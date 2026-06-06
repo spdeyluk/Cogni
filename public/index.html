@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cogni</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell exercises-open" id="app-shell">
+      <aside class="app-sidebar" aria-label="Primary navigation">
+        <div class="sidebar-brand">
+          <img src="/assets/brand/logo-black.png" alt="Cogni">
+          <strong>Cogni</strong>
+        </div>
+        <nav class="side-nav">
+          <button class="side-nav-button" data-section="daily" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M5 8h14M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM9 13h1M14 13h1M9 17h1M14 17h1"/></svg>
+            </span>
+            <span>Daily</span>
+          </button>
+          <button class="side-nav-button" data-section="assessments" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 4h8l2 3v13H6V7zM9 10h6M9 14h6M9 18h4"/></svg>
+            </span>
+            <span>Assessments</span>
+          </button>
+          <button class="side-nav-button active" id="tab-exercises" data-section="exercises" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/></svg>
+            </span>
+            <span>Training</span>
+          </button>
+          <button class="side-nav-button" id="tab-statistics" data-section="statistics" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>
+            </span>
+            <span>Profile</span>
+          </button>
+          <button class="side-nav-button" data-section="leaderboard" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4"/></svg>
+            </span>
+            <span>Leaderboard</span>
+          </button>
+        </nav>
+      </aside>
+
+      <div class="app-content">
+      <section class="hero">
+        <div class="brand-lockup">
+          <img class="brand-logo" src="/assets/brand/logo-white.png" alt="Cogni">
+          <div>
+            <p class="eyebrow">Training Lab</p>
+            <h1 id="page-title">Training</h1>
+          </div>
+        </div>
+        <p class="lede" id="page-lede">Build routines first, or open a standalone cognitive training module below.</p>
+      </section>
+
+      <section class="exercise-page" aria-label="Exercise selection">
+        <div class="routine-section">
+          <div class="section-heading">
+            <div>
+              <p class="exercise-type">Routines</p>
+              <h2>Saved Routines</h2>
+            </div>
+            <div class="routine-actions">
+              <button id="create-routine" type="button">Create Routine</button>
+              <button id="load-routine" type="button">Load Routine</button>
+            </div>
+          </div>
+          <article class="routine-empty">
+            <p>No routines created yet.</p>
+            <span>Create a routine to stack exercises into a repeatable training block.</span>
+          </article>
+          <div class="routine-list" id="routine-list"></div>
+        </div>
+
+        <div class="section-heading exercise-heading">
+          <div>
+            <p class="exercise-type">Exercises</p>
+            <h2>Standalone Exercises</h2>
+          </div>
+        </div>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Working Memory</p>
+            <h2>N-Back</h2>
+            <p>Train position, color, shape, and audio matching with adaptive N-back sessions.</p>
+          </div>
+          <button id="open-nback" type="button">Open</button>
+        </article>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Fluid Reasoning</p>
+            <h2>Relational Reasoning</h2>
+            <p>Spatial premise training for abstract logic and mental model building.</p>
+          </div>
+          <button id="open-rrt" type="button">Open</button>
+        </article>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Cognitive Control</p>
+            <h2>Cognitive Control Training</h2>
+            <p>Adaptive serial addition for focus, inhibition, and mental endurance.</p>
+          </div>
+          <button id="open-cct" type="button">Open</button>
+        </article>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Inhibition</p>
+            <h2>Inhibitory Control Training</h2>
+            <p>Respond quickly to go cues, then withhold your response when a stop signal appears.</p>
+          </div>
+          <button id="open-ict" type="button">Open</button>
+        </article>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Visual Attention</p>
+            <h2>3D MOT</h2>
+            <p>Track highlighted targets inside a 3D field, then identify them after motion stops.</p>
+          </div>
+          <button id="open-mot" type="button">Open</button>
+        </article>
+
+        <article class="exercise-card exercise-card-active">
+          <div>
+            <p class="exercise-type">Visual Attention</p>
+            <h2>UFOV</h2>
+            <p>Identify a central symbol while locating a brief peripheral target among distractors.</p>
+          </div>
+          <button id="open-ufov" type="button">Open</button>
+        </article>
+      </section>
+
+      <section class="profile-page" aria-label="Profile"></section>
+
+      <section class="placeholder-page" aria-label="Future section">
+        <article class="placeholder-panel">
+          <p class="exercise-type" id="placeholder-eyebrow">Coming Next</p>
+          <h2 id="placeholder-title">Section</h2>
+          <p id="placeholder-copy">This area is reserved for the next production system.</p>
+        </article>
+      </section>
+
+      <section class="workbench cct-workbench" aria-label="Cognitive control training">
+        <aside class="controls cct-controls" aria-label="CCT session settings">
+          <button class="back-button" id="back-to-exercises-cct" type="button">Exercises</button>
+
+          <div class="duration-presets" aria-label="Session duration">
+            <button class="preset-button active" data-cct-duration="300" type="button">5 min</button>
+            <button class="preset-button" data-cct-duration="600" type="button">10 min</button>
+            <button class="preset-button" data-cct-duration="900" type="button">15 min</button>
+          </div>
+
+          <div class="control-row">
+            <label for="cct-duration">Duration</label>
+            <input id="cct-duration" type="number" min="30" max="3600" step="30" value="300">
+            <span id="cct-duration-value">5 min</span>
+          </div>
+
+          <div class="control-row">
+            <label for="cct-start-interval">Starting Interval</label>
+            <div class="interval-preset-row">
+              <input id="cct-start-interval" type="number" min="0.5" max="10" step="0.5" value="5">
+              <div class="interval-presets" aria-label="Starting interval presets">
+                <button type="button" data-cct-start-preset="0.5">0.5</button>
+                <button type="button" data-cct-start-preset="1">1</button>
+                <button type="button" data-cct-start-preset="2">2</button>
+                <button type="button" data-cct-start-preset="3">3</button>
+                <button class="active" type="button" data-cct-start-preset="5">5</button>
+              </div>
+            </div>
+            <span id="cct-start-interval-value">5 sec</span>
+          </div>
+
+          <div class="control-row">
+            <label for="cct-min-interval">Minimum Interval</label>
+            <div class="interval-preset-row">
+              <input id="cct-min-interval" type="number" min="0.5" max="10" step="0.5" value="0.5">
+              <div class="interval-presets" aria-label="Minimum interval presets">
+                <button class="active" type="button" data-cct-min-preset="0.5">0.5</button>
+                <button type="button" data-cct-min-preset="1">1</button>
+                <button type="button" data-cct-min-preset="2">2</button>
+                <button type="button" data-cct-min-preset="3">3</button>
+                <button type="button" data-cct-min-preset="5">5</button>
+              </div>
+            </div>
+            <span id="cct-min-interval-value">0.5 sec</span>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+            <label class="inline-check"><input id="cct-adaptive" type="checkbox" checked> Adaptive interval</label>
+            <div class="control-row">
+              <label for="cct-correct-step">Correct Step</label>
+              <input id="cct-correct-step" type="number" min="0" max="1000" step="20" value="120">
+              <span>ms faster</span>
+            </div>
+            <div class="control-row">
+              <label for="cct-wrong-step">Wrong Step</label>
+              <input id="cct-wrong-step" type="number" min="0" max="1500" step="20" value="220">
+              <span>ms slower</span>
+            </div>
+          </details>
+
+          <button id="start-cct-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="cct-stage-card" aria-live="polite">
+          <button class="quit-button" id="quit-cct-session" type="button" disabled aria-label="Quit CCT session">Quit</button>
+
+          <div class="session-bar">
+            <span id="cct-session-state">Ready</span>
+            <span id="cct-session-progress">0 / 0</span>
+          </div>
+
+          <div class="cct-display">
+            <span id="cct-digit">-</span>
+            <p id="cct-instruction">Add each new digit to the digit immediately before it.</p>
+          </div>
+
+          <div class="cct-answer">
+            <input id="cct-answer-input" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer">
+            <button id="cct-submit-answer" type="button" disabled>Enter</button>
+          </div>
+
+          <div class="cct-keypad" aria-label="CCT keypad">
+            <button type="button" data-cct-key="1">1</button>
+            <button type="button" data-cct-key="2">2</button>
+            <button type="button" data-cct-key="3">3</button>
+            <button type="button" data-cct-key="4">4</button>
+            <button type="button" data-cct-key="5">5</button>
+            <button type="button" data-cct-key="6">6</button>
+            <button type="button" data-cct-key="7">7</button>
+            <button type="button" data-cct-key="8">8</button>
+            <button type="button" data-cct-key="9">9</button>
+            <button type="button" data-cct-key="back">Del</button>
+            <button type="button" data-cct-key="0">0</button>
+            <button type="button" data-cct-key="enter">OK</button>
+          </div>
+
+          <dl class="live-stats">
+            <div>
+              <dt>Correct</dt>
+              <dd id="cct-correct">0</dd>
+            </div>
+            <div>
+              <dt>Wrong</dt>
+              <dd id="cct-wrong">0</dd>
+            </div>
+            <div>
+              <dt>Interval</dt>
+              <dd id="cct-interval-stat">5.0</dd>
+            </div>
+            <div>
+              <dt>Time</dt>
+              <dd id="cct-time-left">5:00</dd>
+            </div>
+          </dl>
+
+          <div class="feedback-line" id="cct-feedback-line">Feedback will appear here.</div>
+          <pre id="cct-session-output"></pre>
+        </section>
+      </section>
+
+      <section class="workbench rrt-workbench" aria-label="Relational reasoning training">
+        <aside class="controls rrt-controls" aria-label="RRT session settings">
+          <button class="back-button" id="back-to-exercises-rrt" type="button">Exercises</button>
+
+          <div class="control-row">
+            <label for="rrt-timer-seconds">Timer Per Trial</label>
+            <div class="timer-control">
+              <input id="rrt-timer-seconds" type="number" min="5" max="120" step="5" value="30">
+              <span id="rrt-timer-seconds-value">30 sec</span>
+              <label class="timer-toggle"><input id="rrt-timer-enabled" type="checkbox" checked> Enabled</label>
+            </div>
+          </div>
+
+          <label class="inline-check"><input id="rrt-use-meaningful" name="rrt-vocabulary-choice" type="radio" value="meaningful"> Use Meaningful Words</label>
+          <div class="inline-grid nested-control">
+            <label class="inline-check"><input id="rrt-use-nouns" type="checkbox" checked> Nouns</label>
+            <label class="inline-check"><input id="rrt-use-adjectives" type="checkbox"> Adjectives</label>
+          </div>
+
+          <label class="inline-check"><input id="rrt-use-emoji" name="rrt-vocabulary-choice" type="radio" value="emoji"> Use Emoji</label>
+          <label class="inline-check"><input id="rrt-use-voronoi-emoji" type="checkbox"> Use Voronoi Emoji</label>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+
+            <div class="control-row">
+              <label for="rrt-profile">Current Profile</label>
+              <div class="inline-actions">
+                <select id="rrt-profile">
+                  <option selected>Default</option>
+                </select>
+                <button type="button" aria-label="Add profile">+</button>
+                <button type="button">Share</button>
+              </div>
+            </div>
+
+            <div class="control-row">
+              <label for="rrt-premise-count">Global Premises</label>
+              <input id="rrt-premise-count" type="number" min="2" max="6" step="1" value="2">
+              <span id="rrt-premise-count-value">2 qty</span>
+            </div>
+
+            <div class="control-row">
+              <label for="rrt-trial-count">Trials</label>
+              <input id="rrt-trial-count" type="number" min="1" max="60" step="1" value="12">
+            </div>
+
+            <label class="inline-check"><input id="rrt-auto-progression" type="checkbox" checked> Enable Auto Progression</label>
+
+            <div class="control-row">
+              <label for="rrt-daily-target">Daily Target</label>
+              <input id="rrt-daily-target" type="number" min="0" max="240" step="5" value="10">
+              <span>min</span>
+            </div>
+
+            <div class="control-row">
+              <label for="rrt-weekly-target">Weekly Target</label>
+              <input id="rrt-weekly-target" type="number" min="0" max="1200" step="10" value="0">
+              <span>min</span>
+            </div>
+
+            <label class="inline-check"><input id="rrt-use-nonsense" name="rrt-vocabulary-choice" type="radio" value="nonsense" checked> Use Nonsense Words</label>
+            <div class="control-row nested-control">
+              <label for="rrt-nonsense-length">Nonsense Word Length</label>
+              <input id="rrt-nonsense-length" type="number" min="2" max="8" step="1" value="3">
+              <span id="rrt-nonsense-length-value">3 letters</span>
+            </div>
+
+            <label class="inline-check"><input id="rrt-use-garbage" name="rrt-vocabulary-choice" type="radio" value="garbage"> Use Garbage Words</label>
+            <div class="control-row nested-control">
+              <label for="rrt-garbage-length">Garbage Word Length</label>
+              <input id="rrt-garbage-length" type="number" min="2" max="12" step="1" value="3">
+              <span id="rrt-garbage-length-value">3 letters</span>
+            </div>
+
+            <div class="control-row">
+              <label for="rrt-visual-noise">Use Visual Noise</label>
+              <input id="rrt-visual-noise" type="number" min="0" max="20" step="1" value="5">
+              <span>split</span>
+            </div>
+
+            <div class="control-row">
+              <label for="rrt-scramble-factor">Scramble Factor</label>
+              <input id="rrt-scramble-factor" type="number" min="0" max="100" step="5" value="80">
+              <span>%</span>
+            </div>
+
+            <label class="inline-check"><input id="rrt-connection-branching" type="checkbox" checked> Enable Connection Branching</label>
+            <label class="inline-check"><input id="rrt-spoiler-conclusion" type="checkbox"> Spoiler Conclusion</label>
+
+            <div class="rrt-mode-settings" aria-label="RRT mode settings">
+              <article class="mode-panel">
+                <label class="inline-check"><input id="rrt-enable-distinction" type="checkbox" checked> Enable Distinction</label>
+                <p>A is the same as B<br>A is opposite to B</p>
+                <div class="mode-grid">
+                  <label>Premises<input id="rrt-distinction-premises" type="number" min="0" max="6" step="1" placeholder="global"></label>
+                  <label>Time<input id="rrt-distinction-time" type="number" min="0" max="90" step="5" placeholder="global"></label>
+                  <label>Priority<input id="rrt-distinction-priority" type="number" min="1" max="300" step="10" value="150"></label>
+                </div>
+              </article>
+
+              <article class="mode-panel">
+                <label class="inline-check"><input id="rrt-enable-linear" type="checkbox" checked> Enable Linear</label>
+                <p>A is left of B<br>A is right of B</p>
+                <div class="mode-grid">
+                  <label>Premises<input id="rrt-linear-premises" type="number" min="0" max="6" step="1" placeholder="global"></label>
+                  <label>Time<input id="rrt-linear-time" type="number" min="0" max="90" step="5" placeholder="global"></label>
+                  <label>Priority<input id="rrt-linear-priority" type="number" min="1" max="300" step="10" value="100"></label>
+                </div>
+                <label class="inline-check small-check"><input id="rrt-linear-180" type="checkbox"> 180 Mode</label>
+              </article>
+
+              <article class="mode-panel">
+                <label class="inline-check"><input id="rrt-enable-space2d" type="checkbox" checked> Enable Space 2D</label>
+                <p>A is at South-West of B</p>
+                <div class="mode-grid">
+                  <label>Premises<input id="rrt-space2d-premises" type="number" min="0" max="6" step="1" placeholder="global"></label>
+                  <label>Time<input id="rrt-space2d-time" type="number" min="0" max="90" step="5" placeholder="global"></label>
+                  <label>Priority<input id="rrt-space2d-priority" type="number" min="1" max="300" step="10" value="100"></label>
+                </div>
+              </article>
+
+              <article class="mode-panel">
+                <label class="inline-check"><input id="rrt-enable-space3d" type="checkbox"> Enable Space 3D</label>
+                <p>A is at Above and North-West of B</p>
+                <div class="mode-grid">
+                  <label>Premises<input id="rrt-space3d-premises" type="number" min="0" max="6" step="1" placeholder="global"></label>
+                  <label>Time<input id="rrt-space3d-time" type="number" min="0" max="90" step="5" placeholder="global"></label>
+                  <label>Priority<input id="rrt-space3d-priority" type="number" min="1" max="300" step="10" value="100"></label>
+                </div>
+              </article>
+            </div>
+          </details>
+
+          <button id="start-rrt-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="rrt-stage-card" aria-live="polite">
+          <button class="quit-button" id="quit-rrt-session" type="button" disabled aria-label="Quit RRT session">Quit</button>
+
+          <div class="rrt-timer-strip">
+            <span>Timer</span>
+            <strong id="rrt-time-left">30</strong>
+            <span id="rrt-timer-unit">sec</span>
+          </div>
+
+          <div class="rrt-prompt">
+            <div class="rrt-prompt-head">
+              <p class="exercise-type" id="rrt-mode-label">Mixed</p>
+              <span id="rrt-premise-stat">2p</span>
+            </div>
+            <div class="rrt-frame">
+              <h2 id="rrt-heading">Press Start Session.</h2>
+              <h3>Premises</h3>
+              <ol id="rrt-premises"></ol>
+              <h3>Conclusion</h3>
+              <div class="rrt-conclusion" id="rrt-conclusion">Conclusion will appear here.</div>
+            </div>
+          </div>
+
+          <div class="rrt-answer-grid">
+            <button id="rrt-true" type="button" disabled>TRUE</button>
+            <button id="rrt-false" type="button" disabled>FALSE</button>
+          </div>
+
+          <span class="sr-only" id="rrt-correct">0</span>
+          <span class="sr-only" id="rrt-wrong">0</span>
+          <span class="sr-only" id="rrt-session-total">0</span>
+          <span class="sr-only" id="rrt-session-state">Ready</span>
+          <span class="sr-only" id="rrt-session-progress">0 / 0</span>
+
+          <div class="feedback-line" id="rrt-feedback-line">Feedback will appear here.</div>
+          <pre id="rrt-session-output"></pre>
+        </section>
+      </section>
+
+      <section class="workbench nback-workbench" aria-label="N-back game">
+        <aside class="controls" aria-label="Session settings">
+          <button class="back-button" id="back-to-exercises" type="button">Exercises</button>
+
+          <div class="nback-preset-group" aria-label="N-back level presets">
+            <span>N level</span>
+            <div class="nback-preset-row">
+              <button class="preset-button" data-nback-level-preset="1" type="button">1-back</button>
+              <button class="preset-button active" data-nback-level-preset="2" type="button">2-back</button>
+              <button class="preset-button" data-nback-level-preset="3" type="button">3-back</button>
+              <button class="preset-button" data-nback-level-preset="4" type="button">4-back</button>
+            </div>
+          </div>
+
+          <div class="nback-preset-group" aria-label="N-back modality presets">
+            <span>Mode</span>
+            <div class="nback-preset-row">
+              <button class="preset-button active" data-nback-modality-toggle="position" type="button">Position</button>
+              <button class="preset-button active" data-nback-modality-toggle="audio" type="button">Sound</button>
+              <button class="preset-button active" data-nback-modality-toggle="color" type="button">Color</button>
+              <button class="preset-button active" data-nback-modality-toggle="shape" type="button">Shape</button>
+            </div>
+          </div>
+
+          <div class="nback-preset-group nback-duration-group" aria-label="N-back session duration">
+            <span>Session time</span>
+            <div class="nback-preset-row">
+              <button class="preset-button active" data-nback-duration-preset="5" type="button">5 min</button>
+              <button class="preset-button" data-nback-duration-preset="10" type="button">10 min</button>
+              <button class="preset-button" data-nback-duration-preset="15" type="button">15 min</button>
+              <label class="nback-custom-duration" for="session-timer">
+                <input id="session-timer" type="number" min="0.5" max="60" step="0.5" value="5" aria-label="Custom session minutes">
+                <span>min</span>
+              </label>
+            </div>
+            <span id="session-timer-value">5 min</span>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+            <div class="sr-only" aria-hidden="true">
+              <input type="checkbox" data-modality="position" checked>
+              <input type="checkbox" data-modality="color" checked>
+              <input type="checkbox" data-modality="shape" checked>
+              <input type="checkbox" data-modality="audio" checked>
+            </div>
+
+            <div class="control-row">
+              <label for="n-level">N level</label>
+              <input id="n-level" type="range" min="1" max="8" value="2">
+              <span id="n-level-value">2-back</span>
+            </div>
+
+            <div class="control-row">
+              <label for="trial-count">Trials</label>
+              <input id="trial-count" type="number" min="12" max="2400" step="1" value="35">
+            </div>
+
+            <div class="control-row">
+              <label for="trial-time">Trial time</label>
+              <input id="trial-time" type="range" min="700" max="5000" step="100" value="2500">
+              <span id="trial-time-value">2500 ms</span>
+            </div>
+
+            <div class="setting-stat">
+              <span>Session duration</span>
+              <strong id="session-duration">1m 28s</strong>
+            </div>
+
+            <div class="control-row">
+              <label for="feedback-mode">Feedback</label>
+              <select id="feedback-mode">
+                <option value="show" selected>Show</option>
+                <option value="hide">Hide</option>
+                <option value="hide-counter">Hide counter only</option>
+              </select>
+            </div>
+
+            <div class="control-row">
+              <label for="match-chance">Match chance</label>
+              <input id="match-chance" type="range" min="5" max="60" value="25">
+              <span id="match-chance-value">25%</span>
+            </div>
+
+            <div class="control-row">
+              <label for="interference">Interference</label>
+              <input id="interference" type="range" min="0" max="60" value="20">
+              <span id="interference-value">20%</span>
+            </div>
+
+            <fieldset class="progression-field">
+              <legend>Auto progression</legend>
+              <label><input id="auto-progression" type="checkbox" checked> Enabled</label>
+              <label for="advance-threshold">When at least <span id="advance-threshold-value">80%</span></label>
+              <input id="advance-threshold" type="range" min="55" max="100" value="80">
+              <label for="advance-streak">Win after <span id="advance-streak-value">1</span> in a row</label>
+              <input id="advance-streak" type="range" min="1" max="5" value="1">
+              <label for="drop-threshold">When below <span id="drop-threshold-value">50%</span></label>
+              <input id="drop-threshold" type="range" min="0" max="75" value="50">
+              <label for="drop-streak">Lose after <span id="drop-streak-value">3</span> in a row</label>
+              <input id="drop-streak" type="range" min="1" max="5" value="3">
+            </fieldset>
+          </details>
+
+          <button id="start-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="stage-card" aria-live="polite">
+          <button class="quit-button" id="quit-session" type="button" disabled aria-label="Quit session">Quit</button>
+
+          <div class="session-bar">
+            <span id="session-state">Ready</span>
+            <span id="session-progress">0 / 0</span>
+          </div>
+
+          <div class="nback-stage" id="stage" aria-label="N-back stimulus stage">
+            <div class="grid-board" id="grid-board"></div>
+            <div class="countdown" id="countdown" aria-live="assertive"></div>
+            <div class="audio-cue" id="audio-cue">Audio ready</div>
+          </div>
+
+          <div class="response-grid">
+            <button id="position-button" type="button" data-response="position" disabled><kbd>A</kbd><span>Position</span></button>
+            <button id="color-button" type="button" data-response="color" disabled><span>Color</span><kbd>F</kbd></button>
+            <button id="shape-button" type="button" data-response="shape" disabled><kbd>J</kbd><span>Shape</span></button>
+            <button id="audio-button" type="button" data-response="audio" disabled><span>Audio</span><kbd>L</kbd></button>
+          </div>
+
+          <dl class="live-stats">
+            <div>
+              <dt>Hits</dt>
+              <dd id="hits">0</dd>
+            </div>
+            <div>
+              <dt>Misses</dt>
+              <dd id="misses">0</dd>
+            </div>
+            <div>
+              <dt>False alarms</dt>
+              <dd id="false-alarms">0</dd>
+            </div>
+            <div>
+              <dt>D-prime</dt>
+              <dd id="d-prime">0</dd>
+            </div>
+          </dl>
+
+          <div class="feedback-line" id="feedback-line">Feedback will appear here.</div>
+
+          <pre id="session-output"></pre>
+        </section>
+      </section>
+
+      <section class="workbench mot-workbench" aria-label="3D multiple object tracking game">
+        <aside class="controls mot-controls" aria-label="MOT session settings">
+          <button class="back-button" id="back-to-exercises-mot" type="button">Exercises</button>
+
+          <div class="control-row">
+            <label for="mot-target-count">Targets</label>
+            <input id="mot-target-count" type="number" min="1" max="12" step="1" value="4">
+          </div>
+
+          <div class="control-row">
+            <label for="mot-blue-distractors">Blue distractors</label>
+            <input id="mot-blue-distractors" type="number" min="0" max="30" step="1" value="4">
+          </div>
+
+          <div class="control-row">
+            <label for="mot-colored-distractors">Colored distractors</label>
+            <input id="mot-colored-distractors" type="number" min="0" max="30" step="1" value="0">
+          </div>
+
+          <div class="control-row">
+            <label for="mot-ball-speed">Ball speed</label>
+            <input id="mot-ball-speed" type="range" min="0.05" max="1.5" step="0.01" value="0.25">
+            <span id="mot-ball-speed-value">0.25</span>
+          </div>
+
+          <div class="control-row">
+            <label for="mot-ball-size">Ball size</label>
+            <input id="mot-ball-size" type="range" min="0.6" max="4" step="0.1" value="1.8">
+            <span id="mot-ball-size-value">1.8</span>
+          </div>
+
+          <div class="control-row">
+            <label for="mot-trial-count">Trials</label>
+            <input id="mot-trial-count" type="number" min="1" max="40" step="1" value="8">
+          </div>
+
+          <div class="control-row">
+            <label for="mot-tracking-duration">Tracking time</label>
+            <input id="mot-tracking-duration" type="range" min="2500" max="20000" step="500" value="7500">
+            <span id="mot-tracking-duration-value">7500 ms</span>
+          </div>
+
+          <div class="control-row">
+            <label for="mot-highlight-duration">Highlight time</label>
+            <input id="mot-highlight-duration" type="range" min="500" max="5000" step="100" value="1800">
+            <span id="mot-highlight-duration-value">1800 ms</span>
+          </div>
+
+          <div class="control-row">
+            <label for="mot-auto-continue">Trial flow</label>
+            <label class="inline-check"><input id="mot-auto-continue" type="checkbox" checked> Auto continue</label>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+
+            <div class="control-row">
+              <label for="mot-box-width">Box width</label>
+              <input id="mot-box-width" type="number" min="12" max="120" step="1" value="45">
+            </div>
+
+            <div class="control-row">
+              <label for="mot-box-height">Box height</label>
+              <input id="mot-box-height" type="number" min="12" max="90" step="1" value="30">
+            </div>
+
+            <div class="control-row">
+              <label for="mot-box-depth">Box depth</label>
+              <input id="mot-box-depth" type="number" min="12" max="90" step="1" value="25">
+            </div>
+
+            <div class="control-row">
+              <label for="mot-fov">FOV</label>
+              <input id="mot-fov" type="number" min="35" max="110" step="1" value="75">
+            </div>
+
+            <div class="control-row">
+              <label for="mot-graphics">Graphics</label>
+              <select id="mot-graphics">
+                <option value="default" selected>Default</option>
+                <option value="low">Low</option>
+                <option value="potato">Potato</option>
+              </select>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-ball-opacity">Ball opacity</label>
+              <input id="mot-ball-opacity" type="range" min="0.35" max="1" step="0.01" value="0.94">
+              <span id="mot-ball-opacity-value">0.94</span>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-camera-rotation">Screen rotation</label>
+              <label class="inline-check"><input id="mot-camera-rotation" type="checkbox"> Enable</label>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-camera-rotation-speed">Rotation speed</label>
+              <input id="mot-camera-rotation-speed" type="range" min="0" max="0.01" step="0.001" value="0.002">
+              <span id="mot-camera-rotation-speed-value">0.002</span>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-camera-distance">Camera distance</label>
+              <input id="mot-camera-distance" type="range" min="24" max="100" step="1" value="42">
+              <span id="mot-camera-distance-value">42</span>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-divider">Divider</label>
+              <select id="mot-divider">
+                <option value="none" selected>None</option>
+                <option value="vertical">Vertical</option>
+              </select>
+            </div>
+
+            <div class="control-row">
+              <label for="mot-feedback-mode">Feedback</label>
+              <select id="mot-feedback-mode">
+                <option value="immediate" selected>Immediate</option>
+                <option value="after-selection">After selection</option>
+              </select>
+            </div>
+
+            <fieldset class="progression-field">
+              <legend>Auto progression</legend>
+              <label><input id="mot-auto-progression" type="checkbox" checked> Enabled</label>
+              <label for="mot-speed-step-correct">Speed change when correct</label>
+              <input id="mot-speed-step-correct" type="number" min="0" max="0.25" step="0.01" value="0.02">
+              <label for="mot-speed-step-incorrect">Speed change when incorrect</label>
+              <input id="mot-speed-step-incorrect" type="number" min="-0.25" max="0" step="0.01" value="-0.02">
+            </fieldset>
+          </details>
+
+          <button id="start-mot-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="mot-stage-card" aria-live="polite">
+          <div class="mot-stage-actions">
+            <button class="quit-button" id="quit-mot-session" type="button" disabled aria-label="Quit MOT session">Quit</button>
+            <button class="stage-fullscreen-button" id="mot-stage-fullscreen" type="button">Fullscreen</button>
+          </div>
+
+          <div class="session-bar">
+            <span id="mot-session-state">Ready</span>
+            <span id="mot-session-progress">0 / 0</span>
+          </div>
+
+          <div class="mot-stage" id="mot-stage">
+            <div class="mot-canvas-wrap" id="mot-canvas-wrap"></div>
+            <div class="mot-fixation-dot" aria-hidden="true"></div>
+            <div class="mot-overlay" id="mot-overlay">Press Start Session.</div>
+          </div>
+
+          <div class="mot-actions">
+            <button id="next-mot-trial" type="button" disabled>Next Trial</button>
+          </div>
+
+          <dl class="live-stats mot-live-stats">
+            <div>
+              <dt>Correct</dt>
+              <dd id="mot-correct">0</dd>
+            </div>
+            <div>
+              <dt>Misses</dt>
+              <dd id="mot-misses">0</dd>
+            </div>
+            <div>
+              <dt>False alarms</dt>
+              <dd id="mot-false-alarms">0</dd>
+            </div>
+            <div>
+              <dt>Speed</dt>
+              <dd id="mot-speed-stat">0.25</dd>
+            </div>
+          </dl>
+
+          <div class="feedback-line" id="mot-feedback-line">Feedback will appear here.</div>
+
+          <pre id="mot-session-output"></pre>
+        </section>
+      </section>
+
+      <section class="workbench ufov-workbench" aria-label="Useful field of view training">
+        <aside class="controls ufov-controls" aria-label="UFOV session settings">
+          <button class="back-button" id="back-to-exercises-ufov" type="button">Exercises</button>
+
+          <div class="control-row">
+            <label for="ufov-trial-count">Trials</label>
+            <input id="ufov-trial-count" type="number" min="4" max="80" step="1" value="16">
+          </div>
+
+          <div class="control-row">
+            <label for="ufov-duration">Stimulus Duration</label>
+            <input id="ufov-duration" type="range" min="120" max="1600" step="20" value="900">
+            <span id="ufov-duration-value">900 ms</span>
+          </div>
+
+          <div class="control-row">
+            <label for="ufov-distractors">Distractors</label>
+            <input id="ufov-distractors" type="number" min="0" max="80" step="1" value="20">
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+            <label class="inline-check"><input id="ufov-auto-progression" type="checkbox" checked> Auto progression</label>
+            <div class="control-row">
+              <label for="ufov-min-duration">Minimum Duration</label>
+              <input id="ufov-min-duration" type="number" min="80" max="1000" step="20" value="180">
+              <span>ms</span>
+            </div>
+            <div class="control-row">
+              <label for="ufov-advance-streak">Advance Streak</label>
+              <input id="ufov-advance-streak" type="number" min="1" max="12" step="1" value="5">
+            </div>
+            <div class="control-row">
+              <label for="ufov-regress-streak">Regress Streak</label>
+              <input id="ufov-regress-streak" type="number" min="1" max="12" step="1" value="3">
+            </div>
+          </details>
+
+          <button id="start-ufov-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="ufov-stage-card" aria-live="polite">
+          <button class="quit-button" id="quit-ufov-session" type="button" disabled aria-label="Quit UFOV session">Quit</button>
+
+          <div class="session-bar">
+            <span id="ufov-session-state">Ready</span>
+            <span id="ufov-session-progress">0 / 0</span>
+          </div>
+
+          <div class="ufov-stage" id="ufov-stage">
+            <div class="ufov-center" id="ufov-center">●</div>
+          </div>
+
+          <div class="ufov-answer-panel">
+            <div>
+              <p class="exercise-type">Center</p>
+              <div class="ufov-center-choices" id="ufov-center-choices"></div>
+            </div>
+            <div>
+              <p class="exercise-type">Peripheral Target</p>
+              <div class="ufov-sector-grid" id="ufov-sector-grid"></div>
+            </div>
+          </div>
+
+          <dl class="live-stats">
+            <div>
+              <dt>Correct</dt>
+              <dd id="ufov-correct">0</dd>
+            </div>
+            <div>
+              <dt>Wrong</dt>
+              <dd id="ufov-wrong">0</dd>
+            </div>
+            <div>
+              <dt>Duration</dt>
+              <dd id="ufov-duration-stat">900</dd>
+            </div>
+            <div>
+              <dt>Accuracy</dt>
+              <dd id="ufov-accuracy">0%</dd>
+            </div>
+          </dl>
+
+          <div class="feedback-line" id="ufov-feedback-line">Feedback will appear here.</div>
+          <pre id="ufov-session-output"></pre>
+        </section>
+      </section>
+
+      <section class="workbench ict-workbench" aria-label="Inhibitory control training">
+        <aside class="controls ict-controls" aria-label="ICT session settings">
+          <button class="back-button" id="back-to-exercises-ict" type="button">Exercises</button>
+
+          <div class="control-row">
+            <label for="ict-blocks">Blocks</label>
+            <input id="ict-blocks" type="number" min="1" max="8" step="1" value="1">
+          </div>
+
+          <div class="control-row">
+            <label for="ict-trials-per-block">Trials / block</label>
+            <input id="ict-trials-per-block" type="number" min="8" max="80" step="1" value="24">
+          </div>
+
+          <div class="control-row">
+            <label for="ict-stop-probability">Stop probability</label>
+            <input id="ict-stop-probability" type="range" min="5" max="50" step="5" value="25">
+            <span id="ict-stop-probability-value">25%</span>
+          </div>
+
+          <div class="control-row">
+            <label for="ict-cue-type">Cue type</label>
+            <select id="ict-cue-type">
+              <option value="arrows" selected>Arrows</option>
+              <option value="food">Food cues</option>
+            </select>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced settings</summary>
+            <div class="control-row">
+              <label for="ict-calibration-trials">Calibration trials</label>
+              <input id="ict-calibration-trials" type="number" min="0" max="40" step="1" value="8">
+            </div>
+            <div class="control-row">
+              <label for="ict-fixation-ms">Fixation</label>
+              <input id="ict-fixation-ms" type="number" min="100" max="2000" step="50" value="500">
+              <span>ms</span>
+            </div>
+            <div class="control-row">
+              <label for="ict-ssd">Initial SSD</label>
+              <input id="ict-ssd" type="number" min="80" max="900" step="10" value="250">
+              <span id="ict-ssd-value">250 ms</span>
+            </div>
+            <div class="control-row">
+              <label for="ict-ssd-step">SSD step</label>
+              <input id="ict-ssd-step" type="number" min="10" max="150" step="10" value="50">
+              <span>ms</span>
+            </div>
+            <div class="control-row">
+              <label for="ict-stop-signal-mode">Stop signal</label>
+              <select id="ict-stop-signal-mode">
+                <option value="triangle" selected>Triangle</option>
+                <option value="text">STOP text</option>
+                <option value="sound">Sound</option>
+              </select>
+            </div>
+            <label class="inline-check"><input id="ict-soft-deadline-enabled" type="checkbox" checked> Use soft deadline</label>
+            <div class="control-row">
+              <label for="ict-soft-deadline">Soft deadline</label>
+              <input id="ict-soft-deadline" type="number" min="350" max="3000" step="50" value="1200">
+              <span>ms</span>
+            </div>
+          </details>
+
+          <button id="start-ict-session" type="button">Start Session</button>
+        </aside>
+
+        <section class="ict-stage-card" aria-live="polite">
+          <button class="quit-button" id="quit-ict-session" type="button" disabled aria-label="Quit ICT session">Quit</button>
+
+          <div class="session-bar">
+            <span id="ict-session-state">Ready</span>
+            <span id="ict-session-progress">0 / 0</span>
+          </div>
+
+          <div class="ict-stage" id="ict-stage">
+            <div class="ict-fixation" id="ict-fixation">+</div>
+            <div class="ict-cue" id="ict-cue">Press Start</div>
+            <div class="ict-stop-signal" id="ict-stop-signal" hidden>STOP</div>
+          </div>
+
+          <div class="ict-response-grid">
+            <button id="ict-left-button" type="button" data-ict-response="left" disabled><kbd>F</kbd><span>Left</span></button>
+            <button id="ict-right-button" type="button" data-ict-response="right" disabled><span>Right</span><kbd>J</kbd></button>
+          </div>
+
+          <dl class="live-stats">
+            <div>
+              <dt>Go correct</dt>
+              <dd id="ict-go-correct">0</dd>
+            </div>
+            <div>
+              <dt>Stops</dt>
+              <dd id="ict-stop-correct">0</dd>
+            </div>
+            <div>
+              <dt>Failed stops</dt>
+              <dd id="ict-stop-fail">0</dd>
+            </div>
+            <div>
+              <dt>SSD</dt>
+              <dd id="ict-ssd-stat">250</dd>
+            </div>
+          </dl>
+
+          <div class="feedback-line" id="ict-feedback-line">Feedback will appear here.</div>
+          <pre id="ict-session-output"></pre>
+        </section>
+      </section>
+      </div>
+    </main>
+
+    <dialog class="quit-dialog" id="quit-dialog">
+      <form method="dialog">
+        <h2>Quit session?</h2>
+        <p>This run will stop, but completed progress will count toward today's stats.</p>
+        <div class="dialog-actions">
+          <button id="cancel-quit" value="cancel" type="button">Cancel</button>
+          <button id="confirm-quit" value="confirm" type="button">Quit</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="routine-dialog" id="routine-dialog">
+      <form method="dialog">
+        <div class="routine-dialog-header">
+          <div>
+            <p class="exercise-type">Routine Builder</p>
+            <h2 id="routine-dialog-title">Create routine</h2>
+          </div>
+          <button class="dialog-close-button" id="close-routine-dialog" value="cancel" type="button" aria-label="Close routine builder">Close</button>
+        </div>
+
+        <div class="routine-builder-grid">
+          <label class="routine-name-field">
+            <span>Routine name</span>
+            <input id="routine-name" type="text" maxlength="64" value="Focus stack">
+          </label>
+          <div class="routine-total-card">
+            <span>Estimated total</span>
+            <strong id="routine-estimated-total">0 min</strong>
+          </div>
+        </div>
+
+        <div class="routine-add-row">
+          <select id="routine-exercise-select" aria-label="Exercise to add">
+            <option value="nback">N-Back</option>
+            <option value="rrt">Relational Reasoning</option>
+            <option value="cct">Cognitive Control Training</option>
+            <option value="ict">Inhibitory Control Training</option>
+            <option value="mot">3D MOT</option>
+            <option value="ufov">UFOV</option>
+          </select>
+          <button id="add-routine-block" type="button">Add Exercise</button>
+        </div>
+
+        <div class="routine-block-list" id="routine-block-list"></div>
+
+        <div class="routine-dialog-actions">
+          <button id="delete-routine" type="button">Delete</button>
+          <button id="save-routine" type="button">Save Routine</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/app/main.js"></script>
+  </body>
+</html>
