@@ -2104,7 +2104,7 @@ const profileCalendarFullMinutes = 20;
 // Five green steps from deep forest to bright: the whole color ramps
 // (saturation and lightness), not just opacity, so neighbors read distinct.
 function activityShade(level) {
-  return `hsl(135, ${Math.round(60 + level * 20)}%, ${Math.round(18 + level * 37)}%)`;
+  return `color-mix(in srgb, var(--success) ${Math.round(30 + level * 70)}%, var(--surface-2))`;
 }
 
 function renderProfileCompletionCalendar(progress, exerciseIds) {
@@ -2146,7 +2146,7 @@ function renderProfileCompletionCalendar(progress, exerciseIds) {
         <div><p class="exercise-type">${escapeHtml(rangeLabel)}</p><h2>Activity</h2></div>
         <div class="activity-legend" aria-hidden="true">
           <span>0m</span>
-          <i style="background: rgba(255, 255, 255, 0.16)"></i>
+          <i style="background: var(--surface-2)"></i>
           <i style="background: ${activityShade(0.4)}"></i>
           <i style="background: ${activityShade(0.7)}"></i>
           <i style="background: ${activityShade(1)}"></i>
@@ -2201,12 +2201,12 @@ function renderProfileImprovementSection(sessions) {
         <div><p class="exercise-type">All exercises · last ${recent.length} sessions</p><h2>Improvement</h2></div>
       </div>
       <div class="profile-graph-legend">
-        <span><i style="background: #30d158"></i>Improvement <b>${improvementValues.at(-1)}</b></span>
-        <span><i style="background: #ff9f0a"></i>Settings weight <b>${weightValues.at(-1)} / 100</b></span>
+        <span><i style="background: var(--success)"></i>Improvement <b>${improvementValues.at(-1)}</b></span>
+        <span><i style="background: var(--accent-2)"></i>Settings weight <b>${weightValues.at(-1)} / 100</b></span>
       </div>
       ${profileGraphSvg([
-        { values: improvementValues, color: "#30d158" },
-        { values: weightValues, color: "#ff9f0a" }
+        { values: improvementValues, color: "var(--success)" },
+        { values: weightValues, color: "var(--accent-2)" }
       ], recent.length)}
     </section>
   `;
@@ -2548,9 +2548,7 @@ function homeHealthHeadLayers(health) {
   const t = clamp01(health / 100);
   const yellowOpacity = clamp01(t * 2);
   const greenOpacity = clamp01(t * 2 - 1);
-  const glowHue = Math.round(t * 120);
   return `
-    <i class="home-health-glow" style="background: radial-gradient(circle, hsla(${glowHue}, 85%, 52%, 0.5) 0%, hsla(${glowHue}, 85%, 52%, 0) 70%)"></i>
     <img class="home-health-head" src="assets/head.png" alt="">
     <img class="home-health-brain" src="assets/head-brain-red.png" alt="">
     <img class="home-health-brain" src="assets/head-brain-yellow.png" alt="" style="opacity: ${yellowOpacity}">
@@ -2560,7 +2558,7 @@ function homeHealthHeadLayers(health) {
 
 function homeHealthColor(health) {
   // Red (hue 0) at 0% through yellow at 50% to bright green (hue 120) at 100%.
-  return `hsl(${Math.round(clamp01(health / 100) * 120)}, 85%, 52%)`;
+  return `hsl(${Math.round(clamp01(health / 100) * 120)}, 32%, 46%)`;
 }
 
 function homeHealthGaugeSvg(health) {
@@ -3543,8 +3541,8 @@ const catShapePaths = {
 function catGlyphSvg(glyph, cellSize) {
   const size = (glyph.sz ?? 0.55) * cellSize;
   const paint = glyph.f
-    ? 'fill="#ececec"'
-    : 'fill="none" stroke="#ececec" stroke-width="2"';
+    ? 'fill="var(--text)"'
+    : 'fill="none" stroke="var(--text)" stroke-width="2"';
   let shapeMarkup;
   if (glyph.s === "circle") shapeMarkup = `<circle r="${(size / 2).toFixed(1)}" ${paint}></circle>`;
   else if (glyph.s === "square") shapeMarkup = `<rect x="${(-size / 2).toFixed(1)}" y="${(-size / 2).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" ${paint}></rect>`;
