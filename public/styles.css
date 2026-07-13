@@ -11002,3 +11002,118 @@ dialog .screen-time-apps-row {
 .cat-lead-form button {
   min-height: 48px;
 }
+
+/* ==========================================================================
+   ANTI-DOPAMINE THEME — design tokens (2026-07-13)
+   Single source of truth for color, type, and shape. Light = warm paper,
+   dark = warm ink. Tweak values here; nothing below should hardcode them.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("assets/fonts/Fraunces-Variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Type */
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Shape */
+  --radius-s: 6px;
+  --radius: 8px;
+
+  /* Palette — light (warm paper) */
+  --bg: #F7F3EA;
+  --surface: #FBF9F3;
+  --surface-2: #F0EBDD;
+  --text: #2C2C2A;
+  --text-2: #5F5E5A;
+  --muted: #77756B;
+  --line: #D9D5C9;
+  --line-strong: #C7C2B2;
+  --fill-subtle: rgba(44, 44, 42, 0.05);
+  --accent: #4A6B57;
+  --on-accent: #FBF9F3;
+  --accent-2: #B0663F;
+  --success: #3E6B4F;
+  --error: #9A3B33;
+  --warning: #8A6D2F;
+  --shadow: 0 1px 2px rgba(44, 44, 42, 0.07);
+
+  /* Legacy variable remap — older layers keep working, now tokenized */
+  --sidebar: var(--surface);
+  --surface-soft: var(--surface);
+  --surface-raised: var(--surface-2);
+  --line-soft: var(--line);
+  --dim: var(--muted);
+  --active: var(--fill-subtle);
+  --control-bg: var(--fill-subtle);
+  --control-bg-hover: rgba(44, 44, 42, 0.09);
+  --accent-blue: var(--accent);
+  --accent-cyan: var(--accent);
+  --accent-purple: var(--accent);
+  --accent-pink: var(--error);
+  --playful-shadow: transparent;
+  --professional-card-shadow: var(--shadow);
+  --professional-flat-shadow: none;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Palette — dark (warm ink, never pure black or pure white) */
+    --bg: #211F1B;
+    --surface: #2A2823;
+    --surface-2: #363329;
+    --text: #EDE9DE;
+    --text-2: #C7C2B4;
+    --muted: #A39D8D;
+    --line: #403C32;
+    --line-strong: #4E4839;
+    --fill-subtle: rgba(237, 233, 222, 0.06);
+    --accent: #7FA98D;
+    --on-accent: #211F1B;
+    --accent-2: #C98B63;
+    --success: #7FA98D;
+    --error: #C4766B;
+    --warning: #C0A25C;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --control-bg-hover: rgba(237, 233, 222, 0.1);
+  }
+}
+
+/* Base type: humanist sans body, book serif headings, unhurried rhythm. */
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans) !important;
+}
+
+body {
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+kbd {
+  font-family: var(--font-mono) !important;
+}
