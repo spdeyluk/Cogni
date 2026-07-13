@@ -1,7 +1,7 @@
 import { CognitiveDomain } from "../domains.js";
 
 const MEANINGFUL_WORDS = ["atlas", "nova", "river", "stone", "ember", "orbit", "signal", "field", "vector", "prism"];
-const EMOJI_WORDS = ["sun", "moon", "star", "bolt", "wave", "leaf", "gem", "flame", "cloud", "comet"];
+const EMOJI_WORDS = ["☀️", "🌙", "⭐", "⚡", "🌊", "🍃", "💎", "🔥", "☁️", "☄️"];
 const SPATIAL_DIRECTIONS = [
   { label: "north of", dx: 0, dy: 1 },
   { label: "south of", dx: 0, dy: -1 },
@@ -41,6 +41,7 @@ export function createRelationalReasoningConfig(overrides = {}) {
     timerEnabled: true,
     timerSeconds: 30,
     vocabulary: "nonsense",
+    vocabularies: null,
     nonsenseLength: 3,
     garbageLength: 3,
     autoProgression: true,
@@ -204,16 +205,47 @@ function normalizeConfig(config) {
     modeSettings,
     premiseCount: clamp(Math.round(config.premiseCount), 2, 6),
     trialCount: clamp(Math.round(config.trialCount), 1, 60),
+    vocabularies: normalizeVocabularies(config),
     nonsenseLength: clamp(Math.round(config.nonsenseLength), 2, 8),
     garbageLength: clamp(Math.round(config.garbageLength ?? config.nonsenseLength), 2, 12)
   };
 }
 
 function createTerms(config, count, random) {
-  if (config.vocabulary === "meaningful") return shuffle(MEANINGFUL_WORDS, random).slice(0, count);
-  if (config.vocabulary === "emoji") return shuffle(EMOJI_WORDS, random).slice(0, count);
-  if (config.vocabulary === "garbage") return Array.from({ length: count }, () => garbageWord(config.garbageLength, random));
-  return Array.from({ length: count }, () => nonsenseWord(config.nonsenseLength, random));
+  const vocabularies = config.vocabularies?.length ? config.vocabularies : [config.vocabulary ?? "nonsense"];
+  const candidates = vocabularies.flatMap((vocabulary) => createTermCandidates(vocabulary, count, config, random));
+  const terms = uniqueTerms(shuffle(candidates, random)).slice(0, count);
+  while (terms.length < count) {
+    const term = createSingleTerm(pick(vocabularies, random), config, random);
+    terms.push(terms.includes(term) ? `${term}${terms.length + 1}` : term);
+  }
+  return terms;
+}
+
+function uniqueTerms(terms) {
+  return terms.filter((term, index, list) => list.indexOf(term) === index);
+}
+
+function normalizeVocabularies(config) {
+  const values = Array.isArray(config.vocabularies) && config.vocabularies.length
+    ? config.vocabularies
+    : [config.vocabulary ?? "nonsense"];
+  const valid = new Set(["nonsense", "garbage", "meaningful", "emoji"]);
+  const normalized = values.filter((value, index, list) => valid.has(value) && list.indexOf(value) === index);
+  return normalized.length ? normalized : ["nonsense"];
+}
+
+function createTermCandidates(vocabulary, count, config, random) {
+  if (vocabulary === "meaningful") return shuffle(MEANINGFUL_WORDS, random);
+  if (vocabulary === "emoji") return shuffle(EMOJI_WORDS, random);
+  return Array.from({ length: count }, () => createSingleTerm(vocabulary, config, random));
+}
+
+function createSingleTerm(vocabulary, config, random) {
+  if (vocabulary === "garbage") return garbageWord(config.garbageLength, random);
+  if (vocabulary === "meaningful") return pick(MEANINGFUL_WORDS, random);
+  if (vocabulary === "emoji") return pick(EMOJI_WORDS, random);
+  return nonsenseWord(config.nonsenseLength, random);
 }
 
 function nonsenseWord(length, random) {

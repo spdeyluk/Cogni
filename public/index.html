@@ -2,81 +2,77 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260709-sheetpolish">
   </head>
   <body>
-    <main class="app-shell exercises-open" id="app-shell">
+    <main class="app-shell home-open" id="app-shell">
       <aside class="app-sidebar" aria-label="Primary navigation">
         <div class="sidebar-brand">
-          <img src="/assets/brand/logo-black.png" alt="Cogni">
+          <img src="assets/brand/logo-white.png" alt="Cogni">
           <strong>Cogni</strong>
         </div>
         <nav class="side-nav">
-          <button class="side-nav-button" data-section="daily" type="button">
+          <button class="side-nav-button active" data-section="home" type="button">
             <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M5 8h14M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM9 13h1M14 13h1M9 17h1M14 17h1"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20h-5v-5H9v5H4z"/></svg>
             </span>
-            <span>Daily</span>
+            <span>Home</span>
+          </button>
+          <button class="side-nav-button" id="tab-exercises" data-section="exercises" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/></svg>
+            </span>
+            <span>Train</span>
           </button>
           <button class="side-nav-button" data-section="assessments" type="button">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M8 4h8l2 3v13H6V7zM9 10h6M9 14h6M9 18h4"/></svg>
             </span>
-            <span>Assessments</span>
-          </button>
-          <button class="side-nav-button active" id="tab-exercises" data-section="exercises" type="button">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/></svg>
-            </span>
-            <span>Training</span>
+            <span>Tests</span>
           </button>
           <button class="side-nav-button" id="tab-statistics" data-section="statistics" type="button">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>
             </span>
-            <span>Profile</span>
-          </button>
-          <button class="side-nav-button" data-section="leaderboard" type="button">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4"/></svg>
-            </span>
-            <span>Leaderboard</span>
+            <span>You</span>
           </button>
         </nav>
       </aside>
 
       <div class="app-content">
       <section class="hero">
+        <div class="page-status" aria-label="Page actions">
+          <button class="page-notification-button" id="top-notification-button" type="button" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9zM10 21h4"/></svg>
+            <span id="top-notification-count" hidden>0</span>
+          </button>
+        </div>
         <div class="brand-lockup">
-          <img class="brand-logo" src="/assets/brand/logo-white.png" alt="Cogni">
+          <img class="brand-logo" src="assets/brand/logo-white.png" alt="Cogni">
           <div>
-            <p class="eyebrow">Training Lab</p>
-            <h1 id="page-title">Training</h1>
+            <p class="eyebrow">Home</p>
+            <h1 id="page-title">Home</h1>
           </div>
         </div>
-        <p class="lede" id="page-lede">Build routines first, or open a standalone cognitive training module below.</p>
+        <p class="lede" id="page-lede"></p>
       </section>
 
+      <section class="home-page" aria-label="Home"></section>
+
+      <section class="friends-page" aria-label="Friends"></section>
+
       <section class="exercise-page" aria-label="Exercise selection">
-        <div class="routine-section">
-          <div class="section-heading">
-            <div>
-              <p class="exercise-type">Routines</p>
-              <h2>Saved Routines</h2>
-            </div>
-            <div class="routine-actions">
-              <button id="create-routine" type="button">Create Routine</button>
-              <button id="load-routine" type="button">Load Routine</button>
-            </div>
+        <article class="daily-detox-card" aria-label="Daily detox routine">
+          <h2>Daily detox</h2>
+          <p>Detox your focus before the scroll gets to it first.</p>
+          <div class="daily-detox-meta">
+            <span>3 exercises</span><i></i><span>~10 min</span>
           </div>
-          <article class="routine-empty">
-            <p>No routines created yet.</p>
-            <span>Create a routine to stack exercises into a repeatable training block.</span>
-          </article>
-          <div class="routine-list" id="routine-list"></div>
-        </div>
+          <button id="start-daily-detox" type="button">Start today's detox</button>
+        </article>
+
 
         <div class="section-heading exercise-heading">
           <div>
@@ -85,7 +81,7 @@
           </div>
         </div>
 
-        <article class="exercise-card exercise-card-active">
+          <article class="exercise-card exercise-card-active" data-open-exercise="nback" tabindex="0">
           <div>
             <p class="exercise-type">Working Memory</p>
             <h2>N-Back</h2>
@@ -94,50 +90,342 @@
           <button id="open-nback" type="button">Open</button>
         </article>
 
-        <article class="exercise-card exercise-card-active">
+          <article class="exercise-card exercise-card-active" data-open-exercise="rrt" tabindex="0">
           <div>
             <p class="exercise-type">Fluid Reasoning</p>
-            <h2>Relational Reasoning</h2>
+            <h2>RRT</h2>
             <p>Spatial premise training for abstract logic and mental model building.</p>
           </div>
           <button id="open-rrt" type="button">Open</button>
         </article>
 
-        <article class="exercise-card exercise-card-active">
+          <article class="exercise-card exercise-card-active" data-open-exercise="cct" tabindex="0">
           <div>
             <p class="exercise-type">Cognitive Control</p>
-            <h2>Cognitive Control Training</h2>
+            <h2>CCT</h2>
             <p>Adaptive serial addition for focus, inhibition, and mental endurance.</p>
           </div>
           <button id="open-cct" type="button">Open</button>
         </article>
 
-        <article class="exercise-card exercise-card-active">
+          <article class="exercise-card exercise-card-active" data-open-exercise="ict" tabindex="0">
           <div>
             <p class="exercise-type">Inhibition</p>
-            <h2>Inhibitory Control Training</h2>
+            <h2>ICT</h2>
             <p>Respond quickly to go cues, then withhold your response when a stop signal appears.</p>
           </div>
           <button id="open-ict" type="button">Open</button>
         </article>
 
-        <article class="exercise-card exercise-card-active">
-          <div>
-            <p class="exercise-type">Visual Attention</p>
-            <h2>3D MOT</h2>
-            <p>Track highlighted targets inside a 3D field, then identify them after motion stops.</p>
-          </div>
-          <button id="open-mot" type="button">Open</button>
-        </article>
+        <button class="routines-tile" id="open-routines" type="button">
+          <span class="routines-tile-copy">
+            <strong>Routines</strong>
+            <span>Create or load your own training stacks</span>
+          </span>
+          <span class="routines-tile-chevron" aria-hidden="true"></span>
+        </button>
 
-        <article class="exercise-card exercise-card-active">
+      </section>
+
+      <section class="assessment-page" aria-label="Assessments">
+        <div class="assessment-intro" id="cat-intro" role="button" tabindex="0" aria-label="Open Cogni IQ Test">
           <div>
-            <p class="exercise-type">Visual Attention</p>
-            <h2>UFOV</h2>
-            <p>Identify a central symbol while locating a brief peripheral target among distractors.</p>
+            <p class="exercise-type">Adaptive test</p>
+            <h2>Cogni IQ Test</h2>
+            <p class="assessment-card-meta">20–50 questions · 10–25 min</p>
           </div>
-          <button id="open-ufov" type="button">Open</button>
-        </article>
+        </div>
+
+        <section class="assessment-detail" id="cat-detail" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="cat-back-to-list" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Adaptive test</p>
+          <h2>Cogni IQ Test</h2>
+          <p class="assessment-history-copy">The test adapts to you: each answer picks the next question. Most sessions take 10–25 minutes and finish in 20–35 questions.</p>
+          <ul class="cat-rules">
+            <li>Find a quiet spot and don't use a calculator or notes.</li>
+            <li>Each question has its own timer — an unanswered question counts as incorrect.</li>
+            <li>You can't go back to earlier questions.</li>
+            <li>Don't refresh or close the app; if it happens, the test resumes where you left off.</li>
+          </ul>
+          <p class="assessment-disclaimer">Scores are estimates from provisional item data, for personal tracking only — this is not a clinically validated IQ test.</p>
+          <div class="assessment-list-actions">
+            <button id="cat-start" type="button">Start</button>
+            <button class="secondary-button" id="cat-open-history" type="button">Previous scores</button>
+          </div>
+        </section>
+
+        <section class="assessment-run" id="cat-run" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="cat-quit" type="button">End test</button>
+            <span id="cat-progress">Question 1</span>
+          </div>
+          <div class="assessment-progress-track" aria-hidden="true"><div id="cat-timer-bar"></div></div>
+          <p class="exercise-type" id="cat-domain-label">Fluid reasoning</p>
+          <h2 id="cat-prompt" class="cat-prompt"></h2>
+          <div class="cat-stage" id="cat-stage"></div>
+          <div class="cat-options" id="cat-options" aria-label="Answer options"></div>
+        </section>
+
+        <section class="assessment-result" id="cat-lead" hidden aria-live="polite">
+          <p class="exercise-type">Cogni IQ Test</p>
+          <h2>Your score is ready</h2>
+          <p class="assessment-history-copy">Drop your details to see your result — and get first access when the Cogni app launches.</p>
+          <form class="cat-lead-form" id="cat-lead-form">
+            <input name="leadName" type="text" placeholder="Name" autocomplete="name" maxlength="80" required>
+            <input name="leadPhone" type="tel" placeholder="Phone number" autocomplete="tel" maxlength="40" required>
+            <input name="leadEmail" type="email" placeholder="Email (optional)" autocomplete="email" maxlength="120">
+            <button type="submit">Show my score</button>
+          </form>
+          <p class="assessment-disclaimer">Only used for your result and the app launch. No spam.</p>
+        </section>
+
+        <section class="assessment-result" id="cat-result" hidden aria-live="polite">
+          <p class="exercise-type">Cogni IQ Test</p>
+          <h2 id="cat-result-title">Your score</h2>
+          <div class="cat-score-hero">
+            <strong id="cat-score">100</strong>
+            <span id="cat-score-ci">95% CI 92–108</span>
+          </div>
+          <div class="cat-curve" id="cat-curve" aria-hidden="true"></div>
+          <p id="cat-result-summary"></p>
+          <dl class="assessment-result-grid">
+            <div><dt>Fluid reasoning</dt><dd id="cat-domain-fluid">–</dd></div>
+            <div><dt>Verbal comprehension</dt><dd id="cat-domain-verbal">–</dd></div>
+            <div><dt>Quantitative reasoning</dt><dd id="cat-domain-quant">–</dd></div>
+          </dl>
+          <p class="assessment-disclaimer">Estimates come from provisional item parameters and sharpen as the item bank is calibrated with real data. Not medical or diagnostic advice.</p>
+          <div class="assessment-list-actions">
+            <button id="cat-result-back" type="button">Back to tests</button>
+            <button class="secondary-button" id="cat-share" type="button" hidden>Share this test</button>
+          </div>
+        </section>
+
+        <section class="assessment-history" id="cat-history" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="cat-history-back" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Cogni IQ Test</p>
+          <h2>Previous scores</h2>
+          <p class="assessment-history-copy">Saved on this device only. Item-level responses are kept for future calibration.</p>
+          <div class="assessment-history-list" id="cat-history-list"></div>
+        </section>
+
+        <div class="assessment-intro" id="ocd-intro" role="button" tabindex="0" aria-label="Open OCD Test">
+          <div>
+            <p class="exercise-type">Self-report</p>
+            <h2>OCD Test</h2>
+            <p class="assessment-card-meta">18 questions · ~3 min</p>
+          </div>
+        </div>
+
+        <section class="assessment-detail" id="ocd-detail" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="ocd-back-to-list" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Self-report</p>
+          <h2>OCD Test</h2>
+          <p class="assessment-history-copy">18 statements about checking, contamination, order, intrusive thoughts, rituals, and saving. Rate how much each applied over the past month.</p>
+          <p class="assessment-disclaimer">This is a self-report screening signal, not an official OCD test, medical advice, or a diagnosis.</p>
+          <div class="assessment-list-actions">
+            <button id="ocd-start" type="button">Start</button>
+          </div>
+        </section>
+
+        <section class="assessment-run" id="ocd-run" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="ocd-back-question" type="button">Back</button>
+            <span id="ocd-progress">1 of 18</span>
+          </div>
+          <div class="assessment-progress-track" aria-hidden="true"><div id="ocd-progress-bar"></div></div>
+          <p class="exercise-type" id="ocd-section-label">Checking</p>
+          <h2 id="ocd-question-text"></h2>
+          <div class="adhd-rating-buttons" id="ocd-rating-buttons" aria-label="Choose an answer"></div>
+        </section>
+
+        <section class="assessment-result" id="ocd-result" hidden aria-live="polite">
+          <p class="exercise-type">Self-report screen</p>
+          <h2>OCD screen complete</h2>
+          <article class="adhd-simple-score" aria-label="OCD screening signal">
+            <span>Screening signal</span>
+            <strong id="ocd-simple-score">0</strong>
+            <div>
+              <b id="ocd-simple-conclusion">Low</b>
+              <p>A simplified read of these answers. It is not an official OCD test or diagnosis.</p>
+            </div>
+          </article>
+          <dl class="assessment-result-grid" id="ocd-subscale-grid"></dl>
+          <p class="assessment-disclaimer">This result is a screening signal only. Consider discussing persistent, distressing, or time-consuming symptoms with a qualified clinician.</p>
+          <div class="assessment-list-actions">
+            <button id="ocd-result-back" type="button">Back to tests</button>
+            <button class="secondary-button" id="ocd-restart" type="button">Take again</button>
+          </div>
+        </section>
+
+        <div class="assessment-intro" id="focus-intro" role="button" tabindex="0" aria-label="Open Focus Test">
+          <div>
+            <p class="exercise-type">Attention</p>
+            <h2>Focus Test</h2>
+            <p class="assessment-card-meta">45 digits · ~1 min</p>
+          </div>
+        </div>
+
+        <section class="assessment-detail" id="focus-detail" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="focus-back-to-list" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Attention</p>
+          <h2>Focus Test</h2>
+          <p class="assessment-history-copy">Digits flash one at a time. Tap for every digit — except 3. When you see a 3, do nothing. It measures sustained attention and impulse control.</p>
+          <p class="assessment-disclaimer">Takes about a minute. Stay with it — the rhythm makes it easy to slip.</p>
+          <div class="assessment-list-actions">
+            <button id="focus-start" type="button">Start</button>
+          </div>
+        </section>
+
+        <section class="assessment-run" id="focus-run" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="focus-quit" type="button">End test</button>
+            <span id="focus-progress">1 / 45</span>
+          </div>
+          <div class="focus-stimulus" id="focus-stimulus" aria-hidden="true">–</div>
+          <button class="focus-tap" id="focus-tap" type="button">Tap</button>
+        </section>
+
+        <section class="assessment-result" id="focus-result" hidden aria-live="polite">
+          <p class="exercise-type">Attention</p>
+          <h2>Focus score</h2>
+          <div class="cat-score-hero">
+            <strong id="focus-score">0</strong>
+            <span id="focus-score-copy"></span>
+          </div>
+          <dl class="assessment-result-grid">
+            <div><dt>Accuracy</dt><dd id="focus-accuracy">–</dd></div>
+            <div><dt>Missed taps</dt><dd id="focus-misses">–</dd></div>
+            <div><dt>Taps on 3</dt><dd id="focus-false-alarms">–</dd></div>
+            <div><dt>Median reaction</dt><dd id="focus-median-rt">–</dd></div>
+          </dl>
+          <div class="assessment-list-actions">
+            <button id="focus-result-back" type="button">Back to tests</button>
+            <button class="secondary-button" id="focus-restart" type="button">Try again</button>
+          </div>
+        </section>
+
+        <div class="assessment-intro" id="memory-intro" role="button" tabindex="0" aria-label="Open Memory Test">
+          <div>
+            <p class="exercise-type">Working memory</p>
+            <h2>Memory Test</h2>
+            <p class="assessment-card-meta">Span 2–9 · ~3 min</p>
+          </div>
+        </div>
+
+        <section class="assessment-detail" id="memory-detail" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="memory-back-to-list" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Working memory</p>
+          <h2>Memory Test</h2>
+          <p class="assessment-history-copy">Tiles light up one after another. Repeat the sequence by tapping the tiles in the same order. Sequences get longer until you miss twice in a row.</p>
+          <p class="assessment-disclaimer">Takes about three minutes. Your span is the longest sequence you repeat correctly.</p>
+          <div class="assessment-list-actions">
+            <button id="memory-start" type="button">Start</button>
+          </div>
+        </section>
+
+        <section class="assessment-run" id="memory-run" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="memory-quit" type="button">End test</button>
+            <span id="memory-progress">Span 2</span>
+          </div>
+          <p class="memory-status" id="memory-status">Watch the sequence…</p>
+          <div class="memory-grid" id="memory-grid" aria-label="Memory tiles"></div>
+        </section>
+
+        <section class="assessment-result" id="memory-result" hidden aria-live="polite">
+          <p class="exercise-type">Working memory</p>
+          <h2>Memory span</h2>
+          <div class="cat-score-hero">
+            <strong id="memory-span">0</strong>
+            <span id="memory-span-copy"></span>
+          </div>
+          <dl class="assessment-result-grid">
+            <div><dt>Sequences correct</dt><dd id="memory-correct">–</dd></div>
+            <div><dt>Longest sequence</dt><dd id="memory-longest">–</dd></div>
+          </dl>
+          <div class="assessment-list-actions">
+            <button id="memory-result-back" type="button">Back to tests</button>
+            <button class="secondary-button" id="memory-restart" type="button">Try again</button>
+          </div>
+        </section>
+
+        <div class="assessment-intro" id="adhd-assessment-intro" role="button" tabindex="0" aria-label="Open ADHD Assessment">
+          <div>
+            <p class="exercise-type">Self-report</p>
+            <h2>ADHD Assessment</h2>
+            <p class="assessment-card-meta">45 questions · ~5 min</p>
+          </div>
+        </div>
+
+        <section class="assessment-detail" id="adhd-assessment-detail" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="back-to-assessment-list-detail" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Self-report</p>
+          <h2>ADHD Assessment</h2>
+          <p class="assessment-history-copy">45 questions across attention, hyperactivity, impulsivity, and functional impact.</p>
+          <p class="assessment-disclaimer">This is a self-report screening tool, not an official ADHD test, medical advice, or a diagnosis.</p>
+          <div class="assessment-list-actions">
+            <button id="start-adhd-assessment" type="button">Start</button>
+            <button class="secondary-button" id="open-adhd-history" type="button">Previous scores</button>
+          </div>
+        </section>
+
+        <section class="assessment-history" id="adhd-assessment-history" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="back-to-assessment-list" type="button">Tests</button>
+          </div>
+          <p class="exercise-type">Self-report history</p>
+          <h2>Previous scores</h2>
+          <p class="assessment-history-copy">Saved on this device only.</p>
+          <div class="assessment-history-list" id="adhd-history-list"></div>
+        </section>
+
+        <section class="assessment-run" id="adhd-assessment-run" hidden aria-live="polite">
+          <div class="assessment-run-header">
+            <button class="back-button" id="back-adhd-question" type="button">Back</button>
+            <span id="adhd-progress">1 of 45</span>
+          </div>
+          <div class="assessment-progress-track" aria-hidden="true"><div id="adhd-progress-bar"></div></div>
+          <p class="assessment-disclaimer">This is a self-report screening tool, not an official ADHD test, medical advice, or a diagnosis.</p>
+          <p class="exercise-type" id="adhd-section-label">Inattention</p>
+          <h2 id="adhd-question-text"></h2>
+          <div class="adhd-rating-buttons" id="adhd-rating-buttons" aria-label="Choose an answer"></div>
+        </section>
+
+        <section class="assessment-result" id="adhd-assessment-result" hidden aria-live="polite">
+          <p class="exercise-type">Self-report screen</p>
+          <h2 id="adhd-result-title">Assessment complete</h2>
+          <p id="adhd-result-summary"></p>
+          <article class="adhd-simple-score" aria-label="ADHD screening signal">
+            <span>Screening signal</span>
+            <strong id="adhd-simple-score">0</strong>
+            <div>
+              <b id="adhd-simple-conclusion">Low</b>
+              <p>A simplified read of these answers. It is not an official ADHD test or diagnosis.</p>
+            </div>
+          </article>
+          <dl class="assessment-result-grid">
+            <div><dt>Inattention</dt><dd id="adhd-inattention-score">0 / 18</dd></div>
+            <div><dt>Hyperactive / impulsive</dt><dd id="adhd-hyperactive-score">0 / 21</dd></div>
+            <div><dt>Functional impact</dt><dd id="adhd-impact-score">0.0 / 4</dd></div>
+          </dl>
+          <p class="assessment-disclaimer">This result is a screening signal only, not an official ADHD test, medical advice, or a diagnosis. Consider discussing persistent symptoms or impairment with a qualified clinician.</p>
+          <div class="assessment-list-actions">
+            <button id="back-to-assessment-list-result" type="button">Back to tests</button>
+            <button class="secondary-button" id="restart-adhd-assessment" type="button">Take again</button>
+          </div>
+        </section>
       </section>
 
       <section class="profile-page" aria-label="Profile"></section>
@@ -154,31 +442,41 @@
         <aside class="controls cct-controls" aria-label="CCT session settings">
           <button class="back-button" id="back-to-exercises-cct" type="button">Exercises</button>
 
-          <div class="duration-presets" aria-label="Session duration">
-            <button class="preset-button active" data-cct-duration="300" type="button">5 min</button>
-            <button class="preset-button" data-cct-duration="600" type="button">10 min</button>
-            <button class="preset-button" data-cct-duration="900" type="button">15 min</button>
+          <div class="time-preset-group cct-duration-group" aria-label="CCT session time">
+            <span>Time</span>
+            <div class="time-preset-row">
+              <button class="preset-button active" data-cct-duration="5" type="button">5 min</button>
+              <button class="preset-button" data-cct-duration="10" type="button">10 min</button>
+              <button class="preset-button" data-cct-duration="15" type="button">15 min</button>
+              <label class="custom-duration" for="cct-duration">
+                <input id="cct-duration" type="number" min="0.5" max="60" step="0.5" value="5" aria-label="Custom CCT session minutes">
+                <span>min</span>
+              </label>
+            </div>
+            <span id="cct-duration-value" hidden>5 min</span>
           </div>
 
-          <div class="control-row">
-            <label for="cct-duration">Duration</label>
-            <input id="cct-duration" type="number" min="30" max="3600" step="30" value="300">
-            <span id="cct-duration-value">5 min</span>
+          <div class="nback-preset-group cct-cue-mode-group" aria-label="CCT number cue mode">
+            <span>Numbers</span>
+            <div class="nback-preset-row">
+              <button class="preset-button active" data-cct-cue-mode="voice" type="button">Voice</button>
+              <button class="preset-button" data-cct-cue-mode="text" type="button">Text</button>
+            </div>
           </div>
 
           <div class="control-row">
             <label for="cct-start-interval">Starting Interval</label>
             <div class="interval-preset-row">
-              <input id="cct-start-interval" type="number" min="0.5" max="10" step="0.5" value="5">
+              <input id="cct-start-interval" type="number" min="0.5" max="10" step="0.5" value="3">
               <div class="interval-presets" aria-label="Starting interval presets">
                 <button type="button" data-cct-start-preset="0.5">0.5</button>
                 <button type="button" data-cct-start-preset="1">1</button>
                 <button type="button" data-cct-start-preset="2">2</button>
-                <button type="button" data-cct-start-preset="3">3</button>
-                <button class="active" type="button" data-cct-start-preset="5">5</button>
+                <button class="active" type="button" data-cct-start-preset="3">3</button>
+                <button type="button" data-cct-start-preset="5">5</button>
               </div>
             </div>
-            <span id="cct-start-interval-value">5 sec</span>
+            <span id="cct-start-interval-value">3 sec</span>
           </div>
 
           <div class="control-row">
@@ -227,25 +525,33 @@
             <p id="cct-instruction">Add each new digit to the digit immediately before it.</p>
           </div>
 
-          <div class="cct-answer">
+          <div class="cct-answer sr-only">
             <input id="cct-answer-input" type="text" inputmode="numeric" autocomplete="off" aria-label="Answer">
             <button id="cct-submit-answer" type="button" disabled>Enter</button>
           </div>
 
-          <div class="cct-keypad" aria-label="CCT keypad">
-            <button type="button" data-cct-key="1">1</button>
-            <button type="button" data-cct-key="2">2</button>
-            <button type="button" data-cct-key="3">3</button>
-            <button type="button" data-cct-key="4">4</button>
-            <button type="button" data-cct-key="5">5</button>
-            <button type="button" data-cct-key="6">6</button>
-            <button type="button" data-cct-key="7">7</button>
-            <button type="button" data-cct-key="8">8</button>
-            <button type="button" data-cct-key="9">9</button>
-            <button type="button" data-cct-key="back">Del</button>
-            <button type="button" data-cct-key="0">0</button>
-            <button type="button" data-cct-key="enter">OK</button>
+          <div class="cct-keypad" aria-label="CCT answer choices">
+            <button type="button" data-cct-answer="1">1</button>
+            <button type="button" data-cct-answer="2">2</button>
+            <button type="button" data-cct-answer="3">3</button>
+            <button type="button" data-cct-answer="4">4</button>
+            <button type="button" data-cct-answer="5">5</button>
+            <button type="button" data-cct-answer="6">6</button>
+            <button type="button" data-cct-answer="7">7</button>
+            <button type="button" data-cct-answer="8">8</button>
+            <button type="button" data-cct-answer="9">9</button>
+            <button type="button" data-cct-answer="10">10</button>
+            <button type="button" data-cct-answer="11">11</button>
+            <button type="button" data-cct-answer="12">12</button>
+            <button type="button" data-cct-answer="13">13</button>
+            <button type="button" data-cct-answer="14">14</button>
+            <button type="button" data-cct-answer="15">15</button>
+            <button type="button" data-cct-answer="16">16</button>
+            <button type="button" data-cct-answer="17">17</button>
+            <button type="button" data-cct-answer="18">18</button>
           </div>
+
+          <div class="cct-result-strip" id="cct-result-strip" aria-label="CCT answers"></div>
 
           <dl class="live-stats">
             <div>
@@ -275,23 +581,47 @@
         <aside class="controls rrt-controls" aria-label="RRT session settings">
           <button class="back-button" id="back-to-exercises-rrt" type="button">Exercises</button>
 
-          <div class="control-row">
-            <label for="rrt-timer-seconds">Timer Per Trial</label>
-            <div class="timer-control">
-              <input id="rrt-timer-seconds" type="number" min="5" max="120" step="5" value="30">
-              <span id="rrt-timer-seconds-value">30 sec</span>
-              <label class="timer-toggle"><input id="rrt-timer-enabled" type="checkbox" checked> Enabled</label>
+          <div class="time-preset-group rrt-duration-group" aria-label="RRT session time">
+            <span>Time</span>
+            <div class="time-preset-row">
+              <button class="preset-button" data-rrt-duration-preset="5" type="button">5 min</button>
+              <button class="preset-button" data-rrt-duration-preset="10" type="button">10 min</button>
+              <button class="preset-button" data-rrt-duration-preset="15" type="button">15 min</button>
+              <label class="custom-duration" for="rrt-session-minutes">
+                <input id="rrt-session-minutes" type="number" min="0.5" max="60" step="0.5" value="6" aria-label="Custom RRT session minutes">
+                <span>min</span>
+              </label>
             </div>
           </div>
 
-          <label class="inline-check"><input id="rrt-use-meaningful" name="rrt-vocabulary-choice" type="radio" value="meaningful"> Use Meaningful Words</label>
-          <div class="inline-grid nested-control">
-            <label class="inline-check"><input id="rrt-use-nouns" type="checkbox" checked> Nouns</label>
-            <label class="inline-check"><input id="rrt-use-adjectives" type="checkbox"> Adjectives</label>
+          <div class="nback-preset-group rrt-object-group" aria-label="RRT object type">
+            <span>Objects</span>
+            <div class="rrt-preset-row">
+              <button class="preset-button" data-rrt-object="garbage" type="button">Garbage words</button>
+              <button class="preset-button" data-rrt-object="meaningful" type="button">Real words</button>
+              <button class="preset-button active" data-rrt-object="emoji" type="button">Emojis</button>
+              <button class="preset-button" data-rrt-object="voronoi" type="button" disabled aria-disabled="true">Voronoi emojis</button>
+            </div>
           </div>
 
-          <label class="inline-check"><input id="rrt-use-emoji" name="rrt-vocabulary-choice" type="radio" value="emoji"> Use Emoji</label>
-          <label class="inline-check"><input id="rrt-use-voronoi-emoji" type="checkbox"> Use Voronoi Emoji</label>
+          <div class="nback-preset-group rrt-mode-group" aria-label="RRT modes">
+            <span>Modes</span>
+            <div class="rrt-preset-row">
+              <button class="preset-button active" data-rrt-mode="distinction" type="button">Distinction</button>
+              <button class="preset-button active" data-rrt-mode="linear" type="button">Linear</button>
+              <button class="preset-button" data-rrt-mode="space2d" type="button">2D Space</button>
+              <button class="preset-button" data-rrt-mode="space3d" type="button">3D Space</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <label for="rrt-timer-seconds">Timer Per Trial</label>
+            <div class="timer-control">
+              <label class="timer-toggle"><input id="rrt-timer-enabled" type="checkbox" checked> Timer</label>
+              <input id="rrt-timer-seconds" type="number" min="5" max="120" step="5" value="30">
+              <span id="rrt-timer-seconds-value">30 sec</span>
+            </div>
+          </div>
 
           <details class="advanced-settings">
             <summary>Advanced settings</summary>
@@ -320,6 +650,15 @@
 
             <label class="inline-check"><input id="rrt-auto-progression" type="checkbox" checked> Enable Auto Progression</label>
 
+            <label class="inline-check"><input id="rrt-use-meaningful" name="rrt-vocabulary-choice" type="checkbox" value="meaningful"> Use Real Words</label>
+            <div class="inline-grid nested-control">
+              <label class="inline-check"><input id="rrt-use-nouns" type="checkbox" checked> Nouns</label>
+              <label class="inline-check"><input id="rrt-use-adjectives" type="checkbox"> Adjectives</label>
+            </div>
+
+            <label class="inline-check"><input id="rrt-use-emoji" name="rrt-vocabulary-choice" type="checkbox" value="emoji" checked> Use Emojis</label>
+            <label class="inline-check disabled-option"><input id="rrt-use-voronoi-emoji" type="checkbox" disabled> Use Voronoi Emojis</label>
+
             <div class="control-row">
               <label for="rrt-daily-target">Daily Target</label>
               <input id="rrt-daily-target" type="number" min="0" max="240" step="5" value="10">
@@ -332,14 +671,14 @@
               <span>min</span>
             </div>
 
-            <label class="inline-check"><input id="rrt-use-nonsense" name="rrt-vocabulary-choice" type="radio" value="nonsense" checked> Use Nonsense Words</label>
+            <label class="inline-check"><input id="rrt-use-nonsense" name="rrt-vocabulary-choice" type="checkbox" value="nonsense"> Use Nonsense Words</label>
             <div class="control-row nested-control">
               <label for="rrt-nonsense-length">Nonsense Word Length</label>
               <input id="rrt-nonsense-length" type="number" min="2" max="8" step="1" value="3">
               <span id="rrt-nonsense-length-value">3 letters</span>
             </div>
 
-            <label class="inline-check"><input id="rrt-use-garbage" name="rrt-vocabulary-choice" type="radio" value="garbage"> Use Garbage Words</label>
+            <label class="inline-check"><input id="rrt-use-garbage" name="rrt-vocabulary-choice" type="checkbox" value="garbage"> Use Garbage Words</label>
             <div class="control-row nested-control">
               <label for="rrt-garbage-length">Garbage Word Length</label>
               <input id="rrt-garbage-length" type="number" min="2" max="12" step="1" value="3">
@@ -405,16 +744,17 @@
             </div>
           </details>
 
-          <button id="start-rrt-session" type="button">Start Session</button>
+          <button id="start-rrt-session" type="button">Start</button>
         </aside>
 
         <section class="rrt-stage-card" aria-live="polite">
-          <button class="quit-button" id="quit-rrt-session" type="button" disabled aria-label="Quit RRT session">Quit</button>
+          <button class="quit-button" id="quit-rrt-session" type="button" disabled aria-label="Back from RRT session">Back</button>
 
           <div class="rrt-timer-strip">
-            <span>Timer</span>
-            <strong id="rrt-time-left">30</strong>
-            <span id="rrt-timer-unit">sec</span>
+            <div class="rrt-timer-progress" aria-hidden="true"></div>
+            <span class="sr-only">Timer</span>
+            <strong class="sr-only" id="rrt-time-left">30</strong>
+            <span class="sr-only" id="rrt-timer-unit">sec</span>
           </div>
 
           <div class="rrt-prompt">
@@ -423,7 +763,7 @@
               <span id="rrt-premise-stat">2p</span>
             </div>
             <div class="rrt-frame">
-              <h2 id="rrt-heading">Press Start Session.</h2>
+              <h2 id="rrt-heading">Press Start.</h2>
               <h3>Premises</h3>
               <ol id="rrt-premises"></ol>
               <h3>Conclusion</h3>
@@ -431,9 +771,11 @@
             </div>
           </div>
 
+          <div class="rrt-result-strip" id="rrt-result-strip" aria-label="RRT answers"></div>
+
           <div class="rrt-answer-grid">
-            <button id="rrt-true" type="button" disabled>TRUE</button>
-            <button id="rrt-false" type="button" disabled>FALSE</button>
+            <button id="rrt-true" type="button" disabled><span>TRUE</span><kbd>J</kbd></button>
+            <button id="rrt-false" type="button" disabled><span>FALSE</span><kbd>F</kbd></button>
           </div>
 
           <span class="sr-only" id="rrt-correct">0</span>
@@ -461,37 +803,38 @@
             </div>
           </div>
 
-          <div class="nback-preset-group" aria-label="N-back modality presets">
+          <div class="nback-preset-group" aria-label="N-back cue modes">
             <span>Mode</span>
             <div class="nback-preset-row">
               <button class="preset-button active" data-nback-modality-toggle="position" type="button">Position</button>
               <button class="preset-button active" data-nback-modality-toggle="audio" type="button">Sound</button>
-              <button class="preset-button active" data-nback-modality-toggle="color" type="button">Color</button>
-              <button class="preset-button active" data-nback-modality-toggle="shape" type="button">Shape</button>
+              <button class="preset-button" data-nback-modality-toggle="color" type="button">Color</button>
+              <button class="preset-button" data-nback-modality-toggle="shape" type="button">Shape</button>
             </div>
           </div>
 
           <div class="nback-preset-group nback-duration-group" aria-label="N-back session duration">
-            <span>Session time</span>
-            <div class="nback-preset-row">
+            <span>Time</span>
+            <div class="time-preset-row">
               <button class="preset-button active" data-nback-duration-preset="5" type="button">5 min</button>
               <button class="preset-button" data-nback-duration-preset="10" type="button">10 min</button>
               <button class="preset-button" data-nback-duration-preset="15" type="button">15 min</button>
-              <label class="nback-custom-duration" for="session-timer">
+              <label class="custom-duration" for="session-timer">
                 <input id="session-timer" type="number" min="0.5" max="60" step="0.5" value="5" aria-label="Custom session minutes">
                 <span>min</span>
               </label>
             </div>
-            <span id="session-timer-value">5 min</span>
+            <span id="session-timer-value" hidden>5 min</span>
           </div>
 
           <details class="advanced-settings">
-            <summary>Advanced settings</summary>
+            <summary>Advanced</summary>
+
             <div class="sr-only" aria-hidden="true">
               <input type="checkbox" data-modality="position" checked>
-              <input type="checkbox" data-modality="color" checked>
-              <input type="checkbox" data-modality="shape" checked>
               <input type="checkbox" data-modality="audio" checked>
+              <input type="checkbox" data-modality="color">
+              <input type="checkbox" data-modality="shape">
             </div>
 
             <div class="control-row">
@@ -507,8 +850,8 @@
 
             <div class="control-row">
               <label for="trial-time">Trial time</label>
-              <input id="trial-time" type="range" min="700" max="5000" step="100" value="2500">
-              <span id="trial-time-value">2500 ms</span>
+              <input id="trial-time" type="range" min="1500" max="5000" step="100" value="3000">
+              <span id="trial-time-value">3000 ms</span>
             </div>
 
             <div class="setting-stat">
@@ -551,11 +894,11 @@
             </fieldset>
           </details>
 
-          <button id="start-session" type="button">Start Session</button>
+          <button id="start-session" type="button">Start</button>
         </aside>
 
         <section class="stage-card" aria-live="polite">
-          <button class="quit-button" id="quit-session" type="button" disabled aria-label="Quit session">Quit</button>
+          <button class="quit-button" id="quit-session" type="button" disabled aria-label="Back from session">Back</button>
 
           <div class="session-bar">
             <span id="session-state">Ready</span>
@@ -565,7 +908,7 @@
           <div class="nback-stage" id="stage" aria-label="N-back stimulus stage">
             <div class="grid-board" id="grid-board"></div>
             <div class="countdown" id="countdown" aria-live="assertive"></div>
-            <div class="audio-cue" id="audio-cue">Audio ready</div>
+            <div class="audio-cue" id="audio-cue" aria-hidden="true"></div>
           </div>
 
           <div class="response-grid">
@@ -594,7 +937,7 @@
             </div>
           </dl>
 
-          <div class="feedback-line" id="feedback-line">Feedback will appear here.</div>
+          <div class="feedback-line" id="feedback-line"></div>
 
           <pre id="session-output"></pre>
         </section>
@@ -603,6 +946,19 @@
       <section class="workbench mot-workbench" aria-label="3D multiple object tracking game">
         <aside class="controls mot-controls" aria-label="MOT session settings">
           <button class="back-button" id="back-to-exercises-mot" type="button">Exercises</button>
+
+          <div class="time-preset-group mot-duration-group" aria-label="MOT session time">
+            <span>Time</span>
+            <div class="time-preset-row">
+              <button class="preset-button" data-mot-duration-preset="5" type="button">5 min</button>
+              <button class="preset-button" data-mot-duration-preset="10" type="button">10 min</button>
+              <button class="preset-button" data-mot-duration-preset="15" type="button">15 min</button>
+              <label class="custom-duration" for="mot-session-minutes">
+                <input id="mot-session-minutes" type="number" min="0.5" max="60" step="0.5" value="1.5" aria-label="Custom MOT session minutes">
+                <span>min</span>
+              </label>
+            </div>
+          </div>
 
           <div class="control-row">
             <label for="mot-target-count">Targets</label>
@@ -633,7 +989,7 @@
 
           <div class="control-row">
             <label for="mot-trial-count">Trials</label>
-            <input id="mot-trial-count" type="number" min="1" max="40" step="1" value="8">
+            <input id="mot-trial-count" type="number" min="1" max="120" step="1" value="8">
           </div>
 
           <div class="control-row">
@@ -787,9 +1143,22 @@
         <aside class="controls ufov-controls" aria-label="UFOV session settings">
           <button class="back-button" id="back-to-exercises-ufov" type="button">Exercises</button>
 
+          <div class="time-preset-group ufov-duration-group" aria-label="UFOV session time">
+            <span>Time</span>
+            <div class="time-preset-row">
+              <button class="preset-button" data-ufov-duration-preset="5" type="button">5 min</button>
+              <button class="preset-button" data-ufov-duration-preset="10" type="button">10 min</button>
+              <button class="preset-button" data-ufov-duration-preset="15" type="button">15 min</button>
+              <label class="custom-duration" for="ufov-session-minutes">
+                <input id="ufov-session-minutes" type="number" min="0.5" max="60" step="0.5" value="0.5" aria-label="Custom UFOV session minutes">
+                <span>min</span>
+              </label>
+            </div>
+          </div>
+
           <div class="control-row">
             <label for="ufov-trial-count">Trials</label>
-            <input id="ufov-trial-count" type="number" min="4" max="80" step="1" value="16">
+            <input id="ufov-trial-count" type="number" min="4" max="300" step="1" value="16">
           </div>
 
           <div class="control-row">
@@ -875,6 +1244,19 @@
         <aside class="controls ict-controls" aria-label="ICT session settings">
           <button class="back-button" id="back-to-exercises-ict" type="button">Exercises</button>
 
+          <div class="time-preset-group ict-duration-group" aria-label="ICT session time">
+            <span>Time</span>
+            <div class="time-preset-row">
+              <button class="preset-button" data-ict-duration-preset="5" type="button">5 min</button>
+              <button class="preset-button" data-ict-duration-preset="10" type="button">10 min</button>
+              <button class="preset-button" data-ict-duration-preset="15" type="button">15 min</button>
+              <label class="custom-duration" for="ict-session-minutes">
+                <input id="ict-session-minutes" type="number" min="0.5" max="60" step="0.5" value="1" aria-label="Custom ICT session minutes">
+                <span>min</span>
+              </label>
+            </div>
+          </div>
+
           <div class="control-row">
             <label for="ict-blocks">Blocks</label>
             <input id="ict-blocks" type="number" min="1" max="8" step="1" value="1">
@@ -940,7 +1322,7 @@
         </aside>
 
         <section class="ict-stage-card" aria-live="polite">
-          <button class="quit-button" id="quit-ict-session" type="button" disabled aria-label="Quit ICT session">Quit</button>
+          <button class="quit-button" id="quit-ict-session" type="button" disabled aria-label="Back from ICT session">Back</button>
 
           <div class="session-bar">
             <span id="ict-session-state">Ready</span>
@@ -954,8 +1336,8 @@
           </div>
 
           <div class="ict-response-grid">
-            <button id="ict-left-button" type="button" data-ict-response="left" disabled><kbd>F</kbd><span>Left</span></button>
-            <button id="ict-right-button" type="button" data-ict-response="right" disabled><span>Right</span><kbd>J</kbd></button>
+            <button id="ict-left-button" type="button" data-ict-response="left"><kbd>F</kbd><span>Left</span></button>
+            <button id="ict-right-button" type="button" data-ict-response="right"><span>Right</span><kbd>J</kbd></button>
           </div>
 
           <dl class="live-stats">
@@ -995,6 +1377,99 @@
       </form>
     </dialog>
 
+    <dialog class="session-summary-dialog" id="session-summary-dialog">
+      <form method="dialog">
+        <div class="session-summary-header">
+          <span>Session summary</span>
+          <button id="close-session-summary" value="close" type="submit" aria-label="Close summary">Done</button>
+        </div>
+        <h2>N-back complete</h2>
+        <dl class="session-summary-grid">
+          <div>
+            <dt>Test</dt>
+            <dd id="summary-test">-</dd>
+          </div>
+          <div>
+            <dt>Time</dt>
+            <dd id="summary-time">-</dd>
+          </div>
+          <div>
+            <dt>Correct</dt>
+            <dd id="summary-correct">0</dd>
+          </div>
+          <div>
+            <dt>Misses</dt>
+            <dd id="summary-misses">0</dd>
+          </div>
+          <div>
+            <dt>False alarms</dt>
+            <dd id="summary-false-alarms">0</dd>
+          </div>
+          <div>
+            <dt>Answer speed</dt>
+            <dd id="summary-speed">-</dd>
+          </div>
+        </dl>
+      </form>
+    </dialog>
+
+    <dialog class="friend-dialog" id="friend-dialog">
+      <form id="friend-request-form">
+        <div class="session-summary-header">
+          <span>Friends</span>
+          <button id="close-friend-dialog" type="button" aria-label="Close friends">Done</button>
+        </div>
+        <h2>Add by @</h2>
+        <p class="friend-dialog-copy">Send a friend request to another Cogni username.</p>
+        <label class="friend-handle-field">
+          <span>Username</span>
+          <div><b>@</b><input id="friend-handle-input" name="friendHandle" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="username"></div>
+        </label>
+        <button type="submit">Send request</button>
+        <p class="friend-status" id="friend-status" role="status"></p>
+        <section class="friend-list-section">
+          <h3>Friends</h3>
+          <div class="friend-list" id="friend-friends-list"></div>
+        </section>
+        <section class="friend-list-section">
+          <h3>Incoming</h3>
+          <div class="friend-list" id="friend-incoming-list"></div>
+        </section>
+        <section class="friend-list-section">
+          <h3>Sent</h3>
+          <div class="friend-list" id="friend-outgoing-list"></div>
+        </section>
+      </form>
+    </dialog>
+
+    <dialog class="social-leaderboard-dialog" id="social-leaderboard-dialog">
+      <form method="dialog">
+        <div class="session-summary-header">
+          <span>Social</span>
+          <button id="close-social-leaderboard" type="button" aria-label="Close leaderboard">Done</button>
+        </div>
+        <div id="social-leaderboard-content"></div>
+      </form>
+    </dialog>
+
+    <dialog class="routine-load-dialog" id="routine-load-dialog">
+      <form method="dialog">
+        <div class="routine-dialog-header">
+          <div>
+            <p class="exercise-type">Routines</p>
+            <h2>Your routines</h2>
+          </div>
+          <button class="dialog-close-button" id="close-routine-load-dialog" value="cancel" type="button" aria-label="Close routine loader">Close</button>
+        </div>
+        <article class="routine-empty">
+          <p>No routines created yet.</p>
+          <span>Create a routine to stack exercises into a repeatable training block.</span>
+        </article>
+        <div class="routine-list" id="routine-list"></div>
+        <button class="routine-create-inline" id="routine-load-create" type="button">+ Create new routine</button>
+      </form>
+    </dialog>
+
     <dialog class="routine-dialog" id="routine-dialog">
       <form method="dialog">
         <div class="routine-dialog-header">
@@ -1022,8 +1497,6 @@
             <option value="rrt">Relational Reasoning</option>
             <option value="cct">Cognitive Control Training</option>
             <option value="ict">Inhibitory Control Training</option>
-            <option value="mot">3D MOT</option>
-            <option value="ufov">UFOV</option>
           </select>
           <button id="add-routine-block" type="button">Add Exercise</button>
         </div>
@@ -1037,6 +1510,90 @@
       </form>
     </dialog>
 
-    <script type="module" src="/src/app/main.js"></script>
+    <dialog class="settings-drawer" id="settings-drawer" aria-label="Settings">
+      <div class="settings-drawer-body">
+        <div class="settings-drawer-header">
+          <h2>Settings</h2>
+          <button class="dialog-close-button" id="close-settings-drawer" type="button" aria-label="Close settings">Close</button>
+        </div>
+        <p class="settings-drawer-group-label">Community</p>
+        <nav class="settings-drawer-group" aria-label="Community links">
+          <a href="https://discord.gg/cogni" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 15.5c2.5 1 4.5 1 7 0M9 6.5C7 7 5.5 7.8 4.5 9c-1.3 3-1.8 6-1.5 9 1.5 1.2 3 1.8 4.5 2l1-2m6.5-11.5c2 .5 3.5 1.3 4.5 2.5 1.3 3 1.8 6 1.5 9-1.5 1.2-3 1.8-4.5 2l-1-2M9 6.5 9.5 5h5L15 6.5M9 6.5c2-.4 4-.4 6 0"/><circle cx="9.5" cy="12" r="1.2"/><circle cx="14.5" cy="12" r="1.2"/></svg>
+            <span>Discord</span>
+          </a>
+          <a href="https://instagram.com/cogni.app" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1"/></svg>
+            <span>Instagram</span>
+          </a>
+          <a href="https://tiktok.com/@cogni.app" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5M14 4c.3 2.2 1.8 4 4 4.5"/></svg>
+            <span>TikTok</span>
+          </a>
+          <a href="https://x.com/cogni_app" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+            <span>X</span>
+          </a>
+        </nav>
+        <p class="settings-drawer-group-label">Legal</p>
+        <nav class="settings-drawer-group" aria-label="Agreements">
+          <a href="https://cogni.app/terms" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h6l4 4v14H8zM14 3v4h4M10 12h6M10 16h6"/></svg>
+            <span>Terms of Service</span>
+          </a>
+          <a href="https://cogni.app/privacy" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
+            <span>Privacy Policy</span>
+          </a>
+          <a href="https://cogni.app/user-agreement" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l2 2 4-5M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
+            <span>User Agreement</span>
+          </a>
+        </nav>
+        <p class="settings-drawer-version">Cogni 0.1.0</p>
+      </div>
+    </dialog>
+
+    <dialog class="exercise-sheet" id="exercise-sheet" aria-label="Exercise settings">
+      <div class="exercise-sheet-body">
+        <div class="routine-dialog-header">
+          <div>
+            <p class="exercise-type" id="exercise-sheet-type">Exercise</p>
+            <h2 id="exercise-sheet-title">Session settings</h2>
+          </div>
+          <button class="dialog-close-button" id="close-exercise-sheet" type="button" aria-label="Close exercise settings">Close</button>
+        </div>
+        <div class="exercise-sheet-earn" aria-label="Coin earning rate">
+          <img src="assets/cogni-coin-23.png" alt="">
+          <span>Earn <b id="exercise-sheet-rate">10</b> coins per minute of training</span>
+        </div>
+        <div class="exercise-sheet-content" id="exercise-sheet-content"></div>
+      </div>
+    </dialog>
+
+    <dialog class="screen-time-dialog" id="screen-time-dialog">
+      <form method="dialog">
+        <div class="session-summary-header">
+          <span>Screen Time</span>
+          <button id="close-screen-time-dialog" type="button" aria-label="Close screen time">Done</button>
+        </div>
+        <h2>Unlock time</h2>
+        <div id="screen-time-content"></div>
+      </form>
+    </dialog>
+
+    <dialog class="screen-time-dialog" id="tasks-dialog">
+      <div class="session-summary-header">
+        <span>Daily Tasks</span>
+        <button id="close-tasks-dialog" type="button" aria-label="Close tasks">Done</button>
+      </div>
+      <h2>Earn coins</h2>
+      <div id="tasks-content"></div>
+    </dialog>
+
+    <script src="reset-local-data.js?v=20260710-newuser"></script>
+    <script src="demo-data.js?v=20260710-demo"></script>
+    <script defer src="clear-segmented.js?v=20260709-sheetpolish"></script>
+    <script type="module" src="src/app/main.js?v=20260709-sheetpolish"></script>
   </body>
 </html>

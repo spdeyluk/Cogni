@@ -5,9 +5,18 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "mobile:prepare": "node scripts/prepare-mobile.js",
+    "ios:sync": "npm run mobile:prepare && npx cap sync ios",
+    "ios:open": "npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
   }
 }

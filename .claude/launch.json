@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cogni",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 4283,
+      "autoPort": true
+    }
+  ]
+}

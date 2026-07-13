@@ -1,0 +1,8 @@
+{
+  "appId": "com.spidey.cogni",
+  "appName": "Cogni",
+  "webDir": "mobile-www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

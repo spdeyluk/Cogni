@@ -6,7 +6,7 @@ export function createCctConfig(overrides = {}) {
     title: "Cognitive Control Training",
     domain: CognitiveDomain.ATTENTION,
     durationSeconds: 300,
-    startingIntervalMs: 5000,
+    startingIntervalMs: 3000,
     minimumIntervalMs: 500,
     adaptive: true,
     correctStepMs: 120,
