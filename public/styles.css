@@ -8703,7 +8703,7 @@ button:hover,
 .page-streak-pill,
 .page-notification-button {
   border-color: var(--line) !important;
-  background: rgba(8, 9, 11, 0.84) !important;
+  background: var(--glass) !important;
   background-image: none !important;
   box-shadow: var(--professional-flat-shadow) !important;
 }
@@ -8732,13 +8732,13 @@ textarea,
 }
 
 .app-sidebar {
-  background: rgba(5, 5, 6, 0.82) !important;
+  background: var(--glass) !important;
   border-color: var(--line) !important;
 }
 
 @media (max-width: 820px) {
   .app-sidebar {
-    background: rgba(5, 5, 6, 0.82) !important;
+    background: var(--glass) !important;
     border-color: var(--line) !important;
   }
 }
@@ -11008,7 +11008,7 @@ dialog .screen-time-apps-row {
 
 @font-face {
   font-family: "Fraunces";
-  src: url("assets/fonts/Fraunces-Variable.ttf") format("truetype-variations");
+  src: url("assets/fonts/Fraunces-Variable.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -11043,6 +11043,7 @@ dialog .screen-time-apps-row {
   --error: #9A3B33;
   --warning: #8A6D2F;
   --shadow: 0 1px 2px rgba(44, 44, 42, 0.07);
+  --glass: rgba(251, 249, 243, 0.88);
 
   /* Legacy variable remap — older layers keep working, now tokenized */
   --sidebar: var(--surface);
@@ -11081,9 +11082,10 @@ dialog .screen-time-apps-row {
     --on-accent: #211F1B;
     --accent-2: #C98B63;
     --success: #7FA98D;
-    --error: #C4766B;
+    --error: #CD8175;
     --warning: #C0A25C;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --glass: rgba(42, 40, 35, 0.88);
     --control-bg-hover: rgba(237, 233, 222, 0.1);
   }
 }
@@ -11113,4 +11115,17 @@ h4 {
 
 kbd {
   font-family: var(--font-mono) !important;
+}
+
+/* Nav legibility on the paper glass bar. */
+.side-nav-button {
+  color: var(--muted) !important;
+}
+
+.side-nav-button.active {
+  color: var(--text) !important;
+}
+
+.side-nav-button .nav-icon svg {
+  stroke: currentColor !important;
 }
