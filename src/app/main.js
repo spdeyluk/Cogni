@@ -2666,14 +2666,15 @@ function renderTasksDialog() {
   elements.tasksDialogContent.innerHTML = `
     <div class="home-quests">${rows}</div>
     <form class="task-add-row" data-task-add-form>
-      <input name="taskLabel" type="text" maxlength="48" placeholder="New task..." autocomplete="off">
-      <select name="taskReward" aria-label="Reward">
-        <option value="10">+10</option>
-        <option value="25" selected>+25</option>
-        <option value="50">+50</option>
+      <select name="taskExercise" aria-label="Exercise">
+        ${Object.entries(customTaskExerciseLabels).map(([id, label]) => `<option value="${id}">${escapeHtml(label)}</option>`).join("")}
+      </select>
+      <select name="taskMinutes" aria-label="Minutes">
+        ${customTaskMinuteChoices.map((minutes) => `<option value="${minutes}"${minutes === 10 ? " selected" : ""}>${minutes} min</option>`).join("")}
       </select>
       <button type="submit">Add</button>
     </form>
+    <p class="task-add-hint">Your task pays 10 coins per minute — e.g. 15 min = +150.</p>
   `;
 }
 
@@ -2798,7 +2799,7 @@ function handleTasksDialogSubmit(event) {
   const form = event.target.closest("[data-task-add-form]");
   if (!form) return;
   event.preventDefault();
-  if (addCustomTask(form.taskLabel.value, form.taskReward.value)) {
+  if (addExerciseTask(form.taskExercise.value, form.taskMinutes.value)) {
     renderTasksDialog();
     renderHomePage();
   }
@@ -7175,6 +7176,35 @@ function addCustomTask(label, reward) {
   return true;
 }
 
+const customTaskExerciseLabels = {
+  any: "Any exercise",
+  nback: "N-Back",
+  rrt: "RRT",
+  cct: "CCT",
+  ict: "ICT"
+};
+const customTaskMinuteChoices = [5, 10, 15, 20, 30];
+
+// User-built daily task: train a chosen exercise for a chosen number of
+// minutes; pays the same 10 coins per minute as the preset train quests.
+function addExerciseTask(exerciseId, minutes) {
+  const cleanExercise = customTaskExerciseLabels[exerciseId] ? exerciseId : "any";
+  const cleanMinutes = customTaskMinuteChoices.includes(Number(minutes)) ? Number(minutes) : 10;
+  const tasks = loadCustomTasks();
+  const duplicate = tasks.some((task) => task.kind === "exercise-minutes" && task.exerciseId === cleanExercise && task.target === cleanMinutes);
+  if (duplicate) return false;
+  tasks.push({
+    id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    label: `${customTaskExerciseLabels[cleanExercise]} · ${cleanMinutes} min`,
+    reward: cleanMinutes * 10,
+    kind: "exercise-minutes",
+    exerciseId: cleanExercise,
+    target: cleanMinutes
+  });
+  saveCustomTasks(tasks);
+  return true;
+}
+
 function removeCustomTask(id) {
   saveCustomTasks(loadCustomTasks().filter((task) => task.id !== id));
 }
@@ -7187,6 +7217,10 @@ function dailyQuestViews(progress) {
     if (def.kind === "honor") progressPct = 1;
     if (def.kind === "session") progressPct = minutesToday > 0 ? 1 : 0;
     if (def.kind === "minutes") progressPct = clamp01(minutesToday / def.target);
+    if (def.kind === "exercise-minutes") {
+      const ids = def.exerciseId === "any" ? leaderboardExerciseIds : [def.exerciseId];
+      progressPct = clamp01(trainingMinutesForDate(progress, ids, localDateKey()) / def.target);
+    }
     if (def.kind === "detox") progressPct = isDailyDetoxDoneToday() ? 1 : 0;
     const claimed = Boolean(state.quests[def.id]?.claimed);
     return {
