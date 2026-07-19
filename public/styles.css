@@ -11136,3 +11136,56 @@ kbd {
   color: var(--muted);
   font-size: 0.78rem;
 }
+
+/* Web IQ funnel (2026-07-19): email gate -> slides -> test -> phone gate. */
+.iq-standalone #cat-intro,
+.iq-standalone #ocd-intro,
+.iq-standalone #focus-intro,
+.iq-standalone #memory-intro,
+.iq-standalone #adhd-assessment-intro {
+  display: none !important;
+}
+
+.iq-funnel {
+  max-width: 560px;
+}
+
+.iq-slide-dots {
+  display: flex;
+  gap: 8px;
+  margin: 22px 0 4px;
+}
+
+.iq-slide-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.iq-slide-dots i.active {
+  background: var(--accent);
+}
+
+.iq-discord {
+  margin-top: 26px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.iq-discord p {
+  margin: 0 0 14px;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+a.secondary-button,
+a.secondary-button:visited {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  color: var(--text);
+}

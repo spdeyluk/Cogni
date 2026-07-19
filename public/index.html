@@ -128,6 +128,58 @@
       </section>
 
       <section class="assessment-page" aria-label="Assessments">
+        <section class="assessment-detail iq-funnel" id="iq-welcome" hidden aria-live="polite">
+          <p class="exercise-type">Free adaptive test</p>
+          <h2>What's your real IQ?</h2>
+          <p class="assessment-history-copy">The Cogni IQ Test adapts to every answer you give, zeroing in on your score in about 15 minutes. Fluid, verbal and quantitative reasoning — measured properly, free.</p>
+          <ul class="cat-rules">
+            <li>20–35 adaptive questions, each with its own timer.</li>
+            <li>Scored on the classic IQ scale (mean 100, SD 15).</li>
+            <li>Your result includes a confidence interval and subscores.</li>
+          </ul>
+          <div class="assessment-list-actions">
+            <button id="iq-welcome-start" type="button">Start the test</button>
+          </div>
+        </section>
+
+        <section class="assessment-detail iq-funnel" id="iq-email" hidden aria-live="polite">
+          <p class="exercise-type">Step 1 of 2</p>
+          <h2>Verify your email to begin</h2>
+          <p class="assessment-history-copy">Your test unlocks with a valid email — it's also where you'll get first access when the Cogni app launches.</p>
+          <form class="cat-lead-form" id="iq-email-form">
+            <input name="leadEmail" type="email" placeholder="you@email.com" autocomplete="email" maxlength="120" required>
+            <button type="submit">Verify &amp; continue</button>
+          </form>
+          <p class="assessment-disclaimer">We'll send occasional Cogni updates. Unsubscribe anytime — no spam.</p>
+        </section>
+
+        <section class="assessment-detail iq-funnel" id="iq-slides" hidden aria-live="polite">
+          <div class="iq-slide">
+            <p class="exercise-type">Before you begin</p>
+            <h2>Your mind is your biggest asset</h2>
+            <p class="assessment-history-copy">Decades of research agree: general intelligence is the single best predictor of how fast you learn, how well you solve new problems, and how far you go. Most people never measure it — and never train it.</p>
+          </div>
+          <div class="iq-slide" hidden>
+            <p class="exercise-type">Before you begin</p>
+            <h2>In the AI age, thinking is leverage</h2>
+            <p class="assessment-history-copy">AI is automating routine work faster than any shift in history. What's left — and what's rewarded — is deep thinking: focus, reasoning, judgment. The people who thrive won't be the ones who out-work the machines. They'll be the ones who out-think everyone else.</p>
+          </div>
+          <div class="iq-slide" hidden>
+            <p class="exercise-type">Before you begin</p>
+            <h2>How the test works</h2>
+            <p class="assessment-history-copy">One question at a time, each with its own timer. The test adapts to you — there's no going back, and an unanswered question counts as incorrect.</p>
+            <ul class="cat-rules">
+              <li>Find a quiet spot and give it your full attention.</li>
+              <li>No calculator, no notes.</li>
+              <li>If the page refreshes, the test resumes where you left off.</li>
+            </ul>
+          </div>
+          <div class="iq-slide-dots" aria-hidden="true"><i class="active"></i><i></i><i></i></div>
+          <div class="assessment-list-actions">
+            <button id="iq-slides-next" type="button">Continue</button>
+          </div>
+        </section>
+
         <div class="assessment-intro" id="cat-intro" role="button" tabindex="0" aria-label="Open Cogni IQ Test">
           <div>
             <p class="exercise-type">Adaptive test</p>
@@ -171,13 +223,15 @@
         <section class="assessment-result" id="cat-lead" hidden aria-live="polite">
           <p class="exercise-type">Cogni IQ Test</p>
           <h2>Your score is ready</h2>
-          <p class="assessment-history-copy">Drop your details to see your result — and get first access when the Cogni app launches.</p>
+          <p class="assessment-history-copy">We're launching the world's first true IQ training app. Enter your phone number to unlock your score — and get first access at launch.</p>
           <form class="cat-lead-form" id="cat-lead-form">
-            <input name="leadName" type="text" placeholder="Name" autocomplete="name" maxlength="80" required>
             <input name="leadPhone" type="tel" placeholder="Phone number" autocomplete="tel" maxlength="40" required>
-            <input name="leadEmail" type="email" placeholder="Email (optional)" autocomplete="email" maxlength="120">
-            <button type="submit">Show my score</button>
+            <button type="submit">Unlock my score</button>
           </form>
+          <div class="iq-discord">
+            <p>Join the IQ training community on Discord — training talk, score battles, and launch news first.</p>
+            <a class="secondary-button iq-discord-link" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">Join the Discord</a>
+          </div>
           <p class="assessment-disclaimer">Only used for your result and the app launch. No spam.</p>
         </section>
 
@@ -199,6 +253,7 @@
           <div class="assessment-list-actions">
             <button id="cat-result-back" type="button">Back to tests</button>
             <button class="secondary-button" id="cat-share" type="button" hidden>Share this test</button>
+            <a class="secondary-button iq-discord-link" id="cat-discord" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener" hidden>Join the Discord</a>
           </div>
         </section>
 

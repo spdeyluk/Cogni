@@ -88,26 +88,38 @@ async function handleApiRequest(request, response, url) {
     return true;
   }
 
-  // App-drop waitlist: leads captured by the shareable IQ test.
+  // App-drop waitlist: the IQ funnel posts the same lead twice (email gate,
+  // then phone gate), so posts carrying a known id merge into one row.
   if (url.pathname === "/api/leads" && request.method === "POST") {
     const body = await readJsonBody(request);
+    const id = String(body.id ?? "").trim().slice(0, 60);
     const name = String(body.name ?? "").trim().slice(0, 80);
     const phone = String(body.phone ?? "").trim().slice(0, 40);
     const email = String(body.email ?? "").trim().slice(0, 120);
-    if (!name || (!phone && !email)) {
-      sendJson(response, 400, { error: "Name and a phone number or email are required." });
+    if (!phone && !email) {
+      sendJson(response, 400, { error: "A phone number or email is required." });
       return true;
     }
+    const score = Number.isFinite(body.score) ? Math.round(body.score) : null;
     const leads = await loadLeads();
-    leads.push({
-      id: `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      name,
-      phone,
-      email,
-      score: Number.isFinite(body.score) ? Math.round(body.score) : null,
-      source: String(body.source ?? "web").slice(0, 40),
-      createdAt: new Date().toISOString()
-    });
+    const existing = id ? leads.find((lead) => lead.id === id) : null;
+    if (existing) {
+      if (name) existing.name = name;
+      if (phone) existing.phone = phone;
+      if (email) existing.email = email;
+      if (score !== null) existing.score = score;
+      existing.updatedAt = new Date().toISOString();
+    } else {
+      leads.push({
+        id: id || `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        name,
+        phone,
+        email,
+        score,
+        source: String(body.source ?? "web").slice(0, 40),
+        createdAt: new Date().toISOString()
+      });
+    }
     await saveLeads(leads);
     sendJson(response, 200, { ok: true, count: leads.length });
     return true;

@@ -7,6 +7,12 @@
       "runtimeArgs": ["start"],
       "port": 4283,
       "autoPort": true
+    },
+    {
+      "name": "tracky",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/spidey/Desktop/tracky/server.js"],
+      "port": 3000
     }
   ]
 }

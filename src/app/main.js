@@ -88,33 +88,68 @@ const cogniUiMode = detectCogniUiMode();
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
 
-// Shareable IQ funnel: /iq (or ?iq) boots straight into the test with the
-// app chrome hidden; results are gated behind the launch-list lead form.
-const iqStandalone = window.location.pathname === "/iq" || new URLSearchParams(window.location.search).has("iq");
+// The web build IS the IQ funnel: email gate -> why-IQ slides -> adaptive
+// test -> phone gate + app-launch promo -> score. Nothing else is reachable.
+// Escape hatch for previewing the full pro training hub: append ?app.
+const iqStandalone = cogniUiMode === "pro" && !new URLSearchParams(window.location.search).has("app");
 const leadStorageKey = "cogni.lead.v1";
 let catPendingResult = null;
 
-function hasSubmittedLead() {
+function loadLead() {
   try {
-    return Boolean(JSON.parse(localStorage.getItem(leadStorageKey))?.createdAt);
+    return JSON.parse(localStorage.getItem(leadStorageKey)) ?? {};
   } catch {
-    return false;
+    return {};
   }
+}
+
+// Merges the patch into the stored lead and syncs it to the server, so the
+// email gate and the later phone gate land on one row in leads.json.
+function saveLead(patch) {
+  const lead = { ...loadLead(), ...patch };
+  if (!lead.id) lead.id = `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  if (!lead.createdAt) lead.createdAt = new Date().toISOString();
+  try {
+    localStorage.setItem(leadStorageKey, JSON.stringify(lead));
+  } catch {
+    // Local copy is best effort; the POST below is the real capture.
+  }
+  fetch("/api/leads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(lead)
+  }).catch(() => {});
+  return lead;
+}
+
+function hasVerifiedEmail() {
+  return Boolean(loadLead().email);
+}
+
+function hasSubmittedLead() {
+  return Boolean(loadLead().phone);
 }
 
 function initIqStandalone() {
   showAssessments();
+  const latestSession = loadCatSessions()[0];
   if (catActive?.currentItemId) {
     showCatSection("run");
     renderCatQuestion();
+  } else if (latestSession && !hasSubmittedLead()) {
+    // Finished the test but never unlocked the score (e.g. refreshed away).
+    catPendingResult = latestSession;
+    showAssessmentSection("cat-lead");
   } else {
-    showCatSection("detail");
+    showAssessmentSection("iq-welcome");
   }
   elements.pageTitle.textContent = "Cogni IQ Test";
   elements.pageLede.textContent = "";
 }
 
 function detectCogniUiMode() {
+  const paramMode = new URLSearchParams(window.location.search).get("mode");
+  if (paramMode === "play" || paramMode === "pro") return paramMode;
   try {
     const stored = localStorage.getItem("cogni.uiMode.v1");
     if (stored === "play" || stored === "pro") return stored;
@@ -787,7 +822,10 @@ elements.appShell?.classList.add(cogniUiMode === "pro" ? "pro-mode" : "play-mode
 document.documentElement.classList.add(cogniUiMode === "pro" ? "mode-pro" : "mode-play");
 renderHomePage();
 renderTopStatus();
-if (cogniUiMode === "pro") document.querySelector("#cat-share")?.removeAttribute("hidden");
+if (cogniUiMode === "pro") {
+  document.querySelector("#cat-share")?.removeAttribute("hidden");
+  document.querySelector("#cat-discord")?.removeAttribute("hidden");
+}
 if (iqStandalone) {
   elements.appShell?.classList.add("iq-standalone");
   // Defer past module evaluation so CAT state (let bindings below) exists.
@@ -993,28 +1031,52 @@ elements.catOpenHistory?.addEventListener("click", () => {
 });
 elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
 elements.catResultBack?.addEventListener("click", showAssessmentList);
+// Funnel step 1: the email gate before anything starts.
+document.querySelector("#iq-welcome-start")?.addEventListener("click", () => {
+  if (hasVerifiedEmail()) {
+    showIqSlide(0);
+    showAssessmentSection("iq-slides");
+  } else {
+    showAssessmentSection("iq-email");
+  }
+});
+document.querySelector("#iq-email-form")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const email = event.target.leadEmail.value.trim();
+  if (!email) return;
+  saveLead({ email, source: "iq-web" });
+  showIqSlide(0);
+  showAssessmentSection("iq-slides");
+});
+
+// Funnel step 2: the why-IQ slides between the email gate and the test.
+const iqSlideNodes = Array.from(document.querySelectorAll("#iq-slides .iq-slide"));
+const iqSlideDots = Array.from(document.querySelectorAll("#iq-slides .iq-slide-dots i"));
+let iqSlideIndex = 0;
+
+function showIqSlide(index) {
+  iqSlideIndex = index;
+  iqSlideNodes.forEach((slide, i) => { slide.hidden = i !== index; });
+  iqSlideDots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+  const next = document.querySelector("#iq-slides-next");
+  if (next) next.textContent = index === iqSlideNodes.length - 1 ? "Begin the test" : "Continue";
+}
+
+document.querySelector("#iq-slides-next")?.addEventListener("click", () => {
+  if (iqSlideIndex < iqSlideNodes.length - 1) showIqSlide(iqSlideIndex + 1);
+  else startCatTest();
+});
+
+// Funnel step 3: the phone gate between finishing and seeing the score.
 document.querySelector("#cat-lead-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
-  const form = event.target;
-  const lead = {
-    name: form.leadName.value.trim(),
-    phone: form.leadPhone.value.trim(),
-    email: form.leadEmail.value.trim(),
+  const phone = event.target.leadPhone.value.trim();
+  if (!phone) return;
+  saveLead({
+    phone,
     score: catPendingResult?.score ?? null,
-    source: iqStandalone ? "iq-share" : "web-app",
-    createdAt: new Date().toISOString()
-  };
-  if (!lead.name || !lead.phone) return;
-  try {
-    localStorage.setItem(leadStorageKey, JSON.stringify(lead));
-  } catch {
-    // Local copy is best effort; the POST below is the real capture.
-  }
-  fetch("/api/leads", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(lead)
-  }).catch(() => {});
+    source: iqStandalone ? "iq-web" : "web-app"
+  });
   const record = catPendingResult;
   catPendingResult = null;
   if (record) renderCatResult(record);
@@ -3301,6 +3363,7 @@ function saveCatSessions(sessions) {
 
 const assessmentIntroIds = ["cat-intro", "ocd-intro", "focus-intro", "memory-intro", "adhd-assessment-intro"];
 const assessmentSectionIds = [
+  "iq-welcome", "iq-email", "iq-slides",
   "cat-detail", "cat-run", "cat-lead", "cat-result", "cat-history",
   "ocd-detail", "ocd-run", "ocd-result",
   "focus-detail", "focus-run", "focus-result",
@@ -3466,6 +3529,10 @@ function abandonCatTest() {
   stopCatTimer();
   catActive = null;
   saveCatActive();
+  if (iqStandalone) {
+    showAssessmentSection("iq-welcome");
+    return;
+  }
   showCatSection("intro");
   elements.adhdAssessmentIntro.hidden = false;
 }
