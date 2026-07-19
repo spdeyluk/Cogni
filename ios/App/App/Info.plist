@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cogni</string>
+	<string>Mindcare</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -25,9 +25,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Cogni uses the camera so you can take a profile photo.</string>
+	<string>Mindcare uses the camera so you can take a profile photo.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Cogni uses your photo library so you can choose a profile photo.</string>
+	<string>Mindcare uses your photo library so you can choose a profile photo.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

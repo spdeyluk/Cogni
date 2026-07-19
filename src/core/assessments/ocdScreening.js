@@ -1,4 +1,4 @@
-// Self-report OCD screening. All statements are original Cogni content —
+// Self-report OCD screening. All statements are original Mindcare content —
 // nothing is reproduced from published instruments. This is a screening
 // signal for personal tracking, not a diagnostic tool.
 

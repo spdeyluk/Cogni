@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "cogni",
+      "name": "mindcare",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "port": 4283,

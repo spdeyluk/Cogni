@@ -15,13 +15,13 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
-		7B240705A001000000000001 /* CogniBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000002 /* CogniBridgeViewController.swift */; };
+		7B240705A001000000000001 /* MindcareBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000002 /* MindcareBridgeViewController.swift */; };
 		7B240705A001000000000003 /* NativeLiquidGlassNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */; };
 		7B240705A001000000000012 /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000011 /* ScreenTimeShared.swift */; };
 		7B240705A001000000000014 /* ScreenTimePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000013 /* ScreenTimePlugin.swift */; };
 		7B240705A001000000000017 /* ShieldMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000016 /* ShieldMonitor.swift */; };
 		7B240705A001000000000018 /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000011 /* ScreenTimeShared.swift */; };
-		7B240705A00100000000001C /* CogniShieldMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7B240705A00100000000001B /* CogniShieldMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7B240705A00100000000001C /* MindcareShieldMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7B240705A00100000000001B /* MindcareShieldMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 7B240705A00100000000001F;
-			remoteInfo = CogniShieldMonitor;
+			remoteInfo = MindcareShieldMonitor;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -41,7 +41,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				7B240705A00100000000001C /* CogniShieldMonitor.appex in Embed Foundation Extensions */,
+				7B240705A00100000000001C /* MindcareShieldMonitor.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -58,15 +58,15 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
-		7B240705A001000000000002 /* CogniBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CogniBridgeViewController.swift; sourceTree = "<group>"; };
+		7B240705A001000000000002 /* MindcareBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MindcareBridgeViewController.swift; sourceTree = "<group>"; };
 		7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLiquidGlassNavBar.swift; sourceTree = "<group>"; };
 		7B240705A001000000000011 /* ScreenTimeShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeShared.swift; sourceTree = "<group>"; };
 		7B240705A001000000000013 /* ScreenTimePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimePlugin.swift; sourceTree = "<group>"; };
 		7B240705A001000000000015 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		7B240705A001000000000016 /* ShieldMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldMonitor.swift; sourceTree = "<group>"; };
 		7B240705A001000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		7B240705A00100000000001A /* CogniShieldMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CogniShieldMonitor.entitlements; sourceTree = "<group>"; };
-		7B240705A00100000000001B /* CogniShieldMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CogniShieldMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B240705A00100000000001A /* MindcareShieldMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MindcareShieldMonitor.entitlements; sourceTree = "<group>"; };
+		7B240705A00100000000001B /* MindcareShieldMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MindcareShieldMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -94,7 +94,7 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
-				7B240705A00100000000001E /* CogniShieldMonitor */,
+				7B240705A00100000000001E /* MindcareShieldMonitor */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,7 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
-				7B240705A00100000000001B /* CogniShieldMonitor.appex */,
+				7B240705A00100000000001B /* MindcareShieldMonitor.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -113,7 +113,7 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
-				7B240705A001000000000002 /* CogniBridgeViewController.swift */,
+				7B240705A001000000000002 /* MindcareBridgeViewController.swift */,
 				7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */,
 				7B240705A001000000000011 /* ScreenTimeShared.swift */,
 				7B240705A001000000000013 /* ScreenTimePlugin.swift */,
@@ -128,14 +128,14 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		7B240705A00100000000001E /* CogniShieldMonitor */ = {
+		7B240705A00100000000001E /* MindcareShieldMonitor */ = {
 			isa = PBXGroup;
 			children = (
 				7B240705A001000000000016 /* ShieldMonitor.swift */,
 				7B240705A001000000000019 /* Info.plist */,
-				7B240705A00100000000001A /* CogniShieldMonitor.entitlements */,
+				7B240705A00100000000001A /* MindcareShieldMonitor.entitlements */,
 			);
-			path = CogniShieldMonitor;
+			path = MindcareShieldMonitor;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -163,9 +163,9 @@
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
 		};
-		7B240705A00100000000001F /* CogniShieldMonitor */ = {
+		7B240705A00100000000001F /* MindcareShieldMonitor */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7B240705A001000000000025 /* Build configuration list for PBXNativeTarget "CogniShieldMonitor" */;
+			buildConfigurationList = 7B240705A001000000000025 /* Build configuration list for PBXNativeTarget "MindcareShieldMonitor" */;
 			buildPhases = (
 				7B240705A001000000000020 /* Sources */,
 				7B240705A001000000000021 /* Frameworks */,
@@ -175,9 +175,9 @@
 			);
 			dependencies = (
 			);
-			name = CogniShieldMonitor;
-			productName = CogniShieldMonitor;
-			productReference = 7B240705A00100000000001B /* CogniShieldMonitor.appex */;
+			name = MindcareShieldMonitor;
+			productName = MindcareShieldMonitor;
+			productReference = 7B240705A00100000000001B /* MindcareShieldMonitor.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -218,7 +218,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
-				7B240705A00100000000001F /* CogniShieldMonitor */,
+				7B240705A00100000000001F /* MindcareShieldMonitor */,
 			);
 		};
 /* End PBXProject section */
@@ -252,7 +252,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
-				7B240705A001000000000001 /* CogniBridgeViewController.swift in Sources */,
+				7B240705A001000000000001 /* MindcareBridgeViewController.swift in Sources */,
 				7B240705A001000000000003 /* NativeLiquidGlassNavBar.swift in Sources */,
 				7B240705A001000000000012 /* ScreenTimeShared.swift in Sources */,
 				7B240705A001000000000014 /* ScreenTimePlugin.swift in Sources */,
@@ -273,7 +273,7 @@
 /* Begin PBXTargetDependency section */
 		7B240705A001000000000026 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 7B240705A00100000000001F /* CogniShieldMonitor */;
+			target = 7B240705A00100000000001F /* MindcareShieldMonitor */;
 			targetProxy = 7B240705A001000000000027 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -468,13 +468,13 @@
 		7B240705A001000000000023 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = CogniShieldMonitor/CogniShieldMonitor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = MindcareShieldMonitor/MindcareShieldMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UNZBL7TMM3;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CogniShieldMonitor/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Cogni Shield";
+				INFOPLIST_FILE = MindcareShieldMonitor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mindcare Shield";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -494,13 +494,13 @@
 		7B240705A001000000000024 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = CogniShieldMonitor/CogniShieldMonitor.entitlements;
+				CODE_SIGN_ENTITLEMENTS = MindcareShieldMonitor/MindcareShieldMonitor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UNZBL7TMM3;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CogniShieldMonitor/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Cogni Shield";
+				INFOPLIST_FILE = MindcareShieldMonitor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mindcare Shield";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -537,7 +537,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7B240705A001000000000025 /* Build configuration list for PBXNativeTarget "CogniShieldMonitor" */ = {
+		7B240705A001000000000025 /* Build configuration list for PBXNativeTarget "MindcareShieldMonitor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7B240705A001000000000023 /* Debug */,

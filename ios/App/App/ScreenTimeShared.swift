@@ -2,12 +2,12 @@ import Foundation
 import FamilyControls
 import ManagedSettings
 
-/// Shared between the main app and the CogniShieldMonitor extension via the app group.
-enum CogniScreenTime {
+/// Shared between the main app and the MindcareShieldMonitor extension via the app group.
+enum MindcareScreenTime {
     static let appGroupId = "group.com.spidey.cogni"
-    static let selectionKey = "cogni.screenTime.selection.v1"
-    static let unlockUntilKey = "cogni.screenTime.unlockUntil.v1"
-    static let shieldActiveKey = "cogni.screenTime.shieldActive.v1"
+    static let selectionKey = "mindcare.screenTime.selection.v1"
+    static let unlockUntilKey = "mindcare.screenTime.unlockUntil.v1"
+    static let shieldActiveKey = "mindcare.screenTime.shieldActive.v1"
 
     static var defaults: UserDefaults? {
         UserDefaults(suiteName: appGroupId)
@@ -15,7 +15,7 @@ enum CogniScreenTime {
 
     @available(iOS 16.0, *)
     static var shieldStore: ManagedSettingsStore {
-        ManagedSettingsStore(named: ManagedSettingsStore.Name("cogni.shield"))
+        ManagedSettingsStore(named: ManagedSettingsStore.Name("mindcare.shield"))
     }
 
     @available(iOS 16.0, *)

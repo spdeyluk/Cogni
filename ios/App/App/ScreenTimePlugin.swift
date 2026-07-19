@@ -16,7 +16,7 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "lockNow", returnType: CAPPluginReturnPromise)
     ]
 
-    private static let unlockActivity = DeviceActivityName("cogni.unlock")
+    private static let unlockActivity = DeviceActivityName("mindcare.unlock")
 
     @objc func getStatus(_ call: CAPPluginCall) {
         guard #available(iOS 16.0, *) else {
@@ -29,20 +29,20 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
             ])
             return
         }
-        let defaults = CogniScreenTime.defaults
-        var unlockUntil = defaults?.double(forKey: CogniScreenTime.unlockUntilKey) ?? 0
+        let defaults = MindcareScreenTime.defaults
+        var unlockUntil = defaults?.double(forKey: MindcareScreenTime.unlockUntilKey) ?? 0
         if unlockUntil > 0, unlockUntil <= Date().timeIntervalSince1970 {
             // The unlock expired while nothing was watching; re-shield now.
             DeviceActivityCenter().stopMonitoring([Self.unlockActivity])
-            CogniScreenTime.applyShield()
+            MindcareScreenTime.applyShield()
             unlockUntil = 0
         }
-        let selection = CogniScreenTime.loadSelection()
+        let selection = MindcareScreenTime.loadSelection()
         call.resolve([
             "available": true,
             "authorized": AuthorizationCenter.shared.authorizationStatus == .approved,
-            "selectionCount": CogniScreenTime.selectionCount(selection),
-            "shieldActive": defaults?.bool(forKey: CogniScreenTime.shieldActiveKey) ?? false,
+            "selectionCount": MindcareScreenTime.selectionCount(selection),
+            "shieldActive": defaults?.bool(forKey: MindcareScreenTime.shieldActiveKey) ?? false,
             "unlockUntil": unlockUntil * 1000
         ])
     }
@@ -72,22 +72,22 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject("No view controller available to present the picker.")
                 return
             }
-            let current = CogniScreenTime.loadSelection()
+            let current = MindcareScreenTime.loadSelection()
             var host: UIViewController?
             let picker = ScreenTimePickerView(selection: current) { result in
                 host?.dismiss(animated: true)
                 guard let result else {
                     call.resolve([
-                        "selectionCount": CogniScreenTime.selectionCount(current),
+                        "selectionCount": MindcareScreenTime.selectionCount(current),
                         "cancelled": true
                     ])
                     return
                 }
-                CogniScreenTime.saveSelection(result)
+                MindcareScreenTime.saveSelection(result)
                 // A changed selection ends any active unlock and shields immediately.
                 DeviceActivityCenter().stopMonitoring([Self.unlockActivity])
-                CogniScreenTime.applyShield()
-                call.resolve(["selectionCount": CogniScreenTime.selectionCount(result)])
+                MindcareScreenTime.applyShield()
+                call.resolve(["selectionCount": MindcareScreenTime.selectionCount(result)])
             }
             let controller = UIHostingController(rootView: picker)
             controller.overrideUserInterfaceStyle = .dark
@@ -119,7 +119,7 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Could not schedule the re-lock timer: \(error.localizedDescription)")
             return
         }
-        CogniScreenTime.clearShield(until: end)
+        MindcareScreenTime.clearShield(until: end)
         call.resolve(["unlockUntil": end.timeIntervalSince1970 * 1000])
     }
 
@@ -129,9 +129,9 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         DeviceActivityCenter().stopMonitoring([Self.unlockActivity])
-        CogniScreenTime.applyShield()
+        MindcareScreenTime.applyShield()
         call.resolve([
-            "shieldActive": CogniScreenTime.selectionCount(CogniScreenTime.loadSelection()) > 0
+            "shieldActive": MindcareScreenTime.selectionCount(MindcareScreenTime.loadSelection()) > 0
         ])
     }
 }

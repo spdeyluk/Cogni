@@ -6773,7 +6773,7 @@ pre {
   }
 }
 
-/* Premium visual polish: keep Cogni dark, but make controls feel less default-web. */
+/* Premium visual polish: keep Mindcare dark, but make controls feel less default-web. */
 :root {
   --bg: var(--surface);
   --surface: var(--surface);
@@ -7236,7 +7236,7 @@ body {
   }
 }
 
-/* Friendly character pass: keep Cogni dark, but make controls feel less sterile. */
+/* Friendly character pass: keep Mindcare dark, but make controls feel less sterile. */
 :root {
   --accent-blue: var(--accent);
   --accent-cyan: var(--accent);
@@ -10149,10 +10149,10 @@ dialog::backdrop {
   border-radius: var(--radius) !important;
   background: var(--surface) !important;
   box-shadow: var(--shadow);
-  animation: cogni-sheet-up 0.34s cubic-bezier(0.32, 0.72, 0.35, 1);
+  animation: mindcare-sheet-up 0.34s cubic-bezier(0.32, 0.72, 0.35, 1);
 }
 
-@keyframes cogni-sheet-up {
+@keyframes mindcare-sheet-up {
   from {
     transform: translateY(36px);
     opacity: 0;
@@ -11138,6 +11138,7 @@ kbd {
 }
 
 /* Web IQ funnel (2026-07-19): email gate -> slides -> test -> phone gate. */
+.iq-standalone .hero,
 .iq-standalone #cat-intro,
 .iq-standalone #ocd-intro,
 .iq-standalone #focus-intro,
@@ -11167,25 +11168,56 @@ kbd {
   background: var(--accent);
 }
 
-.iq-discord {
-  margin-top: 26px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.iq-discord p {
-  margin: 0 0 14px;
-  color: var(--text-2);
-  font-size: 0.92rem;
-  line-height: 1.55;
-}
-
-a.secondary-button,
-a.secondary-button:visited {
-  display: inline-block;
-  text-decoration: none;
+/* Landing: one clean hero, nothing else. */
+.iq-landing {
+  margin-top: 8vh;
   text-align: center;
-  color: var(--text);
+}
+
+.iq-landing h2 {
+  font-size: 2rem;
+  margin: 14px 0 12px;
+}
+
+.iq-landing .assessment-history-copy {
+  max-width: 420px;
+  margin: 0 auto 26px;
+}
+
+.iq-landing .assessment-list-actions {
+  justify-content: center;
+}
+
+.iq-brand {
+  font-family: var(--font-serif) !important;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Discord CTA: brand blurple in both themes. */
+.iq-discord-button,
+.iq-discord-button:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-radius: var(--radius);
+  background: #5865F2 !important;
+  color: #fff !important;
+  font-weight: 600;
+  text-decoration: none;
+  margin: 6px 0 10px;
+}
+
+.iq-discord-button:hover {
+  background: #4752C4 !important;
+}
+
+.iq-discord-button svg {
+  width: 22px;
+  height: 16px;
+  flex: none;
 }
