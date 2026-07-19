@@ -112,6 +112,9 @@ const iqStandalone = mindcareUiMode === "pro" && !new URLSearchParams(window.loc
 const leadStorageKey = "mindcare.lead.v1";
 const iqRevealPendingKey = "mindcare.iqRevealPending.v1";
 let catPendingResult = null;
+let iqCalcTimer = null;
+let iqCalcPct = 0;
+const iqCalcGates = { phone: false, discord: false };
 
 function loadLead() {
   try {
@@ -154,14 +157,11 @@ function initIqStandalone() {
   if (catActive?.currentItemId) {
     showCatSection("run");
     renderCatQuestion();
-  } else if (latestSession && !hasSubmittedLead()) {
-    // Finished the test but never unlocked the score (e.g. refreshed away).
+  } else if (latestSession && (!hasSubmittedLead() || localStorage.getItem(iqRevealPendingKey))) {
+    // Finished the test but refreshed away before the reveal: the
+    // calculation restarts and re-runs whichever gates are still open.
     catPendingResult = latestSession;
-    showAssessmentSection("cat-lead");
-  } else if (latestSession && localStorage.getItem(iqRevealPendingKey)) {
-    // Phone submitted, refreshed before tapping through to the score.
-    catPendingResult = latestSession;
-    showAssessmentSection("iq-community");
+    startIqCalculating();
   } else {
     showAssessmentSection("iq-welcome");
   }
@@ -1089,26 +1089,75 @@ document.querySelector("#iq-slides-next")?.addEventListener("click", () => {
   else startCatTest();
 });
 
-// Post-test mini onboarding, slide 1 of 2: the phone gate.
-document.querySelector("#cat-lead-form")?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const phone = event.target.leadPhone.value.trim();
-  if (!phone) return;
-  saveLead({
-    phone,
-    score: catPendingResult?.score ?? null,
-    source: iqStandalone ? "iq-web" : "web-app"
-  });
-  try {
-    localStorage.setItem(iqRevealPendingKey, "1");
-  } catch {
-    // Best effort; only affects resume after a refresh.
-  }
-  showAssessmentSection("iq-community");
-});
+// Post-test "calculating your results" screen: a ~20 s progress bar that
+// pauses at 35% for the phone number and at 60% for the Discord ask.
+const iqCalcSteps = [
+  [0, "Scoring your answers"],
+  [20, "Estimating fluid reasoning"],
+  [45, "Weighing verbal and quantitative items"],
+  [70, "Comparing against population norms"],
+  [88, "Finalizing your score"]
+];
+function startIqCalculating() {
+  iqCalcPct = 0;
+  iqCalcGates.phone = hasSubmittedLead();
+  iqCalcGates.discord = false;
+  const phoneBlock = document.querySelector("#iq-calc-phone");
+  const discordBlock = document.querySelector("#iq-calc-discord");
+  if (phoneBlock) phoneBlock.hidden = true;
+  if (discordBlock) discordBlock.hidden = true;
+  showAssessmentSection("iq-calculating");
+  renderIqCalc();
+  resumeIqCalc();
+}
 
-// Slide 2 of 2: the Discord invite, then the score reveal.
-document.querySelector("#iq-community-continue")?.addEventListener("click", () => {
+function renderIqCalc() {
+  const pct = Math.min(100, Math.floor(iqCalcPct));
+  const bar = document.querySelector("#iq-calc-bar");
+  if (bar) bar.style.width = `${pct}%`;
+  const pctLabel = document.querySelector("#iq-calc-pct");
+  if (pctLabel) pctLabel.textContent = `${pct}%`;
+  const title = document.querySelector("#iq-calc-title");
+  if (title) title.textContent = pct >= 60 ? "Almost there…" : "Calculating your results…";
+  const step = iqCalcSteps.filter(([at]) => at <= pct).at(-1);
+  const stepLabel = document.querySelector("#iq-calc-step");
+  if (stepLabel && step) stepLabel.textContent = step[1];
+}
+
+function resumeIqCalc() {
+  window.clearInterval(iqCalcTimer);
+  iqCalcTimer = window.setInterval(() => {
+    iqCalcPct += 0.35 + Math.random() * 0.3; // ~5%/s -> ~20 s of "work"
+    if (!iqCalcGates.phone && iqCalcPct >= 35) {
+      iqCalcPct = 35;
+      renderIqCalc();
+      window.clearInterval(iqCalcTimer);
+      const block = document.querySelector("#iq-calc-phone");
+      if (block) block.hidden = false;
+      block?.querySelector("input")?.focus();
+      return;
+    }
+    if (!iqCalcGates.discord && iqCalcPct >= 60) {
+      iqCalcPct = 60;
+      renderIqCalc();
+      window.clearInterval(iqCalcTimer);
+      const block = document.querySelector("#iq-calc-discord");
+      if (block) block.hidden = false;
+      return;
+    }
+    if (iqCalcPct >= 100) {
+      iqCalcPct = 100;
+      renderIqCalc();
+      window.clearInterval(iqCalcTimer);
+      window.setTimeout(finishIqCalculating, 450);
+      return;
+    }
+    renderIqCalc();
+  }, 100);
+}
+
+function finishIqCalculating() {
+  window.clearInterval(iqCalcTimer);
   try {
     localStorage.removeItem(iqRevealPendingKey);
   } catch {
@@ -1118,6 +1167,30 @@ document.querySelector("#iq-community-continue")?.addEventListener("click", () =
   catPendingResult = null;
   if (record) renderCatResult(record);
   showCatSection("result");
+}
+
+// 35% pause: the phone gate.
+document.querySelector("#cat-lead-form")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const phone = event.target.leadPhone.value.trim();
+  if (!phone) return;
+  saveLead({
+    phone,
+    score: catPendingResult?.score ?? null,
+    source: iqStandalone ? "iq-web" : "web-app"
+  });
+  iqCalcGates.phone = true;
+  const block = document.querySelector("#iq-calc-phone");
+  if (block) block.hidden = true;
+  resumeIqCalc();
+});
+
+// 60% pause: the Discord ask.
+document.querySelector("#iq-community-continue")?.addEventListener("click", () => {
+  iqCalcGates.discord = true;
+  const block = document.querySelector("#iq-calc-discord");
+  if (block) block.hidden = true;
+  resumeIqCalc();
 });
 document.querySelector("#cat-share")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
@@ -3400,8 +3473,8 @@ function saveCatSessions(sessions) {
 
 const assessmentIntroIds = ["cat-intro", "ocd-intro", "focus-intro", "memory-intro", "adhd-assessment-intro"];
 const assessmentSectionIds = [
-  "iq-welcome", "iq-email", "iq-slides", "iq-community",
-  "cat-detail", "cat-run", "cat-lead", "cat-result", "cat-history",
+  "iq-welcome", "iq-email", "iq-slides", "iq-calculating",
+  "cat-detail", "cat-run", "cat-result", "cat-history",
   "ocd-detail", "ocd-run", "ocd-result",
   "focus-detail", "focus-run", "focus-result",
   "memory-detail", "memory-run", "memory-result"
@@ -3418,6 +3491,7 @@ function showAssessmentSection(sectionId) {
     if (node) node.hidden = id !== sectionId;
   }
   if (sectionId !== "cat-run") stopCatTimer();
+  if (sectionId !== "iq-calculating") window.clearInterval(iqCalcTimer);
   if (sectionId !== "focus-run") stopFocusTimer();
   if (sectionId !== "memory-run") stopMemoryTimers();
 }
@@ -3551,11 +3625,16 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   saveCatSessions(sessions.slice(0, 50));
   catActive = null;
   saveCatActive();
-  // Web funnel: first-time takers give their launch-list details before the
-  // reveal. The mobile app and returning leads go straight to the score.
-  if (mindcareUiMode === "pro" && !hasSubmittedLead()) {
+  // Web funnel: the "calculating" screen builds anticipation and holds the
+  // phone + Discord asks. The mobile app goes straight to the score.
+  if (mindcareUiMode === "pro") {
     catPendingResult = sessionRecord;
-    showAssessmentSection("cat-lead");
+    try {
+      localStorage.setItem(iqRevealPendingKey, "1");
+    } catch {
+      // Best effort; only affects resume after a refresh.
+    }
+    startIqCalculating();
     return;
   }
   renderCatResult(sessionRecord);

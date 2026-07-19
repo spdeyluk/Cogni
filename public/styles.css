@@ -11248,3 +11248,50 @@ kbd {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* "Calculating your results" screen: bar + interrupt cards. */
+.iq-calc-track {
+  height: 10px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  overflow: hidden;
+  margin: 26px 0 12px;
+}
+
+#iq-calc-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent) !important;
+  border-radius: inherit;
+  transition: width 0.18s linear;
+}
+
+.iq-calc-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.iq-calc-status b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.iq-calc-interrupt {
+  margin-top: 30px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.iq-calc-interrupt h3 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500;
+  font-size: 1.25rem;
+  margin: 0 0 10px;
+}
+
+.iq-calc-interrupt .assessment-history-copy {
+  margin-top: 0;
+}

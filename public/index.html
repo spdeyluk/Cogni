@@ -216,27 +216,32 @@
           <div class="cat-options" id="cat-options" aria-label="Answer options"></div>
         </section>
 
-        <section class="assessment-result iq-funnel" id="cat-lead" hidden aria-live="polite">
-          <p class="exercise-type">Your score is ready · 1 of 2</p>
-          <h2>Get notified when our IQ training app launches</h2>
-          <p class="assessment-history-copy">We're launching the world's first true IQ training app. Drop your phone number to unlock your score — and get first access at launch.</p>
-          <form class="cat-lead-form" id="cat-lead-form">
-            <input name="leadPhone" type="tel" placeholder="Phone number" autocomplete="tel" maxlength="40" required>
-            <button type="submit">Notify me</button>
-          </form>
-          <p class="assessment-disclaimer">Only used for your result and the app launch. No spam.</p>
-        </section>
+        <section class="assessment-result iq-funnel" id="iq-calculating" hidden aria-live="polite">
+          <p class="exercise-type">Mindcare IQ Test</p>
+          <h2 id="iq-calc-title">Calculating your results…</h2>
+          <div class="iq-calc-track" aria-hidden="true"><div id="iq-calc-bar"></div></div>
+          <p class="iq-calc-status"><b id="iq-calc-pct">0%</b> · <span id="iq-calc-step">Scoring your answers</span></p>
 
-        <section class="assessment-result iq-funnel" id="iq-community" hidden aria-live="polite">
-          <p class="exercise-type">Your score is ready · 2 of 2</p>
-          <h2>Join our Brain Training community</h2>
-          <p class="assessment-history-copy">Training talk, score battles, and launch news first — the Mindcare community lives on Discord.</p>
-          <a class="iq-discord-button" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
-            <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
-            Join the Discord
-          </a>
-          <div class="assessment-list-actions">
-            <button id="iq-community-continue" type="button">Show my score</button>
+          <div class="iq-calc-interrupt" id="iq-calc-phone" hidden>
+            <h3>Get notified when our IQ training app launches</h3>
+            <p class="assessment-history-copy">We're launching the world's first true IQ training app. Drop your phone number to keep your result — and get first access at launch.</p>
+            <form class="cat-lead-form" id="cat-lead-form">
+              <input name="leadPhone" type="tel" placeholder="Phone number" autocomplete="tel" maxlength="40" required>
+              <button type="submit">Notify me &amp; continue</button>
+            </form>
+            <p class="assessment-disclaimer">Only used for your result and the app launch. No spam.</p>
+          </div>
+
+          <div class="iq-calc-interrupt" id="iq-calc-discord" hidden>
+            <h3>Join our Brain Training community</h3>
+            <p class="assessment-history-copy">Training talk, score battles, and launch news first — the Mindcare community lives on Discord.</p>
+            <a class="iq-discord-button" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
+              <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+              Join the Discord
+            </a>
+            <div class="assessment-list-actions">
+              <button id="iq-community-continue" type="button">Continue</button>
+            </div>
           </div>
         </section>
 
