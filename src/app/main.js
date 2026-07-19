@@ -111,6 +111,18 @@ let pendingSessionCoinFloat = 0;
 const iqStandalone = mindcareUiMode === "pro" && !new URLSearchParams(window.location.search).has("app");
 const leadStorageKey = "mindcare.lead.v1";
 const iqRevealPendingKey = "mindcare.iqRevealPending.v1";
+
+// Dev helper: ?fresh replays the funnel as a brand-new visitor (clears the
+// stored lead, any in-progress or finished test, and the reveal flag).
+if (iqStandalone && new URLSearchParams(window.location.search).has("fresh")) {
+  try {
+    for (const key of [leadStorageKey, iqRevealPendingKey, "mindcare.catActiveSession.v1", "mindcare.catSessions.v1"]) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage unavailable; nothing to clear.
+  }
+}
 let catPendingResult = null;
 let iqCalcTimer = null;
 let iqCalcPct = 0;
