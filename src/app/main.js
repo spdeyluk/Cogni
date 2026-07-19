@@ -112,16 +112,19 @@ const iqStandalone = mindcareUiMode === "pro" && !new URLSearchParams(window.loc
 const leadStorageKey = "mindcare.lead.v1";
 const iqRevealPendingKey = "mindcare.iqRevealPending.v1";
 
-// Dev helper: ?fresh replays the funnel as a brand-new visitor (clears the
-// stored lead, any in-progress or finished test, and the reveal flag).
-if (iqStandalone && new URLSearchParams(window.location.search).has("fresh")) {
+// Dev helper: ?fresh replays the funnel as a brand-new visitor. Clears the
+// stored lead, any in-progress or finished test, the reveal flag, AND any
+// play/pro override left from mobile previewing, then reloads clean — so it
+// always ends on the funnel landing no matter what state the browser was in.
+if (new URLSearchParams(window.location.search).has("fresh")) {
   try {
-    for (const key of [leadStorageKey, iqRevealPendingKey, "mindcare.catActiveSession.v1", "mindcare.catSessions.v1"]) {
+    for (const key of [leadStorageKey, iqRevealPendingKey, "mindcare.uiMode.v1", "mindcare.catActiveSession.v1", "mindcare.catSessions.v1"]) {
       localStorage.removeItem(key);
     }
   } catch {
     // Storage unavailable; nothing to clear.
   }
+  window.location.replace("/");
 }
 let catPendingResult = null;
 let iqCalcTimer = null;
