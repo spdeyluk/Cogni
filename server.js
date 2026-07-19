@@ -1,8 +1,19 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 
 const root = process.cwd();
+
+// Minimal .env loader (no dependency): KEY=value lines, # comments.
+try {
+  for (const line of readFileSync(join(root, ".env"), "utf8").split("\n")) {
+    const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (match && !(match[1] in process.env)) process.env[match[1]] = match[2];
+  }
+} catch {
+  // No .env file; env vars may still be set by the host.
+}
 const publicDir = join(root, "public");
 const srcDir = join(root, "src");
 const nodeModulesDir = join(root, "node_modules");
@@ -59,6 +70,60 @@ async function saveSocialDb(db) {
 
 const leadsPath = join(dataDir, "leads.json");
 
+// Brevo (email + SMS list) sync: every captured lead is upserted as a
+// contact, keyed by email, with the phone as the SMS attribute and the IQ
+// score attached for segmenting. leads.json stays the local backup.
+const brevoApiKey = process.env.BREVO_API_KEY || "";
+const brevoListId = Number(process.env.BREVO_LIST_ID) || null;
+
+// Brevo only accepts internationally formatted mobile numbers. Normalize
+// what people type; return null when there's no usable country code.
+function normalizeSmsNumber(raw) {
+  let digits = String(raw ?? "").replace(/[\s().-]/g, "");
+  if (digits.startsWith("00")) digits = `+${digits.slice(2)}`;
+  if (!/^\+[0-9]{8,15}$/.test(digits)) return null;
+  return digits;
+}
+
+async function postBrevoContact(body) {
+  const response = await fetch("https://api.brevo.com/v3/contacts", {
+    method: "POST",
+    headers: { "api-key": brevoApiKey, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (response.ok || response.status === 204) return { ok: true };
+  return { ok: false, status: response.status, detail: await response.text() };
+}
+
+async function syncLeadToBrevo(lead) {
+  if (!brevoApiKey) return;
+  const sms = normalizeSmsNumber(lead.phone);
+  if (!lead.email && !sms) return;
+  const attributes = { LEAD_SOURCE: lead.source ?? "web" };
+  if (sms) attributes.SMS = sms;
+  if (Number.isFinite(lead.score)) attributes.IQ_SCORE = lead.score;
+  const body = {
+    updateEnabled: true,
+    attributes,
+    ...(lead.email ? { email: lead.email } : {}),
+    ...(brevoListId ? { listIds: [brevoListId] } : {})
+  };
+  let result = await postBrevoContact(body);
+  if (!result.ok && attributes.SMS) {
+    // A malformed or already-taken SMS number must not lose the email lead.
+    delete attributes.SMS;
+    result = await postBrevoContact(body);
+  }
+  if (!result.ok) console.error(`[brevo] sync failed (${result.status}): ${result.detail}`);
+}
+
+function leadsCsv(leads) {
+  const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const rows = leads.map((lead) =>
+    [lead.name, lead.email, lead.phone, lead.score, lead.source, lead.createdAt].map(quote).join(","));
+  return ["name,email,phone,score,source,createdAt", ...rows].join("\n");
+}
+
 async function loadLeads() {
   try {
     const leads = JSON.parse(await readFile(leadsPath, "utf8"));
@@ -103,6 +168,7 @@ async function handleApiRequest(request, response, url) {
     const score = Number.isFinite(body.score) ? Math.round(body.score) : null;
     const leads = await loadLeads();
     const existing = id ? leads.find((lead) => lead.id === id) : null;
+    let synced = existing;
     if (existing) {
       if (name) existing.name = name;
       if (phone) existing.phone = phone;
@@ -110,7 +176,7 @@ async function handleApiRequest(request, response, url) {
       if (score !== null) existing.score = score;
       existing.updatedAt = new Date().toISOString();
     } else {
-      leads.push({
+      synced = {
         id: id || `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         name,
         phone,
@@ -118,10 +184,22 @@ async function handleApiRequest(request, response, url) {
         score,
         source: String(body.source ?? "web").slice(0, 40),
         createdAt: new Date().toISOString()
-      });
+      };
+      leads.push(synced);
     }
     await saveLeads(leads);
+    syncLeadToBrevo(synced).catch((error) => console.error("[brevo] sync error:", error.message));
     sendJson(response, 200, { ok: true, count: leads.length });
+    return true;
+  }
+
+  if (url.pathname === "/api/leads.csv" && request.method === "GET") {
+    response.writeHead(200, {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": "attachment; filename=mindcare-leads.csv",
+      ...noCacheHeaders
+    });
+    response.end(leadsCsv(await loadLeads()));
     return true;
   }
 
