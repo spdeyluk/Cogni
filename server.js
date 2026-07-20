@@ -17,7 +17,8 @@ try {
 const publicDir = join(root, "public");
 const srcDir = join(root, "src");
 const nodeModulesDir = join(root, "node_modules");
-const dataDir = join(root, ".data");
+// DATA_DIR lets a host mount a persistent disk (leads survive redeploys).
+const dataDir = process.env.DATA_DIR || join(root, ".data");
 const socialDbPath = join(dataDir, "social.json");
 const port = Number(process.env.PORT || 4283);
 

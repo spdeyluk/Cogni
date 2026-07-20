@@ -1,0 +1,25 @@
+# Render blueprint: deploys the Mindcare IQ funnel as one Node web service.
+# Render reads this automatically when you create a Blueprint from the repo.
+services:
+  - type: web
+    name: mindcare
+    runtime: node
+    plan: starter # free tier also works, but sleeps after 15 min idle
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Leads are written here; the mounted disk keeps them across deploys.
+      - key: DATA_DIR
+        value: /var/data
+      # Set in the Render dashboard (never commit these).
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_LIST_ID
+        sync: false
+    disk:
+      name: mindcare-data
+      mountPath: /var/data
+      sizeGB: 1
