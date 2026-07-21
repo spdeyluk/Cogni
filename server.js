@@ -17,8 +17,9 @@ try {
 const publicDir = join(root, "public");
 const srcDir = join(root, "src");
 const nodeModulesDir = join(root, "node_modules");
-// DATA_DIR lets a host mount a persistent disk (leads survive redeploys).
-const dataDir = process.env.DATA_DIR || join(root, ".data");
+// Leads are written to a persistent disk so they survive redeploys.
+// DATA_DIR wins; otherwise use Railway's volume mount if one is attached.
+const dataDir = process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || join(root, ".data");
 const socialDbPath = join(dataDir, "social.json");
 const port = Number(process.env.PORT || 4283);
 
