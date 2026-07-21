@@ -198,7 +198,7 @@ async function handleApiRequest(request, response, url) {
   if (url.pathname === "/api/leads.csv" && request.method === "GET") {
     response.writeHead(200, {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": "attachment; filename=mindcare-leads.csv",
+      "Content-Disposition": "attachment; filename=cogni-leads.csv",
       ...noCacheHeaders
     });
     response.end(leadsCsv(await loadLeads()));

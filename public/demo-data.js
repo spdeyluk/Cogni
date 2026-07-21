@@ -4,9 +4,9 @@
 // script tag in index.html to ship without demo data.
 (() => {
   var SEED_TOKEN = "20260712-demo-v2";
-  var MARKER_KEY = "mindcare.demoDataSeedToken";
+  var MARKER_KEY = "cogni.demoDataSeedToken";
   var PROGRESS_KEY = "brainer.exerciseProgress.v1";
-  var XP_KEY = "mindcare.xpProgress.v1";
+  var XP_KEY = "cogni.xpProgress.v1";
   try {
     if (localStorage.getItem(MARKER_KEY) === SEED_TOKEN) return;
     var existing = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "null");

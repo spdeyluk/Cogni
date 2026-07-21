@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 import WebKit
 
-final class MindcareBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler {
+final class CogniBridgeViewController: CAPBridgeViewController, WKScriptMessageHandler {
     private let nativeNavModel = NativeLiquidNavModel()
     private var nativeNavHost: UIHostingController<NativeLiquidGlassNavBar>?
     private var didInstallNativeNav = false
@@ -70,16 +70,16 @@ final class MindcareBridgeViewController: CAPBridgeViewController, WKScriptMessa
     }
 
     private func selectWebTab(_ tab: NativeLiquidNavTab) {
-        let script = "window.MindcareNativeNav && window.MindcareNativeNav.selectTab('\(tab.webSection)');"
+        let script = "window.CogniNativeNav && window.CogniNativeNav.selectTab('\(tab.webSection)');"
         webView?.evaluateJavaScript(script)
     }
 
     private var nativeNavInstallScript: String {
         """
         document.documentElement.classList.add('native-liquid-nav');
-        if (!document.getElementById('mindcare-native-liquid-nav-style')) {
+        if (!document.getElementById('cogni-native-liquid-nav-style')) {
           const style = document.createElement('style');
-          style.id = 'mindcare-native-liquid-nav-style';
+          style.id = 'cogni-native-liquid-nav-style';
           style.textContent = `
             .app-sidebar {
               display: none !important;
@@ -91,7 +91,7 @@ final class MindcareBridgeViewController: CAPBridgeViewController, WKScriptMessa
           `;
           document.head.appendChild(style);
         }
-        window.dispatchEvent(new CustomEvent('mindcare-native-nav-ready'));
+        window.dispatchEvent(new CustomEvent('cogni-native-nav-ready'));
         """
     }
 

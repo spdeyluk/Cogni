@@ -1,6 +1,6 @@
 {
   "appId": "com.spidey.cogni",
-  "appName": "Mindcare",
+  "appName": "Cogni",
   "webDir": "mobile-www",
   "server": {
     "androidScheme": "https"

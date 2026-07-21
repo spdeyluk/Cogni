@@ -6773,7 +6773,7 @@ pre {
   }
 }
 
-/* Premium visual polish: keep Mindcare dark, but make controls feel less default-web. */
+/* Premium visual polish: keep Cogni dark, but make controls feel less default-web. */
 :root {
   --bg: var(--surface);
   --surface: var(--surface);
@@ -7236,7 +7236,7 @@ body {
   }
 }
 
-/* Friendly character pass: keep Mindcare dark, but make controls feel less sterile. */
+/* Friendly character pass: keep Cogni dark, but make controls feel less sterile. */
 :root {
   --accent-blue: var(--accent);
   --accent-cyan: var(--accent);
@@ -10149,10 +10149,10 @@ dialog::backdrop {
   border-radius: var(--radius) !important;
   background: var(--surface) !important;
   box-shadow: var(--shadow);
-  animation: mindcare-sheet-up 0.34s cubic-bezier(0.32, 0.72, 0.35, 1);
+  animation: cogni-sheet-up 0.34s cubic-bezier(0.32, 0.72, 0.35, 1);
 }
 
-@keyframes mindcare-sheet-up {
+@keyframes cogni-sheet-up {
   from {
     transform: translateY(36px);
     opacity: 0;

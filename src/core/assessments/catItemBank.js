@@ -1,5 +1,5 @@
 // Original item bank for the adaptive cognitive assessment.
-// All content is written for Mindcare — no items are reproduced from any
+// All content is written for Cogni — no items are reproduced from any
 // published test. Difficulty (b) and discrimination (a) parameters are
 // PROVISIONAL author estimates: every item carries provisional: true and the
 // bank is meant to be re-fit from real response data via

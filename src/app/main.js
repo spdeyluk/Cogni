@@ -55,15 +55,15 @@ import {
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
 import * as THREE from "../../node_modules/three/build/three.module.js";
 
-console.info("[Mindcare] main.js loaded");
+console.info("[Cogni] main.js loaded");
 
-// Cogni -> Mindcare rename (2026-07-19): migrate any device data still under
-// the old key prefix before the first storage read below.
+// Carry any device data left under the temporary "mindcare." key prefix
+// back to "cogni." before the first storage read below.
 try {
   for (let i = localStorage.length - 1; i >= 0; i -= 1) {
     const oldKey = localStorage.key(i);
-    if (oldKey?.startsWith("cogni.")) {
-      const newKey = `mindcare.${oldKey.slice(6)}`;
+    if (oldKey?.startsWith("mindcare.")) {
+      const newKey = `cogni.${oldKey.slice(9)}`;
       if (localStorage.getItem(newKey) === null) {
         localStorage.setItem(newKey, localStorage.getItem(oldKey));
       }
@@ -84,13 +84,13 @@ const modalityKeys = {
 const letterAudioBasePath = "assets/audio/nback-letters";
 const audioCache = new Map();
 const exerciseProgressStorageKey = "brainer.exerciseProgress.v1";
-const routineStorageKey = "mindcare.routines.v1";
-const adhdHistoryStorageKey = "mindcare.adhdAssessmentHistory.v1";
-const userProfileStorageKey = "mindcare.userProfile.v1";
-const socialApiBaseStorageKey = "mindcare.socialApiBaseUrl.v1";
-const xpProgressStorageKey = "mindcare.xpProgress.v1";
-const screenTimeWalletStorageKey = "mindcare.screenTimeWallet.v1";
-const screenTimeLocalStateStorageKey = "mindcare.screenTimeState.v1";
+const routineStorageKey = "cogni.routines.v1";
+const adhdHistoryStorageKey = "cogni.adhdAssessmentHistory.v1";
+const userProfileStorageKey = "cogni.userProfile.v1";
+const socialApiBaseStorageKey = "cogni.socialApiBaseUrl.v1";
+const xpProgressStorageKey = "cogni.xpProgress.v1";
+const screenTimeWalletStorageKey = "cogni.screenTimeWallet.v1";
+const screenTimeLocalStateStorageKey = "cogni.screenTimeState.v1";
 const screenTimePointsPerMinute = 10;
 // Direct earning: every minute of exercise training pays this many coins,
 // on top of the daily quest rewards.
@@ -99,8 +99,8 @@ const sessionCoinsPerMinute = 10;
 // Two experiences from one codebase: the native mobile app is the friendly,
 // gamified coach (coins, quests, screen time); the web build is the plain
 // training tool for hardcore mind builders. Override with
-// localStorage "mindcare.uiMode.v1" = "play" | "pro" for testing.
-const mindcareUiMode = detectCogniUiMode();
+// localStorage "cogni.uiMode.v1" = "play" | "pro" for testing.
+const cogniUiMode = detectCogniUiMode();
 
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
@@ -108,9 +108,9 @@ let pendingSessionCoinFloat = 0;
 // The web build IS the IQ funnel: email gate -> why-IQ slides -> adaptive
 // test -> phone gate + app-launch promo -> score. Nothing else is reachable.
 // Escape hatch for previewing the full pro training hub: append ?app.
-const iqStandalone = mindcareUiMode === "pro" && !new URLSearchParams(window.location.search).has("app");
-const leadStorageKey = "mindcare.lead.v1";
-const iqRevealPendingKey = "mindcare.iqRevealPending.v1";
+const iqStandalone = cogniUiMode === "pro" && !new URLSearchParams(window.location.search).has("app");
+const leadStorageKey = "cogni.lead.v1";
+const iqRevealPendingKey = "cogni.iqRevealPending.v1";
 
 // Dev helper: ?fresh replays the funnel as a brand-new visitor. Clears the
 // stored lead, any in-progress or finished test, the reveal flag, AND any
@@ -118,7 +118,7 @@ const iqRevealPendingKey = "mindcare.iqRevealPending.v1";
 // always ends on the funnel landing no matter what state the browser was in.
 if (new URLSearchParams(window.location.search).has("fresh")) {
   try {
-    for (const key of [leadStorageKey, iqRevealPendingKey, "mindcare.uiMode.v1", "mindcare.catActiveSession.v1", "mindcare.catSessions.v1"]) {
+    for (const key of [leadStorageKey, iqRevealPendingKey, "cogni.uiMode.v1", "cogni.catActiveSession.v1", "cogni.catSessions.v1"]) {
       localStorage.removeItem(key);
     }
   } catch {
@@ -180,7 +180,7 @@ function initIqStandalone() {
   } else {
     showAssessmentSection("iq-welcome");
   }
-  elements.pageTitle.textContent = "Mindcare IQ Test";
+  elements.pageTitle.textContent = "Cogni IQ Test";
   elements.pageLede.textContent = "";
 }
 
@@ -188,7 +188,7 @@ function detectCogniUiMode() {
   const paramMode = new URLSearchParams(window.location.search).get("mode");
   if (paramMode === "play" || paramMode === "pro") return paramMode;
   try {
-    const stored = localStorage.getItem("mindcare.uiMode.v1");
+    const stored = localStorage.getItem("cogni.uiMode.v1");
     if (stored === "play" || stored === "pro") return stored;
   } catch {
     // Fall through to platform detection.
@@ -196,8 +196,8 @@ function detectCogniUiMode() {
   return window.Capacitor?.isNativePlatform?.() ? "play" : "pro";
 }
 const screenTimeUnlockOptions = [15, 30, 60];
-const dailyQuestsStorageKey = "mindcare.dailyQuests.v1";
-const customTasksStorageKey = "mindcare.customTasks.v1";
+const dailyQuestsStorageKey = "cogni.dailyQuests.v1";
+const customTasksStorageKey = "cogni.customTasks.v1";
 const homeShowcaseApps = [
   { name: "TikTok", slug: "tiktok" },
   { name: "Instagram", slug: "instagram" },
@@ -218,7 +218,7 @@ const dailyQuestDefs = [
   { id: "train5", label: "Train 5 minutes", reward: 60, kind: "minutes", target: 5 },
   { id: "train10", label: "Train 10 minutes", reward: 100, kind: "minutes", target: 10 }
 ];
-const dailyDetoxDoneStorageKey = "mindcare.dailyDetoxDone.v1";
+const dailyDetoxDoneStorageKey = "cogni.dailyDetoxDone.v1";
 const screenTimeStatus = {
   available: false,
   authorized: false,
@@ -855,11 +855,11 @@ resetCctOutput();
 resetUfovOutput();
 resetIctOutput();
 renderRoutineList();
-elements.appShell?.classList.add(mindcareUiMode === "pro" ? "pro-mode" : "play-mode");
-document.documentElement.classList.add(mindcareUiMode === "pro" ? "mode-pro" : "mode-play");
+elements.appShell?.classList.add(cogniUiMode === "pro" ? "pro-mode" : "play-mode");
+document.documentElement.classList.add(cogniUiMode === "pro" ? "mode-pro" : "mode-play");
 renderHomePage();
 renderTopStatus();
-if (mindcareUiMode === "pro") {
+if (cogniUiMode === "pro") {
   document.querySelector("#cat-share")?.removeAttribute("hidden");
   document.querySelector("#cat-discord")?.removeAttribute("hidden");
 }
@@ -867,7 +867,7 @@ if (iqStandalone) {
   elements.appShell?.classList.add("iq-standalone");
   // Defer past module evaluation so CAT state (let bindings below) exists.
   window.setTimeout(initIqStandalone, 0);
-} else if (mindcareUiMode === "pro") {
+} else if (cogniUiMode === "pro") {
   showExerciseHub();
 }
 renderProfileOnboarding();
@@ -1211,7 +1211,7 @@ document.querySelector("#cat-share")?.addEventListener("click", async (event) =>
   const button = event.currentTarget;
   const shareUrl = `${window.location.origin}/iq`;
   try {
-    if (navigator.share) await navigator.share({ title: "Mindcare IQ Test", url: shareUrl });
+    if (navigator.share) await navigator.share({ title: "Cogni IQ Test", url: shareUrl });
     else {
       await navigator.clipboard.writeText(shareUrl);
       button.textContent = "Link copied!";
@@ -1896,7 +1896,7 @@ function openExerciseById(exerciseId) {
   // Routines drive sessions programmatically; the settings sheet is only for
   // a person browsing into an exercise, and only in the gamified mobile app —
   // the pro web build uses the full inline settings page.
-  if (!activeRoutineRun && mindcareUiMode === "play") openExerciseSheet(exerciseId);
+  if (!activeRoutineRun && cogniUiMode === "play") openExerciseSheet(exerciseId);
 }
 
 const exerciseSheetInfo = {
@@ -2202,7 +2202,7 @@ function renderProfileIdentityStats(stats) {
       </div>
       <div>
         <strong>${Math.max(0, Math.round(stats.cogniXp ?? 0)).toLocaleString()}</strong>
-        <span>Mindcare XP</span>
+        <span>Cogni XP</span>
       </div>
     </div>
   `;
@@ -2436,9 +2436,9 @@ function profileGraphSvg(seriesList, pointCount) {
 
 function loadUserProfile() {
   try {
-    return JSON.parse(localStorage.getItem(userProfileStorageKey)) || { handle: "@mindcare", avatarInitial: "C" };
+    return JSON.parse(localStorage.getItem(userProfileStorageKey)) || { handle: "@cogni", avatarInitial: "C" };
   } catch {
-    return { handle: "@mindcare", avatarInitial: "C" };
+    return { handle: "@cogni", avatarInitial: "C" };
   }
 }
 
@@ -2474,7 +2474,7 @@ function renderProfileOnboarding() {
   document.body.insertAdjacentHTML("beforeend", `
     <section class="profile-onboarding" id="${profileOnboardingId}" aria-label="Profile setup">
       <form class="profile-onboarding-card" data-profile-onboarding-form>
-        <p class="exercise-type">Mindcare</p>
+        <p class="exercise-type">Cogni</p>
         <h2>Create your profile</h2>
         <div class="profile-onboarding-photo">
           <div class="profile-avatar" aria-hidden="true">
@@ -2483,7 +2483,7 @@ function renderProfileOnboarding() {
         </div>
         <label class="profile-edit-field">
           <span>Username</span>
-          <div><b>@</b><input name="profileHandle" type="text" value="mindcare" autocomplete="username" autocapitalize="none" spellcheck="false" aria-label="Username"></div>
+          <div><b>@</b><input name="profileHandle" type="text" value="cogni" autocomplete="username" autocapitalize="none" spellcheck="false" aria-label="Username"></div>
         </label>
         <button type="submit">Start</button>
       </form>
@@ -2507,10 +2507,10 @@ function handleProfileOnboardingSubmit(event) {
 function normalizeProfileHandle(value) {
   const raw = String(value ?? "").trim().replace(/^@+/, "").toLowerCase();
   const cleaned = raw.replace(/[^a-z0-9_.]/g, "").slice(0, 24);
-  return `@${cleaned || "mindcare"}`;
+  return `@${cleaned || "cogni"}`;
 }
 
-function normalizeProfileAvatar(value, handle = "@mindcare") {
+function normalizeProfileAvatar(value, handle = "@cogni") {
   const fallback = normalizeProfileHandle(handle).replace(/^@/, "").charAt(0).toUpperCase() || "C";
   return String(value ?? "").trim().replace(/[^a-z0-9]/gi, "").charAt(0).toUpperCase() || fallback;
 }
@@ -2527,14 +2527,14 @@ function animateBrainHealthScore() {
   const targetScore = clampNumber(scoreNode.dataset.brainScore, 0, 200);
   const targetPercent = clampNumber(arcNode.dataset.brainProgress, 0, 100);
   const now = Date.now();
-  const lastAnimatedAt = Number(sessionStorage.getItem("mindcare.brainScoreAnimatedAt") ?? 0);
+  const lastAnimatedAt = Number(sessionStorage.getItem("cogni.brainScoreAnimatedAt") ?? 0);
   const shouldAnimate = !lastAnimatedAt || now - lastAnimatedAt > brainScoreAnimationCooldownMs;
   if (!shouldAnimate) {
     scoreNode.textContent = String(Math.round(targetScore));
     arcNode.style.strokeDasharray = `${targetPercent} 100`;
     return;
   }
-  sessionStorage.setItem("mindcare.brainScoreAnimatedAt", String(now));
+  sessionStorage.setItem("cogni.brainScoreAnimatedAt", String(now));
   scoreNode.textContent = "0";
   arcNode.style.strokeDasharray = "0 100";
   const durationMs = 850;
@@ -2676,9 +2676,9 @@ function renderHomePage() {
       <span>Cognition health</span>
     </section>
 
-    ${mindcareUiMode === "play" ? renderHomePointsCard() : ""}
+    ${cogniUiMode === "play" ? renderHomePointsCard() : ""}
 
-    ${mindcareUiMode === "play" ? renderHomeQuests() : ""}
+    ${cogniUiMode === "play" ? renderHomeQuests() : ""}
   `;
   renderTopStatus();
 }
@@ -2691,9 +2691,9 @@ function renderHomeQuests() {
     if (quest.claimed) {
       pill = '<span class="quest-pill quest-pill-claimed">Claimed</span>';
     } else if (quest.claimable) {
-      pill = `<button class="quest-pill quest-pill-claimable" data-quest-claim="${quest.id}" type="button">+${quest.reward} <img src="assets/mindcare-coin-23.png" alt="coins"></button>`;
+      pill = `<button class="quest-pill quest-pill-claimable" data-quest-claim="${quest.id}" type="button">+${quest.reward} <img src="assets/cogni-coin-23.png" alt="coins"></button>`;
     } else {
-      pill = `<span class="quest-pill quest-pill-progress" style="--quest-progress: ${Math.round(quest.progressPct * 100)}%">+${quest.reward} <img src="assets/mindcare-coin-23.png" alt="coins"></span>`;
+      pill = `<span class="quest-pill quest-pill-progress" style="--quest-progress: ${Math.round(quest.progressPct * 100)}%">+${quest.reward} <img src="assets/cogni-coin-23.png" alt="coins"></span>`;
     }
     return `
       <div class="home-quest-row">
@@ -2777,11 +2777,11 @@ function renderHomePointsCard() {
   const wallet = loadScreenTimeWallet();
   const app = homeShowcaseApps[homeAppCycleIndex % homeShowcaseApps.length];
   return `
-    <article class="home-points-card" aria-label="Mindcare coins">
+    <article class="home-points-card" aria-label="Cogni coins">
       <div class="home-points-main">
         <div class="home-points-balance">
           <strong>${wallet.balance.toLocaleString()}</strong>
-          <img src="assets/mindcare-coin-45.png" alt="coins">
+          <img src="assets/cogni-coin-45.png" alt="coins">
         </div>
         <button class="home-points-buy" data-tasks-open type="button">Set task</button>
       </div>
@@ -2836,9 +2836,9 @@ function renderTasksDialog() {
     if (quest.claimed) {
       pill = '<span class="quest-pill quest-pill-claimed">Claimed</span>';
     } else if (quest.claimable) {
-      pill = `<button class="quest-pill quest-pill-claimable" data-quest-claim="${quest.id}" type="button">+${quest.reward} <img src="assets/mindcare-coin-23.png" alt="coins"></button>`;
+      pill = `<button class="quest-pill quest-pill-claimable" data-quest-claim="${quest.id}" type="button">+${quest.reward} <img src="assets/cogni-coin-23.png" alt="coins"></button>`;
     } else {
-      pill = `<span class="quest-pill quest-pill-progress" style="--quest-progress: ${Math.round(quest.progressPct * 100)}%">+${quest.reward} <img src="assets/mindcare-coin-23.png" alt="coins"></span>`;
+      pill = `<span class="quest-pill quest-pill-progress" style="--quest-progress: ${Math.round(quest.progressPct * 100)}%">+${quest.reward} <img src="assets/cogni-coin-23.png" alt="coins"></span>`;
     }
     const remove = quest.id.startsWith("custom-")
       ? `<button class="task-remove" data-task-remove="${quest.id}" type="button" aria-label="Remove task">&times;</button>`
@@ -2944,7 +2944,7 @@ function spawnCoinClaimBurst(button) {
   const rect = button.getBoundingClientRect();
   const float = document.createElement("div");
   float.className = "coin-claim-float";
-  float.innerHTML = `<span>${escapeHtml(button.textContent.trim())}</span><img src="assets/mindcare-coin-23.png" alt="">`;
+  float.innerHTML = `<span>${escapeHtml(button.textContent.trim())}</span><img src="assets/cogni-coin-23.png" alt="">`;
   float.style.left = `${rect.left + rect.width / 2}px`;
   float.style.top = `${rect.top - 6}px`;
   (button.closest("dialog") ?? document.body).appendChild(float);
@@ -3255,8 +3255,8 @@ async function shareCogniInvite() {
   const handle = normalizeProfileHandle(loadUserProfile().handle);
   const inviteUrl = buildCogniInviteUrl(handle);
   const shareData = {
-    title: "Join me on Mindcare",
-    text: `Add me on Mindcare: ${handle}`,
+    title: "Join me on Cogni",
+    text: `Add me on Cogni: ${handle}`,
     url: inviteUrl
   };
 
@@ -3284,7 +3284,7 @@ async function shareCogniInvite() {
 
 function buildCogniInviteUrl(handle) {
   const cleanHandle = normalizeProfileHandle(handle).replace(/^@/, "");
-  return `https://mindcare.app/invite?from=${encodeURIComponent(cleanHandle)}`;
+  return `https://cogni.app/invite?from=${encodeURIComponent(cleanHandle)}`;
 }
 
 async function handleSocialFriendRequestSubmit(sourceButton = null) {
@@ -3367,7 +3367,7 @@ async function refreshSocialHubFriends() {
 
 function friendApiErrorMessage(error) {
   const detail = error?.message || "Friend request failed.";
-  return `${detail} Online friend requests need the Mindcare social server. Invite links still work.`;
+  return `${detail} Online friend requests need the Cogni social server. Invite links still work.`;
 }
 
 function calculateDailyTrainingStreak(progress, exerciseIds, targetMinutes = 5) {
@@ -3443,8 +3443,8 @@ function showAssessmentList() {
 // Adaptive cognitive assessment (CAT over the 2PL IRT engine)
 // ---------------------------------------------------------------------------
 
-const catStateStorageKey = "mindcare.catActiveSession.v1";
-const catSessionsStorageKey = "mindcare.catSessions.v1";
+const catStateStorageKey = "cogni.catActiveSession.v1";
+const catSessionsStorageKey = "cogni.catSessions.v1";
 const catItemsById = new Map(catItemBank.map((item) => [item.id, item]));
 let catActive = loadCatActive();
 let catTimerHandle = null;
@@ -3642,7 +3642,7 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   saveCatActive();
   // Web funnel: the "calculating" screen builds anticipation and holds the
   // phone + Discord asks. The mobile app goes straight to the score.
-  if (mindcareUiMode === "pro") {
+  if (cogniUiMode === "pro") {
     catPendingResult = sessionRecord;
     try {
       localStorage.setItem(iqRevealPendingKey, "1");
@@ -4188,7 +4188,7 @@ function setActiveTab(tab) {
 }
 
 function installNativeNavigationBridge() {
-  window.MindcareNativeNav = {
+  window.CogniNativeNav = {
     selectTab(tab) {
       const handlers = {
         home: showHome,
@@ -4200,7 +4200,7 @@ function installNativeNavigationBridge() {
     }
   };
 
-  window.addEventListener("mindcare-native-nav-ready", syncNativeNavigationChrome);
+  window.addEventListener("cogni-native-nav-ready", syncNativeNavigationChrome);
   if (elements.appShell) {
     new MutationObserver(syncNativeNavigationChrome).observe(elements.appShell, {
       attributes: true,
@@ -4304,7 +4304,7 @@ function renderSocialLeaderboard() {
     <section class="social-leaderboard-hero">
       <p class="exercise-type">Top 100</p>
       <h2>Leaderboards</h2>
-      <p>Compare Mindcare points across friends and global trainers.</p>
+      <p>Compare Cogni points across friends and global trainers.</p>
     </section>
     <div class="leaderboard-timeframe-switch" aria-label="Leaderboard timeframe">
       ${Object.entries(leaderboardTimeframeLabels).map(([key, label]) => `
@@ -4316,7 +4316,7 @@ function renderSocialLeaderboard() {
         <article class="${entry.rank === 1 ? "first" : ""} ${entry.isCurrentUser ? "current" : ""}">
           <span>#${entry.rank}</span>
           <strong>${escapeHtml(entry.handle)}</strong>
-          <b>${Math.max(0, Math.round(entry.xp))} Mindcare points</b>
+          <b>${Math.max(0, Math.round(entry.xp))} Cogni points</b>
         </article>
       `).join("")}
     </section>
@@ -4325,7 +4325,7 @@ function renderSocialLeaderboard() {
         <article class="leaderboard-row ${entry.isCurrentUser ? "current" : ""}">
           <span>${entry.rank}</span>
           <strong>${escapeHtml(entry.handle)}</strong>
-          <em>${Math.max(0, Math.round(entry.xp))} Mindcare points</em>
+          <em>${Math.max(0, Math.round(entry.xp))} Cogni points</em>
         </article>
       `).join("")}
     </section>
@@ -4907,7 +4907,7 @@ function showPendingSessionCoinFloat() {
   pendingSessionCoinFloat = 0;
   const float = document.createElement("div");
   float.className = "coin-claim-float coin-claim-float-center";
-  float.innerHTML = `<span>+${amount}</span><img src="assets/mindcare-coin-23.png" alt="">`;
+  float.innerHTML = `<span>+${amount}</span><img src="assets/cogni-coin-23.png" alt="">`;
   document.body.appendChild(float);
   window.setTimeout(() => float.remove(), 1400);
 }
@@ -6521,7 +6521,7 @@ function recordExerciseProgress(exerciseId, sessionData) {
   };
   const xpAward = awardSessionXp(progress, sessionRecord);
   sessionRecord.xpAward = xpAward;
-  const coinAward = mindcareUiMode === "play" ? Math.round((durationMs / 60000) * sessionCoinsPerMinute) : 0;
+  const coinAward = cogniUiMode === "play" ? Math.round((durationMs / 60000) * sessionCoinsPerMinute) : 0;
   if (coinAward > 0) {
     creditScreenTimeWallet(coinAward, `${exerciseId.toUpperCase()} training`, { session: sessionRecord.id });
     pendingSessionCoinFloat += coinAward;
@@ -7240,7 +7240,7 @@ function saveXpProgress(progress) {
       events: (progress.events ?? []).slice(0, 500)
     }));
   } catch {
-    // Mindcare points are local-first until account sync exists.
+    // Cogni points are local-first until account sync exists.
   }
 }
 
@@ -7595,7 +7595,7 @@ function renderScreenTimeDialog() {
     <div class="screen-time-apps-row">${appsLine}</div>
     <div class="screen-time-balance">
       <span>Available</span>
-      <strong>${wallet.balance.toLocaleString()} <img src="assets/mindcare-coin-23.png" alt="coins"></strong>
+      <strong>${wallet.balance.toLocaleString()} <img src="assets/cogni-coin-23.png" alt="coins"></strong>
     </div>
     <p class="screen-time-rate">${note}</p>
     <div class="screen-time-options">
