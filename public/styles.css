@@ -11295,3 +11295,68 @@ kbd {
 .iq-calc-interrupt .assessment-history-copy {
   margin-top: 0;
 }
+
+/* Post-funnel recommendations: only shown on the shareable /iq result. */
+.iq-recommend {
+  display: none;
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.iq-standalone .iq-recommend {
+  display: block;
+}
+
+.iq-recommend h3 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500;
+  font-size: 1.3rem;
+  margin: 0 0 8px;
+}
+
+.iq-recommend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.iq-recommend-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.iq-recommend-card:hover {
+  border-color: var(--accent);
+}
+
+.iq-recommend-card b {
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.iq-recommend-card span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .iq-recommend-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Funnel result: recommendations replace the in-app "Back to tests". */
+.iq-standalone #cat-result-back {
+  display: none !important;
+}

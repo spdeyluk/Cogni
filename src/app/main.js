@@ -105,17 +105,17 @@ const cogniUiMode = detectCogniUiMode();
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
 
-// The web build IS the IQ funnel: email gate -> why-IQ slides -> adaptive
-// test -> phone gate + app-launch promo -> score. Nothing else is reachable.
-// Escape hatch for previewing the full pro training hub: append ?app.
-const iqStandalone = cogniUiMode === "pro" && !new URLSearchParams(window.location.search).has("app");
+// The web app is the full training site. On top of it, /iq (or ?iq) is a
+// standalone shareable funnel: email gate -> why-IQ slides -> adaptive test
+// -> phone gate + Discord -> score -> "try the rest of the site". The rest
+// of the web experience (exercises, all tests) is open to everyone.
+const iqStandalone = window.location.pathname === "/iq" || new URLSearchParams(window.location.search).has("iq");
 const leadStorageKey = "cogni.lead.v1";
 const iqRevealPendingKey = "cogni.iqRevealPending.v1";
 
-// Dev helper: ?fresh replays the funnel as a brand-new visitor. Clears the
-// stored lead, any in-progress or finished test, the reveal flag, AND any
-// play/pro override left from mobile previewing, then reloads clean — so it
-// always ends on the funnel landing no matter what state the browser was in.
+// Dev helper: /iq?fresh replays the funnel as a brand-new visitor. Clears
+// the stored lead, any in-progress or finished test, the reveal flag, and
+// any play/pro override, then reloads clean onto the funnel landing.
 if (new URLSearchParams(window.location.search).has("fresh")) {
   try {
     for (const key of [leadStorageKey, iqRevealPendingKey, "cogni.uiMode.v1", "cogni.catActiveSession.v1", "cogni.catSessions.v1"]) {
@@ -124,7 +124,7 @@ if (new URLSearchParams(window.location.search).has("fresh")) {
   } catch {
     // Storage unavailable; nothing to clear.
   }
-  window.location.replace("/");
+  window.location.replace("/iq");
 }
 let catPendingResult = null;
 let iqCalcTimer = null;
@@ -868,7 +868,10 @@ if (iqStandalone) {
   // Defer past module evaluation so CAT state (let bindings below) exists.
   window.setTimeout(initIqStandalone, 0);
 } else if (cogniUiMode === "pro") {
-  showExerciseHub();
+  // The funnel's "keep exploring" buttons deep-link back with ?go=.
+  const landing = new URLSearchParams(window.location.search).get("go");
+  if (landing === "tests") showAssessments();
+  else showExerciseHub();
 }
 renderProfileOnboarding();
 syncSocialProfileQuietly();

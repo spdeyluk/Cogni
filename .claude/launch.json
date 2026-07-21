@@ -13,6 +13,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["/Users/spidey/Desktop/tracky/server.js"],
       "port": 3000
+    },
+    {
+      "name": "vip",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "4174", "/Users/spidey/Desktop/vip-membership-site"],
+      "port": 4174
     }
   ]
 }
