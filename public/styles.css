@@ -11002,8 +11002,8 @@ dialog .screen-time-apps-row {
 
 /* ==========================================================================
    ANTI-DOPAMINE THEME — design tokens (2026-07-13)
-   Single source of truth for color, type, and shape. Light = warm paper,
-   dark = warm ink. Tweak values here; nothing below should hardcode them.
+   Single source of truth for color, type, and shape. Cool neutral palette:
+   light = cool grey paper, dark = cool ink. Tweak values here only.
    ========================================================================== */
 
 @font-face {
@@ -11026,24 +11026,25 @@ dialog .screen-time-apps-row {
   --radius-s: 6px;
   --radius: 8px;
 
-  /* Palette — light (warm paper) */
-  --bg: #F7F3EA;
-  --surface: #FBF9F3;
-  --surface-2: #F0EBDD;
-  --text: #2C2C2A;
-  --text-2: #5F5E5A;
-  --muted: #77756B;
-  --line: #D9D5C9;
-  --line-strong: #C7C2B2;
-  --fill-subtle: rgba(44, 44, 42, 0.05);
-  --accent: #4A6B57;
-  --on-accent: #FBF9F3;
-  --accent-2: #B0663F;
-  --success: #3E6B4F;
-  --error: #9A3B33;
-  --warning: #8A6D2F;
-  --shadow: 0 1px 2px rgba(44, 44, 42, 0.07);
-  --glass: rgba(251, 249, 243, 0.88);
+  /* Palette — light (cool neutral) */
+  --bg: #F2F4F6;
+  --surface: #FAFBFC;
+  --surface-2: #E9ECF0;
+  --text: #222529;
+  --text-2: #565B62;
+  --muted: #686E76;
+  --line: #DBDEE3;
+  --line-strong: #C7CBD2;
+  --fill-subtle: rgba(34, 37, 41, 0.05);
+  --accent: #47716A;
+  /* muted darkened to #686E76 so secondary text clears WCAG AA on --bg */
+  --on-accent: #FAFBFC;
+  --accent-2: #4E6E88;
+  --success: #3E6B57;
+  --error: #9C4640;
+  --warning: #7F7040;
+  --shadow: 0 1px 2px rgba(30, 33, 38, 0.07);
+  --glass: rgba(250, 251, 252, 0.88);
 
   /* Legacy variable remap — older layers keep working, now tokenized */
   --sidebar: var(--surface);
@@ -11053,7 +11054,7 @@ dialog .screen-time-apps-row {
   --dim: var(--muted);
   --active: var(--fill-subtle);
   --control-bg: var(--fill-subtle);
-  --control-bg-hover: rgba(44, 44, 42, 0.09);
+  --control-bg-hover: rgba(34, 37, 41, 0.09);
   --accent-blue: var(--accent);
   --accent-cyan: var(--accent);
   --accent-purple: var(--accent);
@@ -11068,25 +11069,25 @@ dialog .screen-time-apps-row {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Palette — dark (warm ink, never pure black or pure white) */
-    --bg: #211F1B;
-    --surface: #2A2823;
-    --surface-2: #363329;
-    --text: #EDE9DE;
-    --text-2: #C7C2B4;
-    --muted: #A39D8D;
-    --line: #403C32;
-    --line-strong: #4E4839;
-    --fill-subtle: rgba(237, 233, 222, 0.06);
-    --accent: #7FA98D;
-    --on-accent: #211F1B;
-    --accent-2: #C98B63;
-    --success: #7FA98D;
-    --error: #CD8175;
-    --warning: #C0A25C;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --glass: rgba(42, 40, 35, 0.88);
-    --control-bg-hover: rgba(237, 233, 222, 0.1);
+    /* Palette — dark (cool ink, never pure black or pure white) */
+    --bg: #191B1F;
+    --surface: #22252A;
+    --surface-2: #2D3137;
+    --text: #E6E9ED;
+    --text-2: #B7BCC4;
+    --muted: #888E98;
+    --line: #353A41;
+    --line-strong: #454B54;
+    --fill-subtle: rgba(230, 233, 237, 0.06);
+    --accent: #7CAA9E;
+    --on-accent: #191B1F;
+    --accent-2: #83A3C0;
+    --success: #7FA89A;
+    --error: #CB8079;
+    --warning: #B7A268;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --glass: rgba(34, 37, 42, 0.88);
+    --control-bg-hover: rgba(230, 233, 237, 0.1);
   }
 }
 
