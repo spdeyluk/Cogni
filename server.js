@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
 import { extname, join, normalize } from "node:path";
 
 const root = process.cwd();
@@ -126,6 +127,104 @@ function leadsCsv(leads) {
   return ["name,email,phone,score,source,createdAt", ...rows].join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Accounts: email/password + Google, with per-user cloud-synced app state.
+// ---------------------------------------------------------------------------
+const usersPath = join(dataDir, "users.json");
+const SESSION_COOKIE = "cogni_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
+
+// A stable secret signs session tokens. Prefer an env var; otherwise generate
+// one and persist it so sessions survive restarts.
+let sessionSecret = process.env.SESSION_SECRET || "";
+if (!sessionSecret) {
+  const secretPath = join(dataDir, ".session-secret");
+  try {
+    sessionSecret = readFileSync(secretPath, "utf8").trim();
+  } catch {
+    sessionSecret = randomBytes(32).toString("hex");
+    try {
+      mkdirSync(dataDir, { recursive: true });
+      writeFileSync(secretPath, sessionSecret);
+    } catch {
+      // Ephemeral secret; sessions won't survive a restart, but auth still works.
+    }
+  }
+}
+
+async function loadUsers() {
+  try {
+    const users = JSON.parse(await readFile(usersPath, "utf8"));
+    return users && typeof users === "object" ? users : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveUsers(users) {
+  await mkdir(dataDir, { recursive: true });
+  await writeFile(usersPath, JSON.stringify(users, null, 2));
+}
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = String(stored ?? "").split(":");
+  if (!salt || !hash) return false;
+  const test = scryptSync(password, salt, 64);
+  const known = Buffer.from(hash, "hex");
+  return test.length === known.length && timingSafeEqual(test, known);
+}
+
+function signSession(userId) {
+  const sig = createHmac("sha256", sessionSecret).update(userId).digest("hex");
+  return `${userId}.${sig}`;
+}
+
+function verifySession(token) {
+  if (!token) return null;
+  const idx = token.lastIndexOf(".");
+  if (idx < 0) return null;
+  const userId = token.slice(0, idx);
+  const sig = Buffer.from(token.slice(idx + 1));
+  const expected = Buffer.from(createHmac("sha256", sessionSecret).update(userId).digest("hex"));
+  if (sig.length !== expected.length || !timingSafeEqual(sig, expected)) return null;
+  return userId;
+}
+
+function parseCookies(request) {
+  const out = {};
+  for (const part of String(request.headers.cookie ?? "").split(";")) {
+    const i = part.indexOf("=");
+    if (i > -1) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return out;
+}
+
+function setSessionCookie(response, token) {
+  const attrs = ["Path=/", "HttpOnly", "SameSite=Lax", `Max-Age=${SESSION_MAX_AGE}`];
+  if (process.env.COOKIE_SECURE === "1") attrs.push("Secure");
+  response.setHeader("Set-Cookie", `${SESSION_COOKIE}=${token}; ${attrs.join("; ")}`);
+}
+
+function clearSessionCookie(response) {
+  response.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; Max-Age=0`);
+}
+
+function publicUser(user) {
+  return { id: user.id, email: user.email, hasGoogle: Boolean(user.googleId), createdAt: user.createdAt };
+}
+
+async function currentUser(request) {
+  const userId = verifySession(parseCookies(request)[SESSION_COOKIE]);
+  if (!userId) return null;
+  const users = await loadUsers();
+  return Object.values(users).find((user) => user.id === userId) || null;
+}
+
 async function loadLeads() {
   try {
     const leads = JSON.parse(await readFile(leadsPath, "utf8"));
@@ -152,6 +251,100 @@ async function handleApiRequest(request, response, url) {
   if (request.method === "OPTIONS") {
     response.writeHead(204, apiHeaders);
     response.end();
+    return true;
+  }
+
+  if (url.pathname === "/api/auth/signup" && request.method === "POST") {
+    const body = await readJsonBody(request);
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      sendJson(response, 400, { error: "Enter a valid email address." });
+      return true;
+    }
+    if (password.length < 8) {
+      sendJson(response, 400, { error: "Password must be at least 8 characters." });
+      return true;
+    }
+    const users = await loadUsers();
+    if (users[email]) {
+      sendJson(response, 409, { error: "An account with that email already exists." });
+      return true;
+    }
+    const user = {
+      id: `u-${Date.now()}-${randomBytes(6).toString("hex")}`,
+      email,
+      passwordHash: hashPassword(password),
+      googleId: null,
+      createdAt: new Date().toISOString(),
+      state: null,
+      stateUpdatedAt: null
+    };
+    users[email] = user;
+    await saveUsers(users);
+    setSessionCookie(response, signSession(user.id));
+    sendJson(response, 200, { user: publicUser(user) });
+    return true;
+  }
+
+  if (url.pathname === "/api/auth/login" && request.method === "POST") {
+    const body = await readJsonBody(request);
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const password = String(body.password ?? "");
+    const users = await loadUsers();
+    const user = users[email];
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      sendJson(response, 401, { error: "Wrong email or password." });
+      return true;
+    }
+    setSessionCookie(response, signSession(user.id));
+    sendJson(response, 200, { user: publicUser(user) });
+    return true;
+  }
+
+  if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+    clearSessionCookie(response);
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
+  if (url.pathname === "/api/auth/me" && request.method === "GET") {
+    const user = await currentUser(request);
+    sendJson(response, 200, { user: user ? publicUser(user) : null });
+    return true;
+  }
+
+  // Cloud-synced app state: the client mirrors its localStorage snapshot here
+  // so progress follows the account across devices.
+  if (url.pathname === "/api/state" && request.method === "GET") {
+    const user = await currentUser(request);
+    if (!user) {
+      sendJson(response, 401, { error: "Not signed in." });
+      return true;
+    }
+    sendJson(response, 200, { state: user.state ?? null, updatedAt: user.stateUpdatedAt ?? null });
+    return true;
+  }
+
+  if (url.pathname === "/api/state" && request.method === "PUT") {
+    const user = await currentUser(request);
+    if (!user) {
+      sendJson(response, 401, { error: "Not signed in." });
+      return true;
+    }
+    const body = await readJsonBody(request);
+    if (!body || typeof body.state !== "object" || body.state === null) {
+      sendJson(response, 400, { error: "Invalid state payload." });
+      return true;
+    }
+    const users = await loadUsers();
+    const stored = users[user.email];
+    if (stored) {
+      stored.state = body.state;
+      stored.stateUpdatedAt = new Date().toISOString();
+      await saveUsers(users);
+    }
+    sendJson(response, 200, { ok: true, updatedAt: stored?.stateUpdatedAt ?? null });
     return true;
   }
 
