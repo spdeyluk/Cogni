@@ -5,3 +5,4 @@ ios/App/App/public/
 ios/DerivedData/
 .DS_Store
 .env
+/deploy.sh

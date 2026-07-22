@@ -11902,3 +11902,245 @@ kbd {
 
 /* Landing covers the app shell until "Start training". */
 html.landing-active #app-shell { display: none !important; }
+
+/* ===================================================================
+   Mini exercises (2026-07-22): shared runner + five quick games
+   =================================================================== */
+.mini-ex {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  padding: max(18px, env(safe-area-inset-top)) 20px 24px;
+}
+
+.mini-ex-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mini-ex-back {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 2px;
+}
+
+.mini-ex-status {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+.mini-ex-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 12px;
+  width: min(88vw, 460px);
+  aspect-ratio: 1;
+}
+
+.mini-cell {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+}
+
+.mini-cell.has-num { border-color: var(--line-strong); }
+.mini-cell.flash { background: var(--accent); border-color: var(--accent); }
+.mini-cell.correct { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.mini-cell.wrong { background: var(--error); border-color: var(--error); color: #fff; }
+.mini-cell:active { transform: scale(0.96); }
+
+.mini-hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0;
+  text-align: center;
+}
+
+.mini-number {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(2.4rem, 11vw, 4.4rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  text-align: center;
+}
+
+.mini-number.entry { color: var(--accent); min-height: 1.2em; }
+.mini-number.wrong { color: var(--error); }
+
+.mini-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: min(84vw, 320px);
+}
+
+.mini-keypad button {
+  aspect-ratio: 1.6;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mini-keypad button.ok { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.mini-keypad button:active { transform: scale(0.96); }
+
+.mini-word {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 9vw, 3.6rem);
+  font-weight: 500;
+  text-transform: lowercase;
+  color: var(--text);
+}
+
+.mini-word.wrong { color: var(--error); }
+
+.mini-word-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.mini-word-actions button {
+  padding: 15px 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.mini-word-actions button:active { transform: scale(0.97); }
+
+.mini-react {
+  width: min(90vw, 560px);
+  min-height: min(58vh, 460px);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-react.waiting { background: var(--error); }
+.mini-react.go { background: var(--success); }
+.mini-react.early { background: var(--warning); color: var(--bg); }
+.mini-react.result { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+
+.mini-result { text-align: center; max-width: 420px; }
+.mini-result h2 { font-family: var(--font-serif) !important; font-weight: 500 !important; margin: 4px 0 20px; }
+.mini-result-metric { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.mini-result-metric strong { font-size: 2.6rem; font-weight: 600; color: var(--accent); }
+.mini-result-metric span { color: var(--muted); font-size: 0.95rem; }
+.mini-result-sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 22px; }
+.mini-result-actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+.mini-primary { padding: 13px 26px; border: none; border-radius: var(--radius); background: var(--accent) !important; color: var(--on-accent) !important; font-weight: 600; cursor: pointer; }
+.mini-secondary { padding: 13px 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--text); font-weight: 500; cursor: pointer; }
+
+/* Mini exercise: first-time tutorial screen. */
+.mini-intro {
+  max-width: 440px;
+  text-align: center;
+}
+
+.mini-intro h2 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.9rem;
+  margin: 4px 0 22px;
+}
+
+.mini-intro-steps {
+  text-align: left;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mini-intro-steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 14px 16px 14px 52px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.mini-intro-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.mini-intro .mini-primary {
+  padding: 14px 40px;
+  font-size: 1rem;
+}
+
+.mini-howto {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

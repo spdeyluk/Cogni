@@ -137,6 +137,14 @@
       </section>
     </div>
 
+    <div class="mini-ex" id="mini-ex" hidden>
+      <div class="mini-ex-top">
+        <button class="mini-ex-back" id="mini-ex-back" type="button" aria-label="Back to exercises">← Exercises</button>
+        <span class="mini-ex-status" id="mini-ex-status"></span>
+      </div>
+      <div class="mini-ex-stage" id="mini-ex-stage" aria-live="polite"></div>
+    </div>
+
     <main class="app-shell home-open" id="app-shell">
       <aside class="app-sidebar" aria-label="Primary navigation">
         <div class="sidebar-brand">
@@ -245,6 +253,51 @@
             <p>Respond quickly to go cues, then withhold your response when a stop signal appears.</p>
           </div>
           <button id="open-ict" type="button">Open</button>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="gridmemory" tabindex="0">
+          <div>
+            <p class="exercise-type">Spatial Memory</p>
+            <h2>Grid Memory</h2>
+            <p>A pattern of tiles flashes on the grid — reproduce it from memory. It grows each level.</p>
+          </div>
+          <button type="button">Open</button>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="seqrecall" tabindex="0">
+          <div>
+            <p class="exercise-type">Spatial Memory</p>
+            <h2>Sequence Memory</h2>
+            <p>Numbers appear across the board, then vanish — tap the squares in order from memory.</p>
+          </div>
+          <button type="button">Open</button>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="numrecall" tabindex="0">
+          <div>
+            <p class="exercise-type">Working Memory</p>
+            <h2>Number Recall</h2>
+            <p>A number flashes, then you type it back. One more digit is added every round.</p>
+          </div>
+          <button type="button">Open</button>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="verbal" tabindex="0">
+          <div>
+            <p class="exercise-type">Verbal Memory</p>
+            <h2>Word Memory</h2>
+            <p>Words appear one by one — mark each as new or already seen. The list keeps growing.</p>
+          </div>
+          <button type="button">Open</button>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="reaction" tabindex="0">
+          <div>
+            <p class="exercise-type">Processing Speed</p>
+            <h2>Reaction Time</h2>
+            <p>Wait for the screen to turn green, then tap as fast as you can. Five trials, averaged.</p>
+          </div>
+          <button type="button">Open</button>
         </article>
 
         <button class="routines-tile" id="open-routines" type="button">

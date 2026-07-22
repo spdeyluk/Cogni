@@ -1052,6 +1052,19 @@ elements.exerciseCards.forEach((card) => {
     openExerciseById(card.dataset.openExercise);
   });
 });
+document.querySelectorAll("[data-open-mini]").forEach((card) => {
+  const open = () => openMiniExercise(card.dataset.openMini);
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("button") && !event.target.closest("[data-open-mini] button")) return;
+    open();
+  });
+  card.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    open();
+  });
+});
+document.querySelector("#mini-ex-back")?.addEventListener("click", closeMiniExercise);
 elements.tabExercises.addEventListener("click", showExerciseHub);
 elements.tabStatistics?.addEventListener("click", showStatistics);
 elements.friendsPage?.addEventListener("click", handleFriendsPageClick);
@@ -1909,6 +1922,596 @@ function openExerciseById(exerciseId) {
   // the pro web build uses the full inline settings page.
   if (!activeRoutineRun && cogniUiMode === "play") openExerciseSheet(exerciseId);
 }
+
+// ---------------------------------------------------------------------------
+// Mini exercises: five self-contained quick games that share one runner
+// overlay (#mini-ex). Each game's start(ctx) drives #mini-ex-stage and calls
+// ctx.finish(result) when done; results record through recordExerciseProgress
+// so they count toward stats, streak, coins, and the calendar — same as the
+// full exercises. The mobile app runs this same bundle, so both platforms get
+// them from one implementation.
+// ---------------------------------------------------------------------------
+let miniActive = null;
+
+function miniTimers() {
+  const handles = [];
+  return {
+    after: (fn, ms) => { const t = window.setTimeout(fn, ms); handles.push(t); return t; },
+    clearAll: () => { handles.forEach(window.clearTimeout); handles.length = 0; }
+  };
+}
+
+const miniSeenKey = "cogni.miniSeen.v1";
+
+const miniIntros = {
+  gridmemory: {
+    tag: "Spatial memory",
+    title: "Grid Memory",
+    steps: [
+      "A pattern of tiles lights up on the grid.",
+      "When it fades, tap the tiles that were lit — in any order.",
+      "Clear it and the pattern grows by one tile. Three misses ends the run."
+    ]
+  },
+  seqrecall: {
+    tag: "Spatial memory",
+    title: "Sequence Memory",
+    steps: [
+      "Numbers appear in squares across the board.",
+      "Tap the squares in order, starting from 1.",
+      "After your first tap the numbers vanish — recall their spots from memory. It grows each level."
+    ]
+  },
+  numrecall: {
+    tag: "Working memory",
+    title: "Number Recall",
+    steps: [
+      "A number flashes on the screen, then disappears.",
+      "Type it back on the keypad and press ✓.",
+      "Every correct answer adds one more digit."
+    ]
+  },
+  verbal: {
+    tag: "Verbal memory",
+    title: "Word Memory",
+    steps: [
+      "A word appears — decide whether you've already seen it this session.",
+      "Tap SEEN if it's a repeat, NEW if it's the first time.",
+      "The word list keeps growing. Three mistakes ends the run."
+    ]
+  },
+  reaction: {
+    tag: "Processing speed",
+    title: "Reaction Time",
+    steps: [
+      "The screen starts red — wait for it.",
+      "The instant it turns green, tap as fast as you can.",
+      "Tap too early and the trial restarts. Five trials, then your average."
+    ]
+  }
+};
+
+function miniSeen(id) {
+  try {
+    return (JSON.parse(localStorage.getItem(miniSeenKey)) || []).includes(id);
+  } catch {
+    return false;
+  }
+}
+
+function markMiniSeen(id) {
+  try {
+    const set = new Set(JSON.parse(localStorage.getItem(miniSeenKey)) || []);
+    set.add(id);
+    localStorage.setItem(miniSeenKey, JSON.stringify([...set]));
+  } catch {
+    // Best effort; the tutorial just shows again next time.
+  }
+}
+
+function openMiniExercise(id) {
+  if (!requireAuth("Create a free account to start training.")) return;
+  if (!miniGames[id]) return;
+  const overlay = document.querySelector("#mini-ex");
+  if (overlay) overlay.hidden = false;
+  miniActive = null;
+  // First time on this game (or via the "How to play" replay) shows a tutorial.
+  if (!miniSeen(id)) renderMiniIntro(id);
+  else runMiniGame(id);
+}
+
+function renderMiniIntro(id) {
+  const info = miniIntros[id];
+  const stage = document.querySelector("#mini-ex-stage");
+  document.querySelector("#mini-ex-status").textContent = "How to play";
+  stage.innerHTML = `
+    <div class="mini-intro">
+      <p class="exercise-type">${escapeHtml(info.tag)}</p>
+      <h2>${escapeHtml(info.title)}</h2>
+      <ol class="mini-intro-steps">${info.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+      <button class="mini-primary" type="button" data-mini-begin>Start</button>
+    </div>`;
+  stage.querySelector("[data-mini-begin]").addEventListener("click", () => {
+    markMiniSeen(id);
+    runMiniGame(id);
+  });
+}
+
+function runMiniGame(id) {
+  const game = miniGames[id];
+  if (miniActive?.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
+  const overlay = document.querySelector("#mini-ex");
+  if (overlay) overlay.hidden = false;
+  const stage = document.querySelector("#mini-ex-stage");
+  const statusEl = document.querySelector("#mini-ex-status");
+  stage.innerHTML = "";
+  statusEl.textContent = game.label;
+  miniActive = { id, startedAt: Date.now(), cleanup: null, ended: false };
+  const ctx = {
+    stage,
+    setStatus: (text) => { statusEl.textContent = text; },
+    finish: (result) => {
+      if (!miniActive || miniActive.ended) return;
+      miniActive.ended = true;
+      finishMiniExercise(id, result);
+    }
+  };
+  const cleanup = game.start(ctx);
+  if (miniActive) miniActive.cleanup = typeof cleanup === "function" ? cleanup : null;
+}
+
+function closeMiniExercise() {
+  if (miniActive?.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
+  miniActive = null;
+  const overlay = document.querySelector("#mini-ex");
+  if (overlay) overlay.hidden = true;
+  showExerciseHub();
+}
+
+function finishMiniExercise(id, result) {
+  if (miniActive?.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
+  const durationMs = Date.now() - (miniActive?.startedAt ?? Date.now());
+  const correct = result.correct ?? 0;
+  const incorrect = result.incorrect ?? 0;
+  const accuracy = result.accuracy != null
+    ? result.accuracy
+    : (correct + incorrect > 0 ? correct / (correct + incorrect) : 0);
+  try {
+    recordExerciseProgress(id, {
+      status: "completed",
+      durationMs,
+      completedTrials: result.completedTrials ?? (correct + incorrect),
+      correct,
+      incorrect,
+      accuracy,
+      avgAnswerSpeedMs: result.avgAnswerSpeedMs ?? null,
+      difficultyScore: result.difficultyScore ?? 1,
+      settings: {},
+      trialData: []
+    });
+  } catch (error) {
+    console.error("[mini] failed to record session", error);
+  }
+  renderMiniResult(id, result);
+}
+
+function renderMiniResult(id, result) {
+  const game = miniGames[id];
+  const stage = document.querySelector("#mini-ex-stage");
+  document.querySelector("#mini-ex-status").textContent = "Session complete";
+  stage.innerHTML = `
+    <div class="mini-result">
+      <p class="exercise-type">${game.label}</p>
+      <h2>${escapeHtml(result.headline ?? "Session complete")}</h2>
+      <div class="mini-result-metric"><strong>${escapeHtml(String(result.metricValue))}</strong><span>${escapeHtml(result.metricLabel ?? "")}</span></div>
+      ${result.sub ? `<p class="mini-result-sub">${escapeHtml(result.sub)}</p>` : ""}
+      <div class="mini-result-actions">
+        <button class="mini-primary" type="button" data-mini-replay>Play again</button>
+        <button class="mini-secondary" type="button" data-mini-done>Done</button>
+      </div>
+      <button class="mini-howto" type="button" data-mini-howto>How to play</button>
+    </div>`;
+  stage.querySelector("[data-mini-replay]").addEventListener("click", () => runMiniGame(id));
+  stage.querySelector("[data-mini-done]").addEventListener("click", closeMiniExercise);
+  stage.querySelector("[data-mini-howto]").addEventListener("click", () => renderMiniIntro(id));
+}
+
+function miniShuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const miniWordPool = [
+  "river", "candle", "planet", "garden", "pencil", "silver", "market", "window", "forest", "castle",
+  "bridge", "pocket", "lemon", "shadow", "anchor", "velvet", "meadow", "copper", "ribbon", "harbor",
+  "cactus", "pillow", "signal", "walnut", "puzzle", "marble", "cabin", "orbit", "thread", "glacier",
+  "ember", "quartz", "saddle", "tunnel", "beacon", "cricket", "lantern", "pebble", "compass", "maple",
+  "canyon", "feather", "kettle", "meteor", "nectar", "prairie", "raven", "sable", "timber", "violet",
+  "willow", "zephyr", "acorn", "basket", "clover", "dagger", "engine", "fabric", "gravel", "hollow"
+];
+
+const miniGames = {
+  gridmemory: {
+    label: "Grid Memory",
+    start(ctx) {
+      const timers = miniTimers();
+      const size = 5;
+      let level = 1;
+      let lives = 3;
+      let accepting = false;
+      let pattern = new Set();
+      let picked = new Set();
+
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+
+      function board(hint) {
+        status();
+        ctx.stage.innerHTML = `
+          <div class="mini-grid" style="--n:${size}">
+            ${Array.from({ length: size * size }, (_, i) => `<button class="mini-cell" data-i="${i}" type="button"></button>`).join("")}
+          </div>
+          <p class="mini-hint" id="mini-hint">${hint}</p>`;
+        ctx.stage.querySelectorAll(".mini-cell").forEach((cell) => {
+          cell.addEventListener("click", () => onPick(Number(cell.dataset.i), cell));
+        });
+      }
+
+      function flash() {
+        accepting = false;
+        picked = new Set();
+        const count = Math.min(size * size - 1, level + 2);
+        pattern = new Set();
+        while (pattern.size < count) pattern.add(Math.floor(Math.random() * size * size));
+        board("Watch the pattern…");
+        const cells = ctx.stage.querySelectorAll(".mini-cell");
+        pattern.forEach((i) => cells[i].classList.add("flash"));
+        timers.after(() => {
+          cells.forEach((c) => c.classList.remove("flash"));
+          accepting = true;
+          const hint = ctx.stage.querySelector("#mini-hint");
+          if (hint) hint.textContent = "Your turn — tap the tiles.";
+        }, 800 + count * 280);
+      }
+
+      function onPick(i, cell) {
+        if (!accepting || picked.has(i)) return;
+        if (pattern.has(i)) {
+          picked.add(i);
+          cell.classList.add("correct");
+          if (picked.size === pattern.size) {
+            accepting = false;
+            level += 1;
+            timers.after(flash, 600);
+          }
+        } else {
+          cell.classList.add("wrong");
+          lives -= 1;
+          accepting = false;
+          if (lives <= 0) timers.after(() => ctx.finish(result()), 700);
+          else timers.after(flash, 850);
+        }
+      }
+
+      function result() {
+        return {
+          metricValue: `Level ${level}`,
+          metricLabel: "reached",
+          headline: level >= 6 ? "Sharp memory!" : "Session complete",
+          correct: level - 1,
+          incorrect: 3 - lives,
+          accuracy: (level - 1) / Math.max(1, (level - 1) + (3 - lives)),
+          difficultyScore: Math.min(1, level / 7),
+          completedTrials: (level - 1) + (3 - lives)
+        };
+      }
+
+      timers.after(flash, 400);
+      return timers.clearAll;
+    }
+  },
+
+  seqrecall: {
+    label: "Sequence Memory",
+    start(ctx) {
+      const timers = miniTimers();
+      const size = 5;
+      let level = 1;
+      let lives = 3;
+      let order = [];
+      let next = 0;
+      let accepting = false;
+
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+
+      function board(showNumbers) {
+        status();
+        ctx.stage.innerHTML = `
+          <div class="mini-grid" style="--n:${size}">
+            ${Array.from({ length: size * size }, (_, i) => {
+              const pos = order.indexOf(i);
+              const label = (showNumbers && pos >= 0) ? String(pos + 1) : "";
+              return `<button class="mini-cell${pos >= 0 ? " has-num" : ""}" data-i="${i}" type="button">${label}</button>`;
+            }).join("")}
+          </div>
+          <p class="mini-hint">Tap the squares in order — 1, 2, 3…</p>`;
+        ctx.stage.querySelectorAll(".mini-cell").forEach((cell) => {
+          cell.addEventListener("click", () => onPick(Number(cell.dataset.i), cell));
+        });
+      }
+
+      function setup() {
+        const count = Math.min(size * size, level + 2);
+        const set = new Set();
+        while (set.size < count) set.add(Math.floor(Math.random() * size * size));
+        order = [...set];
+        next = 0;
+        accepting = true;
+        board(true);
+      }
+
+      function onPick(i, cell) {
+        if (!accepting) return;
+        if (i === order[next]) {
+          if (next === 0) {
+            // First tap hides the rest — recall the positions from memory.
+            ctx.stage.querySelectorAll(".mini-cell").forEach((c) => {
+              if (Number(c.dataset.i) !== i) c.textContent = "";
+            });
+          }
+          cell.classList.add("correct");
+          cell.textContent = String(next + 1);
+          next += 1;
+          if (next === order.length) {
+            accepting = false;
+            level += 1;
+            timers.after(setup, 600);
+          }
+        } else {
+          cell.classList.add("wrong");
+          lives -= 1;
+          accepting = false;
+          if (lives <= 0) timers.after(() => ctx.finish(result()), 700);
+          else timers.after(setup, 850);
+        }
+      }
+
+      function result() {
+        return {
+          metricValue: `Level ${level}`,
+          metricLabel: "reached",
+          headline: level >= 6 ? "Great recall!" : "Session complete",
+          correct: level - 1,
+          incorrect: 3 - lives,
+          accuracy: (level - 1) / Math.max(1, (level - 1) + (3 - lives)),
+          difficultyScore: Math.min(1, level / 7),
+          completedTrials: (level - 1) + (3 - lives)
+        };
+      }
+
+      setup();
+      return timers.clearAll;
+    }
+  },
+
+  numrecall: {
+    label: "Number Recall",
+    start(ctx) {
+      const timers = miniTimers();
+      let level = 1;
+      let lives = 3;
+      let number = "";
+      let entry = "";
+
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+
+      function newNumber() {
+        const len = level + 2;
+        number = Array.from({ length: len }, () => Math.floor(Math.random() * 10)).join("");
+        entry = "";
+        show();
+      }
+
+      function show() {
+        status();
+        ctx.stage.innerHTML = `<div class="mini-number">${number}</div><p class="mini-hint">Memorize it…</p>`;
+        timers.after(prompt, 1100 + number.length * 350);
+      }
+
+      function prompt() {
+        entry = "";
+        ctx.stage.innerHTML = `
+          <div class="mini-number entry" id="mini-entry">–</div>
+          <div class="mini-keypad">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-k="${n}" type="button">${n}</button>`).join("")}
+            <button data-k="del" type="button">⌫</button>
+            <button data-k="0" type="button">0</button>
+            <button data-k="ok" class="ok" type="button">✓</button>
+          </div>`;
+        const entryEl = ctx.stage.querySelector("#mini-entry");
+        ctx.stage.querySelectorAll(".mini-keypad button").forEach((b) => {
+          b.addEventListener("click", () => {
+            const k = b.dataset.k;
+            if (k === "del") entry = entry.slice(0, -1);
+            else if (k === "ok") { submit(); return; }
+            else if (entry.length < number.length) entry += k;
+            entryEl.textContent = entry || "–";
+          });
+        });
+      }
+
+      function submit() {
+        if (entry === number) {
+          level += 1;
+          timers.after(newNumber, 400);
+        } else {
+          lives -= 1;
+          if (lives <= 0) { ctx.finish(result()); return; }
+          ctx.stage.innerHTML = `<div class="mini-number wrong">${number}</div><p class="mini-hint">It was ${number}</p>`;
+          timers.after(newNumber, 1100);
+        }
+      }
+
+      function result() {
+        return {
+          metricValue: `${level + 1} digits`,
+          metricLabel: "remembered",
+          headline: level >= 6 ? "Impressive span!" : "Session complete",
+          correct: level - 1,
+          incorrect: 3 - lives,
+          accuracy: (level - 1) / Math.max(1, (level - 1) + (3 - lives)),
+          difficultyScore: Math.min(1, level / 8),
+          completedTrials: (level - 1) + (3 - lives)
+        };
+      }
+
+      newNumber();
+      return timers.clearAll;
+    }
+  },
+
+  verbal: {
+    label: "Word Memory",
+    start(ctx) {
+      const timers = miniTimers();
+      const available = miniShuffle([...miniWordPool]);
+      const seen = [];
+      const seenSet = new Set();
+      let lives = 3;
+      let score = 0;
+
+      const status = () => ctx.setStatus(`Score ${score} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+
+      function nextWord() {
+        const canNew = available.length > 0;
+        const canSeen = seen.length > 0;
+        let word;
+        let isSeen;
+        if (canNew && (!canSeen || Math.random() < 0.55)) {
+          word = available.pop();
+          isSeen = false;
+        } else {
+          word = seen[Math.floor(Math.random() * seen.length)];
+          isSeen = true;
+        }
+        show(word, isSeen);
+      }
+
+      function show(word, isSeen) {
+        status();
+        ctx.stage.innerHTML = `
+          <div class="mini-word">${escapeHtml(word)}</div>
+          <div class="mini-word-actions">
+            <button data-a="seen" type="button">SEEN</button>
+            <button data-a="new" type="button">NEW</button>
+          </div>`;
+        ctx.stage.querySelectorAll(".mini-word-actions button").forEach((b) => {
+          b.addEventListener("click", () => answer(b.dataset.a === "seen", word, isSeen));
+        });
+      }
+
+      function answer(saidSeen, word, isSeen) {
+        const correct = saidSeen === isSeen;
+        if (!isSeen && !seenSet.has(word)) { seen.push(word); seenSet.add(word); }
+        if (correct) {
+          score += 1;
+          nextWord();
+        } else {
+          lives -= 1;
+          if (lives <= 0) { ctx.finish(result()); return; }
+          const wordEl = ctx.stage.querySelector(".mini-word");
+          if (wordEl) wordEl.classList.add("wrong");
+          timers.after(nextWord, 650);
+        }
+      }
+
+      function result() {
+        return {
+          metricValue: `${score}`,
+          metricLabel: "words correct",
+          headline: score >= 20 ? "Great memory!" : "Session complete",
+          correct: score,
+          incorrect: 3 - lives,
+          accuracy: score / Math.max(1, score + (3 - lives)),
+          difficultyScore: 0.5,
+          completedTrials: score + (3 - lives)
+        };
+      }
+
+      nextWord();
+      return timers.clearAll;
+    }
+  },
+
+  reaction: {
+    label: "Reaction Time",
+    start(ctx) {
+      const timers = miniTimers();
+      const trials = 5;
+      let done = 0;
+      const times = [];
+      let state = "idle";
+      let greenAt = 0;
+
+      function waitTrial() {
+        state = "waiting";
+        ctx.setStatus(`Trial ${done + 1} of ${trials}`);
+        ctx.stage.innerHTML = `<button class="mini-react waiting" id="mini-react" type="button"><span>Wait for green…</span></button>`;
+        const el = ctx.stage.querySelector("#mini-react");
+        el.addEventListener("click", () => onClick(el));
+        timers.after(() => {
+          if (state !== "waiting") return;
+          state = "go";
+          greenAt = performance.now();
+          el.classList.remove("waiting");
+          el.classList.add("go");
+          el.querySelector("span").textContent = "Tap!";
+        }, 1200 + Math.random() * 2800);
+      }
+
+      function onClick(el) {
+        if (state === "waiting") {
+          state = "early";
+          el.className = "mini-react early";
+          el.querySelector("span").textContent = "Too soon — tap to retry";
+          return;
+        }
+        if (state === "early") { waitTrial(); return; }
+        if (state === "go") {
+          const ms = Math.round(performance.now() - greenAt);
+          times.push(ms);
+          done += 1;
+          state = "result";
+          el.className = "mini-react result";
+          el.querySelector("span").textContent = `${ms} ms`;
+          if (done >= trials) timers.after(finish, 900);
+          else timers.after(waitTrial, 900);
+        }
+      }
+
+      function finish() {
+        const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        ctx.finish({
+          metricValue: `${avg} ms`,
+          metricLabel: "average reaction",
+          headline: avg < 300 ? "Lightning fast!" : "Session complete",
+          sub: `Trials: ${times.join(", ")} ms`,
+          correct: trials,
+          incorrect: 0,
+          accuracy: 1,
+          avgAnswerSpeedMs: avg,
+          difficultyScore: 0.5,
+          completedTrials: trials
+        });
+      }
+
+      waitTrial();
+      return timers.clearAll;
+    }
+  }
+};
 
 const exerciseSheetInfo = {
   nback: { type: "Working Memory", label: "N-Back", controls: ".nback-workbench > .controls" },
@@ -2966,13 +3569,19 @@ function requireAuth(message) {
   return false;
 }
 
+// Account-synced keys: the app's own data lives under both "cogni." and the
+// legacy "brainer." prefix (exercise progress). Both must follow the account.
+function isSyncKey(key) {
+  return typeof key === "string"
+    && (key.startsWith("cogni.") || key.startsWith("brainer."))
+    && !authSyncExclude.has(key);
+}
+
 function collectSyncState() {
   const out = {};
   for (let i = 0; i < localStorage.length; i += 1) {
     const key = localStorage.key(i);
-    if (key && key.startsWith("cogni.") && !authSyncExclude.has(key)) {
-      out[key] = localStorage.getItem(key);
-    }
+    if (isSyncKey(key)) out[key] = localStorage.getItem(key);
   }
   return out;
 }
@@ -2981,7 +3590,7 @@ function applySyncState(state) {
   const stale = [];
   for (let i = 0; i < localStorage.length; i += 1) {
     const key = localStorage.key(i);
-    if (key && key.startsWith("cogni.") && !authSyncExclude.has(key)) stale.push(key);
+    if (isSyncKey(key)) stale.push(key);
   }
   stale.forEach((key) => localStorage.removeItem(key));
   for (const [key, value] of Object.entries(state || {})) {
@@ -3012,9 +3621,7 @@ async function pushSyncState() {
 const nativeSetItem = Storage.prototype.setItem;
 Storage.prototype.setItem = function setItemWithSyncFlag(key, value) {
   nativeSetItem.call(this, key, value);
-  if (authUser && typeof key === "string" && key.startsWith("cogni.") && !authSyncExclude.has(key)) {
-    authSyncDirty = true;
-  }
+  if (authUser && isSyncKey(key)) authSyncDirty = true;
 };
 
 function startSyncLoop() {
