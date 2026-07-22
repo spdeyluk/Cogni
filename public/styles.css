@@ -11036,7 +11036,7 @@ dialog .screen-time-apps-row {
   --line: #DBDEE3;
   --line-strong: #C7CBD2;
   --fill-subtle: rgba(34, 37, 41, 0.05);
-  --accent: #47716A;
+  --accent: #4F5BD5;
   /* muted darkened to #686E76 so secondary text clears WCAG AA on --bg */
   --on-accent: #FAFBFC;
   --accent-2: #4E6E88;
@@ -11079,7 +11079,7 @@ dialog .screen-time-apps-row {
     --line: #353A41;
     --line-strong: #454B54;
     --fill-subtle: rgba(230, 233, 237, 0.06);
-    --accent: #7CAA9E;
+    --accent: #8C97F7;
     --on-accent: #191B1F;
     --accent-2: #83A3C0;
     --success: #7FA89A;
