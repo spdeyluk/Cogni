@@ -11360,3 +11360,240 @@ kbd {
 .iq-standalone #cat-result-back {
   display: none !important;
 }
+
+/* ===================================================================
+   Accounts: login/signup gate (2026-07-22)
+   =================================================================== */
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  padding: 34px 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.auth-brand img {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+}
+
+.auth-brand strong {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.15rem;
+}
+
+.auth-card h1 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.7rem;
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: var(--muted);
+  margin: 0 0 26px;
+  font-size: 0.94rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.auth-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.auth-forgot {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.auth-password {
+  position: relative;
+  display: block;
+}
+
+.auth-password input {
+  padding-right: 46px;
+}
+
+.auth-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.auth-eye svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.auth-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.auth-submit {
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-s);
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.96rem;
+}
+
+.auth-google svg {
+  width: 19px;
+  height: 19px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin: 24px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.auth-switch-button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Settings drawer account block. */
+.settings-account {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-account-email {
+  margin: 0 0 12px;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+.settings-signout {
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--error);
+  font-weight: 500;
+  cursor: pointer;
+}

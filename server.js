@@ -225,6 +225,28 @@ async function currentUser(request) {
   return Object.values(users).find((user) => user.id === userId) || null;
 }
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+
+// The OAuth redirect URI must match what's registered in Google Cloud. Prefer
+// an explicit APP_URL; otherwise reconstruct the public origin from headers.
+function googleRedirectUri(request) {
+  const base = process.env.APP_URL
+    || `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
+  return `${base.replace(/\/$/, "")}/api/auth/google/callback`;
+}
+
+function decodeJwtPayload(jwt) {
+  const payload = jwt.split(".")[1];
+  const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+  return JSON.parse(json);
+}
+
+function redirect(response, location) {
+  response.writeHead(302, { Location: location, ...noCacheHeaders });
+  response.end();
+}
+
 async function loadLeads() {
   try {
     const leads = JSON.parse(await readFile(leadsPath, "utf8"));
@@ -305,6 +327,77 @@ async function handleApiRequest(request, response, url) {
   if (url.pathname === "/api/auth/logout" && request.method === "POST") {
     clearSessionCookie(response);
     sendJson(response, 200, { ok: true });
+    return true;
+  }
+
+  // Google sign-in: /api/auth/google -> Google -> /api/auth/google/callback.
+  if (url.pathname === "/api/auth/google" && request.method === "GET") {
+    if (!googleClientId || !googleClientSecret) {
+      redirect(response, "/?autherror=google_unconfigured");
+      return true;
+    }
+    const state = randomBytes(16).toString("hex");
+    response.setHeader("Set-Cookie", `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`);
+    const params = new URLSearchParams({
+      client_id: googleClientId,
+      redirect_uri: googleRedirectUri(request),
+      response_type: "code",
+      scope: "openid email profile",
+      state,
+      prompt: "select_account"
+    });
+    redirect(response, `https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+    return true;
+  }
+
+  if (url.pathname === "/api/auth/google/callback" && request.method === "GET") {
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const savedState = parseCookies(request).google_oauth_state;
+    if (!code || !state || state !== savedState) {
+      redirect(response, "/?autherror=google_failed");
+      return true;
+    }
+    try {
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: googleClientId,
+          client_secret: googleClientSecret,
+          redirect_uri: googleRedirectUri(request),
+          grant_type: "authorization_code"
+        })
+      });
+      const tokens = await tokenRes.json();
+      if (!tokens.id_token) throw new Error("no id_token");
+      const claims = decodeJwtPayload(tokens.id_token);
+      const email = String(claims.email ?? "").trim().toLowerCase();
+      const googleId = String(claims.sub ?? "");
+      if (!email || !googleId) throw new Error("no email");
+      const users = await loadUsers();
+      let user = Object.values(users).find((candidate) => candidate.googleId === googleId) || users[email];
+      if (!user) {
+        user = {
+          id: `u-${Date.now()}-${randomBytes(6).toString("hex")}`,
+          email,
+          passwordHash: null,
+          googleId,
+          createdAt: new Date().toISOString(),
+          state: null,
+          stateUpdatedAt: null
+        };
+        users[email] = user;
+      } else if (!user.googleId) {
+        user.googleId = googleId; // link Google to an existing password account
+      }
+      await saveUsers(users);
+      setSessionCookie(response, signSession(user.id));
+      redirect(response, "/");
+    } catch {
+      redirect(response, "/?autherror=google_failed");
+    }
     return true;
   }
 

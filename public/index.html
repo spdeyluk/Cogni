@@ -7,6 +7,40 @@
     <link rel="stylesheet" href="styles.css?v=20260709-sheetpolish">
   </head>
   <body>
+    <div class="auth-gate" id="auth-gate" hidden>
+      <div class="auth-card">
+        <div class="auth-brand">
+          <img src="assets/brand/logo-white.png" alt="Cogni">
+          <strong>Cogni</strong>
+        </div>
+        <h1 id="auth-title">Welcome back</h1>
+        <p class="auth-subtitle" id="auth-subtitle">Sign in to continue your training</p>
+        <form class="auth-form" id="auth-form" novalidate>
+          <label class="auth-field">
+            <span>Email</span>
+            <input name="email" type="email" autocomplete="email" placeholder="you@email.com" required>
+          </label>
+          <label class="auth-field">
+            <span class="auth-field-row">Password <button class="auth-forgot" id="auth-forgot" type="button">Forgot password?</button></span>
+            <span class="auth-password">
+              <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="8" required>
+              <button class="auth-eye" id="auth-eye" type="button" aria-label="Show password">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span>
+          </label>
+          <p class="auth-error" id="auth-error" role="alert" hidden></p>
+          <button class="auth-submit" id="auth-submit" type="submit">Sign in</button>
+        </form>
+        <div class="auth-divider" aria-hidden="true"><span>or</span></div>
+        <a class="auth-google" id="auth-google" href="/api/auth/google">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.9 2.9 14.7 2 12 2 6.9 2 2.8 6.1 2.8 12S6.9 22 12 22c5.5 0 9.1-3.9 9.1-9.3 0-.6-.1-1.1-.2-1.5H12z"/></svg>
+          Continue with Google
+        </a>
+        <p class="auth-switch"><span id="auth-switch-text">Don't have an account?</span> <button class="auth-switch-button" id="auth-switch" type="button">Sign up</button></p>
+      </div>
+    </div>
+
     <main class="app-shell home-open" id="app-shell">
       <aside class="app-sidebar" aria-label="Primary navigation">
         <div class="sidebar-brand">
@@ -1633,6 +1667,11 @@
             <span>User Agreement</span>
           </a>
         </nav>
+        <div class="settings-account" id="settings-account" hidden>
+          <p class="settings-drawer-group-label">Account</p>
+          <p class="settings-account-email" id="settings-account-email"></p>
+          <button class="settings-signout" id="settings-signout" type="button">Sign out</button>
+        </div>
         <p class="settings-drawer-version">Cogni 0.1.0</p>
       </div>
     </dialog>

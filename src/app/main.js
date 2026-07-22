@@ -876,6 +876,7 @@ if (iqStandalone) {
 renderProfileOnboarding();
 syncSocialProfileQuietly();
 installNativeNavigationBridge();
+initAuth();
 window.addEventListener("load", () => window.requestAnimationFrame(updateSegmentedControls));
 window.addEventListener("resize", () => window.requestAnimationFrame(updateSegmentedControls));
 
@@ -2895,6 +2896,245 @@ function handleTopActionClick() {
 function openSettingsDrawer() {
   const drawer = document.querySelector("#settings-drawer");
   if (drawer && typeof drawer.showModal === "function" && !drawer.open) drawer.showModal();
+}
+
+// ---------------------------------------------------------------------------
+// Accounts: the web training app (not the /iq funnel, not mobile) is gated
+// behind sign-in. A signed-in user's cogni.* localStorage is mirrored to the
+// server so progress follows the account across devices.
+// ---------------------------------------------------------------------------
+let authUser = null;
+let authMode = "login";
+let authSyncDirty = false;
+let authSyncing = false;
+const authSyncedAtKey = "cogni.__syncedAt";
+const authSyncExclude = new Set([
+  "cogni.localDataResetToken",
+  "cogni.demoDataSeedToken",
+  "cogni.uiMode.v1",
+  "cogni.lead.v1",
+  "cogni.iqRevealPending.v1",
+  authSyncedAtKey
+]);
+
+function authIsGated() {
+  return cogniUiMode === "pro" && !iqStandalone;
+}
+
+function collectSyncState() {
+  const out = {};
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("cogni.") && !authSyncExclude.has(key)) {
+      out[key] = localStorage.getItem(key);
+    }
+  }
+  return out;
+}
+
+function applySyncState(state) {
+  const stale = [];
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("cogni.") && !authSyncExclude.has(key)) stale.push(key);
+  }
+  stale.forEach((key) => localStorage.removeItem(key));
+  for (const [key, value] of Object.entries(state || {})) {
+    if (typeof value === "string") localStorage.setItem(key, value);
+  }
+}
+
+async function pushSyncState() {
+  if (!authUser || authSyncing) return;
+  authSyncing = true;
+  authSyncDirty = false;
+  try {
+    const res = await fetch("/api/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: collectSyncState() })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data?.updatedAt) localStorage.setItem(authSyncedAtKey, data.updatedAt);
+  } catch {
+    authSyncDirty = true; // retry on the next tick
+  } finally {
+    authSyncing = false;
+  }
+}
+
+// Flag a sync whenever app state changes, by wrapping localStorage writes.
+const nativeSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function setItemWithSyncFlag(key, value) {
+  nativeSetItem.call(this, key, value);
+  if (authUser && typeof key === "string" && key.startsWith("cogni.") && !authSyncExclude.has(key)) {
+    authSyncDirty = true;
+  }
+};
+
+function startSyncLoop() {
+  window.setInterval(() => { if (authSyncDirty) pushSyncState(); }, 6000);
+  document.addEventListener("visibilitychange", () => { if (document.hidden && authSyncDirty) pushSyncState(); });
+  window.addEventListener("pagehide", () => {
+    if (authUser && authSyncDirty) {
+      navigator.sendBeacon?.("/api/state", new Blob(
+        [JSON.stringify({ state: collectSyncState() })],
+        { type: "application/json" }
+      ));
+    }
+  });
+}
+
+async function initAuth() {
+  if (!authIsGated()) return;
+  let user = null;
+  try {
+    const res = await fetch("/api/auth/me");
+    user = (await res.json())?.user ?? null;
+  } catch {
+    // Server unreachable: fail open so a local/offline session still works.
+    return;
+  }
+  wireAuthGate();
+  if (!user) {
+    showAuthGate("login");
+    const authError = new URLSearchParams(window.location.search).get("autherror");
+    if (authError === "google_unconfigured") {
+      setAuthError("Google sign-in isn't set up yet — use email and password for now.");
+    } else if (authError === "google_failed") {
+      setAuthError("Google sign-in didn't complete. Please try again.");
+    }
+    return;
+  }
+  authUser = user;
+  // Pull the account's state if another device wrote a newer snapshot.
+  try {
+    const res = await fetch("/api/state");
+    const data = await res.json();
+    const localSyncedAt = localStorage.getItem(authSyncedAtKey);
+    if (data?.state && data.updatedAt && data.updatedAt !== localSyncedAt) {
+      applySyncState(data.state);
+      localStorage.setItem(authSyncedAtKey, data.updatedAt);
+      window.location.reload();
+      return;
+    }
+  } catch {
+    // Keep local state if the pull fails.
+  }
+  onAuthenticated();
+}
+
+function onAuthenticated() {
+  hideAuthGate();
+  const emailNode = document.querySelector("#settings-account-email");
+  const accountBlock = document.querySelector("#settings-account");
+  if (emailNode) emailNode.textContent = authUser.email;
+  if (accountBlock) accountBlock.hidden = false;
+  startSyncLoop();
+}
+
+function showAuthGate(mode) {
+  authMode = mode;
+  const gate = document.querySelector("#auth-gate");
+  if (!gate) return;
+  gate.hidden = false;
+  const isSignup = mode === "signup";
+  document.querySelector("#auth-title").textContent = isSignup ? "Create your account" : "Welcome back";
+  document.querySelector("#auth-subtitle").textContent = isSignup
+    ? "Start training and save your progress"
+    : "Sign in to continue your training";
+  document.querySelector("#auth-submit").textContent = isSignup ? "Create account" : "Sign in";
+  document.querySelector("#auth-switch-text").textContent = isSignup
+    ? "Already have an account?"
+    : "Don't have an account?";
+  document.querySelector("#auth-switch").textContent = isSignup ? "Sign in" : "Sign up";
+  document.querySelector("#auth-forgot").hidden = isSignup;
+  const pw = document.querySelector("#auth-form")?.password;
+  if (pw) pw.autocomplete = isSignup ? "new-password" : "current-password";
+  setAuthError("");
+}
+
+function hideAuthGate() {
+  const gate = document.querySelector("#auth-gate");
+  if (gate) gate.hidden = true;
+}
+
+function setAuthError(message) {
+  const node = document.querySelector("#auth-error");
+  if (!node) return;
+  node.textContent = message;
+  node.hidden = !message;
+}
+
+let authGateWired = false;
+function wireAuthGate() {
+  if (authGateWired) return;
+  authGateWired = true;
+
+  document.querySelector("#auth-switch")?.addEventListener("click", () => {
+    showAuthGate(authMode === "login" ? "signup" : "login");
+  });
+
+  document.querySelector("#auth-eye")?.addEventListener("click", () => {
+    const input = document.querySelector("#auth-form")?.password;
+    if (input) input.type = input.type === "password" ? "text" : "password";
+  });
+
+  document.querySelector("#auth-forgot")?.addEventListener("click", () => {
+    setAuthError("Password reset by email is coming soon — reach out on Discord for now.");
+  });
+
+  document.querySelector("#auth-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const email = form.email.value.trim();
+    const password = form.password.value;
+    if (!email || !password) {
+      setAuthError("Enter your email and password.");
+      return;
+    }
+    const submit = document.querySelector("#auth-submit");
+    submit.disabled = true;
+    setAuthError("");
+    try {
+      const res = await fetch(`/api/auth/${authMode === "signup" ? "signup" : "login"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.error || "Something went wrong. Try again.");
+        submit.disabled = false;
+        return;
+      }
+      authUser = data.user;
+      // First sign-in pulls any saved cloud state, else seeds it from here.
+      const stateRes = await fetch("/api/state");
+      const stateData = await stateRes.json().catch(() => ({}));
+      if (stateData?.state && stateData.updatedAt) {
+        applySyncState(stateData.state);
+        localStorage.setItem(authSyncedAtKey, stateData.updatedAt);
+        window.location.reload();
+        return;
+      }
+      await pushSyncState();
+      onAuthenticated();
+    } catch {
+      setAuthError("Couldn't reach the server. Check your connection.");
+      submit.disabled = false;
+    }
+  });
+
+  document.querySelector("#settings-signout")?.addEventListener("click", async () => {
+    if (authSyncDirty) await pushSyncState();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore; we clear locally regardless.
+    }
+    window.location.reload();
+  });
 }
 
 function renderFriendsPage() {
