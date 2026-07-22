@@ -10003,7 +10003,7 @@ html.native-liquid-nav .game-active .app-content {
 }
 
 .quest-pill-claimable {
-  background: var(--success) !important;
+  background: var(--accent) !important;
   color: var(--on-accent) !important;
   font-weight: 600 !important;
 }
