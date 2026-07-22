@@ -130,6 +130,9 @@ let catPendingResult = null;
 let iqCalcTimer = null;
 let iqCalcPct = 0;
 const iqCalcGates = { phone: false, discord: false };
+// Auth state lives here (not in the auth section below) because boot-time
+// calls like renderProfileOnboarding() read authUser before that section runs.
+let authUser = null;
 
 function loadLead() {
   try {
@@ -868,15 +871,18 @@ if (iqStandalone) {
   // Defer past module evaluation so CAT state (let bindings below) exists.
   window.setTimeout(initIqStandalone, 0);
 } else if (cogniUiMode === "pro") {
-  // The funnel's "keep exploring" buttons deep-link back with ?go=.
-  const landing = new URLSearchParams(window.location.search).get("go");
-  if (landing === "tests") showAssessments();
-  else showExerciseHub();
+  // Pro web opens on the marketing landing page. The funnel's "keep
+  // exploring" links (?go=) and signed-in users skip straight to the app.
+  const go = new URLSearchParams(window.location.search).get("go");
+  if (go === "tests") { enterApp(); showAssessments(); }
+  else if (go === "exercises") { enterApp(); showExerciseHub(); }
+  else { showExerciseHub(); showLanding(); }
 }
 renderProfileOnboarding();
 syncSocialProfileQuietly();
 installNativeNavigationBridge();
-initAuth();
+// Deferred so the auth/landing module-level bindings below are initialized.
+window.setTimeout(initAuth, 0);
 window.addEventListener("load", () => window.requestAnimationFrame(updateSegmentedControls));
 window.addEventListener("resize", () => window.requestAnimationFrame(updateSegmentedControls));
 
@@ -1888,6 +1894,7 @@ function openIctSettings() {
 }
 
 function openExerciseById(exerciseId) {
+  if (!requireAuth("Create a free account to start training.")) return;
   const openers = {
     nback: openNBackSettings,
     mot: openMotSettings,
@@ -1986,6 +1993,7 @@ function showExerciseHub() {
 }
 
 function showStatistics() {
+  if (!requireAuth("Sign in to see your stats and progress.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("profile-open");
@@ -2465,8 +2473,9 @@ function hasUserProfile() {
 function renderProfileOnboarding() {
   const existing = document.querySelector(`#${profileOnboardingId}`);
   // Shared IQ-test visitors are leads, not app users — never ask them to
-  // create a profile.
-  if (iqStandalone) {
+  // create a profile. Web visitors set up a profile only after signing in,
+  // so it never covers the landing page.
+  if (iqStandalone || (authIsGated() && !authUser)) {
     existing?.remove();
     return;
   }
@@ -2903,7 +2912,6 @@ function openSettingsDrawer() {
 // behind sign-in. A signed-in user's cogni.* localStorage is mirrored to the
 // server so progress follows the account across devices.
 // ---------------------------------------------------------------------------
-let authUser = null;
 let authMode = "login";
 let authSyncDirty = false;
 let authSyncing = false;
@@ -2919,6 +2927,43 @@ const authSyncExclude = new Set([
 
 function authIsGated() {
   return cogniUiMode === "pro" && !iqStandalone;
+}
+
+// Landing page <-> app visibility. The pro web app is browsable without an
+// account; only doing tests/exercises or viewing data requires sign-in.
+function showLanding() {
+  const landing = document.querySelector("#landing");
+  if (!landing) return;
+  document.documentElement.classList.add("landing-active");
+  landing.hidden = false;
+}
+
+function enterApp() {
+  const landing = document.querySelector("#landing");
+  if (landing) landing.hidden = true;
+  document.documentElement.classList.remove("landing-active");
+}
+
+let landingWired = false;
+function wireLanding() {
+  if (landingWired) return;
+  landingWired = true;
+  const start = () => { enterApp(); showExerciseHub(); };
+  document.querySelector("#landing-start")?.addEventListener("click", start);
+  document.querySelector("#landing-start-2")?.addEventListener("click", start);
+  document.querySelector("#landing-signin")?.addEventListener("click", () => {
+    wireAuthGate();
+    showAuthGate("login");
+  });
+}
+
+// Gate an action behind sign-in. In ungated contexts (the /iq funnel, the
+// mobile app) or when already signed in, the action just runs.
+function requireAuth(message) {
+  if (!authIsGated() || authUser) return true;
+  wireAuthGate();
+  showAuthGate("login", message);
+  return false;
 }
 
 function collectSyncState() {
@@ -2987,22 +3032,24 @@ function startSyncLoop() {
 
 async function initAuth() {
   if (!authIsGated()) return;
+  wireLanding();
+  wireAuthGate();
   let user = null;
   try {
     const res = await fetch("/api/auth/me");
     user = (await res.json())?.user ?? null;
   } catch {
-    // Server unreachable: fail open so a local/offline session still works.
+    // Server unreachable: leave the landing page up.
     return;
   }
-  wireAuthGate();
   if (!user) {
-    showAuthGate("login");
+    // Browsing stays open; a returning Google error surfaces on the gate.
     const authError = new URLSearchParams(window.location.search).get("autherror");
-    if (authError === "google_unconfigured") {
-      setAuthError("Google sign-in isn't set up yet — use email and password for now.");
-    } else if (authError === "google_failed") {
-      setAuthError("Google sign-in didn't complete. Please try again.");
+    if (authError) {
+      showAuthGate("login");
+      setAuthError(authError === "google_unconfigured"
+        ? "Google sign-in isn't set up yet — use email and password for now."
+        : "Google sign-in didn't complete. Please try again.");
     }
     return;
   }
@@ -3026,23 +3073,26 @@ async function initAuth() {
 
 function onAuthenticated() {
   hideAuthGate();
+  enterApp();
+  showExerciseHub();
   const emailNode = document.querySelector("#settings-account-email");
   const accountBlock = document.querySelector("#settings-account");
   if (emailNode) emailNode.textContent = authUser.email;
   if (accountBlock) accountBlock.hidden = false;
+  renderProfileOnboarding();
   startSyncLoop();
 }
 
-function showAuthGate(mode) {
+function showAuthGate(mode, message) {
   authMode = mode;
   const gate = document.querySelector("#auth-gate");
   if (!gate) return;
   gate.hidden = false;
   const isSignup = mode === "signup";
+  const subtitleOverride = typeof message === "string" ? message : null;
   document.querySelector("#auth-title").textContent = isSignup ? "Create your account" : "Welcome back";
-  document.querySelector("#auth-subtitle").textContent = isSignup
-    ? "Start training and save your progress"
-    : "Sign in to continue your training";
+  document.querySelector("#auth-subtitle").textContent = subtitleOverride
+    || (isSignup ? "Start training and save your progress" : "Sign in to continue your training");
   document.querySelector("#auth-submit").textContent = isSignup ? "Create account" : "Sign in";
   document.querySelector("#auth-switch-text").textContent = isSignup
     ? "Already have an account?"
@@ -3070,6 +3120,9 @@ let authGateWired = false;
 function wireAuthGate() {
   if (authGateWired) return;
   authGateWired = true;
+
+  // The gate is an overlay; closing it reveals the landing or app underneath.
+  document.querySelector("#auth-back")?.addEventListener("click", hideAuthGate);
 
   document.querySelector("#auth-switch")?.addEventListener("click", () => {
     showAuthGate(authMode === "login" ? "signup" : "login");
@@ -3765,6 +3818,7 @@ function catResponsesWithItems() {
 }
 
 function startCatTest() {
+  if (!requireAuth("Sign in to take the Cogni IQ Test.")) return;
   catActive = { startedAt: Date.now(), responses: [], currentItemId: null };
   pickNextCatItem();
   showCatSection("run");
@@ -4021,6 +4075,7 @@ function catMatrixSvg(matrix, cellSize = 64, gap = 8) {
 let ocdAssessment = { index: 0, answers: [] };
 
 function startOcdTest() {
+  if (!requireAuth("Sign in to take this test.")) return;
   ocdAssessment = { index: 0, answers: Array(OCD_QUESTIONS.length).fill(undefined) };
   showAssessmentSection("ocd-run");
   renderOcdQuestion();
@@ -4075,6 +4130,7 @@ let focusRun = null;
 let focusTimerHandle = null;
 
 function startFocusTest() {
+  if (!requireAuth("Sign in to take this test.")) return;
   const config = createSustainedAttentionAssessmentConfig({ trialCount: 45, symbolMs: 1250, mistakePauseMs: 0 });
   focusRun = { config, trials: generateSustainedAttentionTrials(config), index: -1, results: [], responded: false, reactionMs: undefined };
   showAssessmentSection("focus-run");
@@ -4153,6 +4209,7 @@ function memoryDelay(callback, ms) {
 }
 
 function startMemoryTest() {
+  if (!requireAuth("Sign in to take this test.")) return;
   const config = createSpatialSpanAssessmentConfig();
   memoryRun = {
     config,

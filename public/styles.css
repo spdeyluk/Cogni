@@ -11597,3 +11597,307 @@ kbd {
   font-weight: 500;
   cursor: pointer;
 }
+
+/* ===================================================================
+   Marketing landing page (2026-07-22)
+   =================================================================== */
+.landing {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 28px;
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing-brand img { width: 30px; height: 30px; border-radius: 7px; }
+.landing-brand strong { font-family: var(--font-serif); font-weight: 500; font-size: 1.2rem; }
+
+.landing-nav-links {
+  display: flex;
+  gap: 26px;
+  margin-left: auto;
+}
+
+.landing-nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.94rem;
+}
+
+.landing-nav-links a:hover { color: var(--text); }
+
+.landing-signin {
+  padding: 9px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 48px;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 60px 28px 80px;
+}
+
+.landing-hero h1 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0 0 22px;
+}
+
+.landing-hero-lede {
+  color: var(--text-2);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 30em;
+  margin: 0 0 28px;
+}
+
+.landing-hero-points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-hero-points li {
+  position: relative;
+  padding: 14px 18px 14px 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.landing-hero-points li::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.landing-cta {
+  padding: 15px 30px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.landing-hero-card {
+  padding: 34px 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.landing-hero-card h2 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.5rem;
+  margin: 0 0 22px;
+}
+
+.landing-notice-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.landing-notice-list li {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.94rem;
+}
+
+.landing-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 28px;
+}
+
+.landing-h2 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  margin: 0 0 34px;
+}
+
+.landing-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.landing-step {
+  padding: 26px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.landing-step-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  margin: 0 0 12px;
+}
+
+.landing-step h3 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.3rem;
+  margin: 0 0 10px;
+}
+
+.landing-step p { color: var(--muted); line-height: 1.55; margin: 0; }
+
+.landing-approach-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.landing-approach-card {
+  padding: 30px 28px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.landing-approach-card h3 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.35rem;
+  margin: 0 0 12px;
+}
+
+.landing-approach-card p { color: var(--text-2); line-height: 1.6; margin: 0; }
+
+.landing-disclaimer {
+  margin: 26px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.landing-faq {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.landing-faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 4px 20px;
+}
+
+.landing-faq-item summary {
+  padding: 16px 0;
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+}
+
+.landing-faq-item summary::-webkit-details-marker { display: none; }
+.landing-faq-item summary::after { content: "＋"; float: right; color: var(--muted); }
+.landing-faq-item[open] summary::after { content: "－"; }
+.landing-faq-item p { color: var(--muted); line-height: 1.6; margin: 0 0 16px; }
+
+.landing-final {
+  max-width: 1000px;
+  margin: 20px auto 0;
+  padding: 56px 40px 72px;
+  text-align: center;
+}
+
+.landing-final h2 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  margin: 0 0 14px;
+}
+
+.landing-final p { color: var(--text-2); font-size: 1.05rem; margin: 0 0 30px; }
+
+.landing-discord {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 14px;
+  padding: 15px 24px;
+  border-radius: var(--radius);
+  background: #5865F2 !important;
+  color: #fff !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.landing-discord svg { width: 20px; height: 15px; }
+
+.auth-back {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 860px) {
+  .landing-hero { grid-template-columns: 1fr; gap: 34px; padding-top: 40px; }
+  .landing-steps,
+  .landing-approach-grid,
+  .landing-faq { grid-template-columns: 1fr; }
+  .landing-nav-links { display: none; }
+  .landing-discord { display: flex; margin: 18px auto 0; width: fit-content; }
+}
+
+/* Landing covers the app shell until "Start training". */
+html.landing-active #app-shell { display: none !important; }

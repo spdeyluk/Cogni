@@ -9,6 +9,7 @@
   <body>
     <div class="auth-gate" id="auth-gate" hidden>
       <div class="auth-card">
+        <button class="auth-back" id="auth-back" type="button" aria-label="Back">← Back</button>
         <div class="auth-brand">
           <img src="assets/brand/logo-white.png" alt="Cogni">
           <strong>Cogni</strong>
@@ -39,6 +40,101 @@
         </a>
         <p class="auth-switch"><span id="auth-switch-text">Don't have an account?</span> <button class="auth-switch-button" id="auth-switch" type="button">Sign up</button></p>
       </div>
+    </div>
+
+    <div class="landing" id="landing" hidden>
+      <header class="landing-nav">
+        <div class="landing-brand">
+          <img src="assets/brand/logo-white.png" alt="Cogni">
+          <strong>Cogni</strong>
+        </div>
+        <nav class="landing-nav-links" aria-label="Sections">
+          <a href="#landing-approach">Approach</a>
+          <a href="#landing-skills">Skills</a>
+          <a href="#landing-faq">FAQ</a>
+        </nav>
+        <button class="landing-signin" id="landing-signin" type="button">Sign in</button>
+      </header>
+
+      <section class="landing-hero">
+        <div class="landing-hero-main">
+          <h1>Improve cognition with training you can stick to.</h1>
+          <p class="landing-hero-lede">Cogni is a cognitive-training experience built to strengthen self-control, problem solving, comprehension, and how fast you learn — a few focused minutes at a time.</p>
+          <ul class="landing-hero-points">
+            <li>Focus longer, and stay steadier under temptation and stress.</li>
+            <li>Build clearer thinking for reading, studying, and writing.</li>
+            <li>Track your progress as your ability improves, session by session.</li>
+          </ul>
+          <button class="landing-cta" id="landing-start" type="button">Start training</button>
+        </div>
+        <aside class="landing-hero-card">
+          <h2>What people work toward</h2>
+          <ul class="landing-notice-list">
+            <li>Less rumination and faster emotional recovery</li>
+            <li>More consistency between intention and action</li>
+            <li>Steadier self-control around temptations</li>
+            <li>Better comprehension and longer reading sessions</li>
+            <li>Clearer thinking for essays and structured writing</li>
+            <li>Stronger problem solving under real study conditions</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="landing-section" id="landing-skills">
+        <h2 class="landing-h2">Train the skills behind better cognition</h2>
+        <div class="landing-steps">
+          <article class="landing-step">
+            <p class="landing-step-eyebrow">Step one</p>
+            <h3>Hold the cue</h3>
+            <p>Keep the target in mind while distractions compete for your attention.</p>
+          </article>
+          <article class="landing-step">
+            <p class="landing-step-eyebrow">Step two</p>
+            <h3>Decide under pressure</h3>
+            <p>Make quick, accurate judgments when the task pushes on your control.</p>
+          </article>
+          <article class="landing-step">
+            <p class="landing-step-eyebrow">Step three</p>
+            <h3>Adapt as you improve</h3>
+            <p>Difficulty adjusts to your performance so the challenge stays effective.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="landing-section" id="landing-approach">
+        <h2 class="landing-h2">Built on real cognitive-training tasks</h2>
+        <div class="landing-approach-grid">
+          <article class="landing-approach-card">
+            <h3>Cognitive Control Training</h3>
+            <p>Inhibition and attention drills that build the self-regulation behind steadier focus, calmer thinking, and better habits.</p>
+          </article>
+          <article class="landing-approach-card">
+            <h3>Relational Reasoning Training</h3>
+            <p>Structured reasoning that strengthens problem solving, reading comprehension, and the ability to connect ideas under pressure.</p>
+          </article>
+        </div>
+        <p class="landing-disclaimer">Cogni is a training and self-tracking tool, not a medical or diagnostic service. It isn't a replacement for therapy or professional care.</p>
+      </section>
+
+      <section class="landing-section" id="landing-faq">
+        <h2 class="landing-h2">Questions</h2>
+        <div class="landing-faq">
+          <details class="landing-faq-item"><summary>How long does it take to see changes?</summary><p>It varies by person and consistency. Most people train a few minutes most days; the point is a sustainable habit, not a single session.</p></details>
+          <details class="landing-faq-item"><summary>Is this a replacement for therapy or medical care?</summary><p>No. Cogni is a training and self-tracking tool. If you're dealing with a health concern, talk to a qualified professional.</p></details>
+          <details class="landing-faq-item"><summary>What if I miss days?</summary><p>Nothing breaks. Your progress is saved to your account — pick up where you left off whenever you're ready.</p></details>
+          <details class="landing-faq-item"><summary>Is it suitable for students and younger users?</summary><p>The exercises are designed to be broadly accessible. Younger users should have a parent or guardian involved.</p></details>
+        </div>
+      </section>
+
+      <section class="landing-final">
+        <h2>Start building better cognition today</h2>
+        <p>Train your attention, steady your impulses, and improve how consistently you learn.</p>
+        <button class="landing-cta" id="landing-start-2" type="button">Start training</button>
+        <a class="landing-discord" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
+          <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+          Join the community
+        </a>
+      </section>
     </div>
 
     <main class="app-shell home-open" id="app-shell">
