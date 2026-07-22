@@ -2345,12 +2345,14 @@ const miniGames = {
       function submit() {
         if (entry === number) {
           level += 1;
-          timers.after(newNumber, 400);
+          ctx.stage.querySelectorAll(".mini-keypad button").forEach((b) => { b.disabled = true; });
+          ctx.stage.innerHTML = `<div class="mini-number ok">${number}</div><p class="mini-hint mini-feedback ok">Correct — next one's longer</p>`;
+          timers.after(newNumber, 650);
         } else {
           lives -= 1;
           if (lives <= 0) { ctx.finish(result()); return; }
-          ctx.stage.innerHTML = `<div class="mini-number wrong">${number}</div><p class="mini-hint">It was ${number}</p>`;
-          timers.after(newNumber, 1100);
+          ctx.stage.innerHTML = `<div class="mini-number wrong">${number}</div><p class="mini-hint mini-feedback wrong">It was ${number}</p>`;
+          timers.after(newNumber, 1200);
         }
       }
 
@@ -2406,24 +2408,36 @@ const miniGames = {
           <div class="mini-word-actions">
             <button data-a="seen" type="button">SEEN</button>
             <button data-a="new" type="button">NEW</button>
-          </div>`;
+          </div>
+          <p class="mini-feedback" aria-live="polite">&nbsp;</p>`;
         ctx.stage.querySelectorAll(".mini-word-actions button").forEach((b) => {
-          b.addEventListener("click", () => answer(b.dataset.a === "seen", word, isSeen));
+          b.addEventListener("click", () => answer(b.dataset.a === "seen", word, isSeen, b));
         });
       }
 
-      function answer(saidSeen, word, isSeen) {
+      function answer(saidSeen, word, isSeen, btn) {
         const correct = saidSeen === isSeen;
         if (!isSeen && !seenSet.has(word)) { seen.push(word); seenSet.add(word); }
+        // Lock the buttons and show a clear right/wrong beat before advancing.
+        const buttons = ctx.stage.querySelectorAll(".mini-word-actions button");
+        buttons.forEach((b) => { b.disabled = true; });
+        const wordEl = ctx.stage.querySelector(".mini-word");
+        const feedback = ctx.stage.querySelector(".mini-feedback");
         if (correct) {
           score += 1;
-          nextWord();
+          btn.classList.add("picked-ok");
+          if (wordEl) wordEl.classList.add("ok");
+          if (feedback) { feedback.textContent = "Correct"; feedback.classList.add("ok"); }
+          status();
+          timers.after(nextWord, 480);
         } else {
           lives -= 1;
-          if (lives <= 0) { ctx.finish(result()); return; }
-          const wordEl = ctx.stage.querySelector(".mini-word");
+          btn.classList.add("picked-wrong");
           if (wordEl) wordEl.classList.add("wrong");
-          timers.after(nextWord, 650);
+          if (feedback) { feedback.textContent = isSeen ? "You'd seen this word" : "This was a new word"; feedback.classList.add("wrong"); }
+          status();
+          if (lives <= 0) { timers.after(() => ctx.finish(result()), 750); return; }
+          timers.after(nextWord, 850);
         }
       }
 

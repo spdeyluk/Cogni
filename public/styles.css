@@ -11958,6 +11958,7 @@ html.landing-active #app-shell { display: none !important; }
 .mini-grid {
   display: grid;
   grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-rows: repeat(var(--n), 1fr);
   gap: 12px;
   width: min(88vw, 460px);
   aspect-ratio: 1;
@@ -11966,18 +11967,19 @@ html.landing-active #app-shell { display: none !important; }
 .mini-cell {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface-2);
+  background: var(--surface-2) !important;
   color: var(--text);
   font-size: clamp(1rem, 4vw, 1.5rem);
   font-weight: 600;
   cursor: pointer;
+  min-width: 0;
   transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
 }
 
-.mini-cell.has-num { border-color: var(--line-strong); }
-.mini-cell.flash { background: var(--accent); border-color: var(--accent); }
-.mini-cell.correct { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.mini-cell.wrong { background: var(--error); border-color: var(--error); color: #fff; }
+.mini-cell.has-num { border-color: var(--line-strong) !important; }
+.mini-cell.flash { background: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent); }
+.mini-cell.correct { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--on-accent); }
+.mini-cell.wrong { background: var(--error) !important; border-color: var(--error) !important; color: #fff; }
 .mini-cell:active { transform: scale(0.96); }
 
 .mini-hint {
@@ -12250,4 +12252,45 @@ html.landing-active #app-shell { display: none !important; }
     transition: none !important;
     transform: none !important;
   }
+}
+
+/* Mini exercise feedback animations (2026-07-22). */
+@keyframes mini-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes mini-correct-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+@keyframes mini-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* Each prompt animates in, so a repeated word is clearly a NEW question. */
+.mini-word { animation: mini-pop 0.28s ease; }
+.mini-word.ok { color: var(--success); animation: mini-correct-pulse 0.4s ease; }
+.mini-word.wrong { color: var(--error); animation: mini-shake 0.42s ease; }
+
+.mini-word-actions button { transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease; }
+.mini-word-actions button.picked-ok { background: var(--success) !important; border-color: var(--success) !important; color: #fff; }
+.mini-word-actions button.picked-wrong { background: var(--error) !important; border-color: var(--error) !important; color: #fff; }
+
+.mini-number.entry { animation: mini-pop 0.2s ease; }
+.mini-number.ok { color: var(--success); animation: mini-correct-pulse 0.4s ease; }
+.mini-feedback {
+  min-height: 1.4em;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.mini-feedback.ok { color: var(--success); }
+.mini-feedback.wrong { color: var(--error); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-word, .mini-word.ok, .mini-word.wrong, .mini-number.entry, .mini-number.ok { animation: none !important; }
 }
