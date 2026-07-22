@@ -12144,3 +12144,110 @@ html.landing-active #app-shell { display: none !important; }
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* ===================================================================
+   Clean hover interactions (2026-07-22)
+   Subtle lift + border/surface shift. Calm, not flashy. Only on real
+   pointers, and disabled for reduced-motion.
+   =================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .exercise-card,
+  .assessment-intro,
+  .routines-tile,
+  .landing-step,
+  .landing-approach-card,
+  .iq-recommend-card,
+  .home-quest-row,
+  .mini-secondary {
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .exercise-card:hover,
+  .assessment-intro:hover,
+  .routines-tile:hover,
+  .landing-step:hover,
+  .landing-approach-card:hover,
+  .iq-recommend-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--line-strong);
+    box-shadow: 0 6px 20px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Primary / filled actions: a touch of lift and depth. */
+  .landing-cta,
+  .auth-submit,
+  .mini-primary,
+  .landing-signin,
+  .auth-google,
+  .mini-secondary,
+  .settings-signout,
+  .exercise-card button,
+  .assessment-list-actions button,
+  .cat-lead-form button,
+  .iq-email-form button {
+    transition: transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .landing-cta:hover,
+  .auth-submit:hover,
+  .mini-primary:hover,
+  .exercise-card button:hover,
+  .assessment-list-actions button:hover,
+  .cat-lead-form button:hover,
+  .iq-email-form button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  /* Outline / secondary controls: highlight the edge. */
+  .landing-signin:hover,
+  .auth-google:hover,
+  .mini-secondary:hover,
+  .settings-signout:hover {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  /* Grid/keypad cells: gentle edge highlight before you commit. */
+  .mini-cell:not(.flash):not(.correct):not(.wrong):hover,
+  .mini-keypad button:hover,
+  .mini-word-actions button:hover {
+    border-color: var(--accent);
+  }
+
+  /* Nav: subtle brighten on hover. */
+  .side-nav-button {
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .side-nav-button:not(.active):hover {
+    color: var(--text-2) !important;
+  }
+
+  /* Discord CTAs keep their brand colour but lift slightly. */
+  .iq-discord-button,
+  .landing-discord {
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+
+  .iq-discord-button:hover,
+  .landing-discord:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-card,
+  .assessment-intro,
+  .routines-tile,
+  .landing-step,
+  .landing-approach-card,
+  .iq-recommend-card,
+  .landing-cta,
+  .auth-submit,
+  .mini-primary {
+    transition: none !important;
+    transform: none !important;
+  }
+}
