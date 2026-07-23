@@ -13123,3 +13123,54 @@ html.landing-active #app-shell { display: none !important; }
   margin: 2px 0 6px;
   cursor: pointer;
 }
+
+/* Streak celebration toast — fires on the first exercise completed each day. */
+.streak-toast {
+  position: fixed;
+  left: 50%;
+  top: calc(14px + env(safe-area-inset-top));
+  transform: translate(-50%, -140%);
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 28px));
+  padding: 13px 18px 13px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0;
+  transition: transform 0.42s cubic-bezier(0.2, 1.1, 0.3, 1), opacity 0.3s ease;
+}
+
+.streak-toast.show {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+.streak-toast-flame {
+  font-size: 1.9rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(240, 120, 30, 0.55));
+}
+
+.streak-toast-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.streak-toast-copy strong { font-size: 1rem; }
+
+.streak-toast-copy span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-toast { transition: opacity 0.3s ease; transform: translate(-50%, 0); }
+}

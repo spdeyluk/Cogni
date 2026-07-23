@@ -4231,6 +4231,74 @@ function calculateDailyTrainingStreak(progress, exerciseIds, targetMinutes = 5) 
   return streak;
 }
 
+// Days-trained streak: consecutive days (ending today) with at least one
+// completed exercise of any kind. Drives the "first exercise of the day"
+// streak notification; counts up each day the user trains.
+function daysTrainedStreak(progress) {
+  const days = progress.days ?? {};
+  let streak = 0;
+  const cursor = new Date();
+  for (let index = 0; index < 400; index += 1) {
+    const dateKey = localDateKey(cursor);
+    const day = days[dateKey];
+    const trained = day && Object.values(day).some((entry) => Number(entry?.sessions ?? 0) > 0);
+    if (!trained) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+const streakNotifiedDateKey = "cogni.streakNotifiedDate.v1";
+
+// Fires once on the first completed exercise of the day, celebrating the
+// running streak. Idempotent per calendar day via a stored marker.
+function maybeNotifyStreak(progress) {
+  const today = localDateKey();
+  let lastNotified = null;
+  try {
+    lastNotified = localStorage.getItem(streakNotifiedDateKey);
+  } catch {
+    return;
+  }
+  if (lastNotified === today) return;
+  try {
+    localStorage.setItem(streakNotifiedDateKey, today);
+  } catch {
+    // Best effort; worst case it shows again after reload.
+  }
+  const days = daysTrainedStreak(progress);
+  if (days < 1) return;
+  showStreakNotification(days);
+}
+
+function showStreakNotification(days) {
+  hapticSuccess();
+  document.querySelector(".streak-toast")?.remove();
+  const toast = document.createElement("div");
+  toast.className = "streak-toast";
+  toast.setAttribute("role", "status");
+  const dayWord = days === 1 ? "day" : "days";
+  const headline = days === 1 ? "Streak started!" : `${days}-day streak!`;
+  const sub = days === 1
+    ? "First session done — come back tomorrow to keep it alive."
+    : `${days} ${dayWord} in a row. Keep it locked in.`;
+  toast.innerHTML = `
+    <span class="streak-toast-flame" aria-hidden="true">🔥</span>
+    <div class="streak-toast-copy">
+      <strong>${escapeHtml(headline)}</strong>
+      <span>${escapeHtml(sub)}</span>
+    </div>`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
+  const dismiss = () => {
+    toast.classList.remove("show");
+    window.setTimeout(() => toast.remove(), 400);
+  };
+  toast.addEventListener("click", dismiss);
+  window.setTimeout(dismiss, 4200);
+}
+
 function consecutiveMissedTrainingDays(progress, exerciseIds, targetMinutes = 5) {
   let missed = 0;
   const cursor = new Date();
@@ -7409,6 +7477,8 @@ function recordExerciseProgress(exerciseId, sessionData) {
   exercise.history = exercise.history.slice(-30);
 
   saveExerciseProgress(progress);
+  // First completed exercise of the day: celebrate the running streak.
+  maybeNotifyStreak(progress);
   renderStatistics();
   renderHomePage();
   if (elements.appShell.classList.contains("profile-open")) renderProfile();
