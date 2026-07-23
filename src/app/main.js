@@ -2916,6 +2916,7 @@ function handleProfileOnboardingSubmit(event) {
   saveUserProfile({ handle, avatarInitial });
   syncSocialProfileQuietly();
   document.querySelector(`#${profileOnboardingId}`)?.remove();
+  syncNativeNavigationChrome();
   if (elements.appShell.classList.contains("profile-open")) renderProfile();
 }
 
@@ -4911,7 +4912,11 @@ function installNativeNavigationBridge() {
 function syncNativeNavigationChrome() {
   const gameActive = elements.appShell?.classList.contains("game-active") ?? false;
   const sheetOpen = Boolean(document.querySelector("dialog[open]"));
-  postNativeNavigationMessage({ type: "chrome", hidden: gameActive || sheetOpen });
+  // Full-screen first-run flows: the native tab bar has no business there.
+  const storyOnboarding = document.querySelector("#onboarding");
+  const onboardingActive = Boolean(storyOnboarding && !storyOnboarding.hidden)
+    || Boolean(document.querySelector(`#${profileOnboardingId}`));
+  postNativeNavigationMessage({ type: "chrome", hidden: gameActive || sheetOpen || onboardingActive });
 }
 
 // Sheets cover the tab bar like native iOS modals: hide the glass nav while any dialog is open.
@@ -9462,6 +9467,7 @@ function finishOnboarding() {
   const overlay = document.querySelector("#onboarding");
   if (overlay) overlay.hidden = true;
   renderProfileOnboarding();
+  syncNativeNavigationChrome();
 }
 
 let onboardingWired = false;
@@ -9496,4 +9502,5 @@ function showOnboarding() {
   }
   overlay.hidden = false;
   showOnboardingSlide(0);
+  syncNativeNavigationChrome();
 }
