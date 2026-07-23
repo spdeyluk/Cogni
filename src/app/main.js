@@ -3687,11 +3687,13 @@ function onAuthenticated() {
 function showSignInFirst() {
   const wall = document.querySelector("#signin-first");
   if (wall) wall.hidden = false;
+  syncNativeNavigationChrome();
 }
 
 function hideSignInFirst() {
   const wall = document.querySelector("#signin-first");
   if (wall) wall.hidden = true;
+  syncNativeNavigationChrome();
 }
 
 function setSignInError(message) {
@@ -3747,8 +3749,14 @@ async function handleAppleSignIn() {
       return;
     }
     await completeSignIn(data.user, data.token);
-  } catch {
-    setSignInError("Apple sign-in was cancelled.");
+  } catch (err) {
+    const msg = (err && (err.message || err.errorMessage)) ? String(err.message || err.errorMessage) : "";
+    // Apple rejects both on user-cancel and on misconfiguration; only the former is a cancel.
+    if (/cancel/i.test(msg) || err?.code === "1001" || err?.code === 1001) {
+      setSignInError("Apple sign-in was cancelled.");
+    } else {
+      setSignInError("Apple sign-in couldn't start. Make sure Sign in with Apple is enabled for this app, then try again.");
+    }
   }
 }
 
@@ -3758,7 +3766,14 @@ function wireSignInFirst() {
   signInFirstWired = true;
   document.querySelector("#signin-apple")?.addEventListener("click", handleAppleSignIn);
   document.querySelector("#signin-google")?.addEventListener("click", () => {
-    // Reuse the existing server OAuth redirect flow.
+    if (window.Capacitor?.isNativePlatform?.()) {
+      // The web OAuth redirect can't run inside the native webview — it navigates
+      // the app away and can't return a session. Native Google needs a dedicated
+      // flow (deep-link or native SDK); until then, point users at Apple/email.
+      setSignInError("Google sign-in in the app is coming soon — use Apple or email for now.");
+      return;
+    }
+    // Web: reuse the existing server OAuth redirect flow.
     window.location.href = "/api/auth/google";
   });
   document.querySelector("#signin-email")?.addEventListener("click", () => {
@@ -5253,7 +5268,10 @@ function syncNativeNavigationChrome() {
   const storyOnboarding = document.querySelector("#onboarding");
   const onboardingActive = Boolean(storyOnboarding && !storyOnboarding.hidden)
     || Boolean(document.querySelector(`#${profileOnboardingId}`));
-  postNativeNavigationMessage({ type: "chrome", hidden: gameActive || sheetOpen || onboardingActive });
+  // The sign-in wall is a full-screen gate — the native tab bar must not sit over it.
+  const signInWall = document.querySelector("#signin-first");
+  const wallActive = Boolean(signInWall && !signInWall.hidden);
+  postNativeNavigationMessage({ type: "chrome", hidden: gameActive || sheetOpen || onboardingActive || wallActive });
 }
 
 // Sheets cover the tab bar like native iOS modals: hide the glass nav while any dialog is open.
