@@ -834,9 +834,14 @@ if (cogniUiMode === "pro") {
 renderProfileOnboarding();
 syncSocialProfileQuietly();
 installNativeNavigationBridge();
-// Sign-in is required on every platform: show the sign-in wall immediately so
-// nothing flashes underneath, then initAuth confirms the session and proceeds.
-showSignInFirst();
+// Sign-in is required up front on mobile (native): show the Apple/Google wall
+// immediately so nothing flashes underneath. On web the app is browsable — show
+// the marketing landing and only ask for sign-in when the user starts something.
+if (cogniUiMode === "play") {
+  showSignInFirst();
+} else {
+  showLanding();
+}
 // Deferred so the auth/sign-in module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
 window.addEventListener("load", () => window.requestAnimationFrame(updateSegmentedControls));
@@ -2458,10 +2463,10 @@ const miniGames = {
 const exerciseSheetInfo = {
   nback: { type: "Working Memory", label: "N-Back", controls: ".nback-workbench > .controls" },
   mot: { type: "Attention", label: "3D MOT", controls: ".mot-controls" },
-  rrt: { type: "Fluid Reasoning", label: "RRT", controls: ".rrt-controls" },
-  cct: { type: "Cognitive Control", label: "CCT", controls: ".cct-controls" },
-  ufov: { type: "Processing Speed", label: "UFOV", controls: ".ufov-controls" },
-  ict: { type: "Inhibition", label: "ICT", controls: ".ict-controls" }
+  rrt: { type: "Fluid Reasoning", label: "Relational Reasoning (RRT)", controls: ".rrt-controls" },
+  cct: { type: "Cognitive Control", label: "Cognitive Control Training (CCT)", controls: ".cct-controls" },
+  ufov: { type: "Processing Speed", label: "Useful Field of View (UFOV)", controls: ".ufov-controls" },
+  ict: { type: "Inhibition", label: "Inhibitory Control (ICT)", controls: ".ict-controls" }
 };
 const exerciseSheetStartButtons = ["start-session", "start-mot-session", "start-rrt-session", "start-cct-session", "start-ufov-session", "start-ict-session"];
 let exerciseSheetHome = null;
@@ -2606,10 +2611,12 @@ function renderProfile() {
   const exerciseIds = ["nback", "rrt", "cct", "ict"];
   const labels = {
     nback: "N-Back",
-    rrt: "RRT",
-    cct: "CCT",
-    ict: "ICT"
+    rrt: "Relational Reasoning (RRT)",
+    cct: "Cognitive Control (CCT)",
+    ict: "Inhibitory Control (ICT)"
   };
+  // Compact abbreviations for the 4-up picker cards; full names go in the header.
+  const shortLabels = { nback: "N-Back", rrt: "RRT", cct: "CCT", ict: "ICT" };
   if (!exerciseIds.includes(selectedProfileExercise)) selectedProfileExercise = "nback";
   if (!["daily", "weekly", "monthly", "all"].includes(selectedProfileTimeframe)) selectedProfileTimeframe = "daily";
   if (!["profile", "data"].includes(selectedProfileView)) selectedProfileView = "profile";
@@ -2628,7 +2635,7 @@ function renderProfile() {
     const exerciseSessions = filteredProgressSessions(progress, exerciseId, selectedProfileTimeframe);
     return {
       id: exerciseId,
-      label: labels[exerciseId],
+      label: shortLabels[exerciseId],
       sessions: exerciseSessions,
       progress: formatExerciseProgress(progressFromSessions(exerciseSessions)),
       averageWeight: averageSessionWeight(exerciseSessions)
@@ -3614,21 +3621,26 @@ async function initAuth() {
   wireLanding();
   wireAuthGate();
   wireSignInFirst();
+  const nativeWall = cogniUiMode === "play";
   let user = null;
   try {
     const res = await fetch("/api/auth/me");
     user = (await res.json())?.user ?? null;
   } catch {
-    // Server unreachable: keep the sign-in wall up (nothing loads without it).
+    // Server unreachable. Native keeps the wall (nothing loads without it);
+    // web stays on the browsable landing page.
     return;
   }
   if (!user) {
-    // Not signed in: the sign-in wall stays. Surface any OAuth return error.
+    // Not signed in. Native keeps the sign-in wall; web stays on the landing
+    // and asks for sign-in only when the user starts something. Surface any
+    // OAuth return error either way.
     const authError = new URLSearchParams(window.location.search).get("autherror");
     if (authError) {
-      setSignInError(authError === "google_unconfigured"
+      const msg = authError === "google_unconfigured"
         ? "Google sign-in isn't set up yet — use email instead."
-        : "Google sign-in didn't complete. Please try again.");
+        : "Google sign-in didn't complete. Please try again.";
+      if (nativeWall) setSignInError(msg);
     }
     return;
   }
@@ -8440,9 +8452,9 @@ function addCustomTask(label, reward) {
 const customTaskExerciseLabels = {
   any: "Any exercise",
   nback: "N-Back",
-  rrt: "RRT",
-  cct: "CCT",
-  ict: "ICT",
+  rrt: "Relational Reasoning (RRT)",
+  cct: "Cognitive Control (CCT)",
+  ict: "Inhibitory Control (ICT)",
   gridmemory: "Grid Memory",
   seqrecall: "Sequence Memory",
   numrecall: "Number Recall",
