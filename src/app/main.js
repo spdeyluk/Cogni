@@ -1137,6 +1137,9 @@ document.querySelector("#routine-load-create")?.addEventListener("click", () => 
 elements.closeRoutineDialog.addEventListener("click", closeRoutineDialog);
 elements.closeRoutineLoadDialog?.addEventListener("click", closeRoutineLoadDialog);
 elements.closeExerciseSheet?.addEventListener("click", () => elements.exerciseSheet?.close());
+document.querySelector("#exercise-sheet-howto")?.addEventListener("click", () => {
+  if (exerciseSheetCurrentId) showExerciseIntro(exerciseSheetCurrentId);
+});
 elements.exerciseSheet?.addEventListener("close", () => {
   restoreExerciseSheetControls();
   if (!exerciseSheetStarting) showExerciseHub();
@@ -1711,7 +1714,103 @@ function openExerciseById(exerciseId) {
   // Routines drive sessions programmatically; the settings sheet is only for
   // a person browsing into an exercise, and only in the gamified mobile app —
   // the pro web build uses the full inline settings page.
-  if (!activeRoutineRun && cogniUiMode === "play") openExerciseSheet(exerciseId);
+  if (!activeRoutineRun && cogniUiMode === "play") {
+    // First time on one of the complex classic exercises: show a tutorial
+    // before the settings sheet.
+    if (exerciseIntros[exerciseId] && !exerciseIntroSeen(exerciseId)) {
+      showExerciseIntro(exerciseId, () => openExerciseSheet(exerciseId));
+      return;
+    }
+    openExerciseSheet(exerciseId);
+  }
+}
+
+// First-run tutorials for the complex classic exercises. The five mini games
+// have their own intro flow; these mirror it for N-Back/RRT/CCT/ICT, which
+// need it most.
+const exerciseIntroSeenKey = "cogni.exerciseIntroSeen.v1";
+const exerciseIntros = {
+  nback: {
+    tag: "Working memory",
+    title: "N-Back",
+    steps: [
+      "A stream of cues plays one at a time — a square lights up, a color, a shape, a sound.",
+      "Your job: is the current cue the same as the one N steps back? At 2-back, compare to two cues ago.",
+      "Tap the matching buttons when a cue repeats from N back. Say nothing if it doesn't.",
+      "It's meant to feel hard — that mental strain is the training."
+    ]
+  },
+  rrt: {
+    tag: "Fluid reasoning",
+    title: "Relational Reasoning (RRT)",
+    steps: [
+      "You get a few premises about how items relate — bigger, smaller, left of, and so on.",
+      "Hold them in your head and build the relationship in your mind.",
+      "Then answer whether a new statement follows from them.",
+      "The words are often nonsense on purpose, so you reason from logic, not memory."
+    ]
+  },
+  cct: {
+    tag: "Cognitive control",
+    title: "Cognitive Control Training (CCT)",
+    steps: [
+      "Numbers appear one after another with a short gap.",
+      "Add each new number to the one just before it and give that sum.",
+      "As you keep up, the pace speeds up — stay focused and don't lose the last number.",
+      "It trains sustained attention and mental stamina under pressure."
+    ]
+  },
+  ict: {
+    tag: "Inhibition",
+    title: "Inhibitory Control Training (ICT)",
+    steps: [
+      "Respond fast to the 'go' cue every time it appears.",
+      "But when a stop signal shows up right after, withhold your response — don't tap.",
+      "The stop signal gets trickier as you improve, training your brakes.",
+      "It's the self-control muscle behind resisting impulses."
+    ]
+  }
+};
+
+function exerciseIntroSeen(id) {
+  try {
+    return (JSON.parse(localStorage.getItem(exerciseIntroSeenKey)) || []).includes(id);
+  } catch {
+    return false;
+  }
+}
+
+function markExerciseIntroSeen(id) {
+  try {
+    const set = new Set(JSON.parse(localStorage.getItem(exerciseIntroSeenKey)) || []);
+    set.add(id);
+    localStorage.setItem(exerciseIntroSeenKey, JSON.stringify([...set]));
+  } catch {
+    // Best effort; the tutorial just shows again next time.
+  }
+}
+
+// Shows the tutorial dialog. onDone runs after "Got it" (used to chain into
+// the settings sheet on first open); omitted when re-viewed via "How it works".
+function showExerciseIntro(id, onDone) {
+  const info = exerciseIntros[id];
+  const dialog = document.querySelector("#exercise-intro-dialog");
+  const body = document.querySelector("#exercise-intro-body");
+  if (!info || !dialog || !body || typeof dialog.showModal !== "function") {
+    onDone?.();
+    return;
+  }
+  body.innerHTML = `
+    <p class="exercise-type">${escapeHtml(info.tag)}</p>
+    <h2>${escapeHtml(info.title)}</h2>
+    <ol class="mini-intro-steps">${info.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+    <button class="mini-primary" type="button" data-exercise-intro-done>Got it</button>`;
+  body.querySelector("[data-exercise-intro-done]").addEventListener("click", () => {
+    markExerciseIntroSeen(id);
+    dialog.close();
+    onDone?.();
+  });
+  if (!dialog.open) dialog.showModal();
 }
 
 // ---------------------------------------------------------------------------
@@ -2341,11 +2440,16 @@ const exerciseSheetInfo = {
 const exerciseSheetStartButtons = ["start-session", "start-mot-session", "start-rrt-session", "start-cct-session", "start-ufov-session", "start-ict-session"];
 let exerciseSheetHome = null;
 let exerciseSheetStarting = false;
+let exerciseSheetCurrentId = null;
 
 function openExerciseSheet(exerciseId) {
   const info = exerciseSheetInfo[exerciseId];
   const sheet = elements.exerciseSheet;
   if (!info || !sheet || typeof sheet.showModal !== "function") return;
+  exerciseSheetCurrentId = exerciseId;
+  const howto = document.querySelector("#exercise-sheet-howto");
+  // "How it works" only shows for exercises that have a tutorial.
+  if (howto) howto.hidden = !exerciseIntros[exerciseId];
   const controls = document.querySelector(info.controls);
   if (!controls) return;
   restoreExerciseSheetControls();
@@ -8135,8 +8239,15 @@ const customTaskExerciseLabels = {
   nback: "N-Back",
   rrt: "RRT",
   cct: "CCT",
-  ict: "ICT"
+  ict: "ICT",
+  gridmemory: "Grid Memory",
+  seqrecall: "Sequence Memory",
+  numrecall: "Number Recall",
+  verbal: "Word Memory",
+  reaction: "Reaction Time"
 };
+// Every trainable exercise (classic + minis); "Any exercise" tasks count all.
+const allTrainableExerciseIds = Object.keys(customTaskExerciseLabels).filter((id) => id !== "any");
 const customTaskMinuteChoices = [5, 10, 15, 20, 30];
 
 // User-built daily task: train a chosen exercise for a chosen number of
@@ -8172,7 +8283,7 @@ function dailyQuestViews(progress) {
     if (def.kind === "session") progressPct = minutesToday > 0 ? 1 : 0;
     if (def.kind === "minutes") progressPct = clamp01(minutesToday / def.target);
     if (def.kind === "exercise-minutes") {
-      const ids = def.exerciseId === "any" ? leaderboardExerciseIds : [def.exerciseId];
+      const ids = def.exerciseId === "any" ? allTrainableExerciseIds : [def.exerciseId];
       progressPct = clamp01(trainingMinutesForDate(progress, ids, localDateKey()) / def.target);
     }
     if (def.kind === "detox") progressPct = isDailyDetoxDoneToday() ? 1 : 0;

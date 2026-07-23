@@ -13072,3 +13072,54 @@ html.landing-active #app-shell { display: none !important; }
 }
 
 .onboarding-uni-cards p { font-size: 0.82rem; }
+
+/* First-run tutorial for the classic exercises (reuses .mini-intro-steps). */
+.exercise-intro-dialog {
+  width: min(460px, calc(100vw - 36px));
+  max-height: 88vh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px 24px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.exercise-intro-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+.exercise-intro-body { text-align: center; }
+
+.exercise-intro-body h2 {
+  font-family: var(--font-serif) !important;
+  font-weight: 500 !important;
+  font-size: 1.7rem;
+  margin: 4px 0 20px;
+}
+
+.exercise-intro-body .mini-intro-steps { margin-bottom: 22px; }
+
+.exercise-intro-body .mini-primary {
+  width: 100%;
+  padding: 15px 30px;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+/* "How it works" link in the exercise settings sheet. */
+.exercise-sheet-howto {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--accent) !important;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 4px 0 !important;
+  margin: 2px 0 6px;
+  cursor: pointer;
+}
