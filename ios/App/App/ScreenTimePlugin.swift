@@ -13,7 +13,8 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestAuthorization", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "presentAppPicker", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "unlock", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "lockNow", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "lockNow", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise)
     ]
 
     private static let unlockActivity = DeviceActivityName("cogni.unlock")
@@ -133,6 +134,17 @@ public class ScreenTimePlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve([
             "shieldActive": CogniScreenTime.selectionCount(CogniScreenTime.loadSelection()) > 0
         ])
+    }
+
+    // Opens the system Settings app so a user who denied Screen Time access
+    // during onboarding can enable it later (iOS won't re-prompt after a deny).
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+            call.resolve()
+        }
     }
 }
 

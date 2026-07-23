@@ -8442,6 +8442,8 @@ function scheduleScreenTimeExpiryRefresh() {
   }
 }
 
+let screenTimeAuthDenied = false;
+
 async function handleScreenTimeChooseApps() {
   const native = screenTimeNativePlugin();
   if (!native) {
@@ -8452,12 +8454,26 @@ async function handleScreenTimeChooseApps() {
   }
   try {
     const auth = await native.requestAuthorization();
-    if (!auth?.authorized) return;
+    if (!auth?.authorized) {
+      // iOS won't re-prompt after a denial, so surface the Settings path.
+      screenTimeAuthDenied = true;
+      await refreshScreenTimeStatus();
+      return;
+    }
+    screenTimeAuthDenied = false;
     await native.presentAppPicker();
   } catch {
     // User cancelled the picker or authorization.
   }
   await refreshScreenTimeStatus();
+}
+
+async function handleScreenTimeOpenSettings() {
+  try {
+    await screenTimeNativePlugin()?.openSettings?.();
+  } catch {
+    // No native settings bridge available.
+  }
 }
 
 async function handleScreenTimeUnlock(minutes) {
@@ -8520,8 +8536,14 @@ function renderScreenTimeDialog() {
     const until = new Date(screenTimeStatus.unlockUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     note = `Already unlocked until ${until}.`;
   }
+  // Access was denied (in onboarding or the system prompt): iOS won't ask
+  // again, so point the user to Settings to grant it.
+  const needsAccess = Boolean(screenTimeNativePlugin()) && screenTimeStatus.available && !screenTimeStatus.authorized;
   let appsLine;
-  if (alreadyUnlocked) {
+  if (needsAccess) {
+    appsLine = `<span>Screen Time access is off</span><button data-screentime-settings type="button">Enable in Settings</button>`;
+    note = "Cogni needs Screen Time access to lock your apps. Turn it on in Settings, then come back.";
+  } else if (alreadyUnlocked) {
     const until = new Date(screenTimeStatus.unlockUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     appsLine = `<span>Unlocked until ${until}</span><button data-screentime-lock type="button">Lock now</button>`;
   } else if (hasSelection) {
@@ -8552,6 +8574,10 @@ function renderScreenTimeDialog() {
 }
 
 function handleScreenTimeDialogClick(event) {
+  if (event.target.closest("[data-screentime-settings]")) {
+    handleScreenTimeOpenSettings();
+    return;
+  }
   if (event.target.closest("[data-screentime-apps]")) {
     handleScreenTimeChooseApps().then(() => renderScreenTimeDialog());
     return;
@@ -9568,7 +9594,7 @@ const onboardingSlides = [
   "analyzing", "health", "compare", "potential",
   "engineered", "notdoing", "feel", "loop", "cost",
   "plastic", "flip", "how", "proof", "minutes",
-  "notify", "screentime", "pledge", "curve", "ready"
+  "notify", "screentime", "curve", "pledge", "ready"
 ];
 const onboardingCtaLabels = {
   welcome: "Get started",
