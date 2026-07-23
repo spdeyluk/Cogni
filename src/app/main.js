@@ -9738,6 +9738,7 @@ const onboardingSlides = [
   "qforget", "qlearner", "qfocus", "qfog",
   "analyzing", "health", "compare", "potential",
   "engineered", "notdoing", "feel", "loop", "cost",
+  "aidecay", "aicost",
   "plastic", "flip", "how", "proof", "minutes",
   "notify", "screentime", "curve", "pledge", "ready"
 ];
