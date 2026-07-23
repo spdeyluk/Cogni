@@ -5764,6 +5764,7 @@ function beginExerciseTransition() {
 }
 
 function startSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearTimers();
   renderBoard();
   const n = clampNumber(elements.nLevel.value, 1, 8);
@@ -6113,6 +6114,7 @@ function saveIctProgress(status) {
 }
 
 function startRrtSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearRrtTimers();
   clearExerciseCountdown(elements.rrtStageCard);
   rrt.config = readRrtConfig();
@@ -6419,6 +6421,7 @@ function meanRrtReactionTime() {
 }
 
 function startCctSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearCctTimers();
   clearExerciseCountdown(elements.cctStageCard);
   cct.config = readCctConfig();
@@ -6645,6 +6648,7 @@ function clearCctTimers() {
 }
 
 function startUfovSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearUfovTimers();
   clearExerciseCountdown(elements.ufovStageCard);
   ufov.config = readUfovConfig();
@@ -6889,6 +6893,7 @@ function clearUfovTimers() {
 }
 
 function startIctSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearIctTimers();
   clearExerciseCountdown(elements.ictStageCard);
   ict.config = readIctConfig();
@@ -8593,6 +8598,7 @@ function formatClock(ms) {
 }
 
 function startMotSession() {
+  if (!requireAuth("Create a free account to start training.")) return;
   clearMotTimers();
   initMotScene();
   mot.config = readMotConfig();

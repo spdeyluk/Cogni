@@ -12325,3 +12325,37 @@ html.landing-active #app-shell { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .mini-word, .mini-word.ok, .mini-word.wrong, .mini-number.entry, .mini-number.ok { animation: none !important; }
 }
+
+/* ------------------------------------------------------------------------
+   Link-style buttons ("Back", "Forgot password?", "Sign up", the password
+   eye): the late global button rules give every <button> a boxed look —
+   these should read as plain text/icons, so strip the box back off.
+   ------------------------------------------------------------------------ */
+.auth-back,
+.auth-forgot,
+.auth-eye,
+.auth-switch-button {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.auth-back:hover,
+.auth-forgot:hover,
+.auth-eye:hover,
+.auth-switch-button:hover {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 0.75;
+}
+
+.auth-forgot,
+.auth-switch-button {
+  color: var(--accent) !important;
+}
+
+.auth-back,
+.auth-eye {
+  color: var(--muted) !important;
+}
