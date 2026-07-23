@@ -9242,7 +9242,7 @@ select,
 }
 
 .profile-simple-panel {
-  gap: 0 !important;
+  gap: 14px !important;
 }
 
 .profile-simple-panel > .profile-rank-progress-card {
