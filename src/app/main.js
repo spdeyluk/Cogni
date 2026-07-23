@@ -147,6 +147,10 @@ window.fetch = (input, init = {}) => {
 };
 
 function detectCogniUiMode() {
+  // The native app is ALWAYS the gamified "play" experience and must never render
+  // the browsable "pro" web version — not via a URL param and not via a synced or
+  // stored uiMode value (which can arrive from a web session through cloud sync).
+  if (window.Capacitor?.isNativePlatform?.()) return "play";
   const paramMode = new URLSearchParams(window.location.search).get("mode");
   if (paramMode === "play" || paramMode === "pro") return paramMode;
   try {
@@ -155,7 +159,7 @@ function detectCogniUiMode() {
   } catch {
     // Fall through to platform detection.
   }
-  return window.Capacitor?.isNativePlatform?.() ? "play" : "pro";
+  return "pro";
 }
 const screenTimeUnlockOptions = [15, 30, 60];
 const dailyQuestsStorageKey = "cogni.dailyQuests.v1";
@@ -3504,6 +3508,9 @@ function authIsGated() {
 // Landing page <-> app visibility. The pro web app is browsable without an
 // account; only doing tests/exercises or viewing data requires sign-in.
 function showLanding() {
+  // The marketing landing is part of the browsable web version — it must never
+  // appear inside the native app, which is gated by the sign-in wall instead.
+  if (cogniUiMode === "play") return;
   const landing = document.querySelector("#landing");
   if (!landing) return;
   document.documentElement.classList.add("landing-active");
