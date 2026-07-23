@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
+    "postinstall": "patch-package",
     "mobile:prepare": "node scripts/prepare-mobile.js",
     "ios:sync": "npm run mobile:prepare && npx cap sync ios",
     "ios:open": "npx cap open ios"
@@ -23,6 +24,7 @@
     "three": "^0.184.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "patch-package": "^8.0.1"
   }
 }
