@@ -3295,8 +3295,9 @@ function homeHealthHeadLayers(health) {
 }
 
 function homeHealthColor(health) {
-  // Red (hue 0) at 0% through yellow at 50% to bright green (hue 120) at 100%.
-  return `hsl(${Math.round(clamp01(health / 100) * 120)}, 32%, 46%)`;
+  // Bright ring that tracks the brain art: vivid red (hue 0) at 0% through
+  // yellow at 50% to bright green (hue 120) at 100%.
+  return `hsl(${Math.round(clamp01(health / 100) * 120)}, 80%, 54%)`;
 }
 
 function homeHealthGaugeSvg(health) {
