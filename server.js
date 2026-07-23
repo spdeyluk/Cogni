@@ -38,12 +38,44 @@ const noCacheHeaders = {
   "Surrogate-Control": "no-store"
 };
 
-const apiHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  ...noCacheHeaders
+// Baseline hardening for everything we serve. HSTS is only meaningful over
+// HTTPS, so it is opt-in via COOKIE_SECURE (set on the HTTPS deploy).
+const securityHeaders = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Frame-Options": "DENY",
+  ...(process.env.COOKIE_SECURE === "1"
+    ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" }
+    : {})
 };
+
+const apiHeaders = { ...securityHeaders, ...noCacheHeaders };
+
+// CORS is per-request: "*" cannot be combined with credentials, and the native
+// app sends an Authorization header (which needs an explicit allow) from a
+// custom-scheme origin. Anything not on this list gets no CORS grant at all.
+const allowedOrigins = new Set([
+  "capacitor://localhost", // iOS native shell
+  "https://localhost",     // Android native shell
+  "http://localhost:4283",
+  "http://127.0.0.1:4283"
+]);
+if (process.env.APP_URL) allowedOrigins.add(process.env.APP_URL.replace(/\/$/, ""));
+for (const extra of String(process.env.EXTRA_ORIGINS || "").split(",")) {
+  const origin = extra.trim().replace(/\/$/, "");
+  if (origin) allowedOrigins.add(origin);
+}
+
+function applyCorsHeaders(request, response) {
+  response.setHeader("Vary", "Origin");
+  const origin = request.headers.origin;
+  if (!origin || !allowedOrigins.has(origin)) return;
+  response.setHeader("Access-Control-Allow-Origin", origin);
+  response.setHeader("Access-Control-Allow-Credentials", "true");
+  response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  response.setHeader("Access-Control-Max-Age", "600");
+}
 
 function normalizeHandle(value) {
   const raw = String(value ?? "").trim().replace(/^@+/, "").toLowerCase();
@@ -51,9 +83,29 @@ function normalizeHandle(value) {
   return cleaned ? `@${cleaned}` : "";
 }
 
-async function readJsonBody(request) {
+// Request bodies are capped so a single POST can't exhaust server memory.
+// The synced app-state snapshot is the only legitimately large payload.
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_STATE_BODY_BYTES = 2 * 1024 * 1024;
+
+class PayloadTooLarge extends Error {}
+
+async function readJsonBody(request, limit = MAX_BODY_BYTES) {
+  // Reject on the declared length first so honest clients get a clean 413
+  // instead of a reset connection.
+  const declared = Number(request.headers["content-length"]);
+  if (Number.isFinite(declared) && declared > limit) throw new PayloadTooLarge("body too large");
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) {
+      // No/!lying Content-Length: cut the socket rather than buffer more.
+      request.destroy();
+      throw new PayloadTooLarge("body too large");
+    }
+    chunks.push(chunk);
+  }
   if (!chunks.length) return {};
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
@@ -179,20 +231,55 @@ function verifyPassword(password, stored) {
   return test.length === known.length && timingSafeEqual(test, known);
 }
 
+// Tokens carry their issue time so they can expire, and so a logout (which
+// bumps the account's tokensValidFrom) can invalidate every token already out
+// there. Previously a token was a constant per user: permanent and unrevocable.
+const SESSION_MAX_AGE_MS = SESSION_MAX_AGE * 1000;
+
 function signSession(userId) {
-  const sig = createHmac("sha256", sessionSecret).update(userId).digest("hex");
-  return `${userId}.${sig}`;
+  const payload = `${userId}.${Date.now()}`;
+  const sig = createHmac("sha256", sessionSecret).update(payload).digest("hex");
+  return `${payload}.${sig}`;
 }
 
 function verifySession(token) {
   if (!token) return null;
-  const idx = token.lastIndexOf(".");
-  if (idx < 0) return null;
-  const userId = token.slice(0, idx);
-  const sig = Buffer.from(token.slice(idx + 1));
-  const expected = Buffer.from(createHmac("sha256", sessionSecret).update(userId).digest("hex"));
+  const lastDot = String(token).lastIndexOf(".");
+  if (lastDot < 0) return null;
+  const payload = String(token).slice(0, lastDot);
+  const sig = Buffer.from(String(token).slice(lastDot + 1));
+  const expected = Buffer.from(createHmac("sha256", sessionSecret).update(payload).digest("hex"));
   if (sig.length !== expected.length || !timingSafeEqual(sig, expected)) return null;
-  return userId;
+  const sep = payload.lastIndexOf(".");
+  if (sep < 0) return null;
+  const issuedAt = Number(payload.slice(sep + 1));
+  if (!Number.isFinite(issuedAt) || Date.now() - issuedAt > SESSION_MAX_AGE_MS) return null;
+  return { userId: payload.slice(0, sep), issuedAt };
+}
+
+// A custom URL scheme can be claimed by any app on the device, so the OAuth
+// deep link must not carry a session token. It carries a single-use code with a
+// short TTL that the app immediately exchanges for the real token over HTTPS.
+const pendingAuthCodes = new Map();
+const AUTH_CODE_TTL_MS = 2 * 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, entry] of pendingAuthCodes) if (now > entry.expiresAt) pendingAuthCodes.delete(code);
+}, 60_000).unref?.();
+
+function issueAuthCode(userId) {
+  const code = randomBytes(32).toString("hex");
+  pendingAuthCodes.set(code, { userId, expiresAt: Date.now() + AUTH_CODE_TTL_MS });
+  return code;
+}
+
+function consumeAuthCode(code) {
+  const entry = pendingAuthCodes.get(String(code ?? ""));
+  if (!entry) return null;
+  pendingAuthCodes.delete(String(code)); // single use, even if expired
+  if (Date.now() > entry.expiresAt) return null;
+  return entry.userId;
 }
 
 function parseCookies(request) {
@@ -233,10 +320,82 @@ function sessionTokenFromRequest(request) {
 }
 
 async function currentUser(request) {
-  const userId = verifySession(sessionTokenFromRequest(request));
-  if (!userId) return null;
+  const session = verifySession(sessionTokenFromRequest(request));
+  if (!session) return null;
   const users = await loadUsers();
-  return Object.values(users).find((user) => user.id === userId) || null;
+  const user = Object.values(users).find((candidate) => candidate.id === session.userId) || null;
+  if (!user) return null;
+  // Tokens issued before the last sign-out are dead.
+  if (user.tokensValidFrom && session.issuedAt < user.tokensValidFrom) return null;
+  return user;
+}
+
+// Operator-only endpoints (lead/feedback exports) carry personal data. They are
+// fail-closed: with no ADMIN_TOKEN configured, nobody gets in.
+const adminToken = process.env.ADMIN_TOKEN || "";
+function isAdminRequest(request) {
+  if (!adminToken) return false;
+  const supplied = String(request.headers["x-admin-token"] ?? "");
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(adminToken);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function requireAdmin(request, response) {
+  if (isAdminRequest(request)) return true;
+  sendJson(response, 404, { error: "Not found" });
+  return false;
+}
+
+// In-memory rate limiting, enough to stop credential stuffing from a single
+// host. A multi-instance deploy would need shared (e.g. Redis) counters.
+const rateBuckets = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateBuckets) if (now > bucket.resetAt) rateBuckets.delete(key);
+}, 60_000).unref?.();
+
+function clientIp(request) {
+  return String(request.headers["x-forwarded-for"] ?? "").split(",")[0].trim()
+    || request.socket?.remoteAddress
+    || "unknown";
+}
+
+function rateLimit(request, response, key, limit, windowMs) {
+  const bucketKey = `${key}:${clientIp(request)}`;
+  const now = Date.now();
+  const bucket = rateBuckets.get(bucketKey);
+  if (!bucket || now > bucket.resetAt) {
+    rateBuckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  bucket.count += 1;
+  if (bucket.count > limit) {
+    response.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - now) / 1000)));
+    sendJson(response, 429, { error: "Too many attempts. Please try again later." });
+    return false;
+  }
+  return true;
+}
+
+async function requireUser(request, response) {
+  const user = await currentUser(request);
+  if (!user) {
+    sendJson(response, 401, { error: "Not signed in." });
+    return null;
+  }
+  return user;
+}
+
+// Avatars are stored inline as data URIs; cap them so one account can't bloat
+// the social store (roughly a 200KB image once base64-encoded).
+const MAX_AVATAR_CHARS = 280 * 1024;
+
+// Never expose the owning account id to other clients.
+function publicSocialUser(entry) {
+  if (!entry) return null;
+  const { ownerId, ...rest } = entry;
+  return rest;
 }
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
@@ -329,6 +488,7 @@ function sendJson(response, status, data) {
 }
 
 async function handleApiRequest(request, response, url) {
+  applyCorsHeaders(request, response);
   if (request.method === "OPTIONS") {
     response.writeHead(204, apiHeaders);
     response.end();
@@ -336,6 +496,7 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/auth/signup" && request.method === "POST") {
+    if (!rateLimit(request, response, "signup", 10, 15 * 60_000)) return true;
     const body = await readJsonBody(request);
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
@@ -370,6 +531,7 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/auth/login" && request.method === "POST") {
+    if (!rateLimit(request, response, "login", 10, 15 * 60_000)) return true;
     const body = await readJsonBody(request);
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
@@ -386,6 +548,16 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+    // Clearing the cookie isn't enough: the native app holds a Bearer token, so
+    // invalidate every token issued to this account up to now.
+    const user = await currentUser(request);
+    if (user) {
+      const users = await loadUsers();
+      if (users[user.email]) {
+        users[user.email].tokensValidFrom = Date.now();
+        await saveUsers(users);
+      }
+    }
     clearSessionCookie(response);
     sendJson(response, 200, { ok: true });
     return true;
@@ -461,13 +633,11 @@ async function handleApiRequest(request, response, url) {
         user.googleId = googleId; // link Google to an existing password account
       }
       await saveUsers(users);
-      const token = signSession(user.id);
       if (isNative) {
-        // Hand the session token to the app over the deep link; it then calls
-        // /api/auth/me with the Bearer token to load the user. No cookie needed.
-        redirect(response, `cogni://auth?token=${encodeURIComponent(token)}`);
+        // Single-use code only — never a session token in a deep-link URL.
+        redirect(response, `cogni://auth?code=${issueAuthCode(user.id)}`);
       } else {
-        setSessionCookie(response, token);
+        setSessionCookie(response, signSession(user.id));
         redirect(response, "/");
       }
     } catch {
@@ -481,6 +651,7 @@ async function handleApiRequest(request, response, url) {
   // provided by Apple on the very first authorization, so we keep the first
   // email we ever see for this Apple user.
   if (url.pathname === "/api/auth/apple" && request.method === "POST") {
+    if (!rateLimit(request, response, "apple", 20, 15 * 60_000)) return true;
     const body = await readJsonBody(request);
     const idToken = String(body.identityToken ?? "");
     if (!idToken) {
@@ -526,6 +697,25 @@ async function handleApiRequest(request, response, url) {
     return true;
   }
 
+  // The native app trades its one-time OAuth code for a session token here.
+  if (url.pathname === "/api/auth/exchange" && request.method === "POST") {
+    if (!rateLimit(request, response, "exchange", 20, 15 * 60_000)) return true;
+    const body = await readJsonBody(request);
+    const userId = consumeAuthCode(body.code);
+    if (!userId) {
+      sendJson(response, 400, { error: "That sign-in link expired. Please try again." });
+      return true;
+    }
+    const users = await loadUsers();
+    const user = Object.values(users).find((candidate) => candidate.id === userId);
+    if (!user) {
+      sendJson(response, 400, { error: "That sign-in link expired. Please try again." });
+      return true;
+    }
+    sendJson(response, 200, { user: publicUser(user), token: signSession(user.id) });
+    return true;
+  }
+
   if (url.pathname === "/api/auth/me" && request.method === "GET") {
     const user = await currentUser(request);
     sendJson(response, 200, { user: user ? publicUser(user) : null });
@@ -550,7 +740,7 @@ async function handleApiRequest(request, response, url) {
       sendJson(response, 401, { error: "Not signed in." });
       return true;
     }
-    const body = await readJsonBody(request);
+    const body = await readJsonBody(request, MAX_STATE_BODY_BYTES);
     if (!body || typeof body.state !== "object" || body.state === null) {
       sendJson(response, 400, { error: "Invalid state payload." });
       return true;
@@ -569,6 +759,7 @@ async function handleApiRequest(request, response, url) {
   // App-drop waitlist: the IQ funnel posts the same lead twice (email gate,
   // then phone gate), so posts carrying a known id merge into one row.
   if (url.pathname === "/api/leads" && request.method === "POST") {
+    if (!rateLimit(request, response, "leads", 20, 60 * 60_000)) return true;
     const body = await readJsonBody(request);
     const id = String(body.id ?? "").trim().slice(0, 60);
     const name = String(body.name ?? "").trim().slice(0, 80);
@@ -608,6 +799,7 @@ async function handleApiRequest(request, response, url) {
 
   // In-app feedback prompt (fires once after a few minutes of use).
   if (url.pathname === "/api/feedback" && request.method === "POST") {
+    if (!rateLimit(request, response, "feedback", 20, 60 * 60_000)) return true;
     const body = await readJsonBody(request);
     const message = String(body.message ?? "").trim().slice(0, 1000);
     if (!message) {
@@ -635,6 +827,7 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/feedback" && request.method === "GET") {
+    if (!requireAdmin(request, response)) return true;
     let entries = [];
     try {
       entries = JSON.parse(await readFile(join(dataDir, "feedback.json"), "utf8"));
@@ -646,6 +839,7 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/leads.csv" && request.method === "GET") {
+    if (!requireAdmin(request, response)) return true;
     response.writeHead(200, {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": "attachment; filename=cogni-leads.csv",
@@ -656,11 +850,14 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/leads" && request.method === "GET") {
+    if (!requireAdmin(request, response)) return true;
     sendJson(response, 200, { leads: await loadLeads() });
     return true;
   }
 
   if (url.pathname === "/api/social/profile" && request.method === "POST") {
+    const user = await requireUser(request, response);
+    if (!user) return true;
     const body = await readJsonBody(request);
     const handle = normalizeHandle(body.handle);
     if (!handle) {
@@ -668,21 +865,42 @@ async function handleApiRequest(request, response, url) {
       return true;
     }
     const db = await loadSocialDb();
+    const existing = db.users[handle];
+    // A handle belongs to one account; it can't be hijacked by claiming it.
+    if (existing && existing.ownerId && existing.ownerId !== user.id) {
+      sendJson(response, 409, { error: "That @ username is already taken." });
+      return true;
+    }
+    // Releasing a previous handle keeps one account from squatting many.
+    for (const [key, entry] of Object.entries(db.users)) {
+      if (entry?.ownerId === user.id && key !== handle) delete db.users[key];
+    }
+    const avatarImage = String(body.avatarImage ?? "");
     db.users[handle] = {
       handle,
+      ownerId: user.id,
       avatarInitial: String(body.avatarInitial ?? "").slice(0, 2),
-      avatarImage: String(body.avatarImage ?? "").startsWith("data:image/") ? body.avatarImage : "",
+      avatarImage: avatarImage.startsWith("data:image/") && avatarImage.length <= MAX_AVATAR_CHARS ? avatarImage : "",
       updatedAt: new Date().toISOString()
     };
     await saveSocialDb(db);
-    sendJson(response, 200, { user: db.users[handle] });
+    const users = await loadUsers();
+    if (users[user.email]) {
+      users[user.email].handle = handle;
+      await saveUsers(users);
+    }
+    sendJson(response, 200, { user: publicSocialUser(db.users[handle]) });
     return true;
   }
 
   if (url.pathname === "/api/friend-requests" && request.method === "GET") {
-    const handle = normalizeHandle(url.searchParams.get("handle"));
+    const user = await requireUser(request, response);
+    if (!user) return true;
+    // The handle comes from the session, never the query string — otherwise
+    // anyone could read anyone else's friends and pending requests.
+    const handle = normalizeHandle(user.handle);
     if (!handle) {
-      sendJson(response, 400, { error: "Missing handle." });
+      sendJson(response, 200, { incoming: [], outgoing: [], friends: [] });
       return true;
     }
     const db = await loadSocialDb();
@@ -696,10 +914,17 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/friend-requests" && request.method === "POST") {
+    const user = await requireUser(request, response);
+    if (!user) return true;
     const body = await readJsonBody(request);
-    const fromHandle = normalizeHandle(body.fromHandle);
+    // The sender is whoever is signed in — a spoofed fromHandle is ignored.
+    const fromHandle = normalizeHandle(user.handle);
     const toHandle = normalizeHandle(body.toHandle);
-    if (!fromHandle || !toHandle) {
+    if (!fromHandle) {
+      sendJson(response, 400, { error: "Pick your @ username first." });
+      return true;
+    }
+    if (!toHandle) {
       sendJson(response, 400, { error: "Enter a valid @ username." });
       return true;
     }
@@ -735,8 +960,11 @@ async function handleApiRequest(request, response, url) {
   }
 
   if (url.pathname === "/api/friend-requests/respond" && request.method === "POST") {
+    const user = await requireUser(request, response);
+    if (!user) return true;
     const body = await readJsonBody(request);
-    const handle = normalizeHandle(body.handle);
+    // Only the recipient (the signed-in account) may answer a request.
+    const handle = normalizeHandle(user.handle);
     const action = body.action === "accept" ? "accepted" : "declined";
     const db = await loadSocialDb();
     const requestItem = db.requests.find((item) => item.id === body.requestId && item.toHandle === handle);
@@ -780,7 +1008,22 @@ const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url, "http://localhost");
     if (url.pathname.startsWith("/api/")) {
-      if (!(await handleApiRequest(request, response, url))) sendJson(response, 404, { error: "Not found" });
+      try {
+        if (!(await handleApiRequest(request, response, url))) sendJson(response, 404, { error: "Not found" });
+      } catch (error) {
+        if (response.headersSent) return;
+        if (error instanceof PayloadTooLarge) {
+          sendJson(response, 413, { error: "Payload too large." });
+          return;
+        }
+        if (error instanceof SyntaxError) {
+          sendJson(response, 400, { error: "Invalid JSON body." });
+          return;
+        }
+        // Never leak internals (stack traces, paths) to the client.
+        console.error("[api] unhandled error:", error?.message);
+        sendJson(response, 500, { error: "Something went wrong." });
+      }
       return;
     }
 
@@ -794,6 +1037,7 @@ const server = createServer(async (request, response) => {
     const body = await readFile(filePath);
     response.writeHead(200, {
       "Content-Type": mimeTypes.get(extname(filePath)) || "application/octet-stream",
+      ...securityHeaders,
       ...noCacheHeaders
     });
     response.end(body);

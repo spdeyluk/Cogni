@@ -3810,23 +3810,27 @@ async function handleGoogleDeepLink(rawUrl) {
     setSignInError("Google sign-in didn't complete. Please try again.");
     return;
   }
-  const token = params.get("token");
-  if (!token) {
+  // The deep link carries only a single-use code (a URL scheme can be claimed by
+  // any app, so a session token must never travel in it). Trade it over HTTPS.
+  const code = params.get("code");
+  if (!code) {
     setSignInError("Google sign-in didn't complete. Please try again.");
     return;
   }
-  setAuthToken(token);
   try {
-    const res = await fetch("/api/auth/me");
-    const user = (await res.json())?.user ?? null;
-    if (!user) {
-      setAuthToken("");
-      setSignInError("Google sign-in didn't complete. Please try again.");
+    const res = await fetch("/api/auth/exchange", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.user || !data.token) {
+      setSignInError(data.error || "Google sign-in didn't complete. Please try again.");
       return;
     }
-    await completeSignIn(user, token);
+    setAuthToken(data.token);
+    await completeSignIn(data.user, data.token);
   } catch {
-    setAuthToken("");
     setSignInError("Couldn't reach the server after Google sign-in. Try again.");
   }
 }
@@ -3891,6 +3895,14 @@ function wireAuthGate() {
 
   // The gate is an overlay; closing it reveals the landing or app underneath.
   document.querySelector("#auth-back")?.addEventListener("click", hideAuthGate);
+
+  // This is a plain <a href="/api/auth/google">, which on native would navigate
+  // the webview to a dead local path. Native must use the deep-link flow.
+  document.querySelector("#auth-google")?.addEventListener("click", (event) => {
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    event.preventDefault();
+    startNativeGoogleSignIn();
+  });
 
   document.querySelector("#auth-switch")?.addEventListener("click", () => {
     showAuthGate(authMode === "login" ? "signup" : "login");
