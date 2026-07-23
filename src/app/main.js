@@ -3152,15 +3152,28 @@ function renderHomeQuests() {
   `;
 }
 
+// The starting % comes from the onboarding brain-health quiz (20..45) so a
+// new user always has room to train; 58 is the fallback when no quiz ran.
+function cognitionBaseHealth() {
+  try {
+    const stored = Number(localStorage.getItem("cogni.brainHealth.v1"));
+    if (Number.isFinite(stored) && stored >= cognitionHealthFloor && stored <= 65) return stored;
+  } catch {
+    // Fall through to the default.
+  }
+  return cognitionHealthStart;
+}
+
 function cognitionHealth(progress) {
-  // Everyone starts at 58%; a week of skipped days erodes it day by day to the 18% floor.
+  // A week of skipped days erodes the base day by day toward the 18% floor.
+  const base = cognitionBaseHealth();
   const hasHistory = Object.keys(progress.days ?? {}).length > 0;
-  if (!hasHistory) return cognitionHealthStart;
+  if (!hasHistory) return base;
   const missedDays = consecutiveMissedTrainingDays(progress, leaderboardExerciseIds);
   const trainedToday = trainingMinutesForDate(progress, leaderboardExerciseIds, localDateKey()) > 0;
   const fullDaysMissed = Math.max(0, missedDays - (trainedToday ? 0 : 1));
-  const dailyDecay = (cognitionHealthStart - cognitionHealthFloor) / 7;
-  return Math.max(cognitionHealthFloor, Math.round(cognitionHealthStart - fullDaysMissed * dailyDecay));
+  const dailyDecay = Math.max(1, (base - cognitionHealthFloor) / 7);
+  return Math.max(cognitionHealthFloor, Math.round(base - fullDaysMissed * dailyDecay));
 }
 
 function homeHealthHeadLayers(health) {
@@ -9368,12 +9381,23 @@ function needsOnboarding() {
 // Slide order. Question slides store their answer under their data-q key;
 // "name" is a free-text slide; "curve" is the interactive bell curve.
 const onboardingSlides = [
-  "welcome", "name", "age", "education", "reason", "promise",
-  "hour", "often", "engineered", "notdoing", "feel", "loop", "cost",
-  "plastic", "flip", "how", "proof", "minutes", "curve", "ready"
+  "welcome", "game", "name", "age", "education", "reason", "promise",
+  "hour", "often", "screentimeq", "qforget", "qlearner", "qfocus", "qfog",
+  "analyzing", "health", "compare", "potential",
+  "engineered", "notdoing", "feel", "loop", "cost",
+  "plastic", "flip", "how", "proof", "minutes",
+  "notify", "screentime", "pledge", "curve", "ready"
 ];
 const onboardingCtaLabels = {
   welcome: "Get started",
+  game: "Alright, I'm in",
+  analyzing: "Analyzing…",
+  health: "Am I really that bad?",
+  compare: "Show me my potential",
+  potential: "I'm ready to lock in",
+  notify: "Allow notifications",
+  screentime: "Connect Screen Time",
+  pledge: "Hold to promise",
   curve: "Train brain",
   ready: "Start training"
 };
@@ -9384,6 +9408,11 @@ const onboardingRequired = {
   education: "education",
   reason: "reason",
   often: "often",
+  screentimeq: "screentime",
+  qforget: "qforget",
+  qlearner: "qlearner",
+  qfocus: "qfocus",
+  qfog: "qfog",
   notdoing: "notdoing",
   feel: "feel",
   minutes: "minutes"
@@ -9493,6 +9522,179 @@ function advanceOnboardingCurve() {
   window.requestAnimationFrame(tick);
 }
 
+// --- Brain-health quiz -> score. Six inputs, 0..2 points each (12 max).
+// The result is deliberately capped low (20..45%) so there's always
+// something to train, even on a perfect quiz.
+const onboardingScoreTables = {
+  often: { daily: 0, most: 1, weekly: 2 },
+  screentime: { lt2: 2, "2-4": 1.5, "4-6": 0.5, "6plus": 0 }
+};
+const obRadarAxes = ["Memory", "Focus", "Speed", "Clarity", "Control", "Balance"];
+
+function onboardingQuizScores() {
+  const numeric = (key) => {
+    const value = Number(onboardingAnswers[key]);
+    return Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 1;
+  };
+  const mapped = (key) => onboardingScoreTables[key]?.[onboardingAnswers[key]] ?? 1;
+  // Axis order matches obRadarAxes.
+  return [numeric("qforget"), numeric("qfocus"), numeric("qlearner"), numeric("qfog"), mapped("often"), mapped("screentime")];
+}
+
+function onboardingBrainHealth() {
+  const total = onboardingQuizScores().reduce((sum, value) => sum + value, 0);
+  return Math.max(20, Math.min(45, Math.round(20 + total * (25 / 12))));
+}
+
+function obRadarSvg(values, labels = obRadarAxes) {
+  const width = 320;
+  const height = 250;
+  const cx = width / 2;
+  const cy = height / 2 + 4;
+  const radius = 82;
+  const point = (index, frac) => {
+    const angle = ((index * 60 - 90) * Math.PI) / 180;
+    return [cx + Math.cos(angle) * radius * frac, cy + Math.sin(angle) * radius * frac];
+  };
+  const ring = (frac) => values.map((_, i) => point(i, frac).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const shape = values.map((value, i) => point(i, Math.max(0.08, value / 100)).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const spokes = values.map((_, i) => {
+    const [x, y] = point(i, 1);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`;
+  }).join("");
+  const texts = values.map((value, i) => {
+    const [x, y] = point(i, 1.3);
+    const anchor = x > cx + 6 ? "start" : x < cx - 6 ? "end" : "middle";
+    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}"><tspan class="ob-radar-value">${Math.round(value)}</tspan> ${labels[i]}</text>`;
+  }).join("");
+  return `
+    <svg viewBox="0 0 ${width} ${height}" aria-hidden="true">
+      <g class="ob-radar-grid">
+        <polygon points="${ring(1)}"></polygon>
+        <polygon points="${ring(0.5)}"></polygon>
+        ${spokes}
+      </g>
+      <polygon class="ob-radar-shape" points="${shape}"></polygon>
+      ${texts}
+    </svg>
+  `;
+}
+
+function renderOnboardingHealth() {
+  const scores = onboardingQuizScores();
+  const health = onboardingBrainHealth();
+  try {
+    localStorage.setItem("cogni.brainHealth.v1", String(health));
+  } catch { /* best effort */ }
+  const radar = document.querySelector("#ob-health-radar");
+  if (radar) radar.innerHTML = obRadarSvg(scores.map((score) => 13 + score * 14));
+  const num = document.querySelector("#ob-health-num");
+  if (num) num.textContent = String(health);
+  const youBar = document.querySelector("#ob-bar-you");
+  const youLabel = document.querySelector("#ob-bar-you-label");
+  if (youBar) youBar.style.height = `${Math.round(health * 1.8)}px`;
+  if (youLabel) youLabel.textContent = `${health}%`;
+}
+
+function renderOnboardingPotential() {
+  const total = onboardingQuizScores().reduce((sum, value) => sum + value, 0);
+  const potential = 84 + Math.round(total / 4);
+  const radar = document.querySelector("#ob-potential-radar");
+  if (radar) radar.innerHTML = obRadarSvg(obRadarAxes.map((_, i) => 88 + ((i * 37 + Math.round(total)) % 12)));
+  const num = document.querySelector("#ob-potential-num");
+  if (num) num.textContent = String(potential);
+}
+
+// Fake "analyzing" beat between the quiz and the reveal; auto-advances.
+const obAnalyzeSteps = [[0, "Scoring your answers"], [40, "Weighing your habits"], [75, "Building your baseline"]];
+let obAnalyzeToken = 0;
+function startOnboardingAnalyzing() {
+  const token = ++obAnalyzeToken;
+  const bar = document.querySelector("#ob-analyze-bar");
+  const step = document.querySelector("#ob-analyze-step");
+  const startedAt = performance.now();
+  const durationMs = 2800;
+  const tick = (now) => {
+    if (token !== obAnalyzeToken) return;
+    if (onboardingSlides[onboardingIndex] !== "analyzing") return;
+    const t = Math.min(1, (now - startedAt) / durationMs);
+    const pct = Math.round(t * 100);
+    if (bar) bar.style.width = `${pct}%`;
+    const current = obAnalyzeSteps.filter(([at]) => at <= pct).at(-1);
+    if (step && current) step.textContent = current[1];
+    if (t < 1) {
+      window.requestAnimationFrame(tick);
+      return;
+    }
+    hapticImpact("MEDIUM");
+    showOnboardingSlide(onboardingIndex + 1);
+  };
+  window.requestAnimationFrame(tick);
+}
+
+async function onboardingRequestNotifications() {
+  try {
+    const plugin = window.Capacitor?.Plugins?.LocalNotifications;
+    if (plugin?.requestPermissions) {
+      await plugin.requestPermissions();
+      return;
+    }
+    if (window.Notification?.requestPermission) await window.Notification.requestPermission();
+  } catch { /* denied or unavailable */ }
+}
+
+async function onboardingRequestScreenTime() {
+  try {
+    await handleScreenTimeChooseApps();
+  } catch { /* cancelled */ }
+}
+
+// "Hold to promise": the pledge CTA fills while held for 3 s, with haptic
+// ticks, then advances. Releasing early resets.
+let obHoldRaf = 0;
+let obHoldStart = 0;
+let obHoldLastTick = 0;
+function obHoldReset(cta) {
+  window.cancelAnimationFrame(obHoldRaf);
+  obHoldStart = 0;
+  cta?.classList.remove("holding");
+  cta?.style.setProperty("--hold", "0%");
+}
+function wireOnboardingPledgeHold(cta) {
+  const holdMs = 3000;
+  const start = (event) => {
+    if (onboardingSlides[onboardingIndex] !== "pledge") return;
+    event.preventDefault();
+    obHoldStart = performance.now();
+    obHoldLastTick = 0;
+    cta.classList.add("holding");
+    hapticImpact("MEDIUM");
+    const tick = (now) => {
+      if (!obHoldStart) return;
+      const t = Math.min(1, (now - obHoldStart) / holdMs);
+      cta.style.setProperty("--hold", `${Math.round(t * 100)}%`);
+      const bucket = Math.floor(t * 6);
+      if (bucket > obHoldLastTick && t < 1) {
+        obHoldLastTick = bucket;
+        hapticImpact("LIGHT");
+      }
+      if (t >= 1) {
+        obHoldReset(cta);
+        hapticSuccess();
+        showOnboardingSlide(onboardingIndex + 1);
+        return;
+      }
+      obHoldRaf = window.requestAnimationFrame(tick);
+    };
+    obHoldRaf = window.requestAnimationFrame(tick);
+  };
+  const cancel = () => obHoldReset(cta);
+  cta.addEventListener("pointerdown", start);
+  cta.addEventListener("pointerup", cancel);
+  cta.addEventListener("pointerleave", cancel);
+  cta.addEventListener("pointercancel", cancel);
+}
+
 function onboardingAnswerSatisfied(slideId) {
   const key = onboardingRequired[slideId];
   if (!key) return true;
@@ -9531,8 +9733,13 @@ function showOnboardingSlide(index) {
   const cta = document.querySelector("#onboarding-next");
   if (cta) {
     cta.textContent = onboardingCtaLabels[id] ?? "Continue";
-    cta.disabled = !onboardingAnswerSatisfied(id);
+    cta.disabled = id === "analyzing" || !onboardingAnswerSatisfied(id);
+    obHoldReset(cta);
   }
+  if (id === "analyzing") startOnboardingAnalyzing();
+  if (id === "health") renderOnboardingHealth();
+  if (id === "compare") renderOnboardingHealth();
+  if (id === "potential") renderOnboardingPotential();
   if (id === "promise") {
     applyOnboardingName();
     const firstReason = (onboardingAnswers.reason ?? [])[0];
@@ -9570,15 +9777,37 @@ function showOnboarding() {
   if (!overlay) return;
   if (!onboardingWired) {
     onboardingWired = true;
-    document.querySelector("#onboarding-next")?.addEventListener("click", () => {
+    const nextCta = document.querySelector("#onboarding-next");
+    if (nextCta) wireOnboardingPledgeHold(nextCta);
+    nextCta?.addEventListener("click", () => {
       const id = onboardingSlides[onboardingIndex];
+      // Slides with their own advance mechanics.
+      if (id === "analyzing" || id === "pledge") return;
       if (id === "curve" && onboardingCurveStage < onboardingCurveStages.length - 1) {
         advanceOnboardingCurve();
         return;
       }
       if (onboardingCurveAnimating || !onboardingAnswerSatisfied(id)) return;
-      if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
-      else finishOnboarding();
+      const advance = () => {
+        if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
+        else finishOnboarding();
+      };
+      // Permission slides: ask the system, then move on either way.
+      if (id === "notify") {
+        onboardingRequestNotifications().finally(advance);
+        return;
+      }
+      if (id === "screentime") {
+        onboardingRequestScreenTime().finally(advance);
+        return;
+      }
+      advance();
+    });
+    // "Maybe later" on the permission slides skips the request.
+    document.querySelectorAll("[data-ob-skip]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
+      });
     });
     document.querySelector("#onboarding-back")?.addEventListener("click", () => {
       if (onboardingIndex > 0) showOnboardingSlide(onboardingIndex - 1);

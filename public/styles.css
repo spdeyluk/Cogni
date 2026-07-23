@@ -12849,3 +12849,204 @@ html.landing-active #app-shell { display: none !important; }
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
+
+/* ------------------------------------------------------------------------
+   Onboarding v3: game checklist, brain-health quiz arc (analyzing bar,
+   red/green radar, compare bars), research cards, permission skip links,
+   and the hold-to-promise CTA.
+   ------------------------------------------------------------------------ */
+.onboarding-checklist {
+  display: grid;
+  gap: 11px;
+  margin: 22px auto 18px;
+  max-width: 360px;
+  text-align: left;
+}
+
+.onboarding-checklist span {
+  position: relative;
+  padding: 14px 18px 14px 46px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.onboarding-checklist span::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--success);
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M4 12.5 9.5 18 20 6.5"/></svg>') center / 14px no-repeat, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M4 12.5 9.5 18 20 6.5"/></svg>') center / 14px no-repeat exclude, linear-gradient(#000 0 0);
+}
+
+.ob-analyze-track {
+  width: min(300px, 80%);
+  height: 6px;
+  margin: 26px auto 16px;
+  border-radius: 999px;
+  background: var(--line-strong, var(--line));
+  overflow: hidden;
+}
+
+.ob-analyze-track i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+#ob-analyze-step { color: var(--muted); }
+
+/* Radar (red now / green potential). */
+.ob-radar { margin: 6px 0 2px; }
+
+.ob-radar svg {
+  width: 100%;
+  max-width: 330px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.ob-radar-grid polygon,
+.ob-radar-grid line {
+  fill: none;
+  stroke: var(--line-strong, var(--line));
+  stroke-width: 1;
+}
+
+.ob-radar-shape {
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.ob-radar.is-bad .ob-radar-shape { fill: rgba(192, 80, 75, 0.18); stroke: #C0504B; }
+.ob-radar.is-good .ob-radar-shape { fill: color-mix(in srgb, var(--success) 18%, transparent); stroke: var(--success); }
+
+.ob-radar text {
+  fill: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ob-radar.is-bad .ob-radar-value { fill: #C0504B; }
+.ob-radar.is-good .ob-radar-value { fill: var(--success); }
+
+.ob-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  margin: 6px 0 12px;
+}
+
+.ob-score strong {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ob-score span { color: var(--muted); font-weight: 600; }
+.ob-score.is-bad strong { color: #C0504B; }
+.ob-score.is-good strong { color: var(--success); }
+
+/* You vs Average bars. */
+.ob-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 40px;
+  min-height: 190px;
+  margin: 26px 0 20px;
+}
+
+.ob-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ob-bar {
+  display: block;
+  width: 64px;
+  border-radius: 10px;
+  transition: height 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.ob-bar.is-bad { background: #C0504B; height: 56px; }
+.ob-bar.is-good { background: var(--success); height: 122px; }
+
+.ob-bar-col b { font-size: 1.05rem; }
+.ob-bar-col span { color: var(--muted); font-size: 0.9rem; }
+
+/* Research cards. */
+.onboarding-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin: 22px auto 4px;
+  max-width: 420px;
+  text-align: left;
+}
+
+.onboarding-cards article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.onboarding-cards h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.onboarding-cards p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.onboarding-skip {
+  margin-top: 16px;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+/* Hold-to-promise: the CTA fills left-to-right while held. */
+.onboarding-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.onboarding-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--hold, 0%);
+  background: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+  transition: width 0.08s linear;
+}
+
+.onboarding-cta.holding {
+  transform: scale(0.985);
+}

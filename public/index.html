@@ -63,6 +63,16 @@
             <p>Feeds train it to skim. Cogni trains it to think — a few focused minutes a day.</p>
           </section>
 
+          <section class="onboarding-slide" data-slide="game" hidden>
+            <h2>Training is a game.</h2>
+            <div class="onboarding-checklist" aria-hidden="true">
+              <span>Your mind is your character</span>
+              <span>Your sessions are your XP</span>
+              <span>Your streak is your power</span>
+            </div>
+            <p>Level it up like one.</p>
+          </section>
+
           <section class="onboarding-slide" data-slide="name" hidden>
             <h2>What should we call you?</h2>
             <input class="onboarding-input" id="onboarding-name" type="text" placeholder="Your name" maxlength="30" autocomplete="given-name">
@@ -124,6 +134,85 @@
               <button type="button" data-value="most">Most days</button>
               <button type="button" data-value="weekly">A few times a week</button>
             </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="screentimeq" hidden>
+            <h2>How much screen time do you rack up a day?</h2>
+            <div class="onboarding-options" data-q="screentime">
+              <button type="button" data-value="lt2">Under 2 hours</button>
+              <button type="button" data-value="2-4">2–4 hours</button>
+              <button type="button" data-value="4-6">4–6 hours</button>
+              <button type="button" data-value="6plus">6+ hours</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="qforget" hidden>
+            <p class="onboarding-hint">Brain check · 1 of 4</p>
+            <h2>Do you forget things often?</h2>
+            <div class="onboarding-options" data-q="qforget">
+              <button type="button" data-value="0">Constantly</button>
+              <button type="button" data-value="1">Sometimes</button>
+              <button type="button" data-value="2">Rarely</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="qlearner" hidden>
+            <p class="onboarding-hint">Brain check · 2 of 4</p>
+            <h2>Are you a fast learner?</h2>
+            <div class="onboarding-options" data-q="qlearner">
+              <button type="button" data-value="2">I pick things up instantly</button>
+              <button type="button" data-value="1">About average</button>
+              <button type="button" data-value="0">It takes me a while</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="qfocus" hidden>
+            <p class="onboarding-hint">Brain check · 3 of 4</p>
+            <h2>How long can you focus before grabbing your phone?</h2>
+            <div class="onboarding-options" data-q="qfocus">
+              <button type="button" data-value="2">30+ minutes</button>
+              <button type="button" data-value="1">About 10 minutes</button>
+              <button type="button" data-value="0">A few minutes, tops</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="qfog" hidden>
+            <p class="onboarding-hint">Brain check · 4 of 4</p>
+            <h2>How often does your head feel foggy?</h2>
+            <div class="onboarding-options" data-q="qfog">
+              <button type="button" data-value="0">Most days</button>
+              <button type="button" data-value="1">Sometimes</button>
+              <button type="button" data-value="2">Rarely</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="analyzing" hidden>
+            <h2>Calculating your brain health…</h2>
+            <div class="ob-analyze-track" aria-hidden="true"><i id="ob-analyze-bar"></i></div>
+            <p id="ob-analyze-step">Scoring your answers</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="health" hidden>
+            <h2>Your brain health right now:</h2>
+            <div class="ob-radar is-bad" id="ob-health-radar" aria-hidden="true"></div>
+            <div class="ob-score is-bad"><strong id="ob-health-num">31</strong><span>% brain health</span></div>
+            <p>Low — but that's the starting line, not the verdict.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="compare" hidden>
+            <h2>Don't have the best news for you…</h2>
+            <div class="ob-bars" aria-hidden="true">
+              <div class="ob-bar-col"><i class="ob-bar is-bad" id="ob-bar-you"></i><b id="ob-bar-you-label">31%</b><span>You</span></div>
+              <div class="ob-bar-col"><i class="ob-bar is-good" id="ob-bar-avg"></i><b>68%</b><span>Average</span></div>
+            </div>
+            <p>Your feed habits are wearing your focus down faster than it recovers.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="potential" hidden>
+            <h2>This is your potential:</h2>
+            <div class="ob-radar is-good" id="ob-potential-radar" aria-hidden="true"></div>
+            <div class="ob-score is-good"><strong id="ob-potential-num">87</strong><span>% locked in</span></div>
+            <p>Consistent training is the only thing between these two charts.</p>
           </section>
 
           <section class="onboarding-slide" data-slide="engineered" hidden>
@@ -200,8 +289,13 @@
           </section>
 
           <section class="onboarding-slide" data-slide="proof" hidden>
-            <h2>This isn't a gimmick.</h2>
-            <p>The exercises inside Cogni are built on tasks used in working-memory and cognitive-control research — the kind that shows gains with consistent practice.</p>
+            <h2>Cogni's method is built on:</h2>
+            <div class="onboarding-cards">
+              <article><h3>N-Back training</h3><p>The most studied working-memory task in cognitive research.</p></article>
+              <article><h3>Stop-Signal tasks</h3><p>The lab standard for training response inhibition and self-control.</p></article>
+              <article><h3>Serial addition (PASAT)</h3><p>A classic clinical measure of attention and processing speed.</p></article>
+              <article><h3>Relational reasoning</h3><p>Structured logic training linked to fluid intelligence.</p></article>
+            </div>
           </section>
 
           <section class="onboarding-slide" data-slide="minutes" hidden>
@@ -211,6 +305,23 @@
               <button type="button" data-value="10">10 minutes</button>
               <button type="button" data-value="15">15 or more</button>
             </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="notify" hidden>
+            <h2>Get alerts about your brain.</h2>
+            <p>Streak reminders and brain-health drops — the nudges that keep training alive. Nothing spammy.</p>
+            <button class="onboarding-skip" type="button" data-ob-skip>Maybe later</button>
+          </section>
+
+          <section class="onboarding-slide" data-slide="screentime" hidden>
+            <h2>Put your feeds behind a lock.</h2>
+            <p>Connect Screen Time and Cogni can hold your worst apps shut until you've earned the minutes by training.</p>
+            <button class="onboarding-skip" type="button" data-ob-skip>Maybe later</button>
+          </section>
+
+          <section class="onboarding-slide" data-slide="pledge" hidden>
+            <h2>Are you actually ready to change?</h2>
+            <p>This isn't for everyone. This is for the locked in.</p>
           </section>
 
           <section class="onboarding-slide" data-slide="curve" hidden>
