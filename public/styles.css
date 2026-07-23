@@ -9673,6 +9673,9 @@ select,
 
 .hero .lede {
   text-align: center !important;
+  /* The lede is a max-width block; without auto margins it hugs the left
+     edge and only its text centers, so the line sits off-center. */
+  margin-inline: auto !important;
 }
 
 /* Boxless back buttons — chevron + label only, no chip behind (2026-07-07). */
