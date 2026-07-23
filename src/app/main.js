@@ -9382,7 +9382,7 @@ function needsOnboarding() {
 // "name" is a free-text slide; "curve" is the interactive bell curve.
 const onboardingSlides = [
   "welcome", "game", "name", "age", "education", "reason", "promise",
-  "hour", "often", "screentimeq", "qforget", "qlearner", "qfocus", "qfog",
+  "doomscroll", "hour", "often", "screentimeq", "qforget", "qlearner", "qfocus", "qfog",
   "analyzing", "health", "compare", "potential",
   "engineered", "notdoing", "feel", "loop", "cost",
   "plastic", "flip", "how", "proof", "minutes",
