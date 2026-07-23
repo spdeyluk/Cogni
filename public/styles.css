@@ -12838,3 +12838,14 @@ html.landing-active #app-shell { display: none !important; }
   color: var(--muted);
   font-size: 0.88rem;
 }
+
+/* Wrapped inputs ("@ username" fields): the wrapper div is the box — undo
+   the global input boxing on the inner input so it doesn't double up. */
+.profile-edit-field div input,
+.profile-handle-edit div input {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
