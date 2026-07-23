@@ -214,6 +214,17 @@ select {
   gap: 10px;
   min-height: 72px;
   padding: 0 18px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-brand:hover {
+  opacity: 0.7;
 }
 
 .sidebar-brand img {

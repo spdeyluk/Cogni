@@ -3572,6 +3572,11 @@ function wireLanding() {
     wireAuthGate();
     showAuthGate("login");
   });
+  // Clicking the top-left Cogni logo returns to the landing page (pro web only).
+  document.querySelector("#sidebar-brand")?.addEventListener("click", () => {
+    if (cogniUiMode !== "pro") return;
+    showLanding();
+  });
 }
 
 // Gate an action behind sign-in. In ungated contexts (the /iq funnel, the
