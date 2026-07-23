@@ -12362,3 +12362,310 @@ html.landing-active #app-shell { display: none !important; }
 .auth-eye {
   color: var(--muted) !important;
 }
+
+/* ------------------------------------------------------------------------
+   First-run onboarding (mobile "play" mode). Full-screen story: hook ->
+   the lost hour -> quick question -> brain cost -> the flip -> the
+   interactive IQ bell curve. Uses the app tokens throughout.
+   ------------------------------------------------------------------------ */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  background: var(--bg);
+  color: var(--text);
+  overflow-y: auto;
+}
+
+.onboarding-inner {
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: calc(18px + env(safe-area-inset-top)) 24px calc(22px + env(safe-area-inset-bottom));
+}
+
+.onboarding-top {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  margin-bottom: 6px;
+}
+
+.onboarding-back {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 4px 10px 4px 0;
+  cursor: pointer;
+}
+
+.onboarding-back[hidden] { display: none; }
+
+.onboarding-dots {
+  display: flex;
+  gap: 7px;
+  margin: 0 auto;
+  /* Balance the back button so the dots sit dead center. */
+  transform: translateX(-11px);
+}
+
+.onboarding-back[hidden] + .onboarding-dots { transform: none; }
+
+.onboarding-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line-strong, var(--line));
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.onboarding-dots i.active {
+  background: var(--accent);
+  transform: scale(1.25);
+}
+
+.onboarding-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.onboarding-slide {
+  text-align: center;
+  animation: onboarding-in 0.34s ease both;
+}
+
+@keyframes onboarding-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+.onboarding-slide h2 {
+  font-size: clamp(1.6rem, 6.4vw, 2.05rem);
+  line-height: 1.16;
+  margin: 0 0 14px;
+}
+
+.onboarding-slide > p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  max-width: 30em;
+  margin: 0 auto;
+}
+
+.onboarding-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.onboarding-brand img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.onboarding-brand span {
+  font-family: var(--font-serif) !important;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* The lost hour. */
+.onboarding-clocks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.onboarding-clock {
+  padding: 10px 16px;
+  border: 1.5px solid var(--line-strong, var(--line));
+  border-radius: var(--radius);
+  font-weight: 650;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.onboarding-clock.is-late {
+  color: #C0504B;
+  border-color: rgba(192, 80, 75, 0.55);
+  background: rgba(192, 80, 75, 0.08);
+}
+
+.onboarding-clock-arrow { color: var(--muted); }
+
+/* Question options. */
+.onboarding-options {
+  display: grid;
+  gap: 11px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.onboarding-options button {
+  padding: 15px 18px;
+  border-radius: var(--radius) !important;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onboarding-options button.selected {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)) !important;
+  color: var(--text) !important;
+}
+
+/* Loop pills (bad = what feeds do, good = what Cogni does). */
+.onboarding-loop {
+  display: grid;
+  gap: 11px;
+  margin: 22px 0 20px;
+}
+
+.onboarding-loop span {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.onboarding-loop.is-bad span {
+  color: #C0504B;
+  background: rgba(192, 80, 75, 0.09);
+}
+
+.onboarding-loop.is-good span {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.onboarding-loop span:nth-child(2) { transform: rotate(0.4deg); }
+.onboarding-loop span:nth-child(1) { transform: rotate(-0.4deg); }
+
+/* The IQ bell curve. Stage colors: 90 red -> 110 amber -> 130 green. */
+.onboarding-iq {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0 4px;
+  transition: color 0.4s ease;
+}
+
+.onboarding-iq strong {
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.onboarding-iq span {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.onboarding-curve { margin: 0 0 18px; }
+
+.onboarding-curve svg {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.onboarding-iq.stage-0, .onboarding-curve.stage-0 { color: #C0504B; }
+.onboarding-iq.stage-1, .onboarding-curve.stage-1 { color: #C29343; }
+.onboarding-iq.stage-2, .onboarding-curve.stage-2 { color: var(--success); }
+
+.onboarding-curve .ob-curve-line {
+  fill: none;
+  stroke: var(--line-strong, var(--line));
+  stroke-width: 2;
+}
+
+.onboarding-curve .ob-curve-fill {
+  fill: currentColor;
+  opacity: 0.16;
+  transition: fill 0.4s ease;
+}
+
+.onboarding-curve .ob-curve-marker {
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.onboarding-curve .ob-curve-dot { fill: currentColor; }
+
+.onboarding-curve .ob-curve-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+/* CTA pinned to the bottom of the flow. */
+.onboarding-cta {
+  margin-top: 26px;
+  padding: 16px 30px;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  box-shadow: none !important;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.onboarding-cta:hover { background: var(--accent) !important; color: var(--on-accent) !important; }
+
+.onboarding-cta:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-slide { animation: none; }
+}
+
+/* Cogni wordmark on the IQ result — for shareable marketing screenshots. */
+.cat-result-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.cat-result-brand img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.cat-result-brand span {
+  font-family: var(--font-serif) !important;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text);
+}

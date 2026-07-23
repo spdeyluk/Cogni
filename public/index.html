@@ -47,6 +47,72 @@
       </div>
     </div>
 
+    <div class="onboarding" id="onboarding" hidden>
+      <div class="onboarding-inner">
+        <div class="onboarding-top">
+          <button class="onboarding-back" id="onboarding-back" type="button" aria-label="Back">←</button>
+          <div class="onboarding-dots" id="onboarding-dots" aria-hidden="true"></div>
+        </div>
+        <div class="onboarding-stage">
+          <section class="onboarding-slide" data-slide="welcome">
+            <div class="onboarding-brand">
+              <img src="assets/brand/logo-white.png" alt="">
+              <span>Cogni</span>
+            </div>
+            <h2>Your brain becomes what you feed it.</h2>
+            <p>Feeds train it to skim. Cogni trains it to think — a few focused minutes a day.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="hour" hidden>
+            <div class="onboarding-clocks" aria-hidden="true">
+              <span class="onboarding-clock">10:30 PM</span>
+              <span class="onboarding-clock-arrow">→</span>
+              <span class="onboarding-clock is-late">11:30 PM</span>
+            </div>
+            <h2>"Just a quick scroll…"</h2>
+            <p>An hour disappears. Nothing sticks. And it happens most nights.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="often" hidden>
+            <h2>How often do you scroll instead of doing?</h2>
+            <div class="onboarding-options" id="onboarding-often">
+              <button type="button" data-value="daily">Every single day</button>
+              <button type="button" data-value="most">Most days</button>
+              <button type="button" data-value="weekly">A few times a week</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="cost" hidden>
+            <h2>Meanwhile, your brain adapts.</h2>
+            <div class="onboarding-loop is-bad" aria-hidden="true">
+              <span>Shorter attention span</span>
+              <span>Weaker working memory</span>
+              <span>Harder to think deeply</span>
+            </div>
+            <p>Your brain gets better at whatever you repeat. Endless feeds train interruption.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="flip" hidden>
+            <h2>Cogni flips the loop.</h2>
+            <div class="onboarding-loop is-good" aria-hidden="true">
+              <span>Train a few minutes</span>
+              <span>Build focus &amp; memory</span>
+              <span>Feel your mind sharpen</span>
+            </div>
+            <p>Real cognitive exercises, adaptive difficulty, and an IQ test to track your gains.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="curve" hidden>
+            <h2>Your mind isn't fixed.</h2>
+            <div class="onboarding-iq stage-0" id="onboarding-iq"><strong id="onboarding-iq-num">90</strong><span>IQ</span></div>
+            <div class="onboarding-curve stage-0" id="onboarding-curve" aria-hidden="true"></div>
+            <p>Consistent training moves you along the curve.</p>
+          </section>
+        </div>
+        <button class="onboarding-cta" id="onboarding-next" type="button">Get started</button>
+      </div>
+    </div>
+
     <div class="landing" id="landing" hidden>
       <header class="landing-nav">
         <div class="landing-brand">
@@ -343,7 +409,11 @@
         </section>
 
         <section class="assessment-result" id="cat-result" hidden aria-live="polite">
-          <p class="exercise-type">Cogni IQ Test</p>
+          <div class="cat-result-brand">
+            <img src="assets/brand/logo-white.png" alt="">
+            <span>Cogni</span>
+          </div>
+          <p class="exercise-type">IQ Test</p>
           <h2 id="cat-result-title">Your score</h2>
           <div class="cat-score-hero">
             <strong id="cat-score">100</strong>

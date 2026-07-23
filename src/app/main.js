@@ -108,6 +108,9 @@ let pendingSessionCoinFloat = 0;
 // Auth state lives here (not in the auth section below) because boot-time
 // calls like renderProfileOnboarding() read authUser before that section runs.
 let authUser = null;
+// Hoisted for the same reason: needsOnboarding() runs during boot.
+const onboardingSeenKey = "cogni.onboardingSeen.v1";
+const onboardingAnswersKey = "cogni.onboardingAnswers.v1";
 
 function detectCogniUiMode() {
   const paramMode = new URLSearchParams(window.location.search).get("mode");
@@ -801,6 +804,9 @@ syncSocialProfileQuietly();
 installNativeNavigationBridge();
 // Deferred so the auth/landing module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
+// First launch of the mobile app: the story onboarding runs before profile
+// setup (deferred past module evaluation like initAuth).
+if (needsOnboarding()) window.setTimeout(showOnboarding, 0);
 window.addEventListener("load", () => window.requestAnimationFrame(updateSegmentedControls));
 window.addEventListener("resize", () => window.requestAnimationFrame(updateSegmentedControls));
 
@@ -2869,8 +2875,9 @@ function hasUserProfile() {
 function renderProfileOnboarding() {
   const existing = document.querySelector(`#${profileOnboardingId}`);
   // Web visitors set up a profile only after signing in, so the prompt
-  // never covers the landing page.
-  if (authIsGated() && !authUser) {
+  // never covers the landing page. On mobile the story onboarding runs
+  // first; finishOnboarding re-invokes this.
+  if (needsOnboarding() || (authIsGated() && !authUser)) {
     existing?.remove();
     return;
   }
@@ -9302,4 +9309,191 @@ function formatDuration(milliseconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+}
+
+// ---------------------------------------------------------------------------
+// First-run onboarding (mobile "play" mode): a short story that frames the
+// problem (scrolling rewires your brain) and the promise (training moves you
+// along the IQ curve), ending in the interactive bell-curve slide.
+// ---------------------------------------------------------------------------
+function needsOnboarding() {
+  if (cogniUiMode !== "play") return false;
+  try {
+    return !localStorage.getItem(onboardingSeenKey);
+  } catch {
+    return false;
+  }
+}
+
+const onboardingSlides = ["welcome", "hour", "often", "cost", "flip", "curve"];
+const onboardingCtaLabels = {
+  welcome: "Get started",
+  hour: "Continue",
+  often: "Continue",
+  cost: "Continue",
+  flip: "Continue",
+  curve: "Train brain"
+};
+let onboardingIndex = 0;
+let onboardingOftenAnswer = null;
+// Bell-curve stages: score + color stage class index.
+const onboardingCurveStages = [90, 110, 130];
+let onboardingCurveStage = 0;
+let onboardingCurveAnimating = false;
+
+function onboardingCurveSvg(score) {
+  const width = 340;
+  const height = 130;
+  const minScore = 55;
+  const maxScore = 145;
+  const baseline = height - 18;
+  const toX = (value) => ((value - minScore) / (maxScore - minScore)) * (width - 16) + 8;
+  const toY = (value) => {
+    const z = (value - 100) / 15;
+    return baseline - Math.exp(-0.5 * z * z) * (height - 40);
+  };
+  const clamped = Math.max(minScore, Math.min(maxScore, score));
+  const curvePoints = [];
+  const fillPoints = [`${toX(minScore).toFixed(1)},${baseline}`];
+  for (let index = 0; index <= 90; index += 1) {
+    const value = minScore + ((maxScore - minScore) * index) / 90;
+    const point = `${toX(value).toFixed(1)},${toY(value).toFixed(1)}`;
+    curvePoints.push(point);
+    if (value <= clamped) fillPoints.push(point);
+  }
+  fillPoints.push(`${toX(clamped).toFixed(1)},${toY(clamped).toFixed(1)}`);
+  fillPoints.push(`${toX(clamped).toFixed(1)},${baseline}`);
+  const markerX = toX(clamped).toFixed(1);
+  const markerY = toY(clamped).toFixed(1);
+  return `
+    <svg viewBox="0 0 ${width} ${height}" aria-hidden="true">
+      <polygon class="ob-curve-fill" points="${fillPoints.join(" ")}"></polygon>
+      <polyline class="ob-curve-line" points="${curvePoints.join(" ")}"></polyline>
+      <line class="ob-curve-marker" x1="${markerX}" y1="${markerY}" x2="${markerX}" y2="${baseline}"></line>
+      <circle class="ob-curve-dot" cx="${markerX}" cy="${markerY}" r="5"></circle>
+      <text class="ob-curve-label" x="${toX(70)}" y="${height - 4}" text-anchor="middle">70</text>
+      <text class="ob-curve-label" x="${toX(100)}" y="${height - 4}" text-anchor="middle">100</text>
+      <text class="ob-curve-label" x="${toX(130)}" y="${height - 4}" text-anchor="middle">130</text>
+    </svg>
+  `;
+}
+
+function setOnboardingCurveStageClass(stage) {
+  for (const node of [document.querySelector("#onboarding-iq"), document.querySelector("#onboarding-curve")]) {
+    node?.classList.remove("stage-0", "stage-1", "stage-2");
+    node?.classList.add(`stage-${stage}`);
+  }
+}
+
+function renderOnboardingCurve(score) {
+  const holder = document.querySelector("#onboarding-curve");
+  if (holder) holder.innerHTML = onboardingCurveSvg(score);
+  const num = document.querySelector("#onboarding-iq-num");
+  if (num) num.textContent = String(Math.round(score));
+}
+
+// Animate the marker gliding up the curve to the next stage.
+function advanceOnboardingCurve() {
+  if (onboardingCurveAnimating || onboardingCurveStage >= onboardingCurveStages.length - 1) return;
+  const from = onboardingCurveStages[onboardingCurveStage];
+  onboardingCurveStage += 1;
+  const to = onboardingCurveStages[onboardingCurveStage];
+  setOnboardingCurveStageClass(onboardingCurveStage);
+  onboardingCurveAnimating = true;
+  const startedAt = performance.now();
+  const durationMs = 750;
+  const tick = (now) => {
+    const t = Math.min(1, (now - startedAt) / durationMs);
+    const eased = 1 - Math.pow(1 - t, 3);
+    renderOnboardingCurve(from + (to - from) * eased);
+    if (t < 1) {
+      window.requestAnimationFrame(tick);
+      return;
+    }
+    onboardingCurveAnimating = false;
+    if (onboardingCurveStage >= onboardingCurveStages.length - 1) {
+      const cta = document.querySelector("#onboarding-next");
+      if (cta) cta.textContent = "Continue";
+    }
+  };
+  window.requestAnimationFrame(tick);
+}
+
+function showOnboardingSlide(index) {
+  onboardingIndex = index;
+  const id = onboardingSlides[index];
+  document.querySelectorAll(".onboarding-slide").forEach((slide) => {
+    slide.hidden = slide.dataset.slide !== id;
+    if (!slide.hidden) {
+      // Retrigger the entry animation.
+      slide.style.animation = "none";
+      void slide.offsetWidth;
+      slide.style.animation = "";
+    }
+  });
+  const dots = document.querySelector("#onboarding-dots");
+  if (dots) {
+    dots.innerHTML = onboardingSlides.map((_, i) => `<i${i === index ? ' class="active"' : ""}></i>`).join("");
+  }
+  const back = document.querySelector("#onboarding-back");
+  if (back) back.hidden = index === 0;
+  const cta = document.querySelector("#onboarding-next");
+  if (cta) {
+    cta.textContent = onboardingCtaLabels[id];
+    cta.disabled = id === "often" && !onboardingOftenAnswer;
+  }
+  if (id === "curve") {
+    onboardingCurveStage = 0;
+    setOnboardingCurveStageClass(0);
+    renderOnboardingCurve(onboardingCurveStages[0]);
+    if (cta) cta.textContent = onboardingCtaLabels.curve;
+  }
+}
+
+function finishOnboarding() {
+  try {
+    localStorage.setItem(onboardingSeenKey, new Date().toISOString());
+    if (onboardingOftenAnswer) {
+      localStorage.setItem(onboardingAnswersKey, JSON.stringify({ often: onboardingOftenAnswer }));
+    }
+  } catch {
+    // Best effort; worst case the flow replays next launch.
+  }
+  const overlay = document.querySelector("#onboarding");
+  if (overlay) overlay.hidden = true;
+  renderProfileOnboarding();
+}
+
+let onboardingWired = false;
+function showOnboarding() {
+  const overlay = document.querySelector("#onboarding");
+  if (!overlay) return;
+  if (!onboardingWired) {
+    onboardingWired = true;
+    document.querySelector("#onboarding-next")?.addEventListener("click", () => {
+      const id = onboardingSlides[onboardingIndex];
+      if (id === "curve" && onboardingCurveStage < onboardingCurveStages.length - 1) {
+        advanceOnboardingCurve();
+        return;
+      }
+      if (onboardingCurveAnimating) return;
+      if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
+      else finishOnboarding();
+    });
+    document.querySelector("#onboarding-back")?.addEventListener("click", () => {
+      if (onboardingIndex > 0) showOnboardingSlide(onboardingIndex - 1);
+    });
+    document.querySelectorAll("#onboarding-often button").forEach((button) => {
+      button.addEventListener("click", () => {
+        onboardingOftenAnswer = button.dataset.value;
+        document.querySelectorAll("#onboarding-often button").forEach((other) => {
+          other.classList.toggle("selected", other === button);
+        });
+        const cta = document.querySelector("#onboarding-next");
+        if (cta) cta.disabled = false;
+      });
+    });
+  }
+  overlay.hidden = false;
+  showOnboardingSlide(0);
 }
