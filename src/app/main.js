@@ -5528,9 +5528,9 @@ function markDailyDetoxDone() {
 }
 
 function buildDailyDetoxRoutine() {
-  // Three blocks totaling ten minutes of training.
-  const minutesByExercise = { nback: 4, rrt: 3, cct: 3 };
-  const blocks = ["nback", "rrt", "cct"].map((exerciseId) => {
+  // A bit of every routine-able exercise, totaling ten minutes of training.
+  const minutesByExercise = { nback: 3, rrt: 3, cct: 2, ict: 2 };
+  const blocks = ["nback", "rrt", "cct", "ict"].map((exerciseId) => {
     const block = createRoutineBlock(exerciseId);
     block.timeMinutes = minutesByExercise[exerciseId];
     return block;
@@ -9330,17 +9330,40 @@ function needsOnboarding() {
   }
 }
 
-const onboardingSlides = ["welcome", "hour", "often", "cost", "flip", "curve"];
+// Slide order. Question slides store their answer under their data-q key;
+// "name" is a free-text slide; "curve" is the interactive bell curve.
+const onboardingSlides = [
+  "welcome", "name", "age", "education", "reason", "promise",
+  "hour", "often", "engineered", "notdoing", "feel", "loop", "cost",
+  "plastic", "flip", "how", "proof", "minutes", "curve", "ready"
+];
 const onboardingCtaLabels = {
   welcome: "Get started",
-  hour: "Continue",
-  often: "Continue",
-  cost: "Continue",
-  flip: "Continue",
-  curve: "Train brain"
+  curve: "Train brain",
+  ready: "Start training"
+};
+// Slides that need an answer before Continue unlocks.
+const onboardingRequired = {
+  name: "name",
+  age: "age",
+  education: "education",
+  reason: "reason",
+  often: "often",
+  notdoing: "notdoing",
+  feel: "feel",
+  minutes: "minutes"
+};
+const onboardingPromiseLines = {
+  academic: "Cogni trains the working memory and reasoning that grades are built on.",
+  memory: "Cogni's memory exercises directly train recall, span and retention.",
+  focus: "Cogni's control training rebuilds the focus that feeds keep stealing.",
+  iq: "Cogni trains the exact abilities IQ tests measure — and tracks your score over time.",
+  sports: "Cogni sharpens reaction time and processing speed — the mental half of sport.",
+  mental: "A trained, steadier mind recovers faster from stress and rumination.",
+  adhd: "Cogni's inhibition and attention drills are built around the control ADHD makes hard."
 };
 let onboardingIndex = 0;
-let onboardingOftenAnswer = null;
+const onboardingAnswers = {};
 // Bell-curve stages: score + color stage class index.
 const onboardingCurveStages = [90, 110, 130];
 let onboardingCurveStage = 0;
@@ -9424,6 +9447,21 @@ function advanceOnboardingCurve() {
   window.requestAnimationFrame(tick);
 }
 
+function onboardingAnswerSatisfied(slideId) {
+  const key = onboardingRequired[slideId];
+  if (!key) return true;
+  const value = onboardingAnswers[key];
+  if (Array.isArray(value)) return value.length > 0;
+  return Boolean(value && String(value).trim());
+}
+
+function applyOnboardingName() {
+  const name = String(onboardingAnswers.name ?? "").trim();
+  document.querySelectorAll("[data-ob-name]").forEach((node) => {
+    node.textContent = name || "friend";
+  });
+}
+
 function showOnboardingSlide(index) {
   onboardingIndex = index;
   const id = onboardingSlides[index];
@@ -9438,14 +9476,26 @@ function showOnboardingSlide(index) {
   });
   const dots = document.querySelector("#onboarding-dots");
   if (dots) {
-    dots.innerHTML = onboardingSlides.map((_, i) => `<i${i === index ? ' class="active"' : ""}></i>`).join("");
+    // One dot per slide would be noise at 20 slides: show progress as a bar.
+    const pct = Math.round(((index + 1) / onboardingSlides.length) * 100);
+    dots.innerHTML = `<span class="onboarding-progress"><i style="width:${pct}%"></i></span>`;
   }
   const back = document.querySelector("#onboarding-back");
   if (back) back.hidden = index === 0;
   const cta = document.querySelector("#onboarding-next");
   if (cta) {
-    cta.textContent = onboardingCtaLabels[id];
-    cta.disabled = id === "often" && !onboardingOftenAnswer;
+    cta.textContent = onboardingCtaLabels[id] ?? "Continue";
+    cta.disabled = !onboardingAnswerSatisfied(id);
+  }
+  if (id === "promise") {
+    applyOnboardingName();
+    const firstReason = (onboardingAnswers.reason ?? [])[0];
+    const line = document.querySelector("#onboarding-promise-line");
+    if (line && onboardingPromiseLines[firstReason]) line.textContent = onboardingPromiseLines[firstReason];
+  }
+  if (id === "age" || id === "ready") applyOnboardingName();
+  if (id === "name") {
+    window.setTimeout(() => document.querySelector("#onboarding-name")?.focus(), 250);
   }
   if (id === "curve") {
     onboardingCurveStage = 0;
@@ -9458,9 +9508,7 @@ function showOnboardingSlide(index) {
 function finishOnboarding() {
   try {
     localStorage.setItem(onboardingSeenKey, new Date().toISOString());
-    if (onboardingOftenAnswer) {
-      localStorage.setItem(onboardingAnswersKey, JSON.stringify({ often: onboardingOftenAnswer }));
-    }
+    localStorage.setItem(onboardingAnswersKey, JSON.stringify(onboardingAnswers));
   } catch {
     // Best effort; worst case the flow replays next launch.
   }
@@ -9482,21 +9530,46 @@ function showOnboarding() {
         advanceOnboardingCurve();
         return;
       }
-      if (onboardingCurveAnimating) return;
+      if (onboardingCurveAnimating || !onboardingAnswerSatisfied(id)) return;
       if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
       else finishOnboarding();
     });
     document.querySelector("#onboarding-back")?.addEventListener("click", () => {
       if (onboardingIndex > 0) showOnboardingSlide(onboardingIndex - 1);
     });
-    document.querySelectorAll("#onboarding-often button").forEach((button) => {
-      button.addEventListener("click", () => {
-        onboardingOftenAnswer = button.dataset.value;
-        document.querySelectorAll("#onboarding-often button").forEach((other) => {
-          other.classList.toggle("selected", other === button);
+    // Free-text name slide.
+    const nameInput = document.querySelector("#onboarding-name");
+    nameInput?.addEventListener("input", () => {
+      onboardingAnswers.name = nameInput.value;
+      const cta = document.querySelector("#onboarding-next");
+      if (cta) cta.disabled = !onboardingAnswerSatisfied("name");
+    });
+    nameInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && onboardingAnswerSatisfied("name")) {
+        document.querySelector("#onboarding-next")?.click();
+      }
+    });
+    // Question slides: single-select replaces the answer, multi toggles.
+    document.querySelectorAll(".onboarding-options[data-q]").forEach((group) => {
+      const key = group.dataset.q;
+      const multi = group.hasAttribute("data-multi");
+      group.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (multi) {
+            const current = new Set(onboardingAnswers[key] ?? []);
+            if (current.has(button.dataset.value)) current.delete(button.dataset.value);
+            else current.add(button.dataset.value);
+            onboardingAnswers[key] = [...current];
+            button.classList.toggle("selected");
+          } else {
+            onboardingAnswers[key] = button.dataset.value;
+            group.querySelectorAll("button").forEach((other) => {
+              other.classList.toggle("selected", other === button);
+            });
+          }
+          const cta = document.querySelector("#onboarding-next");
+          if (cta) cta.disabled = !onboardingAnswerSatisfied(onboardingSlides[onboardingIndex]);
         });
-        const cta = document.querySelector("#onboarding-next");
-        if (cta) cta.disabled = false;
       });
     });
   }

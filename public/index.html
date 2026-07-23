@@ -63,6 +63,50 @@
             <p>Feeds train it to skim. Cogni trains it to think — a few focused minutes a day.</p>
           </section>
 
+          <section class="onboarding-slide" data-slide="name" hidden>
+            <h2>What should we call you?</h2>
+            <input class="onboarding-input" id="onboarding-name" type="text" placeholder="Your name" maxlength="30" autocomplete="given-name">
+          </section>
+
+          <section class="onboarding-slide" data-slide="age" hidden>
+            <h2><span data-ob-name>You</span>, how old are you?</h2>
+            <div class="onboarding-options" data-q="age">
+              <button type="button" data-value="u16">Under 16</button>
+              <button type="button" data-value="16-24">16–24</button>
+              <button type="button" data-value="25-34">25–34</button>
+              <button type="button" data-value="35+">35 or older</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="education" hidden>
+            <h2>Where are you in life right now?</h2>
+            <div class="onboarding-options" data-q="education">
+              <button type="button" data-value="school">In school</button>
+              <button type="button" data-value="university">In university</button>
+              <button type="button" data-value="working">Working</button>
+              <button type="button" data-value="other">Something else</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="reason" hidden>
+            <h2>What brought you to Cogni?</h2>
+            <p class="onboarding-hint">Pick everything that applies.</p>
+            <div class="onboarding-options" data-q="reason" data-multi>
+              <button type="button" data-value="academic">Academic performance</button>
+              <button type="button" data-value="memory">Better memory</button>
+              <button type="button" data-value="focus">Deeper focus</button>
+              <button type="button" data-value="iq">Raising my IQ</button>
+              <button type="button" data-value="sports">Sports performance</button>
+              <button type="button" data-value="mental">Mental health</button>
+              <button type="button" data-value="adhd">ADHD</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="promise" hidden>
+            <h2>Good call, <span data-ob-name>friend</span>.</h2>
+            <p id="onboarding-promise-line">Cogni trains the abilities that matter most to you.</p>
+          </section>
+
           <section class="onboarding-slide" data-slide="hour" hidden>
             <div class="onboarding-clocks" aria-hidden="true">
               <span class="onboarding-clock">10:30 PM</span>
@@ -75,11 +119,49 @@
 
           <section class="onboarding-slide" data-slide="often" hidden>
             <h2>How often do you scroll instead of doing?</h2>
-            <div class="onboarding-options" id="onboarding-often">
+            <div class="onboarding-options" data-q="often">
               <button type="button" data-value="daily">Every single day</button>
               <button type="button" data-value="most">Most days</button>
               <button type="button" data-value="weekly">A few times a week</button>
             </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="engineered" hidden>
+            <h2>It's not a willpower problem.</h2>
+            <p>Feeds are engineered by thousands of people to keep you swiping. Your brain never stood a chance on its own.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="notdoing" hidden>
+            <h2>What do you end up <em>not</em> doing because you scroll?</h2>
+            <p class="onboarding-hint">Pick everything that applies.</p>
+            <div class="onboarding-options" data-q="notdoing" data-multi>
+              <button type="button" data-value="sleep">Sleep</button>
+              <button type="button" data-value="study">Study or work</button>
+              <button type="button" data-value="exercise">Working out</button>
+              <button type="button" data-value="reading">Reading</button>
+              <button type="button" data-value="people">Time with people</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="feel" hidden>
+            <h2>And how do you feel after?</h2>
+            <p class="onboarding-hint">Be honest — pick any.</p>
+            <div class="onboarding-options" data-q="feel" data-multi>
+              <button type="button" data-value="empty">Empty</button>
+              <button type="button" data-value="annoyed">Annoyed at myself</button>
+              <button type="button" data-value="guilty">Guilty</button>
+              <button type="button" data-value="wired">Tired but wired</button>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="loop" hidden>
+            <h2>So the loop runs itself.</h2>
+            <div class="onboarding-loop is-bad" aria-hidden="true">
+              <span>Scroll now</span>
+              <span>Avoid life</span>
+              <span>Regret after</span>
+            </div>
+            <p>And every lap makes the next one easier to fall into.</p>
           </section>
 
           <section class="onboarding-slide" data-slide="cost" hidden>
@@ -92,6 +174,11 @@
             <p>Your brain gets better at whatever you repeat. Endless feeds train interruption.</p>
           </section>
 
+          <section class="onboarding-slide" data-slide="plastic" hidden>
+            <h2>The good news: it works both ways.</h2>
+            <p>Neuroplasticity — your brain strengthens whatever it repeats. Feed it real training and it rebuilds in the other direction.</p>
+          </section>
+
           <section class="onboarding-slide" data-slide="flip" hidden>
             <h2>Cogni flips the loop.</h2>
             <div class="onboarding-loop is-good" aria-hidden="true">
@@ -99,7 +186,31 @@
               <span>Build focus &amp; memory</span>
               <span>Feel your mind sharpen</span>
             </div>
-            <p>Real cognitive exercises, adaptive difficulty, and an IQ test to track your gains.</p>
+            <p>The same pull that feeds exploit, pointed at your own mind.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="how" hidden>
+            <h2>How Cogni works</h2>
+            <div class="onboarding-how">
+              <span>Real cognitive exercises — memory, reasoning, control, speed</span>
+              <span>Difficulty adapts to you, so it always challenges</span>
+              <span>Streaks and coins keep the habit alive</span>
+              <span>An IQ test tracks your progress over time</span>
+            </div>
+          </section>
+
+          <section class="onboarding-slide" data-slide="proof" hidden>
+            <h2>This isn't a gimmick.</h2>
+            <p>The exercises inside Cogni are built on tasks used in working-memory and cognitive-control research — the kind that shows gains with consistent practice.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="minutes" hidden>
+            <h2>How many minutes a day can you give?</h2>
+            <div class="onboarding-options" data-q="minutes">
+              <button type="button" data-value="5">5 minutes</button>
+              <button type="button" data-value="10">10 minutes</button>
+              <button type="button" data-value="15">15 or more</button>
+            </div>
           </section>
 
           <section class="onboarding-slide" data-slide="curve" hidden>
@@ -107,6 +218,15 @@
             <div class="onboarding-iq stage-0" id="onboarding-iq"><strong id="onboarding-iq-num">90</strong><span>IQ</span></div>
             <div class="onboarding-curve stage-0" id="onboarding-curve" aria-hidden="true"></div>
             <p>Consistent training moves you along the curve.</p>
+          </section>
+
+          <section class="onboarding-slide" data-slide="ready" hidden>
+            <div class="onboarding-brand">
+              <img src="assets/brand/logo-white.png" alt="">
+              <span>Cogni</span>
+            </div>
+            <h2>You're set, <span data-ob-name>friend</span>.</h2>
+            <p>Your first session is waiting. A few focused minutes — that's all it takes to start.</p>
           </section>
         </div>
         <button class="onboarding-cta" id="onboarding-next" type="button">Get started</button>
@@ -263,11 +383,18 @@
           <h2>Daily detox</h2>
           <p>Detox your focus before the scroll gets to it first.</p>
           <div class="daily-detox-meta">
-            <span>3 exercises</span><i></i><span>~10 min</span>
+            <span>4 exercises</span><i></i><span>~10 min</span>
           </div>
           <button id="start-daily-detox" type="button">Start today's detox</button>
         </article>
 
+        <button class="routines-tile" id="open-routines" type="button">
+          <span class="routines-tile-copy">
+            <strong>Routines</strong>
+            <span>Create or load your own training stacks</span>
+          </span>
+          <span class="routines-tile-chevron" aria-hidden="true"></span>
+        </button>
 
         <div class="section-heading exercise-heading">
           <div>
@@ -356,14 +483,6 @@
           </div>
           <button type="button">Open</button>
         </article>
-
-        <button class="routines-tile" id="open-routines" type="button">
-          <span class="routines-tile-copy">
-            <strong>Routines</strong>
-            <span>Create or load your own training stacks</span>
-          </span>
-          <span class="routines-tile-chevron" aria-hidden="true"></span>
-        </button>
 
       </section>
 
