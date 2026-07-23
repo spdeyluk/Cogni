@@ -5739,13 +5739,24 @@ function markDailyDetoxDone() {
   }
 }
 
+// Easiest settings per exercise, so the daily detox is always approachable.
+const dailyDetoxEasySettings = {
+  nback: { n: 1, modalities: ["position"], trialTimeMs: nBackTrialTimeLimits.max, matchChance: 35, interference: 0, autoProgression: false },
+  rrt: { premiseCount: 2, timerEnabled: false, vocabulary: "meaningful", visualNoise: 0, scrambleFactor: 0 },
+  cct: { startingIntervalSeconds: 4, minimumIntervalSeconds: 2, adaptive: false },
+  ict: { stopProbability: 15, softDeadlineMs: 1600, stopSignalDelayMs: 350 }
+};
+
 function buildDailyDetoxRoutine() {
   // A bit of every exercise: short classic blocks plus one round of each
-  // mini game, roughly twelve minutes in total.
+  // mini game, roughly twelve minutes in total. Always the easiest settings.
   const minutesByExercise = { nback: 2, rrt: 2, cct: 1.5, ict: 1.5 };
   const blocks = ["nback", "rrt", "cct", "ict", "gridmemory", "seqrecall", "numrecall", "verbal", "reaction"].map((exerciseId) => {
     const block = createRoutineBlock(exerciseId);
     if (minutesByExercise[exerciseId]) block.timeMinutes = minutesByExercise[exerciseId];
+    if (dailyDetoxEasySettings[exerciseId]) {
+      block.settings = { ...block.settings, ...dailyDetoxEasySettings[exerciseId] };
+    }
     return block;
   });
   return { id: "daily-detox", name: "Daily detox", blocks };

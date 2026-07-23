@@ -3,7 +3,7 @@
 // the app starts as a brand-new user. Bump RESET_TOKEN to trigger another
 // reset; leave it alone otherwise.
 (() => {
-  var RESET_TOKEN = "20260723-ob-v3-test10";
+  var RESET_TOKEN = "20260723-ob-v3-test11";
   var MARKER_KEY = "cogni.localDataResetToken";
   // Carry any device data left under the temporary "mindcare." key prefix
   // back to "cogni." before anything reads or resets it.
