@@ -56,28 +56,15 @@
         <button class="landing-signin" id="landing-signin" type="button">Sign in</button>
       </header>
 
-      <section class="landing-hero">
+      <section class="landing-hero landing-hero-centered">
         <div class="landing-hero-main">
-          <h1>Improve cognition with training you can stick to.</h1>
-          <p class="landing-hero-lede">Cogni is a cognitive-training experience built to strengthen self-control, problem solving, comprehension, and how fast you learn — a few focused minutes at a time.</p>
-          <ul class="landing-hero-points">
-            <li>Focus longer, and stay steadier under temptation and stress.</li>
-            <li>Build clearer thinking for reading, studying, and writing.</li>
-            <li>Track your progress as your ability improves, session by session.</li>
-          </ul>
-          <button class="landing-cta" id="landing-start" type="button">Start training</button>
+          <h1>Measure your mind. Then train it.</h1>
+          <p class="landing-hero-lede">Real cognitive tests and adaptive training — a few focused minutes at a time.</p>
+          <div class="landing-cta-row">
+            <button class="landing-cta" id="landing-start" type="button">Start training</button>
+            <button class="landing-cta landing-cta-ghost" id="landing-testiq" type="button">Test IQ</button>
+          </div>
         </div>
-        <aside class="landing-hero-card">
-          <h2>What people work toward</h2>
-          <ul class="landing-notice-list">
-            <li>Less rumination and faster emotional recovery</li>
-            <li>More consistency between intention and action</li>
-            <li>Steadier self-control around temptations</li>
-            <li>Better comprehension and longer reading sessions</li>
-            <li>Clearer thinking for essays and structured writing</li>
-            <li>Stronger problem solving under real study conditions</li>
-          </ul>
-        </aside>
       </section>
 
       <section class="landing-section" id="landing-skills">
@@ -128,7 +115,6 @@
 
       <section class="landing-final">
         <h2>Start building better cognition today</h2>
-        <p>Train your attention, steady your impulses, and improve how consistently you learn.</p>
         <button class="landing-cta" id="landing-start-2" type="button">Start training</button>
         <a class="landing-discord" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
           <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
@@ -147,10 +133,10 @@
 
     <main class="app-shell home-open" id="app-shell">
       <aside class="app-sidebar" aria-label="Primary navigation">
-        <button class="sidebar-brand" id="sidebar-brand" type="button" aria-label="Go to home page">
+        <div class="sidebar-brand" id="sidebar-brand">
           <img src="assets/brand/logo-white.png" alt="Cogni">
           <strong>Cogni</strong>
-        </button>
+        </div>
         <nav class="side-nav">
           <button class="side-nav-button active" data-section="home" type="button">
             <span class="nav-icon" aria-hidden="true">
@@ -311,54 +297,6 @@
       </section>
 
       <section class="assessment-page" aria-label="Assessments">
-        <section class="assessment-detail iq-funnel iq-landing" id="iq-welcome" hidden aria-live="polite">
-          <p class="iq-brand">Cogni</p>
-          <h2>What's your real IQ?</h2>
-          <p class="assessment-history-copy">A free adaptive test that zeroes in on your score in about 15 minutes. Scored on the classic IQ scale, with a full breakdown at the end.</p>
-          <div class="assessment-list-actions">
-            <button id="iq-welcome-start" type="button">Take IQ test</button>
-          </div>
-          <p class="iq-about">Cogni builds tools for measuring and training the mind. Our IQ training app is on the way — this adaptive test is where it starts: 20–35 questions across fluid, verbal and quantitative reasoning, with a proper score, confidence interval and breakdown at the end.</p>
-        </section>
-
-        <section class="assessment-detail iq-funnel" id="iq-email" hidden aria-live="polite">
-          <p class="exercise-type">Cogni IQ Test</p>
-          <h2>Verify your email to begin</h2>
-          <p class="assessment-history-copy">Your test unlocks with a valid email — it's also where you'll get first access when the Cogni app launches.</p>
-          <form class="cat-lead-form" id="iq-email-form">
-            <input name="leadEmail" type="email" placeholder="you@email.com" autocomplete="email" maxlength="120" required>
-            <button type="submit">Verify &amp; continue</button>
-          </form>
-          <p class="assessment-disclaimer">We'll send occasional Cogni updates. Unsubscribe anytime — no spam.</p>
-        </section>
-
-        <section class="assessment-detail iq-funnel" id="iq-slides" hidden aria-live="polite">
-          <div class="iq-slide">
-            <p class="exercise-type">Before you begin</p>
-            <h2>Your mind is your biggest asset</h2>
-            <p class="assessment-history-copy">Decades of research agree: general intelligence is the single best predictor of how fast you learn, how well you solve new problems, and how far you go. Most people never measure it — and never train it.</p>
-          </div>
-          <div class="iq-slide" hidden>
-            <p class="exercise-type">Before you begin</p>
-            <h2>In the AI age, thinking is leverage</h2>
-            <p class="assessment-history-copy">AI is automating routine work faster than any shift in history. What's left — and what's rewarded — is deep thinking: focus, reasoning, judgment. The people who thrive won't be the ones who out-work the machines. They'll be the ones who out-think everyone else.</p>
-          </div>
-          <div class="iq-slide" hidden>
-            <p class="exercise-type">Before you begin</p>
-            <h2>How the test works</h2>
-            <p class="assessment-history-copy">One question at a time, each with its own timer. The test adapts to you — there's no going back, and an unanswered question counts as incorrect.</p>
-            <ul class="cat-rules">
-              <li>Find a quiet spot and give it your full attention.</li>
-              <li>No calculator, no notes.</li>
-              <li>If the page refreshes, the test resumes where you left off.</li>
-            </ul>
-          </div>
-          <div class="iq-slide-dots" aria-hidden="true"><i class="active"></i><i></i><i></i></div>
-          <div class="assessment-list-actions">
-            <button id="iq-slides-next" type="button">Continue</button>
-          </div>
-        </section>
-
         <div class="assessment-intro" id="cat-intro" role="button" tabindex="0" aria-label="Open Cogni IQ Test">
           <div>
             <p class="exercise-type">Adaptive test</p>
@@ -397,35 +335,6 @@
           <h2 id="cat-prompt" class="cat-prompt"></h2>
           <div class="cat-stage" id="cat-stage"></div>
           <div class="cat-options" id="cat-options" aria-label="Answer options"></div>
-        </section>
-
-        <section class="assessment-result iq-funnel" id="iq-calculating" hidden aria-live="polite">
-          <p class="exercise-type">Cogni IQ Test</p>
-          <h2 id="iq-calc-title">Calculating your results…</h2>
-          <div class="iq-calc-track" aria-hidden="true"><div id="iq-calc-bar"></div></div>
-          <p class="iq-calc-status"><b id="iq-calc-pct">0%</b> · <span id="iq-calc-step">Scoring your answers</span></p>
-
-          <div class="iq-calc-interrupt" id="iq-calc-phone" hidden>
-            <h3>Get notified when our IQ training app launches</h3>
-            <p class="assessment-history-copy">We're launching the world's first true IQ training app. Drop your phone number to keep your result — and get first access at launch.</p>
-            <form class="cat-lead-form" id="cat-lead-form">
-              <input name="leadPhone" type="tel" placeholder="Phone number, e.g. +358 40 123 4567" autocomplete="tel" maxlength="40" required>
-              <button type="submit">Notify me &amp; continue</button>
-            </form>
-            <p class="assessment-disclaimer">Include your country code. By continuing you agree to receive texts about the Cogni launch. No spam, unsubscribe anytime.</p>
-          </div>
-
-          <div class="iq-calc-interrupt" id="iq-calc-discord" hidden>
-            <h3>Join our Brain Training community</h3>
-            <p class="assessment-history-copy">Training talk, score battles, and launch news first — the Cogni community lives on Discord.</p>
-            <a class="iq-discord-button" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
-              <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
-              Join the Discord
-            </a>
-            <div class="assessment-list-actions">
-              <button id="iq-community-continue" type="button">Continue</button>
-            </div>
-          </div>
         </section>
 
         <section class="assessment-result" id="cat-result" hidden aria-live="polite">

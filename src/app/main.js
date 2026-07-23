@@ -105,87 +105,9 @@ const cogniUiMode = detectCogniUiMode();
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
 
-// The web app is the full training site. On top of it, /iq (or ?iq) is a
-// standalone shareable funnel: email gate -> why-IQ slides -> adaptive test
-// -> phone gate + Discord -> score -> "try the rest of the site". The rest
-// of the web experience (exercises, all tests) is open to everyone.
-const iqStandalone = window.location.pathname === "/iq" || new URLSearchParams(window.location.search).has("iq");
-const leadStorageKey = "cogni.lead.v1";
-const iqRevealPendingKey = "cogni.iqRevealPending.v1";
-
-// Dev helper: /iq?fresh replays the funnel as a brand-new visitor. Clears
-// the stored lead, any in-progress or finished test, the reveal flag, and
-// any play/pro override, then reloads clean onto the funnel landing.
-if (new URLSearchParams(window.location.search).has("fresh")) {
-  try {
-    for (const key of [leadStorageKey, iqRevealPendingKey, "cogni.uiMode.v1", "cogni.catActiveSession.v1", "cogni.catSessions.v1"]) {
-      localStorage.removeItem(key);
-    }
-  } catch {
-    // Storage unavailable; nothing to clear.
-  }
-  window.location.replace("/iq");
-}
-let catPendingResult = null;
-let iqCalcTimer = null;
-let iqCalcPct = 0;
-const iqCalcGates = { phone: false, discord: false };
 // Auth state lives here (not in the auth section below) because boot-time
 // calls like renderProfileOnboarding() read authUser before that section runs.
 let authUser = null;
-
-function loadLead() {
-  try {
-    return JSON.parse(localStorage.getItem(leadStorageKey)) ?? {};
-  } catch {
-    return {};
-  }
-}
-
-// Merges the patch into the stored lead and syncs it to the server, so the
-// email gate and the later phone gate land on one row in leads.json.
-function saveLead(patch) {
-  const lead = { ...loadLead(), ...patch };
-  if (!lead.id) lead.id = `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  if (!lead.createdAt) lead.createdAt = new Date().toISOString();
-  try {
-    localStorage.setItem(leadStorageKey, JSON.stringify(lead));
-  } catch {
-    // Local copy is best effort; the POST below is the real capture.
-  }
-  fetch("/api/leads", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(lead)
-  }).catch(() => {});
-  return lead;
-}
-
-function hasVerifiedEmail() {
-  return Boolean(loadLead().email);
-}
-
-function hasSubmittedLead() {
-  return Boolean(loadLead().phone);
-}
-
-function initIqStandalone() {
-  showAssessments();
-  const latestSession = loadCatSessions()[0];
-  if (catActive?.currentItemId) {
-    showCatSection("run");
-    renderCatQuestion();
-  } else if (latestSession && (!hasSubmittedLead() || localStorage.getItem(iqRevealPendingKey))) {
-    // Finished the test but refreshed away before the reveal: the
-    // calculation restarts and re-runs whichever gates are still open.
-    catPendingResult = latestSession;
-    startIqCalculating();
-  } else {
-    showAssessmentSection("iq-welcome");
-  }
-  elements.pageTitle.textContent = "Cogni IQ Test";
-  elements.pageLede.textContent = "";
-}
 
 function detectCogniUiMode() {
   const paramMode = new URLSearchParams(window.location.search).get("mode");
@@ -866,13 +788,9 @@ if (cogniUiMode === "pro") {
   document.querySelector("#cat-share")?.removeAttribute("hidden");
   document.querySelector("#cat-discord")?.removeAttribute("hidden");
 }
-if (iqStandalone) {
-  elements.appShell?.classList.add("iq-standalone");
-  // Defer past module evaluation so CAT state (let bindings below) exists.
-  window.setTimeout(initIqStandalone, 0);
-} else if (cogniUiMode === "pro") {
-  // Pro web opens on the marketing landing page. The funnel's "keep
-  // exploring" links (?go=) and signed-in users skip straight to the app.
+if (cogniUiMode === "pro") {
+  // Pro web opens on the marketing landing page. ?go= deep links and
+  // signed-in users skip straight to the app.
   const go = new URLSearchParams(window.location.search).get("go");
   if (go === "tests") { enterApp(); showAssessments(); }
   else if (go === "exercises") { enterApp(); showExerciseHub(); }
@@ -1091,148 +1009,9 @@ elements.catOpenHistory?.addEventListener("click", () => {
 });
 elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
 elements.catResultBack?.addEventListener("click", showAssessmentList);
-// Funnel step 1: the email gate before anything starts.
-document.querySelector("#iq-welcome-start")?.addEventListener("click", () => {
-  if (hasVerifiedEmail()) {
-    showIqSlide(0);
-    showAssessmentSection("iq-slides");
-  } else {
-    showAssessmentSection("iq-email");
-  }
-});
-document.querySelector("#iq-email-form")?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const email = event.target.leadEmail.value.trim();
-  if (!email) return;
-  saveLead({ email, source: "iq-web" });
-  showIqSlide(0);
-  showAssessmentSection("iq-slides");
-});
-
-// Funnel step 2: the why-IQ slides between the email gate and the test.
-const iqSlideNodes = Array.from(document.querySelectorAll("#iq-slides .iq-slide"));
-const iqSlideDots = Array.from(document.querySelectorAll("#iq-slides .iq-slide-dots i"));
-let iqSlideIndex = 0;
-
-function showIqSlide(index) {
-  iqSlideIndex = index;
-  iqSlideNodes.forEach((slide, i) => { slide.hidden = i !== index; });
-  iqSlideDots.forEach((dot, i) => dot.classList.toggle("active", i === index));
-  const next = document.querySelector("#iq-slides-next");
-  if (next) next.textContent = index === iqSlideNodes.length - 1 ? "Begin the test" : "Continue";
-}
-
-document.querySelector("#iq-slides-next")?.addEventListener("click", () => {
-  if (iqSlideIndex < iqSlideNodes.length - 1) showIqSlide(iqSlideIndex + 1);
-  else startCatTest();
-});
-
-// Post-test "calculating your results" screen: a ~20 s progress bar that
-// pauses at 35% for the phone number and at 60% for the Discord ask.
-const iqCalcSteps = [
-  [0, "Scoring your answers"],
-  [20, "Estimating fluid reasoning"],
-  [45, "Weighing verbal and quantitative items"],
-  [70, "Comparing against population norms"],
-  [88, "Finalizing your score"]
-];
-function startIqCalculating() {
-  iqCalcPct = 0;
-  iqCalcGates.phone = hasSubmittedLead();
-  iqCalcGates.discord = false;
-  const phoneBlock = document.querySelector("#iq-calc-phone");
-  const discordBlock = document.querySelector("#iq-calc-discord");
-  if (phoneBlock) phoneBlock.hidden = true;
-  if (discordBlock) discordBlock.hidden = true;
-  showAssessmentSection("iq-calculating");
-  renderIqCalc();
-  resumeIqCalc();
-}
-
-function renderIqCalc() {
-  const pct = Math.min(100, Math.floor(iqCalcPct));
-  const bar = document.querySelector("#iq-calc-bar");
-  if (bar) bar.style.width = `${pct}%`;
-  const pctLabel = document.querySelector("#iq-calc-pct");
-  if (pctLabel) pctLabel.textContent = `${pct}%`;
-  const title = document.querySelector("#iq-calc-title");
-  if (title) title.textContent = pct >= 60 ? "Almost there…" : "Calculating your results…";
-  const step = iqCalcSteps.filter(([at]) => at <= pct).at(-1);
-  const stepLabel = document.querySelector("#iq-calc-step");
-  if (stepLabel && step) stepLabel.textContent = step[1];
-}
-
-function resumeIqCalc() {
-  window.clearInterval(iqCalcTimer);
-  iqCalcTimer = window.setInterval(() => {
-    iqCalcPct += 0.35 + Math.random() * 0.3; // ~5%/s -> ~20 s of "work"
-    if (!iqCalcGates.phone && iqCalcPct >= 35) {
-      iqCalcPct = 35;
-      renderIqCalc();
-      window.clearInterval(iqCalcTimer);
-      const block = document.querySelector("#iq-calc-phone");
-      if (block) block.hidden = false;
-      block?.querySelector("input")?.focus();
-      return;
-    }
-    if (!iqCalcGates.discord && iqCalcPct >= 60) {
-      iqCalcPct = 60;
-      renderIqCalc();
-      window.clearInterval(iqCalcTimer);
-      const block = document.querySelector("#iq-calc-discord");
-      if (block) block.hidden = false;
-      return;
-    }
-    if (iqCalcPct >= 100) {
-      iqCalcPct = 100;
-      renderIqCalc();
-      window.clearInterval(iqCalcTimer);
-      window.setTimeout(finishIqCalculating, 450);
-      return;
-    }
-    renderIqCalc();
-  }, 100);
-}
-
-function finishIqCalculating() {
-  window.clearInterval(iqCalcTimer);
-  try {
-    localStorage.removeItem(iqRevealPendingKey);
-  } catch {
-    // Best effort.
-  }
-  const record = catPendingResult ?? loadCatSessions()[0];
-  catPendingResult = null;
-  if (record) renderCatResult(record);
-  showCatSection("result");
-}
-
-// 35% pause: the phone gate.
-document.querySelector("#cat-lead-form")?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const phone = event.target.leadPhone.value.trim();
-  if (!phone) return;
-  saveLead({
-    phone,
-    score: catPendingResult?.score ?? null,
-    source: iqStandalone ? "iq-web" : "web-app"
-  });
-  iqCalcGates.phone = true;
-  const block = document.querySelector("#iq-calc-phone");
-  if (block) block.hidden = true;
-  resumeIqCalc();
-});
-
-// 60% pause: the Discord ask.
-document.querySelector("#iq-community-continue")?.addEventListener("click", () => {
-  iqCalcGates.discord = true;
-  const block = document.querySelector("#iq-calc-discord");
-  if (block) block.hidden = true;
-  resumeIqCalc();
-});
 document.querySelector("#cat-share")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
-  const shareUrl = `${window.location.origin}/iq`;
+  const shareUrl = window.location.origin;
   try {
     if (navigator.share) await navigator.share({ title: "Cogni IQ Test", url: shareUrl });
     else {
@@ -3089,10 +2868,9 @@ function hasUserProfile() {
 
 function renderProfileOnboarding() {
   const existing = document.querySelector(`#${profileOnboardingId}`);
-  // Shared IQ-test visitors are leads, not app users — never ask them to
-  // create a profile. Web visitors set up a profile only after signing in,
-  // so it never covers the landing page.
-  if (iqStandalone || (authIsGated() && !authUser)) {
+  // Web visitors set up a profile only after signing in, so the prompt
+  // never covers the landing page.
+  if (authIsGated() && !authUser) {
     existing?.remove();
     return;
   }
@@ -3525,9 +3303,9 @@ function openSettingsDrawer() {
 }
 
 // ---------------------------------------------------------------------------
-// Accounts: the web training app (not the /iq funnel, not mobile) is gated
-// behind sign-in. A signed-in user's cogni.* localStorage is mirrored to the
-// server so progress follows the account across devices.
+// Accounts: the web training app (not mobile) is gated behind sign-in. A
+// signed-in user's cogni.* localStorage is mirrored to the server so progress
+// follows the account across devices.
 // ---------------------------------------------------------------------------
 let authMode = "login";
 let authSyncDirty = false;
@@ -3538,12 +3316,11 @@ const authSyncExclude = new Set([
   "cogni.demoDataSeedToken",
   "cogni.uiMode.v1",
   "cogni.lead.v1",
-  "cogni.iqRevealPending.v1",
   authSyncedAtKey
 ]);
 
 function authIsGated() {
-  return cogniUiMode === "pro" && !iqStandalone;
+  return cogniUiMode === "pro";
 }
 
 // Landing page <-> app visibility. The pro web app is browsable without an
@@ -3568,6 +3345,12 @@ function wireLanding() {
   const start = () => { enterApp(); showExerciseHub(); };
   document.querySelector("#landing-start")?.addEventListener("click", start);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
+  // "Test IQ" lands on the IQ test page; sign-in is asked at Start.
+  document.querySelector("#landing-testiq")?.addEventListener("click", () => {
+    enterApp();
+    showAssessments();
+    showCatSection("detail");
+  });
   document.querySelector("#landing-signin")?.addEventListener("click", () => {
     wireAuthGate();
     showAuthGate("login");
@@ -4410,7 +4193,6 @@ function saveCatSessions(sessions) {
 
 const assessmentIntroIds = ["cat-intro", "ocd-intro", "focus-intro", "memory-intro", "adhd-assessment-intro"];
 const assessmentSectionIds = [
-  "iq-welcome", "iq-email", "iq-slides", "iq-calculating",
   "cat-detail", "cat-run", "cat-result", "cat-history",
   "ocd-detail", "ocd-run", "ocd-result",
   "focus-detail", "focus-run", "focus-result",
@@ -4428,7 +4210,6 @@ function showAssessmentSection(sectionId) {
     if (node) node.hidden = id !== sectionId;
   }
   if (sectionId !== "cat-run") stopCatTimer();
-  if (sectionId !== "iq-calculating") window.clearInterval(iqCalcTimer);
   if (sectionId !== "focus-run") stopFocusTimer();
   if (sectionId !== "memory-run") stopMemoryTimers();
 }
@@ -4563,18 +4344,6 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   saveCatSessions(sessions.slice(0, 50));
   catActive = null;
   saveCatActive();
-  // Web funnel: the "calculating" screen builds anticipation and holds the
-  // phone + Discord asks. The mobile app goes straight to the score.
-  if (cogniUiMode === "pro") {
-    catPendingResult = sessionRecord;
-    try {
-      localStorage.setItem(iqRevealPendingKey, "1");
-    } catch {
-      // Best effort; only affects resume after a refresh.
-    }
-    startIqCalculating();
-    return;
-  }
   renderCatResult(sessionRecord);
   showCatSection("result");
 }
@@ -4583,10 +4352,6 @@ function abandonCatTest() {
   stopCatTimer();
   catActive = null;
   saveCatActive();
-  if (iqStandalone) {
-    showAssessmentSection("iq-welcome");
-    return;
-  }
   showCatSection("intro");
   elements.adhdAssessmentIntro.hidden = false;
 }

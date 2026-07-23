@@ -214,11 +214,6 @@ select {
   gap: 10px;
   min-height: 72px;
   padding: 0 18px;
-  width: 100%;
-  border: none;
-  background: transparent;
-  font: inherit;
-  text-align: left;
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
@@ -11729,6 +11724,31 @@ kbd {
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
+}
+
+/* Hero variant: one centered column, two side-by-side CTAs. */
+.landing-hero-centered {
+  grid-template-columns: 1fr;
+  text-align: center;
+  padding: 96px 28px 110px;
+}
+
+.landing-hero-centered .landing-hero-lede {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-cta-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.landing-cta-ghost {
+  background: transparent !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--line-strong, var(--line));
 }
 
 .landing-hero-card {
