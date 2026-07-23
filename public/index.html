@@ -7,6 +7,35 @@
     <link rel="stylesheet" href="styles.css?v=20260709-sheetpolish">
   </head>
   <body>
+    <div class="signin-first" id="signin-first" hidden>
+      <div class="signin-first-inner">
+        <div class="signin-first-brand">
+          <img src="assets/brand/logo-white.png" alt="">
+          <span>Cogni</span>
+        </div>
+        <h1>Train the mind behind everything you do.</h1>
+        <p class="signin-first-lede">Sign in to save your progress across every device.</p>
+        <div class="signin-first-actions">
+          <button class="signin-btn signin-btn-apple" id="signin-apple" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.365 1.43c0 1.14-.42 2.2-1.12 3-.76.87-2 .15-2 .15s-.28-1.28.55-2.3c.84-1.04 2.2-1.16 2.2-1.16s.37.16.37.31zM20.9 17.1c-.36.83-.53 1.2-1 1.94-.65 1.03-1.57 2.3-2.7 2.31-1 .01-1.26-.65-2.62-.64-1.36 0-1.64.65-2.64.64-1.13-.01-2-1.16-2.65-2.19-1.82-2.86-2.01-6.22-.89-8 .8-1.27 2.05-2.02 3.23-2.02 1.2 0 1.96.66 2.95.66.96 0 1.55-.66 2.94-.66 1.05 0 2.16.57 2.95 1.56-2.59 1.42-2.17 5.12.43 6.4z"/></svg>
+            Continue with Apple
+          </button>
+          <button class="signin-btn signin-btn-google" id="signin-google" type="button">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+        <p class="signin-first-error" id="signin-first-error" hidden></p>
+        <button class="signin-first-email" id="signin-email" type="button">Use email instead</button>
+        <p class="signin-first-legal">By continuing you agree to our Terms and acknowledge our Privacy Policy.</p>
+      </div>
+    </div>
+
     <div class="auth-gate" id="auth-gate" hidden>
       <div class="auth-card">
         <button class="auth-back" id="auth-back" type="button" aria-label="Back">← Back</button>

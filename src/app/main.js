@@ -112,6 +112,40 @@ let authUser = null;
 const onboardingSeenKey = "cogni.onboardingSeen.v1";
 const onboardingAnswersKey = "cogni.onboardingAnswers.v1";
 
+// The native app can't reach a relative "/api/..." (its files are bundled) and
+// can't rely on cross-origin cookies in a webview, so it targets the hosted API
+// and carries the session as a Bearer token. The web build stays same-origin.
+const API_BASE = window.Capacitor?.isNativePlatform?.() ? "https://cogni-production-8b3d.up.railway.app" : "";
+const authTokenKey = "cogni.authToken.v1";
+function getAuthToken() {
+  try { return localStorage.getItem(authTokenKey) || ""; } catch { return ""; }
+}
+function setAuthToken(token) {
+  try {
+    if (token) localStorage.setItem(authTokenKey, token);
+    else localStorage.removeItem(authTokenKey);
+  } catch {
+    // Storage unavailable; auth just won't persist across launches.
+  }
+}
+// Route every same-origin "/api/*" fetch to the API server with the token
+// attached. Wrapping fetch once keeps the ~20 existing call sites unchanged.
+const baseFetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => {
+  try {
+    const url = typeof input === "string" ? input : input?.url;
+    if (typeof url === "string" && url.startsWith("/api/")) {
+      const headers = new Headers(init.headers || (typeof input === "object" ? input.headers : undefined));
+      const token = getAuthToken();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      return baseFetch(API_BASE + url, { credentials: "include", ...init, headers });
+    }
+  } catch {
+    // Fall through to a normal fetch on any wrapper hiccup.
+  }
+  return baseFetch(input, init);
+};
+
 function detectCogniUiMode() {
   const paramMode = new URLSearchParams(window.location.search).get("mode");
   if (paramMode === "play" || paramMode === "pro") return paramMode;
@@ -797,22 +831,14 @@ if (cogniUiMode === "pro") {
   document.querySelector("#cat-share")?.removeAttribute("hidden");
   document.querySelector("#cat-discord")?.removeAttribute("hidden");
 }
-if (cogniUiMode === "pro") {
-  // Pro web opens on the marketing landing page. ?go= deep links and
-  // signed-in users skip straight to the app.
-  const go = new URLSearchParams(window.location.search).get("go");
-  if (go === "tests") { enterApp(); showAssessments(); }
-  else if (go === "exercises") { enterApp(); showExerciseHub(); }
-  else { showExerciseHub(); showLanding(); }
-}
 renderProfileOnboarding();
 syncSocialProfileQuietly();
 installNativeNavigationBridge();
-// Deferred so the auth/landing module-level bindings below are initialized.
+// Sign-in is required on every platform: show the sign-in wall immediately so
+// nothing flashes underneath, then initAuth confirms the session and proceeds.
+showSignInFirst();
+// Deferred so the auth/sign-in module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
-// First launch of the mobile app: the story onboarding runs before profile
-// setup (deferred past module evaluation like initAuth).
-if (needsOnboarding()) window.setTimeout(showOnboarding, 0);
 window.addEventListener("load", () => window.requestAnimationFrame(updateSegmentedControls));
 window.addEventListener("resize", () => window.requestAnimationFrame(updateSegmentedControls));
 
@@ -3463,8 +3489,9 @@ const authSyncExclude = new Set([
   authSyncedAtKey
 ]);
 
+// Sign-in is required on every platform now (Apple/Google first).
 function authIsGated() {
-  return cogniUiMode === "pro";
+  return true;
 }
 
 // Landing page <-> app visibility. The pro web app is browsable without an
@@ -3584,24 +3611,23 @@ function startSyncLoop() {
 }
 
 async function initAuth() {
-  if (!authIsGated()) return;
   wireLanding();
   wireAuthGate();
+  wireSignInFirst();
   let user = null;
   try {
     const res = await fetch("/api/auth/me");
     user = (await res.json())?.user ?? null;
   } catch {
-    // Server unreachable: leave the landing page up.
+    // Server unreachable: keep the sign-in wall up (nothing loads without it).
     return;
   }
   if (!user) {
-    // Browsing stays open; a returning Google error surfaces on the gate.
+    // Not signed in: the sign-in wall stays. Surface any OAuth return error.
     const authError = new URLSearchParams(window.location.search).get("autherror");
     if (authError) {
-      showAuthGate("login");
-      setAuthError(authError === "google_unconfigured"
-        ? "Google sign-in isn't set up yet — use email and password for now."
+      setSignInError(authError === "google_unconfigured"
+        ? "Google sign-in isn't set up yet — use email instead."
         : "Google sign-in didn't complete. Please try again.");
     }
     return;
@@ -3626,14 +3652,107 @@ async function initAuth() {
 
 function onAuthenticated() {
   hideAuthGate();
-  enterApp();
-  showExerciseHub();
+  hideSignInFirst();
   const emailNode = document.querySelector("#settings-account-email");
   const accountBlock = document.querySelector("#settings-account");
   if (emailNode) emailNode.textContent = authUser.email;
   if (accountBlock) accountBlock.hidden = false;
-  renderProfileOnboarding();
   startSyncLoop();
+  // First launch on mobile: the story onboarding runs before the app.
+  if (needsOnboarding()) {
+    showOnboarding();
+    return;
+  }
+  enterApp();
+  showExerciseHub();
+  renderProfileOnboarding();
+}
+
+// ---------------------------------------------------------------------------
+// Sign-in-first wall: Apple + Google are the very first thing in the app, on
+// every platform. Nothing else is reachable until a session exists.
+// ---------------------------------------------------------------------------
+function showSignInFirst() {
+  const wall = document.querySelector("#signin-first");
+  if (wall) wall.hidden = false;
+}
+
+function hideSignInFirst() {
+  const wall = document.querySelector("#signin-first");
+  if (wall) wall.hidden = true;
+}
+
+function setSignInError(message) {
+  const node = document.querySelector("#signin-first-error");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+}
+
+// After any successful sign-in, pull cloud state (reload if newer) or seed it.
+async function completeSignIn(user, token) {
+  authUser = user;
+  if (token) setAuthToken(token);
+  try {
+    const stateRes = await fetch("/api/state");
+    const stateData = await stateRes.json().catch(() => ({}));
+    if (stateData?.state && stateData.updatedAt) {
+      applySyncState(stateData.state);
+      localStorage.setItem(authSyncedAtKey, stateData.updatedAt);
+      window.location.reload();
+      return;
+    }
+  } catch {
+    // Fall through and seed from local state.
+  }
+  await pushSyncState();
+  onAuthenticated();
+}
+
+async function handleAppleSignIn() {
+  setSignInError("");
+  const plugin = window.Capacitor?.Plugins?.SignInWithApple;
+  if (!plugin?.authorize) {
+    setSignInError("Apple sign-in isn't available here — use Google or email.");
+    return;
+  }
+  try {
+    const result = await plugin.authorize({ requestedScopes: [0, 1] }); // 0=email, 1=fullName
+    const identityToken = result?.response?.identityToken;
+    const email = result?.response?.email ?? null;
+    if (!identityToken) {
+      setSignInError("Apple sign-in was cancelled.");
+      return;
+    }
+    const res = await fetch("/api/auth/apple", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identityToken, email })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.user) {
+      setSignInError(data.error || "Apple sign-in failed. Try again.");
+      return;
+    }
+    await completeSignIn(data.user, data.token);
+  } catch {
+    setSignInError("Apple sign-in was cancelled.");
+  }
+}
+
+let signInFirstWired = false;
+function wireSignInFirst() {
+  if (signInFirstWired) return;
+  signInFirstWired = true;
+  document.querySelector("#signin-apple")?.addEventListener("click", handleAppleSignIn);
+  document.querySelector("#signin-google")?.addEventListener("click", () => {
+    // Reuse the existing server OAuth redirect flow.
+    window.location.href = "/api/auth/google";
+  });
+  document.querySelector("#signin-email")?.addEventListener("click", () => {
+    wireAuthGate();
+    showAuthGate("login");
+  });
 }
 
 function showAuthGate(mode, message) {
@@ -3715,6 +3834,7 @@ function wireAuthGate() {
         return;
       }
       authUser = data.user;
+      setAuthToken(data.token);
       // First sign-in pulls any saved cloud state, else seeds it from here.
       const stateRes = await fetch("/api/state");
       const stateData = await stateRes.json().catch(() => ({}));
@@ -3739,6 +3859,7 @@ function wireAuthGate() {
     } catch {
       // Ignore; we clear locally regardless.
     }
+    setAuthToken("");
     window.location.reload();
   });
 }

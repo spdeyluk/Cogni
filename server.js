@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual, createHmac, createPublicKey, createVerify } from "node:crypto";
 import { extname, join, normalize } from "node:path";
 
 const root = process.cwd();
@@ -215,11 +215,25 @@ function clearSessionCookie(response) {
 }
 
 function publicUser(user) {
-  return { id: user.id, email: user.email, hasGoogle: Boolean(user.googleId), createdAt: user.createdAt };
+  return {
+    id: user.id,
+    email: user.email,
+    hasGoogle: Boolean(user.googleId),
+    hasApple: Boolean(user.appleId),
+    createdAt: user.createdAt
+  };
+}
+
+// The native app can't rely on cross-origin cookies in a webview, so it sends
+// the session token as a Bearer header instead. Web keeps using the cookie.
+function sessionTokenFromRequest(request) {
+  const auth = String(request.headers.authorization ?? "");
+  if (auth.startsWith("Bearer ")) return auth.slice(7).trim();
+  return parseCookies(request)[SESSION_COOKIE];
 }
 
 async function currentUser(request) {
-  const userId = verifySession(parseCookies(request)[SESSION_COOKIE]);
+  const userId = verifySession(sessionTokenFromRequest(request));
   if (!userId) return null;
   const users = await loadUsers();
   return Object.values(users).find((user) => user.id === userId) || null;
@@ -227,6 +241,51 @@ async function currentUser(request) {
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+
+// Accepted audiences for a Sign in with Apple identity token: the native app's
+// bundle id and (optionally) a web Services ID, comma-separated in APPLE_CLIENT_ID.
+const appleClientIds = (process.env.APPLE_CLIENT_ID || "com.spidey.cogni")
+  .split(",").map((value) => value.trim()).filter(Boolean);
+
+// Apple's public keys, cached briefly (keys rotate). Used to verify the RS256
+// signature on the identity token so we can trust its email/sub claims.
+let appleKeysCache = { keys: null, fetchedAt: 0 };
+async function fetchAppleKeys() {
+  if (appleKeysCache.keys && Date.now() - appleKeysCache.fetchedAt < 60 * 60 * 1000) {
+    return appleKeysCache.keys;
+  }
+  const res = await fetch("https://appleid.apple.com/auth/keys");
+  const data = await res.json();
+  appleKeysCache = { keys: data.keys || [], fetchedAt: Date.now() };
+  return appleKeysCache.keys;
+}
+
+function base64UrlToJson(part) {
+  return JSON.parse(Buffer.from(part.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+}
+
+// Verifies an Apple identity token end to end: signature against Apple's JWKS,
+// issuer, audience, and expiry. Returns the claims, or throws.
+async function verifyAppleIdentityToken(idToken) {
+  const [headerB64, payloadB64, signatureB64] = String(idToken).split(".");
+  if (!headerB64 || !payloadB64 || !signatureB64) throw new Error("malformed token");
+  const header = base64UrlToJson(headerB64);
+  const keys = await fetchAppleKeys();
+  const jwk = keys.find((key) => key.kid === header.kid && key.alg === (header.alg || "RS256"));
+  if (!jwk) throw new Error("signing key not found");
+  const publicKey = createPublicKey({ key: jwk, format: "jwk" });
+  const verifier = createVerify("RSA-SHA256");
+  verifier.update(`${headerB64}.${payloadB64}`);
+  verifier.end();
+  const signature = Buffer.from(signatureB64.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+  if (!verifier.verify(publicKey, signature)) throw new Error("bad signature");
+  const claims = base64UrlToJson(payloadB64);
+  if (claims.iss !== "https://appleid.apple.com") throw new Error("bad issuer");
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (!aud.some((value) => appleClientIds.includes(value))) throw new Error("bad audience");
+  if (typeof claims.exp === "number" && claims.exp * 1000 < Date.now()) throw new Error("token expired");
+  return claims;
+}
 
 // The OAuth redirect URI must match what's registered in Google Cloud. Prefer
 // an explicit APP_URL; otherwise reconstruct the public origin from headers.
@@ -304,8 +363,9 @@ async function handleApiRequest(request, response, url) {
     };
     users[email] = user;
     await saveUsers(users);
-    setSessionCookie(response, signSession(user.id));
-    sendJson(response, 200, { user: publicUser(user) });
+    const token = signSession(user.id);
+    setSessionCookie(response, token);
+    sendJson(response, 200, { user: publicUser(user), token });
     return true;
   }
 
@@ -319,8 +379,9 @@ async function handleApiRequest(request, response, url) {
       sendJson(response, 401, { error: "Wrong email or password." });
       return true;
     }
-    setSessionCookie(response, signSession(user.id));
-    sendJson(response, 200, { user: publicUser(user) });
+    const token = signSession(user.id);
+    setSessionCookie(response, token);
+    sendJson(response, 200, { user: publicUser(user), token });
     return true;
   }
 
@@ -398,6 +459,56 @@ async function handleApiRequest(request, response, url) {
     } catch {
       redirect(response, "/?autherror=google_failed");
     }
+    return true;
+  }
+
+  // Sign in with Apple: the native app posts the identity token it got from
+  // Apple; we verify it and issue our own session. `email`/`fullName` are only
+  // provided by Apple on the very first authorization, so we keep the first
+  // email we ever see for this Apple user.
+  if (url.pathname === "/api/auth/apple" && request.method === "POST") {
+    const body = await readJsonBody(request);
+    const idToken = String(body.identityToken ?? "");
+    if (!idToken) {
+      sendJson(response, 400, { error: "Missing identity token." });
+      return true;
+    }
+    let claims;
+    try {
+      claims = await verifyAppleIdentityToken(idToken);
+    } catch (error) {
+      sendJson(response, 401, { error: "Could not verify Apple sign-in." });
+      return true;
+    }
+    const appleId = String(claims.sub ?? "");
+    if (!appleId) {
+      sendJson(response, 401, { error: "Apple sign-in returned no user id." });
+      return true;
+    }
+    // Prefer the verified token email; fall back to the one Apple hands the
+    // client on first sign-in; otherwise a private relay placeholder.
+    const email = String(claims.email ?? body.email ?? `${appleId}@privaterelay.appleid.com`).trim().toLowerCase();
+    const users = await loadUsers();
+    let user = Object.values(users).find((candidate) => candidate.appleId === appleId) || users[email];
+    if (!user) {
+      user = {
+        id: `u-${Date.now()}-${randomBytes(6).toString("hex")}`,
+        email,
+        passwordHash: null,
+        googleId: null,
+        appleId,
+        createdAt: new Date().toISOString(),
+        state: null,
+        stateUpdatedAt: null
+      };
+      users[user.email] = user;
+    } else if (!user.appleId) {
+      user.appleId = appleId; // link Apple to an existing account
+    }
+    await saveUsers(users);
+    const token = signSession(user.id);
+    setSessionCookie(response, token);
+    sendJson(response, 200, { user: publicUser(user), token });
     return true;
   }
 
