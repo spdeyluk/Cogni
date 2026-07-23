@@ -3760,17 +3760,79 @@ async function handleAppleSignIn() {
   }
 }
 
+// Native Google sign-in: the web OAuth redirect can't return into the bundled
+// webview, so we open Google in an in-app browser and the server redirects back
+// via a `cogni://auth?token=...` deep link that handleGoogleDeepLink catches.
+async function startNativeGoogleSignIn() {
+  setSignInError("");
+  const Browser = window.Capacitor?.Plugins?.Browser;
+  if (!Browser?.open) {
+    setSignInError("Google sign-in isn't available here — use Apple or email.");
+    return;
+  }
+  try {
+    await Browser.open({ url: `${API_BASE}/api/auth/google?native=1`, presentationStyle: "popover" });
+  } catch {
+    setSignInError("Couldn't open Google sign-in. Try again.");
+  }
+}
+
+let googleDeepLinkWired = false;
+function wireGoogleDeepLink() {
+  if (googleDeepLinkWired) return;
+  const App = window.Capacitor?.Plugins?.App;
+  if (!App?.addListener) return;
+  googleDeepLinkWired = true;
+  App.addListener("appUrlOpen", (event) => {
+    const raw = event?.url || "";
+    if (!raw.startsWith("cogni://auth")) return;
+    handleGoogleDeepLink(raw);
+  });
+}
+
+async function handleGoogleDeepLink(rawUrl) {
+  try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch {}
+  let params;
+  try {
+    params = new URL(rawUrl).searchParams;
+  } catch {
+    params = new URLSearchParams(rawUrl.split("?")[1] || "");
+  }
+  const error = params.get("error");
+  if (error) {
+    setSignInError("Google sign-in didn't complete. Please try again.");
+    return;
+  }
+  const token = params.get("token");
+  if (!token) {
+    setSignInError("Google sign-in didn't complete. Please try again.");
+    return;
+  }
+  setAuthToken(token);
+  try {
+    const res = await fetch("/api/auth/me");
+    const user = (await res.json())?.user ?? null;
+    if (!user) {
+      setAuthToken("");
+      setSignInError("Google sign-in didn't complete. Please try again.");
+      return;
+    }
+    await completeSignIn(user, token);
+  } catch {
+    setAuthToken("");
+    setSignInError("Couldn't reach the server after Google sign-in. Try again.");
+  }
+}
+
 let signInFirstWired = false;
 function wireSignInFirst() {
   if (signInFirstWired) return;
   signInFirstWired = true;
+  wireGoogleDeepLink();
   document.querySelector("#signin-apple")?.addEventListener("click", handleAppleSignIn);
   document.querySelector("#signin-google")?.addEventListener("click", () => {
     if (window.Capacitor?.isNativePlatform?.()) {
-      // The web OAuth redirect can't run inside the native webview — it navigates
-      // the app away and can't return a session. Native Google needs a dedicated
-      // flow (deep-link or native SDK); until then, point users at Apple/email.
-      setSignInError("Google sign-in in the app is coming soon — use Apple or email for now.");
+      startNativeGoogleSignIn();
       return;
     }
     // Web: reuse the existing server OAuth redirect flow.

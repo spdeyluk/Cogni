@@ -397,7 +397,11 @@ async function handleApiRequest(request, response, url) {
       redirect(response, "/?autherror=google_unconfigured");
       return true;
     }
-    const state = randomBytes(16).toString("hex");
+    // Native apps can't complete a web redirect back into the bundled webview,
+    // so they open this in an in-app browser and we return via a deep link. The
+    // "n"/"w" state prefix records which, and round-trips through the state cookie.
+    const isNative = url.searchParams.get("native") === "1";
+    const state = (isNative ? "n" : "w") + randomBytes(16).toString("hex");
     response.setHeader("Set-Cookie", `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`);
     const params = new URLSearchParams({
       client_id: googleClientId,
@@ -415,8 +419,11 @@ async function handleApiRequest(request, response, url) {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const savedState = parseCookies(request).google_oauth_state;
+    // Native flows (state prefixed "n") return via a deep link the app can catch.
+    const isNative = typeof state === "string" && state[0] === "n";
+    const failRedirect = isNative ? "cogni://auth?error=google_failed" : "/?autherror=google_failed";
     if (!code || !state || state !== savedState) {
-      redirect(response, "/?autherror=google_failed");
+      redirect(response, failRedirect);
       return true;
     }
     try {
@@ -454,10 +461,17 @@ async function handleApiRequest(request, response, url) {
         user.googleId = googleId; // link Google to an existing password account
       }
       await saveUsers(users);
-      setSessionCookie(response, signSession(user.id));
-      redirect(response, "/");
+      const token = signSession(user.id);
+      if (isNative) {
+        // Hand the session token to the app over the deep link; it then calls
+        // /api/auth/me with the Bearer token to load the user. No cookie needed.
+        redirect(response, `cogni://auth?token=${encodeURIComponent(token)}`);
+      } else {
+        setSessionCookie(response, token);
+        redirect(response, "/");
+      }
     } catch {
-      redirect(response, "/?autherror=google_failed");
+      redirect(response, failRedirect);
     }
     return true;
   }
