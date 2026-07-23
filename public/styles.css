@@ -13174,3 +13174,28 @@ html.landing-active #app-shell { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .streak-toast { transition: opacity 0.3s ease; transform: translate(-50%, 0); }
 }
+
+/* Big dramatic number for the "time lost to scrolling" onboarding slides. */
+.ob-bignum {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 24px 0 18px;
+}
+
+.ob-bignum strong {
+  font-size: clamp(3.6rem, 17vw, 5.2rem);
+  font-weight: 800;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.ob-bignum span {
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ob-bignum.is-bad strong { color: #E8462F; }

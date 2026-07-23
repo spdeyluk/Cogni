@@ -9590,7 +9590,8 @@ function needsOnboarding() {
 // "name" is a free-text slide; "curve" is the interactive bell curve.
 const onboardingSlides = [
   "welcome", "game", "name", "age", "education", "reason", "promise",
-  "doomscroll", "hour", "often", "screentimeq", "qforget", "qlearner", "qfocus", "qfog",
+  "doomscroll", "hour", "often", "screentimeq", "scrollday", "scrollyear", "scrolldecade",
+  "qforget", "qlearner", "qfocus", "qfog",
   "analyzing", "health", "compare", "potential",
   "engineered", "notdoing", "feel", "loop", "cost",
   "plastic", "flip", "how", "proof", "minutes",
@@ -9788,6 +9789,28 @@ function obRadarSvg(values, labels = obRadarAxes) {
   `;
 }
 
+// Turns the daily-screen-time bucket into a representative hours/day figure,
+// then dramatizes it as waking time lost (16 waking hours/day = 8h sleep).
+const onboardingScrollHoursByBucket = { lt2: 1.5, "2-4": 3, "4-6": 5, "6plus": 7 };
+
+function renderOnboardingScroll() {
+  const hpd = onboardingScrollHoursByBucket[onboardingAnswers.screentime] ?? 3;
+  const setText = (attr, value) => {
+    document.querySelectorAll(`[${attr}]`).forEach((node) => { node.textContent = value; });
+  };
+  setText("data-scroll-hours", hpd % 1 === 0 ? String(hpd) : hpd.toFixed(1));
+  // Weekly hours.
+  setText("data-scroll-week", Math.round(hpd * 7));
+  // Yearly, expressed as full *waking* days (16h each) to hit harder.
+  const wakingDaysYear = Math.round((hpd * 365) / 16);
+  setText("data-scroll-year-days", wakingDaysYear);
+  // Over ten years, as years-of-waking-life plus a months figure.
+  const wakingDaysDecade = (hpd * 365 * 10) / 16;
+  const wakingYearsDecade = wakingDaysDecade / 365;
+  setText("data-scroll-decade", wakingYearsDecade.toFixed(1));
+  setText("data-scroll-decade-months", Math.round(wakingDaysDecade / 30));
+}
+
 function renderOnboardingHealth() {
   const scores = onboardingQuizScores();
   const health = onboardingBrainHealth();
@@ -9944,6 +9967,7 @@ function showOnboardingSlide(index) {
     cta.disabled = id === "analyzing" || !onboardingAnswerSatisfied(id);
     obHoldReset(cta);
   }
+  if (id === "scrollday" || id === "scrollyear" || id === "scrolldecade") renderOnboardingScroll();
   if (id === "analyzing") startOnboardingAnalyzing();
   if (id === "health") renderOnboardingHealth();
   if (id === "compare") renderOnboardingHealth();
