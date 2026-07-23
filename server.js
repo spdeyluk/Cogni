@@ -481,6 +481,45 @@ async function handleApiRequest(request, response, url) {
     return true;
   }
 
+  // In-app feedback prompt (fires once after a few minutes of use).
+  if (url.pathname === "/api/feedback" && request.method === "POST") {
+    const body = await readJsonBody(request);
+    const message = String(body.message ?? "").trim().slice(0, 1000);
+    if (!message) {
+      sendJson(response, 400, { error: "Feedback message is required." });
+      return true;
+    }
+    const feedbackPath = join(dataDir, "feedback.json");
+    let entries = [];
+    try {
+      entries = JSON.parse(await readFile(feedbackPath, "utf8"));
+      if (!Array.isArray(entries)) entries = [];
+    } catch {
+      entries = [];
+    }
+    entries.push({
+      id: `fb-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      message,
+      mode: String(body.mode ?? "").slice(0, 10),
+      answers: body.answers && typeof body.answers === "object" ? body.answers : null,
+      createdAt: new Date().toISOString()
+    });
+    await writeFile(feedbackPath, JSON.stringify(entries, null, 2));
+    sendJson(response, 200, { ok: true });
+    return true;
+  }
+
+  if (url.pathname === "/api/feedback" && request.method === "GET") {
+    let entries = [];
+    try {
+      entries = JSON.parse(await readFile(join(dataDir, "feedback.json"), "utf8"));
+    } catch {
+      entries = [];
+    }
+    sendJson(response, 200, { feedback: entries });
+    return true;
+  }
+
   if (url.pathname === "/api/leads.csv" && request.method === "GET") {
     response.writeHead(200, {
       "Content-Type": "text/csv; charset=utf-8",

@@ -217,7 +217,13 @@ const routineExerciseMeta = {
   cct: { label: "Cognitive Control Training", defaultMinutes: 5, secondsPerTrial: 5 },
   ict: { label: "Inhibitory Control Training", defaultMinutes: 4, secondsPerTrial: 1.8 },
   mot: { label: "3D MOT", defaultMinutes: 4, secondsPerTrial: 10 },
-  ufov: { label: "UFOV", defaultMinutes: 3, secondsPerTrial: 1.2 }
+  ufov: { label: "UFOV", defaultMinutes: 3, secondsPerTrial: 1.2 },
+  // Mini games run one full round per block (no time/trial settings).
+  gridmemory: { label: "Grid Memory", defaultMinutes: 1, mini: true },
+  seqrecall: { label: "Sequence Memory", defaultMinutes: 1, mini: true },
+  numrecall: { label: "Number Recall", defaultMinutes: 1, mini: true },
+  verbal: { label: "Word Memory", defaultMinutes: 1.5, mini: true },
+  reaction: { label: "Reaction Time", defaultMinutes: 0.5, mini: true }
 };
 
 const nBackTrialTimeLimits = {
@@ -1848,6 +1854,8 @@ function runMiniGame(id) {
 function closeMiniExercise() {
   if (miniActive?.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
   miniActive = null;
+  // Backing out of a mini mid-routine abandons the routine run.
+  activeRoutineRun = null;
   const overlay = document.querySelector("#mini-ex");
   if (overlay) overlay.hidden = true;
   showExerciseHub();
@@ -1884,21 +1892,31 @@ function renderMiniResult(id, result) {
   const game = miniGames[id];
   const stage = document.querySelector("#mini-ex-stage");
   document.querySelector("#mini-ex-status").textContent = "Session complete";
+  // Inside a routine run: one Continue button instead of replay/done.
+  const actions = activeRoutineRun
+    ? `<div class="mini-result-actions"><button class="mini-primary" type="button" data-mini-routine-next>Continue routine</button></div>`
+    : `<div class="mini-result-actions">
+        <button class="mini-primary" type="button" data-mini-replay>Play again</button>
+        <button class="mini-secondary" type="button" data-mini-done>Done</button>
+      </div>
+      <button class="mini-howto" type="button" data-mini-howto>How to play</button>`;
   stage.innerHTML = `
     <div class="mini-result">
       <p class="exercise-type">${game.label}</p>
       <h2>${escapeHtml(result.headline ?? "Session complete")}</h2>
       <div class="mini-result-metric"><strong>${escapeHtml(String(result.metricValue))}</strong><span>${escapeHtml(result.metricLabel ?? "")}</span></div>
       ${result.sub ? `<p class="mini-result-sub">${escapeHtml(result.sub)}</p>` : ""}
-      <div class="mini-result-actions">
-        <button class="mini-primary" type="button" data-mini-replay>Play again</button>
-        <button class="mini-secondary" type="button" data-mini-done>Done</button>
-      </div>
-      <button class="mini-howto" type="button" data-mini-howto>How to play</button>
+      ${actions}
     </div>`;
-  stage.querySelector("[data-mini-replay]").addEventListener("click", () => runMiniGame(id));
-  stage.querySelector("[data-mini-done]").addEventListener("click", closeMiniExercise);
-  stage.querySelector("[data-mini-howto]").addEventListener("click", () => renderMiniIntro(id));
+  stage.querySelector("[data-mini-routine-next]")?.addEventListener("click", () => {
+    miniActive = null;
+    const overlay = document.querySelector("#mini-ex");
+    if (overlay) overlay.hidden = true;
+    startNextRoutineBlock();
+  });
+  stage.querySelector("[data-mini-replay]")?.addEventListener("click", () => runMiniGame(id));
+  stage.querySelector("[data-mini-done]")?.addEventListener("click", closeMiniExercise);
+  stage.querySelector("[data-mini-howto]")?.addEventListener("click", () => renderMiniIntro(id));
 }
 
 function miniShuffle(arr) {
@@ -5250,6 +5268,7 @@ function routineIcon(name) {
 function routineSettingsTemplate(block) {
   const settings = block.settings ?? {};
   const baseControls = routineBaseSettingsTemplate(block);
+  if (routineExerciseMeta[block.exerciseId]?.mini) return baseControls;
   if (block.exerciseId === "nback") {
     const modalities = settings.modalities ?? [];
     return `
@@ -5326,7 +5345,7 @@ function routineSettingsTemplate(block) {
 }
 
 function routineBaseSettingsTemplate(block) {
-  return `
+  const exercisePicker = `
     <label>
       <span>Exercise</span>
       <select data-routine-field="exerciseId">
@@ -5335,6 +5354,13 @@ function routineBaseSettingsTemplate(block) {
         )).join("")}
       </select>
     </label>
+  `;
+  // Mini games run a fixed full round; time and trial counts don't apply.
+  if (routineExerciseMeta[block.exerciseId]?.mini) {
+    return `${exercisePicker}<p class="routine-mini-note">Runs one full round.</p>`;
+  }
+  return `
+    ${exercisePicker}
     <label>
       <span>Time amount</span>
       <input data-routine-field="timeMinutes" type="number" min="0" max="180" step="0.5" value="${escapeHtml(block.timeMinutes)}" placeholder="minutes">
@@ -5528,20 +5554,22 @@ function markDailyDetoxDone() {
 }
 
 function buildDailyDetoxRoutine() {
-  // A bit of every routine-able exercise, totaling ten minutes of training.
-  const minutesByExercise = { nback: 3, rrt: 3, cct: 2, ict: 2 };
-  const blocks = ["nback", "rrt", "cct", "ict"].map((exerciseId) => {
+  // A bit of every exercise: short classic blocks plus one round of each
+  // mini game, roughly twelve minutes in total.
+  const minutesByExercise = { nback: 2, rrt: 2, cct: 1.5, ict: 1.5 };
+  const blocks = ["nback", "rrt", "cct", "ict", "gridmemory", "seqrecall", "numrecall", "verbal", "reaction"].map((exerciseId) => {
     const block = createRoutineBlock(exerciseId);
-    block.timeMinutes = minutesByExercise[exerciseId];
+    if (minutesByExercise[exerciseId]) block.timeMinutes = minutesByExercise[exerciseId];
     return block;
   });
   return { id: "daily-detox", name: "Daily detox", blocks };
 }
 
 function startRoutine(routine) {
+  if (!requireAuth("Create a free account to start training.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   const blocks = (routine.blocks ?? [])
-    .filter((block) => ["nback", "rrt", "cct", "ict"].includes(block.exerciseId))
+    .filter((block) => ["nback", "rrt", "cct", "ict"].includes(block.exerciseId) || routineExerciseMeta[block.exerciseId]?.mini)
     .map((block) => ({
       ...block,
       settings: {
@@ -5578,6 +5606,13 @@ function startNextRoutineBlock() {
 
   const block = activeRoutineRun.blocks[activeRoutineRun.index];
   activeRoutineRun.index += 1;
+  // Mini blocks run one full round in the mini overlay, then continue.
+  if (routineExerciseMeta[block.exerciseId]?.mini) {
+    const overlay = document.querySelector("#mini-ex");
+    if (overlay) overlay.hidden = false;
+    runMiniGame(block.exerciseId);
+    return;
+  }
   openExerciseById(block.exerciseId);
   applyRoutineBlockSettings(block);
   if (block.exerciseId === "nback") startSession();
@@ -9428,20 +9463,31 @@ function advanceOnboardingCurve() {
   const to = onboardingCurveStages[onboardingCurveStage];
   setOnboardingCurveStageClass(onboardingCurveStage);
   onboardingCurveAnimating = true;
+  hapticImpact("HEAVY");
   const startedAt = performance.now();
   const durationMs = 750;
+  let lastTickBucket = 0;
   const tick = (now) => {
     const t = Math.min(1, (now - startedAt) / durationMs);
     const eased = 1 - Math.pow(1 - t, 3);
     renderOnboardingCurve(from + (to - from) * eased);
+    // Light ticks while the number climbs, like a dial winding up.
+    const bucket = Math.floor(t * 4);
+    if (bucket > lastTickBucket && t < 1) {
+      lastTickBucket = bucket;
+      hapticImpact("LIGHT");
+    }
     if (t < 1) {
       window.requestAnimationFrame(tick);
       return;
     }
     onboardingCurveAnimating = false;
     if (onboardingCurveStage >= onboardingCurveStages.length - 1) {
+      hapticSuccess();
       const cta = document.querySelector("#onboarding-next");
       if (cta) cta.textContent = "Continue";
+    } else {
+      hapticImpact("MEDIUM");
     }
   };
   window.requestAnimationFrame(tick);
@@ -9555,6 +9601,7 @@ function showOnboarding() {
       const multi = group.hasAttribute("data-multi");
       group.querySelectorAll("button").forEach((button) => {
         button.addEventListener("click", () => {
+          hapticImpact("LIGHT");
           if (multi) {
             const current = new Set(onboardingAnswers[key] ?? []);
             if (current.has(button.dataset.value)) current.delete(button.dataset.value);
@@ -9576,4 +9623,88 @@ function showOnboarding() {
   overlay.hidden = false;
   showOnboardingSlide(0);
   syncNativeNavigationChrome();
+}
+
+// ---------------------------------------------------------------------------
+// Feedback ask: after ~7 minutes of cumulative active use, ask once for a
+// line of feedback. "Send" and "Not now" both retire the prompt for good.
+// ---------------------------------------------------------------------------
+const feedbackUsageKey = "cogni.usageSeconds.v1";
+const feedbackStateKey = "cogni.feedbackAsked.v1";
+const feedbackAskAfterSeconds = 7 * 60;
+
+function initFeedbackAsk() {
+  let asked = null;
+  try {
+    asked = localStorage.getItem(feedbackStateKey);
+  } catch {
+    return;
+  }
+  if (asked) return;
+  window.setInterval(() => {
+    if (document.hidden) return;
+    if (needsOnboarding()) return;
+    let used = 0;
+    try {
+      used = Number(localStorage.getItem(feedbackUsageKey)) || 0;
+      used += 15;
+      localStorage.setItem(feedbackUsageKey, String(used));
+      if (localStorage.getItem(feedbackStateKey)) return;
+    } catch {
+      return;
+    }
+    // Never interrupt a session, test, or dialog.
+    const busy = elements.appShell?.classList.contains("game-active")
+      || Boolean(document.querySelector("dialog[open]"))
+      || Boolean(miniActive)
+      || Boolean(activeRoutineRun)
+      || Boolean(catActive?.currentItemId);
+    if (used >= feedbackAskAfterSeconds && !busy) showFeedbackDialog();
+  }, 15000);
+}
+
+let feedbackWired = false;
+function showFeedbackDialog() {
+  const dialog = document.querySelector("#feedback-dialog");
+  if (!dialog || typeof dialog.showModal !== "function") return;
+  if (!feedbackWired) {
+    feedbackWired = true;
+    document.querySelector("#feedback-skip")?.addEventListener("click", () => {
+      try { localStorage.setItem(feedbackStateKey, "skipped"); } catch { /* ignore */ }
+      dialog.close();
+    });
+    document.querySelector("#feedback-form")?.addEventListener("submit", () => {
+      const message = document.querySelector("#feedback-text")?.value.trim();
+      try { localStorage.setItem(feedbackStateKey, message ? "sent" : "skipped"); } catch { /* ignore */ }
+      if (!message) return;
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          mode: cogniUiMode,
+          answers: (() => { try { return JSON.parse(localStorage.getItem(onboardingAnswersKey)) ?? null; } catch { return null; } })()
+        })
+      }).catch(() => {});
+    });
+  }
+  try { localStorage.setItem(feedbackStateKey, "shown"); } catch { /* ignore */ }
+  dialog.showModal();
+}
+
+window.setTimeout(initFeedbackAsk, 0);
+
+// ---------------------------------------------------------------------------
+// Haptics (iOS shell only; silently a no-op in the browser).
+// ---------------------------------------------------------------------------
+function hapticImpact(style = "MEDIUM") {
+  try {
+    window.Capacitor?.Plugins?.Haptics?.impact?.({ style });
+  } catch { /* no haptics available */ }
+}
+
+function hapticSuccess() {
+  try {
+    window.Capacitor?.Plugins?.Haptics?.notification?.({ type: "SUCCESS" });
+  } catch { /* no haptics available */ }
 }

@@ -314,6 +314,19 @@
       </section>
     </div>
 
+    <dialog class="feedback-dialog" id="feedback-dialog">
+      <form method="dialog" id="feedback-form">
+        <p class="exercise-type">Cogni</p>
+        <h2>How's it going so far?</h2>
+        <p class="feedback-lede">You've been training a few minutes — one line of honest feedback helps us make Cogni better.</p>
+        <textarea id="feedback-text" rows="4" maxlength="1000" placeholder="What do you like? What's confusing or missing?"></textarea>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" id="feedback-skip">Not now</button>
+          <button type="submit" id="feedback-send">Send feedback</button>
+        </div>
+      </form>
+    </dialog>
+
     <div class="mini-ex" id="mini-ex" hidden>
       <div class="mini-ex-top">
         <button class="mini-ex-back" id="mini-ex-back" type="button" aria-label="Back to exercises">← Exercises</button>
@@ -383,7 +396,7 @@
           <h2>Daily detox</h2>
           <p>Detox your focus before the scroll gets to it first.</p>
           <div class="daily-detox-meta">
-            <span>4 exercises</span><i></i><span>~10 min</span>
+            <span>9 exercises</span><i></i><span>~12 min</span>
           </div>
           <button id="start-daily-detox" type="button">Start today's detox</button>
         </article>
@@ -1866,6 +1879,11 @@
             <option value="rrt">Relational Reasoning</option>
             <option value="cct">Cognitive Control Training</option>
             <option value="ict">Inhibitory Control Training</option>
+            <option value="gridmemory">Grid Memory</option>
+            <option value="seqrecall">Sequence Memory</option>
+            <option value="numrecall">Number Recall</option>
+            <option value="verbal">Word Memory</option>
+            <option value="reaction">Reaction Time</option>
           </select>
           <button id="add-routine-block" type="button">Add Exercise</button>
         </div>

@@ -12791,3 +12791,50 @@ html.landing-active #app-shell { display: none !important; }
 /* With ~8 options the list can outgrow small screens: let the slide breathe. */
 .onboarding-options { max-width: 380px; margin-left: auto; margin-right: auto; width: 100%; }
 .onboarding-how { max-width: 400px; margin-left: auto; margin-right: auto; }
+
+/* Feedback ask dialog + mini-block note in the routine builder. */
+.feedback-dialog {
+  width: min(420px, calc(100vw - 40px));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.feedback-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+
+.feedback-dialog h2 { margin: 4px 0 8px; }
+
+.feedback-lede {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.feedback-dialog textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s, 8px);
+  padding: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  margin-bottom: 14px;
+}
+
+.feedback-dialog .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.routine-mini-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
