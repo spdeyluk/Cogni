@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260724-theme6">
+    <link rel="stylesheet" href="styles.css?v=20260724-pricing1">
   </head>
   <body>
     <div class="signin-first" id="signin-first" hidden>
@@ -446,6 +446,7 @@
         <nav class="landing-nav-links" aria-label="Sections">
           <a href="#landing-skills">Training</a>
           <a href="#landing-approach">Approach</a>
+          <a href="#landing-pricing">Pricing</a>
           <a href="#landing-faq">FAQ</a>
         </nav>
         <div class="landing-nav-actions">
@@ -518,6 +519,86 @@
           </article>
         </div>
         <p class="landing-disclaimer">Cogni is a training and self-tracking tool, not a medical or diagnostic service. It isn't a replacement for therapy or professional care.</p>
+      </section>
+
+      <section class="landing-section landing-pricing" id="landing-pricing" data-billing="annual">
+        <p class="landing-eyebrow">Membership</p>
+        <h2 class="landing-h2">Train like it matters</h2>
+        <p class="landing-pricing-sub">Start free. Upgrade when a few minutes a day becomes the part of your day you protect.</p>
+
+        <div class="landing-billing" role="tablist" aria-label="Billing period">
+          <button class="landing-billing-option is-active" data-billing-set="annual" role="tab" type="button">Annual</button>
+          <button class="landing-billing-option" data-billing-set="monthly" role="tab" type="button">Monthly</button>
+          <span class="landing-billing-save">Save up to 45%</span>
+        </div>
+
+        <div class="landing-plans">
+          <article class="landing-plan">
+            <div class="landing-plan-head">
+              <h3>Free</h3>
+              <p class="landing-plan-tag">For building the habit.</p>
+            </div>
+            <div class="landing-plan-price">
+              <span class="landing-plan-amount">$0</span>
+              <span class="landing-plan-per">forever</span>
+            </div>
+            <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="free" type="button">Start free</button>
+            <ul class="landing-plan-features">
+              <li>All 8 training exercises</li>
+              <li>One session per day</li>
+              <li>7 days of progress history</li>
+              <li>IQ test — score only</li>
+              <li>Community access</li>
+            </ul>
+          </article>
+
+          <article class="landing-plan landing-plan-featured">
+            <span class="landing-plan-badge">Most popular</span>
+            <div class="landing-plan-head">
+              <h3>Plus</h3>
+              <p class="landing-plan-tag">For serious daily training.</p>
+            </div>
+            <div class="landing-plan-price"
+                 data-price-annual="$4.92" data-per-annual="/mo · billed $59/yr"
+                 data-price-monthly="$9" data-per-monthly="/mo">
+              <span class="landing-plan-amount">$4.92</span>
+              <span class="landing-plan-per">/mo · billed $59/yr</span>
+            </div>
+            <button class="landing-plan-cta" data-plan-cta="plus" type="button">Start 3-day free trial</button>
+            <ul class="landing-plan-features">
+              <li>Everything in Free</li>
+              <li>Unlimited sessions</li>
+              <li>Full history &amp; trend analytics</li>
+              <li>IQ test — full breakdown + retests</li>
+              <li>Custom training routines</li>
+              <li>Friends &amp; leaderboards</li>
+            </ul>
+          </article>
+
+          <article class="landing-plan">
+            <div class="landing-plan-head">
+              <h3>Pro</h3>
+              <p class="landing-plan-tag">For a coached, adaptive plan.</p>
+            </div>
+            <div class="landing-plan-price"
+                 data-price-annual="$12.42" data-per-annual="/mo · billed $149/yr"
+                 data-price-monthly="$19" data-per-monthly="/mo">
+              <span class="landing-plan-amount">$12.42</span>
+              <span class="landing-plan-per">/mo · billed $149/yr</span>
+            </div>
+            <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="pro" type="button">Start 3-day free trial</button>
+            <ul class="landing-plan-features">
+              <li>Everything in Plus</li>
+              <li>Personal AI training coach</li>
+              <li>A weekly plan built around your scores</li>
+              <li>Plan adapts as you improve</li>
+              <li>Advanced cognitive reports</li>
+              <li>Early access to new exercises</li>
+            </ul>
+          </article>
+        </div>
+
+        <p class="landing-pricing-note">Prefer to pay once? <strong>Lifetime access — $99.</strong> &nbsp;·&nbsp; Cancel anytime. No claims about medical outcomes.</p>
       </section>
 
       <section class="landing-section" id="landing-faq">
@@ -2222,6 +2303,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260724-gate1"></script>
+    <script type="module" src="src/app/main.js?v=20260724-pricing1"></script>
   </body>
 </html>

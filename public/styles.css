@@ -12016,6 +12016,256 @@ kbd {
   margin: 0 0 20px;
 }
 
+/* ---------- Pricing ---------- */
+.landing-eyebrow {
+  margin: 0 0 12px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--l-accent);
+}
+
+.landing-pricing-sub {
+  max-width: 34em;
+  margin: -18px auto 0;
+  text-align: center;
+  color: var(--l-ink-2);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+/* Billing toggle — a pill switch with a sliding active chip. */
+.landing-billing {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 30px auto 44px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--l-surface-2);
+  border: 1px solid var(--l-line);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.landing-billing-option {
+  position: relative;
+  z-index: 1;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 22px;
+  background: transparent;
+  color: var(--l-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+
+.landing-billing-option.is-active {
+  background: var(--l-surface);
+  color: var(--l-ink);
+  box-shadow: 0 1px 2px rgba(16, 19, 43, 0.12);
+}
+
+.landing-billing-save {
+  margin-left: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #E3F5EA;
+  color: #14804A;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.landing-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.landing-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px;
+  border: 1px solid var(--l-line);
+  border-radius: 22px;
+  background: var(--l-surface);
+}
+
+/* Featured plan: the accent gradient, lifted, white type — the one your eye
+   lands on. */
+.landing-plan-featured {
+  padding-top: 40px;
+  border: none;
+  color: #fff;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(165deg, #4A54E6 0%, #323DD6 55%, #2A34BE 100%);
+  box-shadow: 0 24px 48px -22px rgba(50, 61, 214, 0.65);
+  transform: translateY(-8px);
+}
+
+.landing-plan-badge {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-plan-head h3 {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.landing-plan-featured .landing-plan-head h3 { color: #fff; }
+
+.landing-plan-tag {
+  margin: 0;
+  color: var(--l-muted);
+  font-size: 0.92rem;
+}
+
+.landing-plan-featured .landing-plan-tag { color: rgba(255, 255, 255, 0.78); }
+
+.landing-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 24px 0 22px;
+  min-height: 46px;
+  flex-wrap: wrap;
+}
+
+.landing-plan-amount {
+  font-size: 2.6rem;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.landing-plan-per {
+  color: var(--l-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.landing-plan-featured .landing-plan-per { color: rgba(255, 255, 255, 0.78); }
+
+.landing-plan-cta {
+  width: 100%;
+  padding: 14px 20px;
+  border: none !important;
+  border-radius: 12px;
+  background: var(--l-accent) !important;
+  color: #fff !important;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.landing-plan-cta:hover { background: var(--l-accent-press) !important; }
+.landing-plan-cta:active { transform: translateY(1px); }
+
+/* On the featured card the button inverts: white on the gradient. */
+.landing-plan-featured .landing-plan-cta {
+  background: #fff !important;
+  color: var(--l-accent) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5) !important;
+}
+
+.landing-plan-featured .landing-plan-cta:hover { background: #F0F1FF !important; }
+
+/* Ghost CTA on the two flat cards. */
+.landing-plan-cta-ghost {
+  background: transparent !important;
+  color: var(--l-ink) !important;
+  box-shadow: inset 0 0 0 1px var(--l-line-strong) !important;
+}
+
+.landing-plan-cta-ghost:hover {
+  background: var(--l-surface-2) !important;
+  box-shadow: inset 0 0 0 1px var(--l-ink) !important;
+}
+
+.landing-plan-features {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 26px 0 0;
+  border-top: 1px solid var(--l-line);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.landing-plan-featured .landing-plan-features { border-top-color: rgba(255, 255, 255, 0.2); }
+
+.landing-plan-features li {
+  position: relative;
+  padding-left: 30px;
+  color: var(--l-ink-2);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.landing-plan-featured .landing-plan-features li { color: rgba(255, 255, 255, 0.92); }
+
+/* Checkmark: a tinted disc with a drawn tick, no icon font needed. */
+.landing-plan-features li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #EDEEFD;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23323DD6' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.landing-plan-featured .landing-plan-features li::before {
+  background-color: rgba(255, 255, 255, 0.22);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
+}
+
+.landing-pricing-note {
+  margin: 40px auto 0;
+  text-align: center;
+  color: var(--l-muted);
+  font-size: 0.92rem;
+}
+
+.landing-pricing-note strong { color: var(--l-ink); }
+
+@media (max-width: 900px) {
+  .landing-plans { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+  .landing-plan-featured { transform: none; }
+}
+
 /* ---------- Closing ---------- */
 .landing-final {
   max-width: 1140px;

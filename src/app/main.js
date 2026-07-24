@@ -3495,6 +3495,44 @@ function enterApp() {
 // can land the user where they were headed instead of the default hub.
 let pendingLandingDestination = null;
 
+// Pricing toggle + plan CTAs. Free starts the app through the auth gate; the
+// paid plans open the same gate today (billing isn't wired yet), so signing up
+// is never blocked — the plan choice is remembered for when checkout exists.
+let pricingWired = false;
+function wirePricing() {
+  if (pricingWired) return;
+  const section = document.querySelector("#landing-pricing");
+  if (!section) return;
+  pricingWired = true;
+
+  const setBilling = (mode) => {
+    section.dataset.billing = mode;
+    for (const opt of section.querySelectorAll("[data-billing-set]")) {
+      opt.classList.toggle("is-active", opt.dataset.billingSet === mode);
+      opt.setAttribute("aria-selected", opt.dataset.billingSet === mode ? "true" : "false");
+    }
+    for (const price of section.querySelectorAll(".landing-plan-price[data-price-annual]")) {
+      const amount = price.querySelector(".landing-plan-amount");
+      const per = price.querySelector(".landing-plan-per");
+      if (amount) amount.textContent = price.dataset[mode === "annual" ? "priceAnnual" : "priceMonthly"];
+      if (per) per.textContent = price.dataset[mode === "annual" ? "perAnnual" : "perMonthly"];
+    }
+  };
+  for (const opt of section.querySelectorAll("[data-billing-set]")) {
+    opt.addEventListener("click", () => setBilling(opt.dataset.billingSet));
+  }
+
+  for (const cta of section.querySelectorAll("[data-plan-cta]")) {
+    cta.addEventListener("click", () => {
+      selectedPlan = cta.dataset.planCta;
+      const start = () => { enterApp(); showExerciseHub(); };
+      if (!requireAuth("Create a free account to start training.")) return;
+      start();
+    });
+  }
+}
+let selectedPlan = "free";
+
 let landingWired = false;
 function wireLanding() {
   if (landingWired) return;
@@ -3507,6 +3545,7 @@ function wireLanding() {
   document.querySelector("#landing-start")?.addEventListener("click", start);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
   document.querySelector("#landing-start-top")?.addEventListener("click", start);
+  wirePricing();
   // The marquee loops by translating one full copy of its items off-screen,
   // so the track needs exactly two copies.
   const marquee = document.querySelector("#landing-marquee-track");
