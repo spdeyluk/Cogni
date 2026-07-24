@@ -23,6 +23,7 @@
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.4.0",
     "@capacitor/local-notifications": "^8.2.1",
+    "@supabase/supabase-js": "^2.110.8",
     "three": "^0.184.0"
   },
   "devDependencies": {
