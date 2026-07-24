@@ -88,7 +88,6 @@ const exerciseProgressStorageKey = "brainer.exerciseProgress.v1";
 const routineStorageKey = "cogni.routines.v1";
 const adhdHistoryStorageKey = "cogni.adhdAssessmentHistory.v1";
 const userProfileStorageKey = "cogni.userProfile.v1";
-const socialApiBaseStorageKey = "cogni.socialApiBaseUrl.v1";
 const xpProgressStorageKey = "cogni.xpProgress.v1";
 const screenTimeWalletStorageKey = "cogni.screenTimeWallet.v1";
 const screenTimeLocalStateStorageKey = "cogni.screenTimeState.v1";
@@ -113,40 +112,8 @@ let authUser = null;
 const onboardingSeenKey = "cogni.onboardingSeen.v1";
 const onboardingAnswersKey = "cogni.onboardingAnswers.v1";
 
-// The native app can't reach a relative "/api/..." (its files are bundled) and
-// can't rely on cross-origin cookies in a webview, so it targets the hosted API
-// and carries the session as a Bearer token. The web build stays same-origin.
-const API_BASE = window.Capacitor?.isNativePlatform?.() ? "https://cogni-production-8b3d.up.railway.app" : "";
-const authTokenKey = "cogni.authToken.v1";
-function getAuthToken() {
-  try { return localStorage.getItem(authTokenKey) || ""; } catch { return ""; }
-}
-function setAuthToken(token) {
-  try {
-    if (token) localStorage.setItem(authTokenKey, token);
-    else localStorage.removeItem(authTokenKey);
-  } catch {
-    // Storage unavailable; auth just won't persist across launches.
-  }
-}
-// Route every same-origin "/api/*" fetch to the API server with the token
-// attached. Wrapping fetch once keeps the ~20 existing call sites unchanged.
-const baseFetch = window.fetch.bind(window);
-window.fetch = (input, init = {}) => {
-  try {
-    const url = typeof input === "string" ? input : input?.url;
-    if (typeof url === "string" && url.startsWith("/api/")) {
-      const headers = new Headers(init.headers || (typeof input === "object" ? input.headers : undefined));
-      const token = getAuthToken();
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return baseFetch(API_BASE + url, { credentials: "include", ...init, headers });
-    }
-  } catch {
-    // Fall through to a normal fetch on any wrapper hiccup.
-  }
-  return baseFetch(input, init);
-};
-
+// Auth, cloud sync, social and feedback all run through Supabase now, which
+// manages its own tokens and refresh — the app no longer talks to server.js.
 function detectCogniUiMode() {
   // The native app is ALWAYS the gamified "play" experience and must never render
   // the browsable "pro" web version — not via a URL param and not via a synced or
@@ -3586,23 +3553,48 @@ function applySyncState(state) {
   }
 }
 
+// Cloud sync lives in the Supabase `user_state` table: one private row per
+// account, guarded by RLS so a user can only ever touch their own.
 async function pushSyncState() {
   if (!authUser || authSyncing) return;
   authSyncing = true;
   authSyncDirty = false;
   try {
-    const res = await fetch("/api/state", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: collectSyncState() })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (data?.updatedAt) localStorage.setItem(authSyncedAtKey, data.updatedAt);
+    const updatedAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("user_state")
+      .upsert({ user_id: authUser.id, state: collectSyncState(), updated_at: updatedAt }, { onConflict: "user_id" });
+    if (error) authSyncDirty = true; // retry on the next tick
+    else localStorage.setItem(authSyncedAtKey, updatedAt);
   } catch {
-    authSyncDirty = true; // retry on the next tick
+    authSyncDirty = true;
   } finally {
     authSyncing = false;
   }
+}
+
+// Pull the account's snapshot when another device wrote a newer one. Returns
+// true when it triggered a reload, so callers stop what they were doing.
+async function pullSyncState() {
+  if (!authUser) return false;
+  try {
+    const { data, error } = await supabase
+      .from("user_state")
+      .select("state, updated_at")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+    if (error || !data?.state) return false;
+    const localSyncedAt = localStorage.getItem(authSyncedAtKey);
+    if (data.updated_at && data.updated_at !== localSyncedAt) {
+      applySyncState(data.state);
+      localStorage.setItem(authSyncedAtKey, data.updated_at);
+      window.location.reload();
+      return true;
+    }
+  } catch {
+    // Keep local state if the pull fails.
+  }
+  return false;
 }
 
 // Flag a sync whenever app state changes, by wrapping localStorage writes.
@@ -3615,14 +3607,28 @@ Storage.prototype.setItem = function setItemWithSyncFlag(key, value) {
 function startSyncLoop() {
   window.setInterval(() => { if (authSyncDirty) pushSyncState(); }, 6000);
   document.addEventListener("visibilitychange", () => { if (document.hidden && authSyncDirty) pushSyncState(); });
+  // Best-effort final flush. sendBeacon can't carry the Supabase auth header,
+  // so this is a normal request that may not finish; the 6s interval and the
+  // visibilitychange flush above are what actually keep state current.
   window.addEventListener("pagehide", () => {
-    if (authUser && authSyncDirty) {
-      navigator.sendBeacon?.("/api/state", new Blob(
-        [JSON.stringify({ state: collectSyncState() })],
-        { type: "application/json" }
-      ));
-    }
+    if (authUser && authSyncDirty) pushSyncState();
   });
+}
+
+// The app's own view of the signed-in account, mapped off the Supabase session.
+function supabaseAuthUser(user) {
+  return user ? { id: user.id, email: user.email ?? "" } : null;
+}
+
+// Supabase returns technical messages; keep the UI copy human.
+function friendlyAuthError(error, fallback = "Something went wrong. Try again.") {
+  const message = String(error?.message ?? "");
+  if (/invalid login credentials/i.test(message)) return "Wrong email or password.";
+  if (/already registered|already exists/i.test(message)) return "An account with that email already exists.";
+  if (/password/i.test(message) && /short|least|weak/i.test(message)) return "Password must be at least 6 characters.";
+  if (/invalid.*email|email.*invalid/i.test(message)) return "Enter a valid email address.";
+  if (/rate limit|too many/i.test(message)) return "Too many attempts. Please wait a moment.";
+  return message || fallback;
 }
 
 async function initAuth() {
@@ -3630,43 +3636,25 @@ async function initAuth() {
   wireAuthGate();
   wireSignInFirst();
   const nativeWall = cogniUiMode === "play";
-  let user = null;
+  let session = null;
   try {
-    const res = await fetch("/api/auth/me");
-    user = (await res.json())?.user ?? null;
+    const { data } = await supabase.auth.getSession();
+    session = data?.session ?? null;
   } catch {
-    // Server unreachable. Native keeps the wall (nothing loads without it);
+    // Auth unreachable. Native keeps the wall (nothing loads without it);
     // web stays on the browsable landing page.
     return;
   }
-  if (!user) {
+  if (!session?.user) {
     // Not signed in. Native keeps the sign-in wall; web stays on the landing
-    // and asks for sign-in only when the user starts something. Surface any
-    // OAuth return error either way.
+    // and asks for sign-in only when the user starts something.
     const authError = new URLSearchParams(window.location.search).get("autherror");
-    if (authError) {
-      const msg = authError === "google_unconfigured"
-        ? "Google sign-in isn't set up yet — use email instead."
-        : "Google sign-in didn't complete. Please try again.";
-      if (nativeWall) setSignInError(msg);
-    }
+    if (authError && nativeWall) setSignInError("Sign-in didn't complete. Please try again.");
     return;
   }
-  authUser = user;
+  authUser = supabaseAuthUser(session.user);
   // Pull the account's state if another device wrote a newer snapshot.
-  try {
-    const res = await fetch("/api/state");
-    const data = await res.json();
-    const localSyncedAt = localStorage.getItem(authSyncedAtKey);
-    if (data?.state && data.updatedAt && data.updatedAt !== localSyncedAt) {
-      applySyncState(data.state);
-      localStorage.setItem(authSyncedAtKey, data.updatedAt);
-      window.location.reload();
-      return;
-    }
-  } catch {
-    // Keep local state if the pull fails.
-  }
+  if (await pullSyncState()) return; // reloading
   onAuthenticated();
 }
 
@@ -3711,22 +3699,13 @@ function setSignInError(message) {
   node.hidden = !message;
 }
 
-// After any successful sign-in, pull cloud state (reload if newer) or seed it.
-async function completeSignIn(user, token) {
-  authUser = user;
-  if (token) setAuthToken(token);
-  try {
-    const stateRes = await fetch("/api/state");
-    const stateData = await stateRes.json().catch(() => ({}));
-    if (stateData?.state && stateData.updatedAt) {
-      applySyncState(stateData.state);
-      localStorage.setItem(authSyncedAtKey, stateData.updatedAt);
-      window.location.reload();
-      return;
-    }
-  } catch {
-    // Fall through and seed from local state.
-  }
+// After any successful sign-in (email, Apple or Google), pull the account's
+// cloud state — reloading if the server copy is newer — otherwise seed it from
+// whatever is on this device.
+async function completeSignIn(user) {
+  authUser = supabaseAuthUser(user);
+  if (!authUser) return;
+  if (await pullSyncState()) return; // reloading with the pulled state
   await pushSyncState();
   onAuthenticated();
 }
@@ -3741,22 +3720,20 @@ async function handleAppleSignIn() {
   try {
     const result = await plugin.authorize({ requestedScopes: [0, 1] }); // 0=email, 1=fullName
     const identityToken = result?.response?.identityToken;
-    const email = result?.response?.email ?? null;
     if (!identityToken) {
       setSignInError("Apple sign-in was cancelled.");
       return;
     }
-    const res = await fetch("/api/auth/apple", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identityToken, email })
+    // Supabase verifies the identity token against Apple directly.
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "apple",
+      token: identityToken
     });
-    const data = await res.json();
-    if (!res.ok || !data.user) {
-      setSignInError(data.error || "Apple sign-in failed. Try again.");
+    if (error || !data?.user) {
+      setSignInError(friendlyAuthError(error, "Apple sign-in failed. Try again."));
       return;
     }
-    await completeSignIn(data.user, data.token);
+    await completeSignIn(data.user);
   } catch (err) {
     const msg = (err && (err.message || err.errorMessage)) ? String(err.message || err.errorMessage) : "";
     // Apple rejects both on user-cancel and on misconfiguration; only the former is a cancel.
@@ -3768,9 +3745,19 @@ async function handleAppleSignIn() {
   }
 }
 
-// Native Google sign-in: the web OAuth redirect can't return into the bundled
-// webview, so we open Google in an in-app browser and the server redirects back
-// via a `cogni://auth?token=...` deep link that handleGoogleDeepLink catches.
+// Google sign-in. On the web this is a plain redirect Supabase completes for us.
+// On native the redirect can't return into the bundled webview, so we open
+// Google in an in-app browser and come back through the `cogni://auth-callback`
+// deep link, which carries a PKCE code we exchange for a session.
+const GOOGLE_NATIVE_REDIRECT = "cogni://auth-callback";
+
+function startWebGoogleSignIn() {
+  return supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin }
+  });
+}
+
 async function startNativeGoogleSignIn() {
   setSignInError("");
   const Browser = window.Capacitor?.Plugins?.Browser;
@@ -3779,7 +3766,16 @@ async function startNativeGoogleSignIn() {
     return;
   }
   try {
-    await Browser.open({ url: `${API_BASE}/api/auth/google?native=1`, presentationStyle: "popover" });
+    // skipBrowserRedirect: we open the URL ourselves so the app stays put.
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: GOOGLE_NATIVE_REDIRECT, skipBrowserRedirect: true }
+    });
+    if (error || !data?.url) {
+      setSignInError(friendlyAuthError(error, "Couldn't start Google sign-in. Try again."));
+      return;
+    }
+    await Browser.open({ url: data.url, presentationStyle: "popover" });
   } catch {
     setSignInError("Couldn't open Google sign-in. Try again.");
   }
@@ -3802,37 +3798,39 @@ async function handleGoogleDeepLink(rawUrl) {
   try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch {}
   let params;
   try {
-    params = new URL(rawUrl).searchParams;
+    const url = new URL(rawUrl);
+    // PKCE returns ?code=…; implicit style returns the values in the fragment.
+    params = url.searchParams.get("code") || url.searchParams.get("error")
+      ? url.searchParams
+      : new URLSearchParams(url.hash.replace(/^#/, ""));
   } catch {
-    params = new URLSearchParams(rawUrl.split("?")[1] || "");
+    params = new URLSearchParams(rawUrl.split(/[?#]/)[1] || "");
   }
-  const error = params.get("error");
-  if (error) {
-    setSignInError("Google sign-in didn't complete. Please try again.");
-    return;
-  }
-  // The deep link carries only a single-use code (a URL scheme can be claimed by
-  // any app, so a session token must never travel in it). Trade it over HTTPS.
-  const code = params.get("code");
-  if (!code) {
+  if (params.get("error") || params.get("error_description")) {
     setSignInError("Google sign-in didn't complete. Please try again.");
     return;
   }
   try {
-    const res = await fetch("/api/auth/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.user || !data.token) {
-      setSignInError(data.error || "Google sign-in didn't complete. Please try again.");
+    const code = params.get("code");
+    let result;
+    if (code) {
+      result = await supabase.auth.exchangeCodeForSession(code);
+    } else if (params.get("access_token")) {
+      result = await supabase.auth.setSession({
+        access_token: params.get("access_token"),
+        refresh_token: params.get("refresh_token") ?? ""
+      });
+    } else {
+      setSignInError("Google sign-in didn't complete. Please try again.");
       return;
     }
-    setAuthToken(data.token);
-    await completeSignIn(data.user, data.token);
+    if (result.error || !result.data?.user) {
+      setSignInError(friendlyAuthError(result.error, "Google sign-in didn't complete. Please try again."));
+      return;
+    }
+    await completeSignIn(result.data.user);
   } catch {
-    setSignInError("Couldn't reach the server after Google sign-in. Try again.");
+    setSignInError("Couldn't finish Google sign-in. Try again.");
   }
 }
 
@@ -3847,8 +3845,7 @@ function wireSignInFirst() {
       startNativeGoogleSignIn();
       return;
     }
-    // Web: reuse the existing server OAuth redirect flow.
-    window.location.href = "/api/auth/google";
+    startWebGoogleSignIn();
   });
   document.querySelector("#signin-email")?.addEventListener("click", () => {
     wireAuthGate();
@@ -3897,12 +3894,12 @@ function wireAuthGate() {
   // The gate is an overlay; closing it reveals the landing or app underneath.
   document.querySelector("#auth-back")?.addEventListener("click", hideAuthGate);
 
-  // This is a plain <a href="/api/auth/google">, which on native would navigate
-  // the webview to a dead local path. Native must use the deep-link flow.
+  // This is a plain <a href="/api/auth/google"> in the markup; auth now goes
+  // through Supabase, so intercept it on both platforms.
   document.querySelector("#auth-google")?.addEventListener("click", (event) => {
-    if (!window.Capacitor?.isNativePlatform?.()) return;
     event.preventDefault();
-    startNativeGoogleSignIn();
+    if (window.Capacitor?.isNativePlatform?.()) startNativeGoogleSignIn();
+    else startWebGoogleSignIn();
   });
 
   document.querySelector("#auth-switch")?.addEventListener("click", () => {
@@ -3931,30 +3928,23 @@ function wireAuthGate() {
     submit.disabled = true;
     setAuthError("");
     try {
-      const res = await fetch(`/api/auth/${authMode === "signup" ? "signup" : "login"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || "Something went wrong. Try again.");
+      const { data, error } = authMode === "signup"
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setAuthError(friendlyAuthError(error));
         submit.disabled = false;
         return;
       }
-      authUser = data.user;
-      setAuthToken(data.token);
-      // First sign-in pulls any saved cloud state, else seeds it from here.
-      const stateRes = await fetch("/api/state");
-      const stateData = await stateRes.json().catch(() => ({}));
-      if (stateData?.state && stateData.updatedAt) {
-        applySyncState(stateData.state);
-        localStorage.setItem(authSyncedAtKey, stateData.updatedAt);
-        window.location.reload();
+      if (!data?.session) {
+        // Only happens if email confirmation gets switched back on.
+        setAuthError("Check your inbox to confirm your email, then sign in.");
+        submit.disabled = false;
         return;
       }
-      await pushSyncState();
-      onAuthenticated();
+      hideAuthGate();
+      hideSignInFirst();
+      await completeSignIn(data.user);
     } catch {
       setAuthError("Couldn't reach the server. Check your connection.");
       submit.disabled = false;
@@ -3964,11 +3954,10 @@ function wireAuthGate() {
   document.querySelector("#settings-signout")?.addEventListener("click", async () => {
     if (authSyncDirty) await pushSyncState();
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await supabase.auth.signOut();
     } catch {
-      // Ignore; we clear locally regardless.
+      // Ignore; the reload clears local session state regardless.
     }
-    setAuthToken("");
     window.location.reload();
   });
 }
@@ -4261,23 +4250,108 @@ function syncSocialProfileQuietly() {
   upsertSocialProfile(loadUserProfile()).catch(() => {});
 }
 
-async function socialApiRequest(path, options = {}) {
-  const response = await fetch(`${socialApiBaseUrl()}${path}`, {
-    method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Social server request failed.");
-  return data;
+// ---------------------------------------------------------------------------
+// Social layer, backed by Supabase (`profiles` + `friend_requests`). This keeps
+// the original path/response shapes so the existing UI code is unchanged, but
+// identity now comes from the session and RLS enforces who may read or write.
+// ---------------------------------------------------------------------------
+async function socialProfileByHandle(handle) {
+  const { data } = await supabase.from("profiles").select("id, handle").eq("handle", handle).maybeSingle();
+  return data ?? null;
 }
 
-function socialApiBaseUrl() {
-  const configured = localStorage.getItem(socialApiBaseStorageKey)?.trim();
-  if (configured) return configured.replace(/\/$/, "");
-  return location.protocol === "capacitor:" ? "http://127.0.0.1:4283" : "";
+async function socialHandlesByIds(ids) {
+  const unique = [...new Set(ids)].filter(Boolean);
+  if (!unique.length) return new Map();
+  const { data } = await supabase.from("profiles").select("id, handle").in("id", unique);
+  return new Map((data ?? []).map((row) => [row.id, row.handle]));
+}
+
+function socialRequestShape(row, handles) {
+  return {
+    id: row.id,
+    fromHandle: handles.get(row.from_user) ?? "",
+    toHandle: handles.get(row.to_user) ?? "",
+    status: row.status,
+    createdAt: row.created_at
+  };
+}
+
+async function socialApiRequest(path, options = {}) {
+  if (!authUser) throw new Error("Sign in to use friends.");
+  const method = options.method ?? "GET";
+  const body = options.body ?? {};
+
+  // Claim / update this account's @handle. The unique index is what stops two
+  // accounts holding the same one.
+  if (path.startsWith("/api/social/profile")) {
+    const handle = normalizeProfileHandle(body.handle);
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ handle, avatar_initial: body.avatarInitial ?? null, updated_at: new Date().toISOString() })
+      .eq("id", authUser.id)
+      .select("id, handle, avatar_initial")
+      .maybeSingle();
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) throw new Error("That @ username is already taken.");
+      throw new Error(error.message);
+    }
+    return { user: { handle: data?.handle ?? handle, avatarInitial: data?.avatar_initial ?? "" } };
+  }
+
+  if (path.startsWith("/api/friend-requests/respond")) {
+    const status = body.action === "accept" ? "accepted" : "declined";
+    // RLS also restricts this to the recipient.
+    const { data, error } = await supabase
+      .from("friend_requests")
+      .update({ status, responded_at: new Date().toISOString() })
+      .eq("id", body.requestId)
+      .eq("to_user", authUser.id)
+      .select("*")
+      .maybeSingle();
+    if (error || !data) throw new Error("Friend request not found.");
+    return { request: socialRequestShape(data, await socialHandlesByIds([data.from_user, data.to_user])) };
+  }
+
+  if (path.startsWith("/api/friend-requests")) {
+    if (method === "POST") {
+      const toHandle = normalizeProfileHandle(body.toHandle);
+      const target = await socialProfileByHandle(toHandle);
+      if (!target) throw new Error("That @ username is not registered yet.");
+      if (target.id === authUser.id) throw new Error("You cannot add yourself.");
+      const pair = `and(from_user.eq.${authUser.id},to_user.eq.${target.id}),and(from_user.eq.${target.id},to_user.eq.${authUser.id})`;
+      const { data: existing } = await supabase
+        .from("friend_requests").select("*").or(pair).neq("status", "declined").maybeSingle();
+      if (existing) {
+        return {
+          request: socialRequestShape(existing, await socialHandlesByIds([existing.from_user, existing.to_user])),
+          duplicate: true
+        };
+      }
+      const { data, error } = await supabase
+        .from("friend_requests")
+        .insert({ from_user: authUser.id, to_user: target.id })
+        .select("*")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return { request: socialRequestShape(data, await socialHandlesByIds([data.from_user, data.to_user])) };
+    }
+
+    // GET: everything this account is a party to. RLS already scopes it.
+    const { data, error } = await supabase
+      .from("friend_requests").select("*")
+      .or(`from_user.eq.${authUser.id},to_user.eq.${authUser.id}`);
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    const handles = await socialHandlesByIds(rows.flatMap((row) => [row.from_user, row.to_user]));
+    return {
+      incoming: rows.filter((r) => r.to_user === authUser.id && r.status === "pending").map((r) => socialRequestShape(r, handles)),
+      outgoing: rows.filter((r) => r.from_user === authUser.id && r.status === "pending").map((r) => socialRequestShape(r, handles)),
+      friends: rows.filter((r) => r.status === "accepted").map((r) => socialRequestShape(r, handles))
+    };
+  }
+
+  throw new Error("Unsupported social request.");
 }
 
 function setFriendStatus(message, state = "") {
@@ -10383,15 +10457,12 @@ function showFeedbackDialog() {
       const message = document.querySelector("#feedback-text")?.value.trim();
       try { localStorage.setItem(feedbackStateKey, message ? "sent" : "skipped"); } catch { /* ignore */ }
       if (!message) return;
-      fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          mode: cogniUiMode,
-          answers: (() => { try { return JSON.parse(localStorage.getItem(onboardingAnswersKey)) ?? null; } catch { return null; } })()
-        })
-      }).catch(() => {});
+      supabase.from("feedback").insert({
+        user_id: authUser?.id ?? null,
+        message,
+        mode: cogniUiMode,
+        answers: (() => { try { return JSON.parse(localStorage.getItem(onboardingAnswersKey)) ?? null; } catch { return null; } })()
+      }).then(() => {}, () => {});
     });
   }
   try { localStorage.setItem(feedbackStateKey, "shown"); } catch { /* ignore */ }
