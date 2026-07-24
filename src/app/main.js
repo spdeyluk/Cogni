@@ -1716,12 +1716,12 @@ function openExerciseById(exerciseId) {
     ict: openIctSettings
   };
   openers[exerciseId]?.();
-  // Routines drive sessions programmatically; the settings sheet is only for
-  // a person browsing into an exercise, and only in the gamified mobile app —
-  // the pro web build uses the full inline settings page.
-  if (!activeRoutineRun && cogniUiMode === "play") {
+  // Routines drive sessions programmatically. Everyone else — web and mobile —
+  // gets the settings as a centered modal; closing it returns to the hub, and
+  // Start restores the controls to their workbench before launching.
+  if (!activeRoutineRun) {
     // First time on one of the complex classic exercises: show a tutorial
-    // before the settings sheet.
+    // before the settings modal.
     if (exerciseIntros[exerciseId] && !exerciseIntroSeen(exerciseId)) {
       showExerciseIntro(exerciseId, () => openExerciseSheet(exerciseId));
       return;

@@ -14438,3 +14438,99 @@ html.reduce-motion *::after {
 #focus-intro,
 #memory-intro,
 #adhd-assessment-intro { display: none !important; }
+
+/* ===================================================================
+   Exercise settings as a centered modal (2026-07-25)
+
+   Was a bottom sheet; the reference presents these as a centered card
+   over a dimmed backdrop. Appended last to win over the sheet rules.
+   =================================================================== */
+.exercise-sheet {
+  inset: 0 !important;
+  margin: auto !important;
+  width: min(560px, 94vw) !important;
+  max-height: 88vh !important;
+  height: max-content !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 18px !important;
+  background: var(--surface) !important;
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7) !important;
+  animation: cogni-modal-in 0.22s ease !important;
+}
+
+.exercise-sheet::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+/* No drag handle on a centered modal. */
+.exercise-sheet::before { display: none !important; }
+
+@keyframes cogni-modal-in {
+  from { transform: scale(0.97); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ===================================================================
+   Exercise cards, reference "All tests" style (2026-07-25)
+
+   Bordered card + soft shadow + a tinted category pill — reads as
+   clearly clickable. Dark-mode adaptation of the light reference.
+   Appended last to override the earlier borderless treatment.
+   =================================================================== */
+.exercise-card {
+  display: grid !important;
+  align-content: start !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  padding: 22px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  background-image: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px -20px rgba(0, 0, 0, 0.7) !important;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+.exercise-card > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.exercise-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: var(--accent) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 32px -16px rgba(0, 0, 0, 0.7) !important;
+}
+
+.exercise-card .exercise-type {
+  display: inline-block;
+  margin: 0 0 2px !important;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.exercise-card h2 {
+  margin: 0 !important;
+  font-size: 1.14rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.015em;
+  color: var(--text) !important;
+}
+
+.exercise-card p {
+  margin: 0 !important;
+  color: var(--muted) !important;
+  font-size: 0.92rem !important;
+  line-height: 1.5 !important;
+}
