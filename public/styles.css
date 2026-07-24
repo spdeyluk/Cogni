@@ -13834,9 +13834,23 @@ html.landing-active #app-shell { display: none !important; }
     box-shadow: none !important;
   }
 
-  .exercise-card,
+  /* Exercise cards lost their inner "Open" button — the whole card opens the
+     exercise now, so drop the tall min-height and the space-between layout
+     that only existed to pin that button to the bottom. Compact, top-aligned. */
+  .exercise-card {
+    min-height: 0 !important;
+    align-content: start !important;
+    gap: 8px !important;
+    padding: 20px 22px !important;
+    cursor: pointer;
+    transition: background 0.16s ease, transform 0.16s ease !important;
+  }
+
+  .exercise-card h2 { font-size: 1.12rem !important; }
+  .exercise-card p { font-size: 0.9rem !important; line-height: 1.45 !important; }
+
   .assessment-intro {
-    padding: 24px !important;
+    padding: 20px 22px !important;
     transition: background 0.16s ease, transform 0.16s ease !important;
   }
 
@@ -13851,6 +13865,16 @@ html.landing-active #app-shell { display: none !important; }
     transform: translateY(-2px) !important;
     box-shadow: none !important;
   }
+}
+
+/* Reduce motion preference (settings toggle sets this class on <html>). */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* ===================================================================
@@ -14032,3 +14056,381 @@ html.landing-active #app-shell { display: none !important; }
   fill: currentColor;
   stroke: none;
 }
+
+/* ===================================================================
+   Settings modal, rebuilt (2026-07-24)
+
+   Was a narrow right-hand drawer; now a centered two-pane modal like the
+   reference — left section nav, right content with grouped rows.
+   Appended last so it overrides the older drawer rules.
+   =================================================================== */
+.settings-drawer {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: min(880px, 94vw) !important;
+  height: min(600px, 90vh) !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 18px !important;
+  background: var(--surface) !important;
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7) !important;
+}
+
+.settings-drawer::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.settings-drawer .settings-drawer-body {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0 !important;
+  height: 100%;
+  padding: 0 !important;
+}
+
+.settings-drawer .settings-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+
+.settings-drawer .settings-drawer-header h2 { font-size: 1.3rem; }
+
+.settings-drawer .dialog-close-button {
+  width: 34px;
+  height: 34px;
+  min-height: 0 !important;
+  display: grid;
+  place-items: center;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.settings-drawer .dialog-close-button:hover {
+  background: var(--fill-subtle) !important;
+  color: var(--text) !important;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none !important;
+  border-radius: 10px;
+  background: transparent !important;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none !important;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.settings-nav-item svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-nav-item:hover { background: var(--fill-subtle) !important; color: var(--text); }
+
+.settings-nav-item.is-active {
+  background: var(--fill-subtle) !important;
+  color: var(--text);
+}
+
+.settings-content {
+  padding: 26px 30px;
+  overflow-y: auto;
+}
+
+.settings-panel[hidden] { display: none; }
+
+.settings-section-label {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.settings-section-danger { color: var(--error); }
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.settings-row + .settings-row { border-top: 1px solid var(--line); }
+
+.settings-row strong {
+  display: block;
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.settings-row p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  max-width: 42ch;
+}
+
+.settings-row-value {
+  color: var(--text-2);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 22px 0;
+}
+
+.settings-links {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+}
+
+.settings-links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.94rem;
+  transition: background 0.14s ease;
+}
+
+.settings-links a:hover { background: var(--fill-subtle); }
+
+.settings-links svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--muted);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Buttons */
+.settings-upgrade-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+
+.settings-upgrade-button:hover { background: #4F52E8; }
+.settings-upgrade-button svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+
+.settings-outline-button,
+.settings-danger-button {
+  flex: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+}
+
+.settings-outline-button {
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+}
+
+.settings-outline-button:hover { background: var(--fill-subtle); }
+
+.settings-danger-button {
+  border: 1px solid color-mix(in srgb, var(--error) 45%, transparent);
+  color: var(--error);
+}
+
+.settings-danger-button:hover { background: color-mix(in srgb, var(--error) 12%, transparent); }
+
+/* Toggle switch */
+.settings-row-toggle { cursor: pointer; }
+
+.settings-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.settings-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.16s ease;
+}
+
+.settings-switch:checked { background: var(--accent); }
+.settings-switch:checked::after { transform: translateX(18px); }
+
+.settings-drawer .settings-drawer-version {
+  margin: 24px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .settings-drawer {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+  .settings-nav-item span { white-space: nowrap; }
+}
+
+/* Feature assessment card: icon + copy + arrow, for the single IQ test. */
+.assessment-intro-feature {
+  display: flex !important;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 26px !important;
+}
+
+.assessment-intro-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.assessment-intro-icon svg {
+  width: 26px;
+  height: 26px;
+  color: var(--accent-2);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.assessment-intro-body { flex: 1; min-width: 0; }
+
+.assessment-intro-desc {
+  margin: 4px 0 8px;
+  color: var(--text-2);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.assessment-intro-body .assessment-card-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.assessment-intro-arrow {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+
+.assessment-intro-arrow svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.assessment-intro-feature:hover .assessment-intro-arrow {
+  color: var(--text);
+  transform: translateX(3px);
+}
+
+/* Only the Cogni IQ test is offered for now. Hidden by id: the list renderer
+   sets .hidden = false on these at runtime, which an id + !important beats. */
+#ocd-intro,
+#focus-intro,
+#memory-intro,
+#adhd-assessment-intro { display: none !important; }

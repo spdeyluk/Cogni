@@ -968,12 +968,14 @@ elements.nbackDurationPresets.forEach((button) => {
     updateTrialCountFromSessionTimer();
   });
 });
-elements.openNback.addEventListener("click", openNBackSettings);
+// The per-card "Open" buttons are gone (the whole card opens the exercise via
+// data-open-exercise); these guarded binds remain only for any that survive.
+elements.openNback?.addEventListener("click", openNBackSettings);
 elements.openMot?.addEventListener("click", openMotSettings);
-elements.openRrt.addEventListener("click", openRrtSettings);
-elements.openCct.addEventListener("click", openCctSettings);
+elements.openRrt?.addEventListener("click", openRrtSettings);
+elements.openCct?.addEventListener("click", openCctSettings);
 elements.openUfov?.addEventListener("click", openUfovSettings);
-elements.openIct.addEventListener("click", openIctSettings);
+elements.openIct?.addEventListener("click", openIctSettings);
 elements.exerciseCards.forEach((card) => {
   card.addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
@@ -2569,11 +2571,15 @@ function handleProfilePageSubmit(event) {
   const form = event.target.closest("[data-profile-edit-form]");
   if (!form) return;
   event.preventDefault();
-  const handleInput = form.querySelector("[name='profileHandle']");
-  const handle = normalizeProfileHandle(handleInput?.value);
-  const avatarInitial = normalizeProfileAvatar("", handle);
-  saveUserProfile({ handle, avatarInitial });
+  const existing = loadUserProfile();
+  const nameInput = form.querySelector("[name='profileName']");
+  const name = String(nameInput?.value ?? "").trim().slice(0, 30) || profileDisplayName(existing);
+  // Keep the social handle stable; only the display name is user-editable.
+  const handle = normalizeProfileHandle(existing.handle);
+  const avatarInitial = normalizeProfileAvatar(name, handle);
+  saveUserProfile({ handle, name, avatarInitial });
   syncSocialProfileQuietly();
+  renderAccountMenu();
   profileEditorOpen = false;
   renderProfile();
 }
@@ -2710,8 +2716,8 @@ function renderProfileIdentity(userProfile, stats = { currentStreak: 0, cogniXp:
         <div class="profile-avatar" aria-hidden="true">${renderProfileAvatarContent({ initial })}</div>
         <div class="profile-identity-main">
           <label class="profile-handle-edit">
-            <span>Username</span>
-            <div><b>@</b><input name="profileHandle" type="text" value="${escapeHtml(handle.replace(/^@/, ""))}" autocomplete="username" autocapitalize="none" spellcheck="false" aria-label="Username"></div>
+            <span>Display name</span>
+            <div><input name="profileName" type="text" value="${escapeHtml(profileDisplayName(userProfile))}" autocomplete="name" spellcheck="false" maxlength="30" aria-label="Display name"></div>
           </label>
           ${renderProfileIdentityStats(stats)}
         </div>
@@ -2723,7 +2729,7 @@ function renderProfileIdentity(userProfile, stats = { currentStreak: 0, cogniXp:
       <button class="profile-edit-button" data-profile-edit type="button">Edit</button>
       <div class="profile-avatar" aria-hidden="true">${renderProfileAvatarContent({ initial })}</div>
       <div class="profile-identity-main">
-        <strong>${escapeHtml(handle)}</strong>
+        <strong>${escapeHtml(profileDisplayName(userProfile))}</strong>
         ${renderProfileIdentityStats(stats)}
       </div>
     </article>
@@ -2984,6 +2990,22 @@ function loadUserProfile() {
   }
 }
 
+// The product shows a plain display name, never an @handle. The handle still
+// exists under the hood as the social lookup key, but users see a name.
+function displayNameFromEmail(email) {
+  const local = String(email || "").split("@")[0];
+  const words = local.split(/[._+-]+/).filter(Boolean);
+  const name = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ").trim();
+  return name || "You";
+}
+
+function profileDisplayName(profile) {
+  if (profile?.name) return profile.name;
+  const handle = String(profile?.handle || "").replace(/^@/, "");
+  if (!handle) return "You";
+  return handle.charAt(0).toUpperCase() + handle.slice(1);
+}
+
 function saveUserProfile(profile) {
   try {
     localStorage.setItem(userProfileStorageKey, JSON.stringify(profile));
@@ -3010,7 +3032,8 @@ function renderProfileOnboarding() {
   if (hasUserProfile()) return;
   const base = String(authUser?.email || "").split("@")[0];
   const handle = normalizeProfileHandle(base || "cogni");
-  saveUserProfile({ handle, avatarInitial: normalizeProfileAvatar("", handle) });
+  const name = displayNameFromEmail(authUser?.email);
+  saveUserProfile({ handle, name, avatarInitial: normalizeProfileAvatar(name, handle) });
   syncSocialProfileQuietly();
   renderAccountMenu();
 }
@@ -3430,7 +3453,84 @@ function handleTopActionClick() {
 
 function openSettingsDrawer() {
   const drawer = document.querySelector("#settings-drawer");
-  if (drawer && typeof drawer.showModal === "function" && !drawer.open) drawer.showModal();
+  if (!drawer || typeof drawer.showModal !== "function") return;
+  wireSettings();
+  renderSettings();
+  if (!drawer.open) drawer.showModal();
+}
+
+// Fill the account panel from the live session.
+function renderSettings() {
+  const emailNode = document.querySelector("#settings-account-email");
+  const methodNode = document.querySelector("#settings-account-method");
+  if (emailNode) emailNode.textContent = authUser?.email || "—";
+  if (methodNode) methodNode.textContent = signInMethodLabel(authUser?.provider);
+}
+
+let settingsWired = false;
+function wireSettings() {
+  if (settingsWired) return;
+  settingsWired = true;
+
+  const items = [...document.querySelectorAll("[data-settings-tab]")];
+  const panels = [...document.querySelectorAll("[data-settings-panel]")];
+  for (const item of items) {
+    item.addEventListener("click", () => {
+      const tab = item.dataset.settingsTab;
+      items.forEach((i) => i.classList.toggle("is-active", i === item));
+      panels.forEach((p) => {
+        const on = p.dataset.settingsPanel === tab;
+        p.classList.toggle("is-active", on);
+        p.hidden = !on;
+      });
+    });
+  }
+
+  const closeDrawer = () => document.querySelector("#settings-drawer")?.close();
+
+  document.querySelector("#settings-upgrade")?.addEventListener("click", () => {
+    closeDrawer();
+    showLanding();
+    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.querySelector("#settings-signout")?.addEventListener("click", async () => {
+    if (authSyncDirty) await pushSyncState();
+    try { await supabase.auth.signOut(); } catch { /* reload clears session regardless */ }
+    window.location.reload();
+  });
+
+  document.querySelector("#settings-reset-local")?.addEventListener("click", () => {
+    if (!window.confirm("Reset saved progress on this device? Synced progress returns when you sign back in.")) return;
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("cogni.") || key.startsWith("brainer.")) && key !== "cogni.supabaseAuth.v1") {
+        localStorage.removeItem(key);
+      }
+    }
+    window.location.reload();
+  });
+
+  // Reduce motion: reflect + persist as a root class the CSS already keys off.
+  const motionKey = "cogni.pref.reduceMotion.v1";
+  const motion = document.querySelector("#pref-reduce-motion");
+  if (motion) {
+    motion.checked = localStorage.getItem(motionKey) === "1";
+    document.documentElement.classList.toggle("reduce-motion", motion.checked);
+    motion.addEventListener("change", () => {
+      localStorage.setItem(motionKey, motion.checked ? "1" : "0");
+      document.documentElement.classList.toggle("reduce-motion", motion.checked);
+    });
+  }
+
+  const hapticsKey = "cogni.pref.haptics.v1";
+  const haptics = document.querySelector("#pref-haptics");
+  if (haptics) {
+    haptics.checked = localStorage.getItem(hapticsKey) !== "0";
+    haptics.addEventListener("change", () => {
+      localStorage.setItem(hapticsKey, haptics.checked ? "1" : "0");
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -3612,7 +3712,7 @@ function renderAccountMenu() {
   const profile = loadUserProfile();
   const nameNode = document.querySelector("#sidebar-account-name");
   const avatarNode = document.querySelector("#sidebar-account-avatar");
-  if (nameNode) nameNode.textContent = profile.handle || "@cogni";
+  if (nameNode) nameNode.textContent = profileDisplayName(profile);
   if (avatarNode) avatarNode.textContent = profile.avatarInitial || "C";
 }
 
@@ -3718,7 +3818,16 @@ function startSyncLoop() {
 
 // The app's own view of the signed-in account, mapped off the Supabase session.
 function supabaseAuthUser(user) {
-  return user ? { id: user.id, email: user.email ?? "" } : null;
+  if (!user) return null;
+  const provider = user.app_metadata?.provider ?? "email";
+  return { id: user.id, email: user.email ?? "", provider };
+}
+
+// "google" -> "Google", "email" -> "Email & password".
+function signInMethodLabel(provider) {
+  if (provider === "google") return "Google";
+  if (provider === "apple") return "Apple";
+  return "Email & password";
 }
 
 // Supabase returns technical messages; keep the UI copy human.
@@ -4058,16 +4167,7 @@ function wireAuthGate() {
       submit.disabled = false;
     }
   });
-
-  document.querySelector("#settings-signout")?.addEventListener("click", async () => {
-    if (authSyncDirty) await pushSyncState();
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Ignore; the reload clears local session state regardless.
-    }
-    window.location.reload();
-  });
+  // Sign-out lives in the settings panel now (wireSettings).
 }
 
 function renderFriendsPage() {
@@ -4749,7 +4849,7 @@ function showAssessments() {
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "Assessments";
-  elements.pageLede.textContent = "Choose a test.";
+  elements.pageLede.textContent = "Your adaptive cognitive assessment.";
   showAssessmentList();
 }
 
