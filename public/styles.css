@@ -13966,19 +13966,22 @@ html.reduce-motion *::after {
   gap: 12px;
   width: 100%;
   padding: 10px 10px;
-  border: none;
+  border: none !important;
   border-radius: 9px;
-  background: transparent;
+  /* Clean list rows, no filled boxes — the global button fill would
+     otherwise tint each item into a card. */
+  background: transparent !important;
   color: var(--text);
   font: inherit;
   font-size: 0.94rem;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  box-shadow: none !important;
   transition: background 0.14s ease;
 }
 
-.sidebar-account-item:hover { background: var(--fill-subtle); }
+.sidebar-account-item:hover { background: var(--fill-subtle) !important; }
 
 .sidebar-account-item svg {
   width: 18px;
@@ -14034,20 +14037,21 @@ html.reduce-motion *::after {
   gap: 8px;
   width: 100%;
   padding: 11px 16px;
-  border: none;
+  border: none !important;
   border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent) !important;
+  background-image: none !important;
+  color: #fff !important;
   font: inherit;
   font-size: 0.92rem;
   font-weight: 650;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
   transition: background 0.15s ease, transform 0.12s ease;
 }
 
-.sidebar-account-upgrade:hover { background: #4F52E8; }
+.sidebar-account-upgrade:hover { background: #4F52E8 !important; }
 .sidebar-account-upgrade:active { transform: translateY(1px); }
 
 .sidebar-account-upgrade svg {
