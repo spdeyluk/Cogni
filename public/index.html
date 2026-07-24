@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260709-sheetpolish">
+    <link rel="stylesheet" href="styles.css?v=20260724-theme1">
   </head>
   <body>
     <div class="signin-first" id="signin-first" hidden>
@@ -85,7 +85,7 @@
         <div class="onboarding-stage">
           <section class="onboarding-slide" data-slide="welcome">
             <div class="onboarding-brand">
-              <img src="assets/brand/logo-white.png" alt="">
+              <img src="assets/brand/logo-black.png" alt="">
               <span>Cogni</span>
             </div>
             <h2>Your brain becomes what you feed it.</h2>
@@ -426,7 +426,7 @@
 
           <section class="onboarding-slide" data-slide="ready" hidden>
             <div class="onboarding-brand">
-              <img src="assets/brand/logo-white.png" alt="">
+              <img src="assets/brand/logo-black.png" alt="">
               <span>Cogni</span>
             </div>
             <h2>You're set, <span data-ob-name>friend</span>.</h2>
@@ -440,24 +440,33 @@
     <div class="landing" id="landing" hidden>
       <header class="landing-nav">
         <div class="landing-brand">
-          <img src="assets/brand/logo-white.png" alt="Cogni">
+          <img src="assets/brand/logo-black.png" alt="" aria-hidden="true">
           <strong>Cogni</strong>
         </div>
         <nav class="landing-nav-links" aria-label="Sections">
+          <a href="#landing-skills">Training</a>
           <a href="#landing-approach">Approach</a>
-          <a href="#landing-skills">Skills</a>
           <a href="#landing-faq">FAQ</a>
         </nav>
-        <button class="landing-signin" id="landing-signin" type="button">Sign in</button>
+        <div class="landing-nav-actions">
+          <button class="landing-login" id="landing-signin" type="button">Log In</button>
+          <button class="landing-nav-cta" id="landing-start-top" type="button">Start training</button>
+        </div>
       </header>
 
       <section class="landing-hero landing-hero-centered">
         <div class="landing-hero-main">
-          <h1>Measure your mind. Then train it.</h1>
-          <p class="landing-hero-lede">Real cognitive tests and adaptive training — a few focused minutes at a time.</p>
+          <h1>Measure Your Mind. Then Train It.</h1>
+          <p class="landing-hero-lede">Cogni is the training space where you test your cognition, drill the skills behind it, and watch every score move.</p>
           <div class="landing-cta-row">
-            <button class="landing-cta" id="landing-start" type="button">Start training</button>
-            <button class="landing-cta landing-cta-ghost" id="landing-testiq" type="button">Test IQ</button>
+            <button class="landing-cta" id="landing-start" type="button">Start training <span class="landing-cta-note">— it's free</span></button>
+          </div>
+          <button class="landing-hero-secondary" id="landing-testiq" type="button">or take the IQ test first</button>
+          <div class="landing-proof">
+            <span class="landing-proof-chips" aria-hidden="true">
+              <span>CCT</span><span>RRT</span><span>ICT</span>
+            </span>
+            <p>Three research-backed training tasks</p>
           </div>
         </div>
       </section>
@@ -2200,6 +2209,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260724-supabase1"></script>
+    <script type="module" src="src/app/main.js?v=20260724-theme1"></script>
   </body>
 </html>

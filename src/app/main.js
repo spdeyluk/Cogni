@@ -3498,6 +3498,7 @@ function wireLanding() {
   const start = () => { enterApp(); showExerciseHub(); };
   document.querySelector("#landing-start")?.addEventListener("click", start);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
+  document.querySelector("#landing-start-top")?.addEventListener("click", start);
   // "Test IQ" lands on the IQ test page; sign-in is asked at Start.
   document.querySelector("#landing-testiq")?.addEventListener("click", () => {
     enterApp();
