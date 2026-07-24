@@ -13752,6 +13752,7 @@ html.landing-active #app-shell { display: none !important; }
   .side-nav { gap: 1px; }
 
   .side-nav-button {
+    border: none !important;
     border-radius: 8px !important;
     padding: 8px 9px !important;
     gap: 12px !important;
