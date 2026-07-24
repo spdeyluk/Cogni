@@ -13907,18 +13907,21 @@ html.reduce-motion *::after {
   gap: 10px;
   width: 100%;
   padding: 8px 10px;
-  border: none;
+  border: none !important;
   border-radius: 10px;
-  background: transparent;
+  /* No resting box — the global button fill would otherwise make this a
+     card. Only hover/open shows a background. */
+  background: transparent !important;
   color: var(--text);
   cursor: pointer;
   text-align: left;
+  box-shadow: none !important;
   transition: background 0.15s ease;
 }
 
 .sidebar-account-button:hover,
 .sidebar-account[data-open] .sidebar-account-button {
-  background: var(--fill-subtle);
+  background: var(--fill-subtle) !important;
 }
 
 .sidebar-account-avatar {
@@ -14522,13 +14525,13 @@ html.reduce-motion *::after {
 .exercise-card .exercise-type {
   display: inline-block;
   margin: 0 0 2px !important;
-  padding: 4px 12px;
+  padding: 2px 9px;
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.16);
+  background: rgba(99, 102, 241, 0.14);
   color: var(--accent-2);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
   text-transform: none;
 }
 
