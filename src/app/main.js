@@ -2829,10 +2829,11 @@ function renderProfileHexagon(sessions) {
 
 const profileCalendarFullMinutes = 20;
 
-// Five green steps from deep forest to bright: the whole color ramps
-// (saturation and lightness), not just opacity, so neighbors read distinct.
+// Accent-blue contribution ramp: the whole color ramps (not just opacity), so
+// neighbouring cells read as distinct steps. Blue not green — the Profile page
+// stays on the brand accent; green is reserved for "correct" in exercises.
 function activityShade(level) {
-  return `color-mix(in srgb, var(--success) ${Math.round(30 + level * 70)}%, var(--surface-2))`;
+  return `color-mix(in srgb, var(--accent) ${Math.round(28 + level * 72)}%, var(--surface-2))`;
 }
 
 function renderProfileCompletionCalendar(progress, exerciseIds) {
@@ -2929,12 +2930,12 @@ function renderProfileImprovementSection(sessions) {
         <div><p class="exercise-type">All exercises · last ${recent.length} sessions</p><h2>Improvement</h2></div>
       </div>
       <div class="profile-graph-legend">
-        <span><i style="background: var(--success)"></i>Improvement <b>${improvementValues.at(-1)}</b></span>
-        <span><i style="background: var(--accent-2)"></i>Settings weight <b>${weightValues.at(-1)} / 100</b></span>
+        <span><i style="background: var(--accent)"></i>Improvement <b>${improvementValues.at(-1)}</b></span>
+        <span><i style="background: var(--muted)"></i>Settings weight <b>${weightValues.at(-1)} / 100</b></span>
       </div>
       ${profileGraphSvg([
-        { values: improvementValues, color: "var(--success)" },
-        { values: weightValues, color: "var(--accent-2)" }
+        { values: improvementValues, color: "var(--accent)" },
+        { values: weightValues, color: "var(--muted)" }
       ], recent.length)}
     </section>
   `;
@@ -2999,38 +3000,18 @@ function hasUserProfile() {
   }
 }
 
+// The old "Create your profile" prompt is gone. A profile is provisioned
+// silently from the account (handle derived from the email) so nothing stands
+// between signing in and using the app; the username stays editable on the
+// Profile page.
 function renderProfileOnboarding() {
-  const existing = document.querySelector(`#${profileOnboardingId}`);
-  // Web visitors set up a profile only after signing in, so the prompt
-  // never covers the landing page. On mobile the story onboarding runs
-  // first; finishOnboarding re-invokes this.
-  if (needsOnboarding() || (authIsGated() && !authUser)) {
-    existing?.remove();
-    return;
-  }
-  if (hasUserProfile()) {
-    existing?.remove();
-    return;
-  }
-  if (existing) return;
-  document.body.insertAdjacentHTML("beforeend", `
-    <section class="profile-onboarding" id="${profileOnboardingId}" aria-label="Profile setup">
-      <form class="profile-onboarding-card" data-profile-onboarding-form>
-        <p class="exercise-type">Cogni</p>
-        <h2>Create your profile</h2>
-        <div class="profile-onboarding-photo">
-          <div class="profile-avatar" aria-hidden="true">
-            <span class="profile-avatar-initial">C</span>
-          </div>
-        </div>
-        <label class="profile-edit-field">
-          <span>Username</span>
-          <div><b>@</b><input name="profileHandle" type="text" value="cogni" autocomplete="username" autocapitalize="none" spellcheck="false" aria-label="Username"></div>
-        </label>
-        <button type="submit">Start</button>
-      </form>
-    </section>
-  `);
+  document.querySelector(`#${profileOnboardingId}`)?.remove();
+  if (needsOnboarding() || (authIsGated() && !authUser)) return;
+  if (hasUserProfile()) return;
+  const base = String(authUser?.email || "").split("@")[0];
+  const handle = normalizeProfileHandle(base || "cogni");
+  saveUserProfile({ handle, avatarInitial: normalizeProfileAvatar("", handle) });
+  syncSocialProfileQuietly();
 }
 
 function handleProfileOnboardingSubmit(event) {

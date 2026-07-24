@@ -13734,38 +13734,41 @@ html.landing-active #app-shell { display: none !important; }
    across half a dozen older passes, and source order is the cheapest way
    to win without unpicking them.
    =================================================================== */
+/* Sidebar nav, Jenni-style: no filled pill, white inactive labels, accent for
+   the active tab. Compact rows. */
 @media (min-width: 821px) {
-  .side-nav { gap: 2px; }
+  .side-nav { gap: 1px; }
 
   .side-nav-button {
     border-radius: 8px !important;
-    padding: 10px !important;
+    padding: 8px 9px !important;
+    gap: 12px !important;
     background: transparent !important;
-    color: var(--muted) !important;
+    color: var(--text) !important;
+    font-size: 0.9rem !important;
     font-weight: 500 !important;
     box-shadow: none !important;
   }
 
+  /* Icons a touch dimmer than the label, like the reference. */
   .side-nav-button .nav-icon,
-  .side-nav-button .nav-icon svg { color: inherit !important; }
+  .side-nav-button .nav-icon svg { color: var(--muted) !important; }
 
-  .side-nav-button:hover {
-    background: var(--fill-subtle) !important;
-    color: var(--text) !important;
-  }
+  .side-nav-button:hover { background: var(--fill-subtle) !important; }
+  .side-nav-button:hover .nav-icon,
+  .side-nav-button:hover .nav-icon svg { color: var(--text) !important; }
 
-  /* Active tab reads as the accent, not as a grey pill. */
+  /* Active tab: accent text + icon, no background pill. */
   .side-nav-button.active,
-  .side-nav-button.active .nav-icon {
-    background: rgba(99, 102, 241, 0.14) !important;
+  .side-nav-button.active .nav-icon,
+  .side-nav-button.active .nav-icon svg {
+    background: transparent !important;
     color: #818CF8 !important;
   }
-
-  .side-nav-button.active .nav-icon { background: transparent !important; }
 }
 
 .nav-icon,
-.nav-icon svg { width: 20px !important; height: 20px !important; }
+.nav-icon svg { width: 18px !important; height: 18px !important; }
 
 .nav-icon svg { stroke-width: 1.8 !important; }
 
