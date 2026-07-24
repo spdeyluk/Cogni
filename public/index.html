@@ -2194,6 +2194,12 @@
 
     <script src="reset-local-data.js?v=20260724-authtest13"></script>
     <script defer src="clear-segmented.js?v=20260709-sheetpolish"></script>
-    <script type="module" src="src/app/main.js?v=20260709-sheetpolish"></script>
+    <!-- Web loads main.js as a raw ES module, so bare package imports need a map.
+         The vendored file is a self-contained esbuild ESM build of the SDK.
+         (Native ignores this: esbuild bundles the package from node_modules.) -->
+    <script type="importmap">
+    { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
+    </script>
+    <script type="module" src="src/app/main.js?v=20260724-supabase1"></script>
   </body>
 </html>

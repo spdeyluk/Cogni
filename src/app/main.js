@@ -54,6 +54,7 @@ import {
 } from "../core/assessments/spatialSpan.js";
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
 import * as THREE from "../../node_modules/three/build/three.module.js";
+import { supabase, supabaseEnabled } from "./supabase.js";
 
 console.info("[Cogni] main.js loaded");
 
