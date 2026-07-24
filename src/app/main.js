@@ -1218,6 +1218,10 @@ elements.sideNavButtons.forEach((button) => {
 });
 document.querySelector('[data-section="home"]')?.addEventListener("click", showHome);
 document.querySelector('[data-section="assessments"]')?.addEventListener("click", showAssessments);
+document.querySelector('[data-section="coach"]')?.addEventListener("click", showCoach);
+document.querySelector('[data-section="screentime"]')?.addEventListener("click", showScreenTime);
+document.querySelector(".coach-page")?.addEventListener("click", handleCoachPageClick);
+document.querySelector(".screentime-page")?.addEventListener("click", handleScreenTimePageClick);
 elements.backToExercises.addEventListener("click", showExerciseHub);
 elements.backToExercisesMot.addEventListener("click", showExerciseHub);
 elements.backToExercisesRrt.addEventListener("click", showExerciseHub);
@@ -1654,7 +1658,7 @@ function syncRrtDifficultyButtons() {
 }
 
 function openNBackSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("nback-open");
   elements.pageTitle.textContent = "N-back";
@@ -1662,7 +1666,7 @@ function openNBackSettings() {
 }
 
 function openMotSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("mot-open");
   elements.pageTitle.textContent = "3D MOT";
@@ -1672,7 +1676,7 @@ function openMotSettings() {
 }
 
 function openRrtSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("rrt-open");
   elements.pageTitle.textContent = "Relational Reasoning";
@@ -1680,7 +1684,7 @@ function openRrtSettings() {
 }
 
 function openCctSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("cct-open");
   elements.pageTitle.textContent = "Cognitive Control Training";
@@ -1688,7 +1692,7 @@ function openCctSettings() {
 }
 
 function openUfovSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("ufov-open");
   elements.pageTitle.textContent = "UFOV";
@@ -1697,7 +1701,7 @@ function openUfovSettings() {
 }
 
 function openIctSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
   setActiveTab("exercises");
   elements.appShell.classList.add("ict-open");
   elements.pageTitle.textContent = "Inhibitory Control Training";
@@ -2479,7 +2483,7 @@ function restoreExerciseSheetControls() {
 
 function showHome() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("home-open");
   setActiveTab("home");
   elements.pageTitle.textContent = "Home";
@@ -2489,7 +2493,7 @@ function showHome() {
 
 function showFriendsPage() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove("home-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("friends-open");
   setActiveTab("friends");
   elements.pageTitle.textContent = "Friends";
@@ -2501,7 +2505,7 @@ function showFriendsPage() {
 function showExerciseHub() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   showPendingSessionCoinFloat();
-  elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("exercises-open");
   setActiveTab("exercises");
   elements.pageTitle.textContent = "Exercises";
@@ -2524,7 +2528,7 @@ function showExerciseHub() {
 function showStatistics() {
   if (!requireAuth("Sign in to see your stats and progress.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("profile-open");
   setActiveTab("statistics");
   elements.pageTitle.textContent = "Profile";
@@ -2532,6 +2536,145 @@ function showStatistics() {
   selectedProfileView = "profile";
   profileEditorOpen = false;
   renderProfile();
+}
+
+const sectionResetClasses = ["home-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active"];
+
+function showCoach() {
+  if (!requireAuth("Sign in to see your training plan.")) return;
+  if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
+  elements.appShell.classList.remove(...sectionResetClasses);
+  elements.appShell.classList.add("coach-open");
+  setActiveTab("coach");
+  elements.pageTitle.textContent = "Coach";
+  elements.pageLede.textContent = "Your personal, adapting brain-training plan.";
+  renderCoach();
+}
+
+function showScreenTime() {
+  if (!requireAuth("Sign in to see your screen time.")) return;
+  if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
+  elements.appShell.classList.remove(...sectionResetClasses);
+  elements.appShell.classList.add("screentime-open");
+  setActiveTab("screentime");
+  elements.pageTitle.textContent = "Screen Time";
+  elements.pageLede.textContent = "Trade a few scrolling minutes for focused ones.";
+  renderScreenTime();
+}
+
+// --- Coach: a personal, adapting training plan ---------------------------
+// The plan is a Pro feature; until AI planning is wired this renders a real,
+// data-aware weekly structure so the surface is complete and honest about
+// what's coming.
+const coachPlanExercises = ["nback", "rrt", "cct", "ict"];
+
+function renderCoach() {
+  const page = document.querySelector(".coach-page");
+  if (!page) return;
+  const progress = loadExerciseProgress();
+  const streak = Math.max(0, Math.round(calculateDailyTrainingStreak(progress, coachPlanExercises)));
+  const today = localDateKey(new Date());
+  const doneToday = trainingMinutesForDate(progress, coachPlanExercises, today) > 0;
+
+  // A fixed weekly shape for now; the focus line is chosen from the plan.
+  const week = [
+    { day: "Mon", label: "N-Back", sub: "Working memory", id: "nback" },
+    { day: "Tue", label: "Relational Reasoning", sub: "Fluid logic", id: "rrt" },
+    { day: "Wed", label: "Cognitive Control", sub: "Focus & inhibition", id: "cct" },
+    { day: "Thu", label: "Light day", sub: "One short session", id: null },
+    { day: "Fri", label: "N-Back", sub: "Working memory", id: "nback" },
+    { day: "Sat", label: "Inhibitory Control", sub: "Impulse control", id: "ict" },
+    { day: "Sun", label: "Rest", sub: "Recover", id: null }
+  ];
+  const dayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+
+  page.innerHTML = `
+    <div class="coach-hero">
+      <span class="coach-badge">Pro preview</span>
+      <h2>Your plan this week</h2>
+      <p>Focus: <strong>working memory</strong> — it's the skill your other scores lean on most. A coached plan adapts this every week from how you actually train.</p>
+      <div class="coach-hero-stats">
+        <div><strong>${streak}</strong><span>day streak</span></div>
+        <div><strong>${doneToday ? "Done" : "0/1"}</strong><span>today's session</span></div>
+        <div><strong>${week.filter((d) => d.id).length}</strong><span>sessions planned</span></div>
+      </div>
+    </div>
+
+    <div class="coach-week">
+      ${week.map((d, i) => `
+        <div class="coach-day ${i === dayIndex ? "is-today" : ""} ${d.id ? "" : "is-rest"}" ${d.id ? `data-coach-open="${d.id}"` : ""} ${d.id ? 'role="button" tabindex="0"' : ""}>
+          <span class="coach-day-name">${d.day}${i === dayIndex ? " · Today" : ""}</span>
+          <div class="coach-day-body">
+            <strong>${escapeHtml(d.label)}</strong>
+            <span>${escapeHtml(d.sub)}</span>
+          </div>
+          ${d.id ? '<span class="coach-day-arrow" aria-hidden="true">›</span>' : '<span class="coach-day-rest">—</span>'}
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="coach-upsell">
+      <div>
+        <strong>Get a coach that plans for you</strong>
+        <p>Pro reads your scores each week and rewrites this plan around your weakest skill — no guessing what to train.</p>
+      </div>
+      <button class="coach-upsell-cta" type="button" data-coach-upgrade>Upgrade to Pro</button>
+    </div>
+  `;
+}
+
+function handleCoachPageClick(event) {
+  if (event.target.closest("[data-coach-upgrade]")) {
+    showLanding();
+    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const day = event.target.closest("[data-coach-open]");
+  if (day) openExerciseById(day.dataset.coachOpen);
+}
+
+// --- Screen Time: minutes reclaimed into focused training ----------------
+function renderScreenTime() {
+  const page = document.querySelector(".screentime-page");
+  if (!page) return;
+  const progress = loadExerciseProgress();
+  const ids = ["nback", "rrt", "cct", "ict", "mot", "ufov"];
+  const today = new Date();
+  const todayMin = trainingMinutesForDate(progress, ids, localDateKey(today));
+  let weekMin = 0;
+  for (let i = 0; i < 7; i += 1) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    weekMin += trainingMinutesForDate(progress, ids, localDateKey(d));
+  }
+  const goal = 15;
+  const pct = Math.min(100, Math.round((todayMin / goal) * 100));
+
+  page.innerHTML = `
+    <div class="screentime-ring-card">
+      <div class="screentime-ring" style="--pct: ${pct}">
+        <div class="screentime-ring-inner">
+          <strong>${todayMin}<span>min</span></strong>
+          <span>focused today</span>
+        </div>
+      </div>
+      <div class="screentime-ring-copy">
+        <h2>${todayMin >= goal ? "Goal reached" : `${goal - todayMin} min to your goal`}</h2>
+        <p>Every focused minute here is a minute not lost to a feed. Aim for ${goal} minutes a day.</p>
+        <button class="screentime-train-cta" type="button" data-screentime-train>Train now</button>
+      </div>
+    </div>
+
+    <div class="screentime-stats">
+      <div class="screentime-stat"><strong>${weekMin}<span>min</span></strong><span>this week</span></div>
+      <div class="screentime-stat"><strong>${Math.round(weekMin / 7)}<span>min</span></strong><span>daily average</span></div>
+      <div class="screentime-stat"><strong>${Math.max(0, Math.round(calculateDailyTrainingStreak(progress, ids)))}</strong><span>day streak</span></div>
+    </div>
+  `;
+}
+
+function handleScreenTimePageClick(event) {
+  if (event.target.closest("[data-screentime-train]")) showExerciseHub();
 }
 
 function handleProfilePageClick(event) {
@@ -4845,7 +4988,7 @@ function trainingMinutesForDate(progress, exerciseIds, dateKey) {
 
 function showAssessments() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "Assessments";

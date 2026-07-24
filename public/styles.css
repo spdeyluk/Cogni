@@ -4108,9 +4108,21 @@ pre {
 .ict-open .exercise-page,
 .stats-open .exercise-page,
 .placeholder-open .exercise-page,
+.coach-open .exercise-page,
+.screentime-open .exercise-page,
 .game-active .exercise-page {
   display: none;
 }
+
+.coach-page,
+.screentime-page {
+  display: none;
+  width: min(1040px, 100%);
+  margin: 0 auto;
+}
+
+.coach-open .coach-page { display: block; }
+.screentime-open .screentime-page { display: block; }
 
 .stats-open .statistics-page {
   display: grid;
@@ -14533,4 +14545,194 @@ html.reduce-motion *::after {
   color: var(--muted) !important;
   font-size: 0.92rem !important;
   line-height: 1.5 !important;
+}
+
+/* ===================================================================
+   Coach (training plan) + Screen Time pages (2026-07-25)
+   =================================================================== */
+.coach-page,
+.screentime-page {
+  gap: 18px;
+  padding-bottom: 40px;
+}
+
+.coach-hero {
+  padding: 28px 30px;
+  border-radius: 20px;
+  color: #fff;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+    linear-gradient(160deg, #4A54E6 0%, #4338CA 60%, #3730A3 100%);
+  box-shadow: 0 24px 48px -26px rgba(67, 56, 202, 0.7);
+  margin-bottom: 18px;
+}
+
+.coach-badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.coach-hero h2 { margin: 0 0 8px; font-size: 1.6rem; letter-spacing: -0.02em; color: #fff; }
+.coach-hero > p { margin: 0; max-width: 60ch; color: rgba(255, 255, 255, 0.9); line-height: 1.55; }
+.coach-hero > p strong { color: #fff; }
+
+.coach-hero-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 22px;
+}
+
+.coach-hero-stats strong { display: block; font-size: 1.5rem; font-weight: 700; }
+.coach-hero-stats span { color: rgba(255, 255, 255, 0.78); font-size: 0.85rem; }
+
+.coach-week {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.coach-day {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.coach-day[data-coach-open] { cursor: pointer; }
+.coach-day[data-coach-open]:hover { border-color: var(--accent); transform: translateY(-2px); }
+.coach-day.is-today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.coach-day.is-rest { opacity: 0.6; }
+
+.coach-day-name {
+  width: 96px;
+  flex: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.coach-day-body { flex: 1; min-width: 0; }
+.coach-day-body strong { display: block; font-size: 1rem; letter-spacing: -0.01em; }
+.coach-day-body span { color: var(--muted); font-size: 0.85rem; }
+
+.coach-day-arrow { color: var(--muted); font-size: 1.4rem; }
+.coach-day-rest { color: var(--muted); }
+
+.coach-upsell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 26px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 16px;
+  background: var(--fill-subtle);
+}
+
+.coach-upsell strong { font-size: 1.05rem; letter-spacing: -0.01em; }
+.coach-upsell p { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; max-width: 52ch; }
+
+.coach-upsell-cta {
+  flex: none;
+  padding: 12px 22px;
+  border: none !important;
+  border-radius: 11px;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.coach-upsell-cta:hover { background: #4F52E8 !important; }
+
+/* Screen Time */
+.screentime-ring-card {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  padding: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+
+.screentime-ring {
+  --pct: 0;
+  width: 168px;
+  height: 168px;
+  flex: none;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--surface-2) 0);
+  display: grid;
+  place-items: center;
+}
+
+.screentime-ring-inner {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.screentime-ring-inner strong { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+.screentime-ring-inner strong span { font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.screentime-ring-inner > span { display: block; color: var(--muted); font-size: 0.85rem; }
+
+.screentime-ring-copy { flex: 1; min-width: 220px; }
+.screentime-ring-copy h2 { margin: 0 0 8px; font-size: 1.4rem; letter-spacing: -0.02em; }
+.screentime-ring-copy p { margin: 0 0 18px; color: var(--muted); line-height: 1.55; max-width: 46ch; }
+
+.screentime-train-cta {
+  padding: 12px 24px;
+  border: none !important;
+  border-radius: 11px;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.screentime-train-cta:hover { background: #4F52E8 !important; }
+
+.screentime-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.screentime-stat {
+  padding: 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.screentime-stat strong { display: block; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.03em; }
+.screentime-stat strong span { font-size: 0.85rem; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.screentime-stat > span { color: var(--muted); font-size: 0.86rem; }
+
+@media (max-width: 720px) {
+  .coach-upsell { flex-direction: column; align-items: flex-start; }
+  .screentime-stats { grid-template-columns: 1fr; }
 }
