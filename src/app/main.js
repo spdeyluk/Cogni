@@ -3473,8 +3473,8 @@ function authIsGated() {
   return true;
 }
 
-// Landing page <-> app visibility. The pro web app is browsable without an
-// account; only doing tests/exercises or viewing data requires sign-in.
+// Landing page <-> app visibility. The marketing landing is the only public
+// surface on the web; entering the app itself requires an account.
 function showLanding() {
   // The marketing landing is part of the browsable web version — it must never
   // appear inside the native app, which is gated by the sign-in wall instead.
@@ -3491,11 +3491,19 @@ function enterApp() {
   document.documentElement.classList.remove("landing-active");
 }
 
+// Set when the gate is opened from a landing-page button, so onAuthenticated
+// can land the user where they were headed instead of the default hub.
+let pendingLandingDestination = null;
+
 let landingWired = false;
 function wireLanding() {
   if (landingWired) return;
   landingWired = true;
-  const start = () => { enterApp(); showExerciseHub(); };
+  const start = () => {
+    if (!requireAuth("Create a free account to start training.")) return;
+    enterApp();
+    showExerciseHub();
+  };
   document.querySelector("#landing-start")?.addEventListener("click", start);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
   document.querySelector("#landing-start-top")?.addEventListener("click", start);
@@ -3509,8 +3517,11 @@ function wireLanding() {
       marquee.append(copy);
     }
   }
-  // "Test IQ" lands on the IQ test page; sign-in is asked at Start.
   document.querySelector("#landing-testiq")?.addEventListener("click", () => {
+    // Remembered across the gate so signing in lands on the test, not the hub.
+    pendingLandingDestination = "assessments";
+    if (!requireAuth("Sign in to take the Cogni IQ Test.")) return;
+    pendingLandingDestination = null;
     enterApp();
     showAssessments();
     showCatSection("detail");
@@ -3683,7 +3694,13 @@ function onAuthenticated() {
     return;
   }
   enterApp();
-  showExerciseHub();
+  if (pendingLandingDestination === "assessments") {
+    pendingLandingDestination = null;
+    showAssessments();
+    showCatSection("detail");
+  } else {
+    showExerciseHub();
+  }
   renderProfileOnboarding();
 }
 
