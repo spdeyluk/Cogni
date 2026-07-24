@@ -287,14 +287,14 @@ select {
   width: min(1160px, calc(100% - 32px));
   min-height: calc(100vh - 32px);
   margin: 16px auto;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  padding: 25px;
-  background:
-    repeating-linear-gradient(0deg, var(--fill-subtle) 0 1px, transparent 1px 11px),
-    repeating-linear-gradient(90deg, var(--fill-subtle) 0 1px, transparent 1px 13px),
-    var(--surface);
-  box-shadow: var(--shadow);
+  /* No frame: content sits directly on the page like the reference, so the
+     cards are the only surfaces. The old border + graph-paper grid + shadow
+     read as a "box within a box". */
+  border: none;
+  border-radius: 0;
+  padding: 25px 25px 40px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .hero {
@@ -378,7 +378,7 @@ select {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 12px;
 }
 
 .brand-logo {
@@ -13806,4 +13806,49 @@ html.landing-active #app-shell { display: none !important; }
 #start-ict-session:hover {
   background: #4F52E8 !important;
   filter: none !important;
+}
+
+/* ===================================================================
+   Clean card surfaces (2026-07-24)
+
+   The reference cards are borderless: a flat fill one step above the
+   page, a large radius, generous padding, and a hover that simply
+   lightens the fill. Cogni's cards carried 1px borders from older
+   passes; this layer removes them and unifies the surface. Appended
+   last so it wins on source order without unpicking those passes.
+   =================================================================== */
+@media (min-width: 821px) {
+  .exercise-card,
+  .assessment-intro,
+  .routines-tile,
+  .home-points-card,
+  .profile-calendar-card,
+  .profile-graph-card,
+  .profile-hexagon-card,
+  .profile-identity-card,
+  .iq-recommend-card {
+    border: none !important;
+    border-radius: 18px !important;
+    background: var(--surface) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  .exercise-card,
+  .assessment-intro {
+    padding: 24px !important;
+    transition: background 0.16s ease, transform 0.16s ease !important;
+  }
+
+  /* Hover: lighten the fill toward zinc-700, a touch of lift. No border,
+     no glow — the fill shift is the whole interaction. */
+  .exercise-card:hover,
+  .assessment-intro:hover,
+  .routines-tile:hover,
+  .iq-recommend-card:hover {
+    background: var(--surface-2) !important;
+    border: none !important;
+    transform: translateY(-2px) !important;
+    box-shadow: none !important;
+  }
 }

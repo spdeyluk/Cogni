@@ -2502,7 +2502,7 @@ function showExerciseHub() {
   elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("exercises-open");
   setActiveTab("exercises");
-  elements.pageTitle.textContent = "Train";
+  elements.pageTitle.textContent = "Exercises";
   elements.pageLede.textContent = "Build routines first, or open a standalone cognitive training module below.";
   elements.start.disabled = false;
   elements.quit.disabled = true;
@@ -4688,7 +4688,7 @@ function showAssessments() {
   elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
-  elements.pageTitle.textContent = "Tests";
+  elements.pageTitle.textContent = "Assessments";
   elements.pageLede.textContent = "Choose a test.";
   showAssessmentList();
 }
