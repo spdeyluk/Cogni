@@ -3499,6 +3499,16 @@ function wireLanding() {
   document.querySelector("#landing-start")?.addEventListener("click", start);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
   document.querySelector("#landing-start-top")?.addEventListener("click", start);
+  // The marquee loops by translating one full copy of its items off-screen,
+  // so the track needs exactly two copies.
+  const marquee = document.querySelector("#landing-marquee-track");
+  if (marquee) {
+    for (const item of [...marquee.children]) {
+      const copy = item.cloneNode(true);
+      copy.setAttribute("aria-hidden", "true");
+      marquee.append(copy);
+    }
+  }
   // "Test IQ" lands on the IQ test page; sign-in is asked at Start.
   document.querySelector("#landing-testiq")?.addEventListener("click", () => {
     enterApp();
@@ -10446,6 +10456,8 @@ function initFeedbackAsk() {
 
 let feedbackWired = false;
 function showFeedbackDialog() {
+  // App-only: the web version never interrupts with this prompt.
+  if (cogniUiMode !== "play") return;
   const dialog = document.querySelector("#feedback-dialog");
   if (!dialog || typeof dialog.showModal !== "function") return;
   if (!feedbackWired) {
