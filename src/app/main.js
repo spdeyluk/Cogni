@@ -3012,6 +3012,7 @@ function renderProfileOnboarding() {
   const handle = normalizeProfileHandle(base || "cogni");
   saveUserProfile({ handle, avatarInitial: normalizeProfileAvatar("", handle) });
   syncSocialProfileQuietly();
+  renderAccountMenu();
 }
 
 function handleProfileOnboardingSubmit(event) {
@@ -3550,11 +3551,69 @@ function wireLanding() {
     wireAuthGate();
     showAuthGate("login");
   });
-  // Clicking the top-left Cogni logo returns to the landing page (pro web only).
-  document.querySelector("#sidebar-brand")?.addEventListener("click", () => {
-    if (cogniUiMode !== "pro") return;
-    showLanding();
+  wireAccountMenu();
+}
+
+// Sidebar account menu: avatar + handle that opens Settings / Logout / plan.
+let accountMenuWired = false;
+function wireAccountMenu() {
+  if (accountMenuWired) return;
+  const root = document.querySelector("#sidebar-account");
+  const button = document.querySelector("#sidebar-account-button");
+  const menu = document.querySelector("#sidebar-account-menu");
+  if (!root || !button || !menu) return;
+  accountMenuWired = true;
+
+  const close = () => {
+    menu.hidden = true;
+    root.removeAttribute("data-open");
+    button.setAttribute("aria-expanded", "false");
+  };
+  const open = () => {
+    renderAccountMenu();
+    menu.hidden = false;
+    root.setAttribute("data-open", "");
+    button.setAttribute("aria-expanded", "true");
+  };
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    menu.hidden ? open() : close();
   });
+  document.addEventListener("click", (event) => {
+    if (!menu.hidden && !root.contains(event.target)) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !menu.hidden) close();
+  });
+
+  document.querySelector("#account-settings")?.addEventListener("click", () => {
+    close();
+    openSettingsDrawer();
+  });
+  document.querySelector("#account-logout")?.addEventListener("click", async () => {
+    close();
+    if (authSyncDirty) await pushSyncState();
+    try { await supabase.auth.signOut(); } catch { /* reload clears session regardless */ }
+    window.location.reload();
+  });
+  document.querySelector("#account-upgrade")?.addEventListener("click", () => {
+    close();
+    // Pricing lives on the marketing landing; hand off there and jump to it.
+    showLanding();
+    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  renderAccountMenu();
+}
+
+// Fill the account button + menu from the stored profile. Plan is Free until
+// billing exists.
+function renderAccountMenu() {
+  const profile = loadUserProfile();
+  const nameNode = document.querySelector("#sidebar-account-name");
+  const avatarNode = document.querySelector("#sidebar-account-avatar");
+  if (nameNode) nameNode.textContent = profile.handle || "@cogni";
+  if (avatarNode) avatarNode.textContent = profile.avatarInitial || "C";
 }
 
 // Gate an action behind sign-in. In ungated contexts (the /iq funnel, the
@@ -3713,6 +3772,7 @@ function onAuthenticated() {
     showOnboarding();
     return;
   }
+  renderAccountMenu();
   enterApp();
   if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;

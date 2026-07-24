@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260724-cards2">
+    <link rel="stylesheet" href="styles.css?v=20260724-acct1">
   </head>
   <body>
     <div class="signin-first" id="signin-first" hidden>
@@ -644,9 +644,34 @@
 
     <main class="app-shell home-open" id="app-shell">
       <aside class="app-sidebar" aria-label="Primary navigation">
-        <div class="sidebar-brand" id="sidebar-brand">
-          <img src="assets/brand/logo-white.png" alt="Cogni">
-          <strong>Cogni</strong>
+        <div class="sidebar-account" id="sidebar-account">
+          <button class="sidebar-account-button" id="sidebar-account-button" type="button" aria-haspopup="true" aria-expanded="false">
+            <span class="sidebar-account-avatar" id="sidebar-account-avatar">C</span>
+            <span class="sidebar-account-name" id="sidebar-account-name">@cogni</span>
+            <svg class="sidebar-account-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9 4-4 4 4M8 15l4 4 4-4"/></svg>
+          </button>
+          <div class="sidebar-account-menu" id="sidebar-account-menu" hidden role="menu">
+            <button class="sidebar-account-item" id="account-settings" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Settings</span>
+            </button>
+            <button class="sidebar-account-item" id="account-logout" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              <span>Logout</span>
+            </button>
+            <div class="sidebar-account-divider"></div>
+            <div class="sidebar-account-plan">
+              <div class="sidebar-account-plan-row">
+                <span>Current plan</span>
+                <strong id="account-plan-name">Free</strong>
+              </div>
+              <p class="sidebar-account-plan-note" id="account-plan-note">1 session a day · 7-day history</p>
+            </div>
+            <button class="sidebar-account-upgrade" id="account-upgrade" type="button" role="menuitem">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+              <span>Upgrade plan</span>
+            </button>
+          </div>
         </div>
         <nav class="side-nav">
           <button class="side-nav-button active" data-section="home" type="button">
@@ -2303,6 +2328,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260724-cards2"></script>
+    <script type="module" src="src/app/main.js?v=20260724-acct1"></script>
   </body>
 </html>
