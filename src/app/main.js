@@ -2699,6 +2699,19 @@ function handleProfilePageClick(event) {
     renderProfile();
     return;
   }
+  const calNav = event.target.closest("[data-cal-nav]");
+  if (calNav) {
+    const today = new Date();
+    if (!profileCalendarMonth) profileCalendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const delta = calNav.dataset.calNav === "next" ? 1 : -1;
+    const next = new Date(profileCalendarMonth.getFullYear(), profileCalendarMonth.getMonth() + delta, 1);
+    // Don't page past the current month.
+    if (!(next.getFullYear() > today.getFullYear() || (next.getFullYear() === today.getFullYear() && next.getMonth() > today.getMonth()))) {
+      profileCalendarMonth = next;
+      renderProfile();
+    }
+    return;
+  }
   if (timeframeButton) {
     selectedProfileTimeframe = timeframeButton.dataset.profileTimeframe;
     renderProfile();
@@ -2985,56 +2998,51 @@ function activityShade(level) {
   return `color-mix(in srgb, var(--accent) ${Math.round(28 + level * 72)}%, var(--surface-2))`;
 }
 
+// Displayed month for the activity calendar (1st of the month). Null = current.
+let profileCalendarMonth = null;
+
 function renderProfileCompletionCalendar(progress, exerciseIds) {
-  const monthsBack = 3;
   const today = new Date();
-  const rangeStart = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1);
-  // Contribution-graph layout: columns are weeks starting Monday.
-  const gridStart = new Date(rangeStart);
-  gridStart.setDate(gridStart.getDate() - ((gridStart.getDay() + 6) % 7));
+  if (!profileCalendarMonth) profileCalendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const year = profileCalendarMonth.getFullYear();
+  const month = profileCalendarMonth.getMonth();
+  const monthLabel = profileCalendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
   const todayKey = localDateKey(today);
-  const daySpan = Math.floor((today - gridStart) / 86400000) + 1;
-  const weeks = Math.ceil(daySpan / 7);
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+
   const cells = [];
-  const monthLabels = [];
-  for (let week = 0; week < weeks; week += 1) {
-    for (let weekday = 0; weekday < 7; weekday += 1) {
-      const date = new Date(gridStart);
-      date.setDate(gridStart.getDate() + week * 7 + weekday);
-      const dateKey = localDateKey(date);
-      if (date < rangeStart || dateKey > todayKey) {
-        cells.push('<i class="activity-day empty" aria-hidden="true"></i>');
-        continue;
-      }
-      if (date.getDate() === 1) {
-        monthLabels.push({ column: week, label: date.toLocaleDateString(undefined, { month: "short" }) });
-      }
-      const minutes = trainingMinutesForDate(progress, exerciseIds, dateKey);
-      const level = minutes > 0 ? Math.ceil(clamp01(minutes / profileCalendarFullMinutes) * 5) / 5 : 0;
-      const classes = ["activity-day"];
-      if (dateKey === todayKey) classes.push("today");
-      const shade = minutes > 0 ? ` style="background: ${activityShade(level)}"` : "";
-      cells.push(`<i class="${classes.join(" ")}"${shade} title="${escapeHtml(dateKey)}: ${minutes} min"></i>`);
-    }
+  for (let i = 0; i < firstWeekday; i += 1) cells.push('<span class="cal-day cal-day-blank" aria-hidden="true"></span>');
+  let trainedDays = 0;
+  let totalMinutes = 0;
+  for (let d = 1; d <= daysInMonth; d += 1) {
+    const date = new Date(year, month, d);
+    const dateKey = localDateKey(date);
+    const future = dateKey > todayKey;
+    const minutes = future ? 0 : trainingMinutesForDate(progress, exerciseIds, dateKey);
+    if (minutes > 0) { trainedDays += 1; totalMinutes += minutes; }
+    const level = minutes > 0 ? Math.ceil(clamp01(minutes / profileCalendarFullMinutes) * 5) / 5 : 0;
+    const classes = ["cal-day"];
+    if (dateKey === todayKey) classes.push("is-today");
+    if (future) classes.push("is-future");
+    if (minutes > 0) classes.push("is-active");
+    const style = minutes > 0 ? ` style="--cal-fill: ${activityShade(level)}"` : "";
+    cells.push(`<span class="${classes.join(" ")}"${style} title="${escapeHtml(dateKey)}: ${minutes} min"><b>${d}</b></span>`);
   }
-  const rangeLabel = `${rangeStart.toLocaleDateString(undefined, { month: "long" })} – ${today.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`;
+
   return `
-    <section class="profile-calendar-card" aria-label="Training activity calendar">
-      <div class="profile-section-heading">
-        <div><p class="exercise-type">${escapeHtml(rangeLabel)}</p><h2>Activity</h2></div>
-        <div class="activity-legend" aria-hidden="true">
-          <span>0m</span>
-          <i style="background: var(--surface-2)"></i>
-          <i style="background: ${activityShade(0.4)}"></i>
-          <i style="background: ${activityShade(0.7)}"></i>
-          <i style="background: ${activityShade(1)}"></i>
-          <span>${profileCalendarFullMinutes}m+</span>
+    <section class="profile-calendar-card" aria-label="Training calendar">
+      <div class="cal-head">
+        <div><p class="exercise-type">Activity</p><h2>${escapeHtml(monthLabel)}</h2></div>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" data-cal-nav="prev" type="button" aria-label="Previous month">‹</button>
+          <button class="cal-nav-btn" data-cal-nav="next" type="button" aria-label="Next month"${isCurrentMonth ? " disabled" : ""}>›</button>
         </div>
       </div>
-      <div class="activity-grid">${cells.join("")}</div>
-      <div class="activity-months" style="grid-template-columns: repeat(${weeks}, 1fr)">
-        ${monthLabels.map((month) => `<span style="grid-column: ${month.column + 1} / span 3">${escapeHtml(month.label)}</span>`).join("")}
-      </div>
+      <div class="cal-weekdays" aria-hidden="true">${["M", "T", "W", "T", "F", "S", "S"].map((d) => `<span>${d}</span>`).join("")}</div>
+      <div class="cal-grid">${cells.join("")}</div>
+      <p class="cal-summary">${trainedDays} day${trainedDays === 1 ? "" : "s"} trained · ${totalMinutes} min this month</p>
     </section>
   `;
 }
