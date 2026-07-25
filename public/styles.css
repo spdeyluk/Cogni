@@ -15137,3 +15137,128 @@ html.reduce-motion *::after {
   border-radius: 11px !important;
   min-height: 42px !important;
 }
+
+/* ===================================================================
+   Mobile / narrow-web layout cleanup (2026-07-25)
+
+   The narrow layout was built for the native app (square icon-tile
+   cards, a 3-slot bottom bar). On the web at phone width that broke:
+   tall empty cards with hidden descriptions, and a 3-column nav holding
+   5 tabs + the account row, so it wrapped. This restores the clean
+   desktop look at small widths. Appended last so it wins.
+   =================================================================== */
+@media (max-width: 820px) {
+  :root { --mobile-nav-height: 68px; }
+
+  .app-content {
+    background: transparent !important;
+    padding-top: max(26px, calc(env(safe-area-inset-top) + 12px)) !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-bottom: calc(var(--mobile-nav-height) + 22px) !important;
+  }
+
+  .hero { margin-bottom: 14px !important; }
+
+  /* Clean single-column exercise cards, descriptions shown. */
+  .exercise-page {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .exercise-card {
+    aspect-ratio: auto !important;
+    min-height: 0 !important;
+    padding: 18px !important;
+    border: 1px solid var(--line-strong) !important;
+    border-radius: 16px !important;
+    background: var(--surface) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .exercise-card > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .exercise-card h2 {
+    font-size: 1.08rem !important;
+    font-weight: 650 !important;
+    line-height: 1.2 !important;
+  }
+
+  .exercise-card p {
+    display: block !important;
+    margin: 0 !important;
+    color: var(--muted) !important;
+    font-size: 0.9rem !important;
+    line-height: 1.45 !important;
+  }
+
+  /* --- Bottom nav: 5 tabs in one row, no account row --- */
+  .sidebar-account { display: none !important; }
+
+  .app-sidebar {
+    border-radius: 16px !important;
+    border: 1px solid var(--line-strong) !important;
+    background: var(--surface) !important;
+    padding: 0 !important;
+  }
+
+  .side-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    padding: 5px 4px !important;
+  }
+
+  /* The 3-slot sliding indicator is wrong for 5 tabs — drop it. */
+  .side-nav::before { display: none !important; }
+
+  .side-nav-button {
+    min-height: 50px !important;
+    padding: 6px 1px !important;
+    font-size: 0.52rem !important;
+    font-weight: 600 !important;
+    color: var(--muted) !important;
+    background: transparent !important;
+    white-space: normal !important;
+    line-height: 1.1 !important;
+  }
+
+  .side-nav-button .nav-icon,
+  .side-nav-button .nav-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+    color: var(--muted) !important;
+  }
+
+  .side-nav-button.active,
+  .side-nav-button.active .nav-icon,
+  .side-nav-button.active .nav-icon svg {
+    color: #818CF8 !important;
+    background: transparent !important;
+  }
+}
+
+/* Keep the modal close (✕) top-right on mobile — the native-app rule
+   stacked the header and pushed it to the left. */
+@media (max-width: 820px) {
+  .exercise-sheet .routine-dialog-header,
+  .routine-load-dialog .routine-dialog-header,
+  .routine-dialog .routine-dialog-header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 12px !important;
+  }
+
+  .modal-close-x { justify-self: end !important; }
+
+  .exercise-sheet .routine-dialog-header h2,
+  .routine-load-dialog .routine-dialog-header h2,
+  .routine-dialog .routine-dialog-header h2 {
+    font-size: 1.2rem !important;
+    line-height: 1.2 !important;
+  }
+}
