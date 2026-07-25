@@ -4908,23 +4908,9 @@ const streakNotifiedDateKey = "cogni.streakNotifiedDate.v1";
 
 // Fires once on the first completed exercise of the day, celebrating the
 // running streak. Idempotent per calendar day via a stored marker.
-function maybeNotifyStreak(progress) {
-  const today = localDateKey();
-  let lastNotified = null;
-  try {
-    lastNotified = localStorage.getItem(streakNotifiedDateKey);
-  } catch {
-    return;
-  }
-  if (lastNotified === today) return;
-  try {
-    localStorage.setItem(streakNotifiedDateKey, today);
-  } catch {
-    // Best effort; worst case it shows again after reload.
-  }
-  const days = daysTrainedStreak(progress);
-  if (days < 1) return;
-  showStreakNotification(days);
+function maybeNotifyStreak() {
+  // Streak notifications removed from the product. Streak counts still show on
+  // the Profile/Screen Time pages; we just don't interrupt with a toast.
 }
 
 function showStreakNotification(days) {
@@ -6495,14 +6481,8 @@ function handleSessionSummaryClose() {
 // Coins earned by the just-finished session float up when the player exits
 // the summary (or lands back on the hub after quitting mid-session).
 function showPendingSessionCoinFloat() {
-  if (!pendingSessionCoinFloat) return;
-  const amount = pendingSessionCoinFloat;
+  // Coin system removed from the product; just clear any pending amount.
   pendingSessionCoinFloat = 0;
-  const float = document.createElement("div");
-  float.className = "coin-claim-float coin-claim-float-center";
-  float.innerHTML = `<span>+${amount}</span><img src="assets/cogni-coin-23.png" alt="">`;
-  document.body.appendChild(float);
-  window.setTimeout(() => float.remove(), 1400);
 }
 
 function stopRoutineRun() {
