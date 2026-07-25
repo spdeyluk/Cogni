@@ -4,7 +4,34 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260725-profile1">
+    <link rel="stylesheet" href="styles.css?v=20260726-routing1">
+    <script>
+      // Decide what to paint FIRST — before the body renders — so the app shell
+      // never flashes before the router settles. On the browsable web (pro mode)
+      // a signed-out visitor should see the marketing landing, so mark the
+      // document landing-active pre-paint; a visitor with a stored session goes
+      // straight to the app, so leave it. Native (Capacitor) shows the sign-in
+      // wall and never the landing, so it opts out entirely.
+      (function () {
+        try {
+          if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
+          var params = new URLSearchParams(window.location.search);
+          var mode = params.get("mode");
+          if (mode !== "play" && mode !== "pro") {
+            try { mode = localStorage.getItem("cogni.uiMode.v1"); } catch (e) {}
+            if (mode !== "play" && mode !== "pro") mode = "pro";
+          }
+          var hasSession = false;
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var k = localStorage.key(i);
+              if (k && /^sb-.*auth-token/.test(k) && localStorage.getItem(k)) { hasSession = true; break; }
+            }
+          } catch (e) {}
+          if (mode === "pro" && !hasSession) document.documentElement.classList.add("landing-active");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div class="signin-first" id="signin-first" hidden>
@@ -437,10 +464,10 @@
       </div>
     </div>
 
-    <div class="landing" id="landing" hidden>
+    <div class="landing" id="landing">
       <header class="landing-nav">
         <div class="landing-brand">
-          <img src="assets/brand/logo-black.png" alt="" aria-hidden="true">
+          <img src="assets/brand/logo-white.png" alt="" aria-hidden="true">
           <strong>Cogni</strong>
         </div>
         <nav class="landing-nav-links" aria-label="Sections">
@@ -2465,6 +2492,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260725-profile1"></script>
+    <script type="module" src="src/app/main.js?v=20260726-routing1"></script>
   </body>
 </html>

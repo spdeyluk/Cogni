@@ -15791,3 +15791,156 @@ html.reduce-motion .home-open .home-page {
 .profile-overview article,
 .profile-detail-summary article,
 .profile-exercise-card { padding: 14px 16px !important; }
+
+/* ===================================================================
+   Routine builder — sleeker & denser (2026-07-25)
+
+   The narrow-layout rules above stacked the block header and blew the
+   three row actions up into full-width 44px buttons, made Add Exercise
+   and Save full-width, and used 22px section gaps — so the whole sheet
+   read as a stack of chunky boxes. This tightens all of it: inline block
+   header with small icon actions, compact fields, a slim total pill, and
+   a right-aligned action row. Appended last so it wins.
+   =================================================================== */
+
+/* Estimated-total: a slim inline pill instead of a tall stacked card. */
+.routine-dialog .routine-total-card {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 9px 13px !important;
+  border-radius: 10px !important;
+}
+.routine-dialog .routine-total-card span {
+  font-size: 0.68rem !important;
+  letter-spacing: 0.07em !important;
+}
+.routine-dialog .routine-total-card strong { font-size: 1.02rem !important; }
+
+/* Field heights: a touch tighter everywhere. */
+.routine-dialog .routine-name-field input,
+.routine-dialog .routine-add-row select { min-height: 38px !important; }
+
+@media (max-width: 820px) {
+  /* Tighter vertical rhythm. */
+  .routine-dialog form { gap: 13px !important; padding: 18px 16px 18px !important; }
+
+  /* Keep Add Exercise inline with the select and compact, not full-width. */
+  .routine-add-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+  .routine-add-row #add-routine-block {
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 16px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Block card: inline header — title left, small icon actions right. */
+  .routine-block { padding: 10px 12px !important; gap: 8px !important; }
+
+  .routine-block-header {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+  }
+
+  .routine-block-actions {
+    display: flex !important;
+    grid-template-columns: none !important;
+    width: auto !important;
+    flex: 0 0 auto !important;
+    gap: 6px !important;
+  }
+
+  .routine-icon-button {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 9px !important;
+  }
+  .routine-icon-button svg { width: 15px !important; height: 15px !important; }
+
+  /* Action row: right-aligned, compact — not two full-width slabs. */
+  .routine-dialog-actions {
+    grid-template-columns: auto auto !important;
+    justify-content: end !important;
+    justify-items: end !important;
+    gap: 10px !important;
+  }
+  .routine-dialog-actions button {
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 20px !important;
+    min-height: 40px !important;
+    height: 40px !important;
+  }
+  .routine-dialog .routine-dialog-actions #delete-routine {
+    min-height: 40px !important;
+    height: 40px !important;
+  }
+  .routine-dialog #save-routine {
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 0 24px !important;
+  }
+}
+
+/* ===================================================================
+   Landing: dark mode + flash fix (2026-07-26)
+
+   The marketing landing now matches the app's dark theme instead of the
+   light palette it shares with onboarding. Visibility also moves from the
+   [hidden] attribute to the .landing-active class, so the inline head
+   script can reveal it pre-paint (no app-shell flash on load).
+   =================================================================== */
+
+/* Landing shows only while the document is landing-active — set pre-paint by
+   the head script, then by showLanding()/enterApp() at runtime. */
+#landing { display: none; }
+html.landing-active #landing { display: block; }
+
+/* Re-point the landing's local palette at the app's dark theme. Scoped to
+   .landing only, so the native onboarding keeps its light palette. */
+.landing {
+  --l-bg: #18181B;
+  --l-ink: #F4F4F5;
+  --l-ink-2: #C7C7CF;
+  --l-muted: #A1A1AA;
+  --l-line: #27272A;
+  --l-line-strong: #3F3F46;
+  --l-surface: #1D1D20;
+  --l-surface-2: #242427;
+  --l-accent: #6366F1;
+  --l-accent-press: #4F52E8;
+  color-scheme: dark;
+}
+
+/* The wordmark now ships white-on-transparent (logo-white.png), so it sits on
+   the dark page directly — no multiply trick, which was only needed to drop a
+   white plate on the old light page. */
+.landing .landing-brand img { mix-blend-mode: normal; }
+
+/* Savings pill: emerald on a dark tint instead of mint-on-white. */
+.landing .landing-billing-save {
+  background: rgba(52, 211, 153, 0.14);
+  color: #6EE7B7;
+}
+
+/* Feature check bullets on the standard plans: indigo tint + a lighter check
+   so they read on the dark card. */
+.landing .landing-plan-features li::before {
+  background-color: rgba(99, 102, 241, 0.18);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A5B4FC' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
+}
+/* The featured plan keeps its white-on-glass check (more specific → wins). */
+.landing .landing-plan-featured .landing-plan-features li::before {
+  background-color: rgba(255, 255, 255, 0.22);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
+}

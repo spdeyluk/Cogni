@@ -55,7 +55,10 @@ function resolveRequestPath(url) {
   if (pathname.startsWith("/src/") || pathname.startsWith("/node_modules/")) {
     return join(root, normalize(pathname));
   }
-  if (pathname === "/" || pathname === "/iq") {
+  // Client-side routes (e.g. /exercises, /profile) carry no file extension —
+  // serve the SPA shell so deep links and refreshes land on the app, which then
+  // routes to the right section. Real assets always have an extension.
+  if (pathname === "/" || pathname === "/iq" || !extname(pathname)) {
     return join(publicDir, "index.html");
   }
   return join(publicDir, normalize(pathname));

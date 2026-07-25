@@ -129,6 +129,79 @@ function detectCogniUiMode() {
   }
   return "pro";
 }
+
+// ---------------------------------------------------------------------------
+// Web path routing (pro/web only). Each top-level section maps to a clean URL
+// so the address bar reflects where you are and browser back/forward + deep
+// links work. Native (play) is a webview with no meaningful URL, so every hook
+// here is a no-op there.
+// ---------------------------------------------------------------------------
+const routeTabToPath = {
+  exercises: "/exercises",
+  assessments: "/assessments",
+  coach: "/ai-chat",
+  screentime: "/screen-time",
+  statistics: "/profile",
+  home: "/home",
+  friends: "/friends"
+};
+const routePathToTab = Object.fromEntries(
+  Object.entries(routeTabToPath).map(([tab, path]) => [path, tab])
+);
+function routeTabHandler(tab) {
+  const handlers = {
+    exercises: showExerciseHub,
+    assessments: showAssessments,
+    coach: showCoach,
+    screentime: showScreenTime,
+    statistics: showStatistics,
+    home: showHome,
+    friends: showFriendsPage
+  };
+  return handlers[tab] || null;
+}
+// The path the page was opened with, captured before the router mutates it.
+const routeBootPath = cogniUiMode === "pro" ? window.location.pathname : "/";
+// True once boot routing has settled — until then, section changes must not
+// push history (the page is still deciding what to show).
+let routerReady = false;
+// True while a route is applied programmatically (boot/popstate) so the section
+// change doesn't push a duplicate entry back onto the history stack.
+let applyingRoute = false;
+
+// Called at the end of setActiveTab: reflect the active section in the URL.
+function syncRouteForTab(tab) {
+  if (cogniUiMode !== "pro" || !routerReady || applyingRoute) return;
+  const path = routeTabToPath[tab];
+  if (!path || window.location.pathname === path) return;
+  history.pushState({ tab }, "", path);
+}
+
+// Called when the marketing landing is revealed from inside the app.
+function syncRouteLanding() {
+  if (cogniUiMode !== "pro" || !routerReady || applyingRoute) return;
+  if (window.location.pathname !== "/") history.pushState({ landing: true }, "", "/");
+}
+
+// Browser back/forward: re-show whatever section the URL now points at.
+if (cogniUiMode === "pro") {
+  window.addEventListener("popstate", () => {
+    const path = window.location.pathname;
+    const tab = routePathToTab[path];
+    applyingRoute = true;
+    if (authUser && tab && routeTabHandler(tab)) {
+      // Coming back from the landing (e.g. See Pricing) must dismiss it first,
+      // since the section handlers assume the app is already visible.
+      enterApp();
+      routeTabHandler(tab)();
+    } else {
+      showLanding();
+      if (path !== "/") history.replaceState({ landing: true }, "", "/");
+    }
+    applyingRoute = false;
+  });
+}
+
 const screenTimeUnlockOptions = [15, 30, 60];
 const dailyQuestsStorageKey = "cogni.dailyQuests.v1";
 const customTasksStorageKey = "cogni.customTasks.v1";
@@ -809,10 +882,11 @@ installNativeNavigationBridge();
 // Sign-in is required up front on mobile (native): show the Apple/Google wall
 // immediately so nothing flashes underneath. On web the app is browsable — show
 // the marketing landing and only ask for sign-in when the user starts something.
+// Native shows the sign-in wall up front. On the web the inline head script has
+// already picked landing-vs-app for first paint; initAuth() finalizes it once
+// the session is known (which also drives boot-time URL routing).
 if (cogniUiMode === "play") {
   showSignInFirst();
-} else {
-  showLanding();
 }
 // Deferred so the auth/sign-in module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
@@ -3714,13 +3788,13 @@ function showLanding() {
   if (cogniUiMode === "play") return;
   const landing = document.querySelector("#landing");
   if (!landing) return;
+  // Visibility is driven by the landing-active class (see styles.css), set
+  // pre-paint by the inline head script so the app shell never flashes first.
   document.documentElement.classList.add("landing-active");
-  landing.hidden = false;
+  syncRouteLanding();
 }
 
 function enterApp() {
-  const landing = document.querySelector("#landing");
-  if (landing) landing.hidden = true;
   document.documentElement.classList.remove("landing-active");
 }
 
@@ -4094,20 +4168,33 @@ async function initAuth() {
     session = data?.session ?? null;
   } catch {
     // Auth unreachable. Native keeps the wall (nothing loads without it);
-    // web stays on the browsable landing page.
+    // web falls back to the browsable landing page.
+    showLanding();
+    finalizeBootAsLanding();
     return;
   }
   if (!session?.user) {
-    // Not signed in. Native keeps the sign-in wall; web stays on the landing
-    // and asks for sign-in only when the user starts something.
+    // Not signed in. Native keeps the sign-in wall; web shows the landing and
+    // asks for sign-in only when the user starts something.
     const authError = new URLSearchParams(window.location.search).get("autherror");
     if (authError && nativeWall) setSignInError("Sign-in didn't complete. Please try again.");
+    showLanding();
+    finalizeBootAsLanding();
     return;
   }
   authUser = supabaseAuthUser(session.user);
   // Pull the account's state if another device wrote a newer snapshot.
   if (await pullSyncState()) return; // reloading
   onAuthenticated();
+}
+
+// A signed-out (or auth-unreachable) boot ends on the landing: normalize a
+// deep-linked app path back to "/" and open the router for later navigation.
+function finalizeBootAsLanding() {
+  if (cogniUiMode === "pro" && window.location.pathname !== "/") {
+    history.replaceState({ landing: true }, "", "/");
+  }
+  routerReady = true;
 }
 
 function onAuthenticated() {
@@ -4125,13 +4212,29 @@ function onAuthenticated() {
   }
   renderAccountMenu();
   enterApp();
+  // Pick the initial section. On the first (boot) auth, honor a deep-linked
+  // path like /profile; otherwise default to the exercise hub. applyingRoute
+  // suppresses the automatic pushState so we can replaceState the final URL
+  // (no phantom history entry).
+  const bootTab = (!routerReady && cogniUiMode === "pro") ? routePathToTab[routeBootPath] : null;
+  applyingRoute = true;
+  let landedPath = routeTabToPath.exercises;
   if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
     showCatSection("detail");
+    landedPath = routeTabToPath.assessments;
+  } else if (bootTab && routeTabHandler(bootTab)) {
+    routeTabHandler(bootTab)();
+    landedPath = routeTabToPath[bootTab];
   } else {
     showExerciseHub();
   }
+  applyingRoute = false;
+  if (cogniUiMode === "pro" && window.location.pathname !== landedPath) {
+    history.replaceState({ tab: routePathToTab[landedPath] }, "", landedPath);
+  }
+  routerReady = true;
   renderProfileOnboarding();
 }
 
@@ -5828,6 +5931,7 @@ function setActiveTab(tab) {
   renderTopStatus();
   postNativeNavigationMessage({ type: "tab", tab });
   syncNativeNavigationChrome();
+  syncRouteForTab(tab);
 }
 
 function installNativeNavigationBridge() {
