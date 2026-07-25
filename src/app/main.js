@@ -3798,6 +3798,23 @@ function wireLanding() {
   wireSidebarToggle();
 }
 
+// Lightweight transient toast (bottom-center).
+let toastTimer = null;
+function showToast(message) {
+  document.querySelector(".cogni-toast")?.remove();
+  window.clearTimeout(toastTimer);
+  const toast = document.createElement("div");
+  toast.className = "cogni-toast";
+  toast.setAttribute("role", "status");
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("is-visible"));
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => toast.remove(), 250);
+  }, 2200);
+}
+
 // Collapsible sidebar: a desktop collapse toggle, and a mobile hamburger
 // drawer (ChatGPT-style) sharing the same nav.
 const sidebarCollapsedKey = "cogni.sidebarCollapsed.v1";
@@ -3848,12 +3865,19 @@ function wireSidebarToggle() {
   });
 
   // Sidebar footer: See Pricing hands off to the landing pricing. The other
-  // three (Web Extension / Tutorials / Help) are placeholders for now.
+  // three (Web Extension / Tutorials / Help) have no content yet, so they
+  // surface a toast instead of doing nothing.
   document.querySelector("#sidebar-see-pricing")?.addEventListener("click", () => {
     if (isMobile()) closeDrawer();
     showLanding();
     document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  for (const id of ["#link-web-extension", "#link-tutorials", "#link-help"]) {
+    document.querySelector(id)?.addEventListener("click", () => {
+      if (isMobile()) closeDrawer();
+      showToast("Page not available currently");
+    });
+  }
   // A nav choice on mobile closes the drawer.
   document.querySelector(".side-nav")?.addEventListener("click", (event) => {
     if (isMobile() && event.target.closest(".side-nav-button")) closeDrawer();

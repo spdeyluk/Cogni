@@ -15661,3 +15661,24 @@ html.reduce-motion .screentime-open .screentime-page,
 html.reduce-motion .home-open .home-page {
   animation: none;
 }
+
+/* Transient toast (e.g. placeholder tabs). */
+.cogni-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  z-index: 300;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 500;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.cogni-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
