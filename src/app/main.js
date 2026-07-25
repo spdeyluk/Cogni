@@ -137,13 +137,11 @@ function detectCogniUiMode() {
 // here is a no-op there.
 // ---------------------------------------------------------------------------
 const routeTabToPath = {
+  coach: "/home",          // the "Home" tab renders the AI Chat / coach page
   exercises: "/exercises",
   assessments: "/assessments",
-  coach: "/ai-chat",
   screentime: "/screen-time",
-  statistics: "/profile",
-  home: "/home",
-  friends: "/friends"
+  statistics: "/profile"
 };
 const routePathToTab = Object.fromEntries(
   Object.entries(routeTabToPath).map(([tab, path]) => [path, tab])
@@ -2620,7 +2618,7 @@ function showCoach() {
   elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("coach-open");
   setActiveTab("coach");
-  elements.pageTitle.textContent = "AI Chat";
+  elements.pageTitle.textContent = "Home";
   elements.pageLede.textContent = "Your AI training coach — a plan that adapts to how you train.";
   renderCoach();
 }
@@ -4213,12 +4211,20 @@ function onAuthenticated() {
   renderAccountMenu();
   const isBoot = !routerReady;
   const bootTab = (isBoot && cogniUiMode === "pro") ? routePathToTab[routeBootPath] : null;
+  // Set the moment a sign-in is initiated (see the auth handlers). It survives an
+  // OAuth redirect / sync reload, so a fresh login always lands IN the app even
+  // when it bounces back through the root URL.
+  let justSignedIn = false;
+  try {
+    justSignedIn = sessionStorage.getItem("cogni.enterAfterAuth") === "1";
+    if (justSignedIn) sessionStorage.removeItem("cogni.enterAfterAuth");
+  } catch { /* sessionStorage unavailable */ }
 
   // Booting straight onto the marketing root with an existing session: stay on
   // the landing. Entering the app is deliberate (Get sharper / a deep link) —
   // we don't yank a returning visitor into the app just because they're signed
-  // in. A fresh sign-in (isBoot === false) still enters the app below.
-  if (isBoot && cogniUiMode === "pro" && !bootTab) {
+  // in. But a fresh sign-in (justSignedIn) does enter the app.
+  if (isBoot && cogniUiMode === "pro" && !bootTab && !justSignedIn) {
     showLanding();
     if (window.location.pathname !== "/") history.replaceState({ landing: true }, "", "/");
     routerReady = true;
@@ -4228,11 +4234,11 @@ function onAuthenticated() {
 
   enterApp();
   // Pick the initial section. On the first (boot) auth, honor a deep-linked
-  // path like /profile; otherwise default to the exercise hub. applyingRoute
-  // suppresses the automatic pushState so we can replaceState the final URL
-  // (no phantom history entry).
+  // path like /profile; otherwise default to Home (the AI Chat page).
+  // applyingRoute suppresses the automatic pushState so we can replaceState the
+  // final URL (no phantom history entry).
   applyingRoute = true;
-  let landedPath = routeTabToPath.exercises;
+  let landedPath = routeTabToPath.coach;
   if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
@@ -4241,8 +4247,10 @@ function onAuthenticated() {
   } else if (bootTab && routeTabHandler(bootTab)) {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
+  } else if (cogniUiMode === "pro") {
+    showCoach(); // web default: the new Home (AI Chat) tab
   } else {
-    showExerciseHub();
+    showExerciseHub(); // native keeps its Exercises default
   }
   applyingRoute = false;
   if (cogniUiMode === "pro" && window.location.pathname !== landedPath) {
@@ -4288,6 +4296,7 @@ async function completeSignIn(user) {
 
 async function handleAppleSignIn() {
   setSignInError("");
+  markEnterAfterAuth();
   const plugin = window.Capacitor?.Plugins?.SignInWithApple;
   if (!plugin?.authorize) {
     setSignInError("Apple sign-in isn't available here — use Google or email.");
@@ -4327,7 +4336,15 @@ async function handleAppleSignIn() {
 // deep link, which carries a PKCE code we exchange for a session.
 const GOOGLE_NATIVE_REDIRECT = "cogni://auth-callback";
 
+// Remember that the user is actively signing in, so onAuthenticated lands them
+// in the app even when the flow bounces back through the root URL (OAuth
+// redirect / sync reload). Cleared as soon as it's consumed.
+function markEnterAfterAuth() {
+  try { sessionStorage.setItem("cogni.enterAfterAuth", "1"); } catch { /* no sessionStorage */ }
+}
+
 function startWebGoogleSignIn() {
+  markEnterAfterAuth();
   return supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: window.location.origin }
@@ -4503,6 +4520,7 @@ function wireAuthGate() {
     const submit = document.querySelector("#auth-submit");
     submit.disabled = true;
     setAuthError("");
+    markEnterAfterAuth();
     try {
       const { data, error } = authMode === "signup"
         ? await supabase.auth.signUp({ email, password })
