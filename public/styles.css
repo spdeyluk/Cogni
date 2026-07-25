@@ -15910,50 +15910,8 @@ html.reduce-motion .home-open .home-page {
 #landing { display: none; }
 html.landing-active #landing { display: block; }
 
-/* Re-point the landing's local palette at the app's dark theme. Scoped to
-   .landing only, so the native onboarding keeps its light palette. */
-.landing {
-  --l-bg: #18181B;
-  --l-ink: #F4F4F5;
-  --l-ink-2: #C7C7CF;
-  --l-muted: #A1A1AA;
-  --l-line: #27272A;
-  --l-line-strong: #3F3F46;
-  --l-surface: #1D1D20;
-  --l-surface-2: #242427;
-  --l-accent: #6366F1;
-  --l-accent-press: #4F52E8;
-  color-scheme: dark;
-}
-
-/* The wordmark now ships white-on-transparent (logo-white.png), so it sits on
-   the dark page directly — no multiply trick, which was only needed to drop a
-   white plate on the old light page. */
-.landing .landing-brand img { mix-blend-mode: normal; }
-
-/* Savings pill: emerald on a dark tint instead of mint-on-white. */
-.landing .landing-billing-save {
-  background: rgba(52, 211, 153, 0.14);
-  color: #6EE7B7;
-}
-
-/* Feature check bullets on the standard plans: indigo tint + a lighter check
-   so they read on the dark card. */
-.landing .landing-plan-features li::before {
-  background-color: rgba(99, 102, 241, 0.18);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A5B4FC' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
-}
-/* The featured plan keeps its white-on-glass check (more specific → wins). */
-.landing .landing-plan-featured .landing-plan-features li::before {
-  background-color: rgba(255, 255, 255, 0.22);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
-}
-
-/* Landing "Log In": softer hover (was a bright white border on the dark page). */
-.landing .landing-login:hover {
-  border-color: var(--l-line-strong) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-}
+/* Landing reverted to its light palette (only the flash-fix display rules
+   above are kept). The blue accent below still applies. */
 
 /* ===================================================================
    Landing: research-institution logo marquee + logo-blue buttons (2026-07-26)
@@ -15973,38 +15931,31 @@ html.landing-active #landing { display: block; }
   box-shadow: 0 24px 48px -22px rgba(50, 92, 255, 0.6) !important;
 }
 
-/* Institution logos in full colour on a light band — they'd disappear on the
-   dark page, so the band lets their real brand colours show. */
+/* Full-colour logos sit directly on the light landing (no band needed). */
 .landing-uni-band {
   width: calc(100% - 40px);
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 0;
-  background: #ffffff;
-  border-radius: 18px;
+  padding: 20px 0;
+  background: transparent;
   overflow: hidden;
 }
 .landing-uni-item {
   display: inline-flex;
   align-items: center;
-  padding: 0 42px;
+  padding: 0 46px;
   flex: none;
 }
+/* All logos are cropped to their content and wide, so one uniform height
+   makes them read the same size. */
 .landing-uni-item img {
-  height: 40px;
+  height: 44px;
   width: auto;
 }
-/* Tall/square marks get more height to match the wide wordmarks' presence.
-   Cambridge (crest over stacked text) needs the most. */
-.landing-uni-item.is-tall img { height: 66px; }
-.landing-uni-item.is-square img { height: 84px; }
 
 @media (max-width: 860px) {
-  .landing-uni-band { border-radius: 14px; padding: 16px 0; }
-  .landing-uni-item { padding: 0 26px; }
-  .landing-uni-item img { height: 30px; }
-  .landing-uni-item.is-tall img { height: 50px; }
-  .landing-uni-item.is-square img { height: 64px; }
+  .landing-uni-item { padding: 0 28px; }
+  .landing-uni-item img { height: 34px; }
 }
 
 /* Calendar: days that reached the daily goal pop in solid accent; days with
