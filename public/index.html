@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260725-popup1">
+    <link rel="stylesheet" href="styles.css?v=20260725-drawer2">
   </head>
   <body>
     <div class="signin-first" id="signin-first" hidden>
@@ -643,7 +643,12 @@
     </div>
 
     <main class="app-shell home-open" id="app-shell">
+      <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
       <aside class="app-sidebar" aria-label="Primary navigation">
+        <div class="sidebar-top">
         <div class="sidebar-account" id="sidebar-account">
           <button class="sidebar-account-button" id="sidebar-account-button" type="button" aria-haspopup="true" aria-expanded="false">
             <span class="sidebar-account-avatar" id="sidebar-account-avatar">C</span>
@@ -672,6 +677,10 @@
               <span>Upgrade plan</span>
             </button>
           </div>
+        </div>
+          <button class="sidebar-collapse" id="sidebar-collapse" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6M20 6l-6 6 6 6"/></svg>
+          </button>
         </div>
         <nav class="side-nav">
           <button class="side-nav-button active" data-section="home" type="button">
@@ -2425,6 +2434,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260725-batch1"></script>
+    <script type="module" src="src/app/main.js?v=20260725-drawer1"></script>
   </body>
 </html>

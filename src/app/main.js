@@ -3795,6 +3795,65 @@ function wireLanding() {
     showAuthGate("login");
   });
   wireAccountMenu();
+  wireSidebarToggle();
+}
+
+// Collapsible sidebar: a desktop collapse toggle, and a mobile hamburger
+// drawer (ChatGPT-style) sharing the same nav.
+const sidebarCollapsedKey = "cogni.sidebarCollapsed.v1";
+let sidebarToggleWired = false;
+function wireSidebarToggle() {
+  if (sidebarToggleWired) return;
+  const hamburger = document.querySelector("#nav-hamburger");
+  const collapse = document.querySelector("#sidebar-collapse");
+  const backdrop = document.querySelector("#sidebar-backdrop");
+  if (!hamburger || !collapse) return;
+  sidebarToggleWired = true;
+
+  const isMobile = () => window.matchMedia("(max-width: 820px)").matches;
+  const root = document.documentElement;
+
+  const openDrawer = () => {
+    root.classList.add("sidebar-open");
+    hamburger.setAttribute("aria-expanded", "true");
+  };
+  const closeDrawer = () => {
+    root.classList.remove("sidebar-open");
+    hamburger.setAttribute("aria-expanded", "false");
+  };
+  const setCollapsed = (collapsed) => {
+    root.classList.toggle("sidebar-collapsed", collapsed);
+    try { localStorage.setItem(sidebarCollapsedKey, collapsed ? "1" : "0"); } catch {}
+  };
+
+  // Restore the desktop collapsed preference.
+  try { if (localStorage.getItem(sidebarCollapsedKey) === "1") root.classList.add("sidebar-collapsed"); } catch {}
+
+  hamburger.addEventListener("click", () => {
+    if (isMobile()) {
+      root.classList.contains("sidebar-open") ? closeDrawer() : openDrawer();
+    } else {
+      setCollapsed(false);
+    }
+  });
+
+  collapse.addEventListener("click", () => {
+    if (isMobile()) closeDrawer();
+    else setCollapsed(true);
+  });
+
+  backdrop?.addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && root.classList.contains("sidebar-open")) closeDrawer();
+  });
+  // A nav choice on mobile closes the drawer.
+  document.querySelector(".side-nav")?.addEventListener("click", (event) => {
+    if (isMobile() && event.target.closest(".side-nav-button")) closeDrawer();
+  });
+  // Leaving mobile width clears the drawer state so desktop isn't stuck open.
+  window.matchMedia("(max-width: 820px)").addEventListener("change", (e) => {
+    if (!e.matches) closeDrawer();
+  });
 }
 
 // Sidebar account menu: avatar + handle that opens Settings / Logout / plan.
