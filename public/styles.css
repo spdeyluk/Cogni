@@ -15380,6 +15380,8 @@ html.reduce-motion *::after {
   flex: none;
   width: 30px;
   height: 30px;
+  min-height: 0 !important;
+  padding: 0 !important;
   display: grid;
   place-items: center;
   border: none !important;
@@ -15420,11 +15422,28 @@ html.reduce-motion *::after {
 
 .sidebar-backdrop { display: none; }
 
-/* --- Desktop: collapse the sidebar out of the grid --- */
+/* --- Desktop: collapse the sidebar out of the grid, animated --- */
 @media (min-width: 821px) {
-  html.sidebar-collapsed .app-shell { grid-template-columns: 1fr; }
-  html.sidebar-collapsed .app-sidebar { display: none; }
-  html.sidebar-collapsed .nav-hamburger { display: grid; }
+  /* Animate the grid column width so the content slides over smoothly. */
+  .app-shell { transition: grid-template-columns 0.26s cubic-bezier(0.4, 0, 0.2, 1); }
+  .app-sidebar { overflow: hidden; }
+
+  html.sidebar-collapsed .app-shell { grid-template-columns: 0 minmax(0, 1fr); }
+  /* The sidebar content fades/slides as the column closes. */
+  html.sidebar-collapsed .app-sidebar {
+    transform: translateX(-12px);
+    opacity: 0;
+    transition: transform 0.22s ease, opacity 0.18s ease;
+  }
+
+  /* Hamburger fades in once the sidebar is gone. */
+  .nav-hamburger {
+    display: grid;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease 0.06s;
+  }
+  html.sidebar-collapsed .nav-hamburger { opacity: 1; pointer-events: auto; }
 }
 
 /* --- Mobile: the sidebar is a slide-in left drawer --- */
