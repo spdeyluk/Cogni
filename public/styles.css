@@ -15649,7 +15649,7 @@ html.reduce-motion *::after {
 .coach-open .coach-page,
 .screentime-open .screentime-page,
 .home-open .home-page {
-  animation: cogni-page-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: cogni-page-enter 0.36s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html.reduce-motion .exercises-open .exercise-page,
