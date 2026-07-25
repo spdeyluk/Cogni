@@ -15279,3 +15279,83 @@ html.reduce-motion *::after {
 .settings-content {
   overscroll-behavior: contain !important;
 }
+
+/* ===================================================================
+   Unified popup colours — Jenni palette (2026-07-25)
+
+   Reference popup background is #18181B (the page bg / zinc-900), NOT a
+   lighter surface. So every Cogni dialog goes dark, and interior filled
+   controls (segmented tracks, inputs, kbd) move to #27272A so they pop.
+   The dimmed backdrop is what separates the dark modal from the page.
+   =================================================================== */
+.feedback-dialog,
+.quit-dialog,
+.session-summary-dialog,
+.friend-dialog,
+.social-leaderboard-dialog,
+.routine-load-dialog,
+.routine-dialog,
+.settings-drawer,
+.exercise-sheet,
+.exercise-intro-dialog,
+.screen-time-dialog {
+  background: var(--bg) !important;              /* #18181B */
+  border: 1px solid #2c2c31 !important;
+}
+
+.feedback-dialog::backdrop,
+.quit-dialog::backdrop,
+.session-summary-dialog::backdrop,
+.friend-dialog::backdrop,
+.social-leaderboard-dialog::backdrop,
+.routine-load-dialog::backdrop,
+.routine-dialog::backdrop,
+.settings-drawer::backdrop,
+.exercise-sheet::backdrop,
+.exercise-intro-dialog::backdrop,
+.screen-time-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Interior fills pop against the darker modal (#27272A on #18181B). */
+.exercise-sheet .time-preset-row,
+.exercise-sheet .nback-preset-row,
+.exercise-sheet .rrt-preset-row,
+.exercise-sheet .interval-presets,
+.exercise-sheet .segmented-control,
+.exercise-sheet .compact-segmented,
+.exercise-sheet .custom-duration,
+.exercise-sheet .nback-custom-duration,
+.exercise-sheet .control-row > input[type="number"],
+.exercise-sheet .control-row > select {
+  background: var(--surface) !important;
+  border-color: #2c2c31 !important;
+}
+
+.exercise-sheet .controls input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--surface) !important;
+}
+
+/* Settings modal panes read on the darker bg. */
+.settings-drawer .settings-nav { border-right-color: #2c2c31 !important; }
+.settings-drawer .settings-drawer-header { border-bottom-color: #2c2c31 !important; }
+.settings-row + .settings-row,
+.settings-divider,
+.exercise-sheet .control-row,
+.exercise-sheet .setting-stat { border-color: #2c2c31 !important; }
+
+/* Feedback textarea / inputs pop. */
+.feedback-dialog textarea,
+.feedback-dialog input {
+  background: var(--surface) !important;
+  border-color: #2c2c31 !important;
+}
+
+/* Routine builder fields on the dark modal. */
+.routine-dialog .routine-name-field input,
+.routine-dialog .routine-add-row select,
+.routine-dialog .routine-total-card {
+  background: var(--surface) !important;
+  border-color: #2c2c31 !important;
+}
