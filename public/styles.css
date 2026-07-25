@@ -3,7 +3,10 @@ body {
   width: 100%;
   min-height: 100%;
   margin: 0;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) contains horizontal overflow WITHOUT turning the
+     body into a scroll container — `hidden` did the latter, which broke the
+     sticky sidebar (it scrolled away with the page). */
+  overflow-x: clip;
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -15261,4 +15264,18 @@ html.reduce-motion *::after {
     font-size: 1.2rem !important;
     line-height: 1.2 !important;
   }
+}
+
+/* ===================================================================
+   Modal scroll boundary fix (2026-07-25)
+
+   Scrolling a modal to its top/bottom edge chained/bounced into the page
+   behind (the "glitch"). Contain the overscroll so the boundary is hard.
+   =================================================================== */
+.exercise-sheet,
+.routine-load-dialog,
+.routine-dialog,
+.settings-drawer,
+.settings-content {
+  overscroll-behavior: contain !important;
 }
