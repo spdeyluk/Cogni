@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Cogni</title>
-    <link rel="stylesheet" href="styles.css?v=20260726-routing1">
+    <link rel="stylesheet" href="styles.css?v=20260726-routing2">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -28,7 +28,12 @@
               if (k && /^sb-.*auth-token/.test(k) && localStorage.getItem(k)) { hasSession = true; break; }
             }
           } catch (e) {}
-          if (mode === "pro" && !hasSession) document.documentElement.classList.add("landing-active");
+          // The root is ALWAYS the marketing landing — even when signed in,
+          // entering the app is a deliberate action. Only a deep link to a known
+          // app path with an existing session paints the app shell straight away.
+          var appPaths = ["/exercises", "/assessments", "/ai-chat", "/screen-time", "/profile", "/home", "/friends"];
+          var showApp = appPaths.indexOf(window.location.pathname) !== -1 && hasSession;
+          if (mode === "pro" && !showApp) document.documentElement.classList.add("landing-active");
         } catch (e) {}
       })();
     </script>
@@ -2492,6 +2497,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-routing1"></script>
+    <script type="module" src="src/app/main.js?v=20260726-routing2"></script>
   </body>
 </html>

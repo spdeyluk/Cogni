@@ -4211,12 +4211,26 @@ function onAuthenticated() {
     return;
   }
   renderAccountMenu();
+  const isBoot = !routerReady;
+  const bootTab = (isBoot && cogniUiMode === "pro") ? routePathToTab[routeBootPath] : null;
+
+  // Booting straight onto the marketing root with an existing session: stay on
+  // the landing. Entering the app is deliberate (Get sharper / a deep link) —
+  // we don't yank a returning visitor into the app just because they're signed
+  // in. A fresh sign-in (isBoot === false) still enters the app below.
+  if (isBoot && cogniUiMode === "pro" && !bootTab) {
+    showLanding();
+    if (window.location.pathname !== "/") history.replaceState({ landing: true }, "", "/");
+    routerReady = true;
+    renderProfileOnboarding();
+    return;
+  }
+
   enterApp();
   // Pick the initial section. On the first (boot) auth, honor a deep-linked
   // path like /profile; otherwise default to the exercise hub. applyingRoute
   // suppresses the automatic pushState so we can replaceState the final URL
   // (no phantom history entry).
-  const bootTab = (!routerReady && cogniUiMode === "pro") ? routePathToTab[routeBootPath] : null;
   applyingRoute = true;
   let landedPath = routeTabToPath.exercises;
   if (pendingLandingDestination === "assessments") {
