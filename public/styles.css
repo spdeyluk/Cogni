@@ -15944,3 +15944,9 @@ html.landing-active #landing { display: block; }
   background-color: rgba(255, 255, 255, 0.22);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5 10 17.5 19 7'/%3E%3C/svg%3E");
 }
+
+/* Landing "Log In": softer hover (was a bright white border on the dark page). */
+.landing .landing-login:hover {
+  border-color: var(--l-line-strong) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
