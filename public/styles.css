@@ -15636,9 +15636,10 @@ html.reduce-motion *::after {
    The incoming page section fades + slides up when you change tabs.
    (Sections go display:none -> block on switch, which re-triggers it.)
    =================================================================== */
+/* Pure slide up from below — no opacity fade (that read as a flash). */
 @keyframes cogni-page-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(22px); }
+  to { transform: translateY(0); }
 }
 
 .exercises-open .exercise-page,
@@ -15648,7 +15649,7 @@ html.reduce-motion *::after {
 .coach-open .coach-page,
 .screentime-open .screentime-page,
 .home-open .home-page {
-  animation: cogni-page-enter 0.26s cubic-bezier(0.22, 0.9, 0.3, 1);
+  animation: cogni-page-enter 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.reduce-motion .exercises-open .exercise-page,
