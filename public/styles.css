@@ -14972,3 +14972,152 @@ html.reduce-motion *::after {
   overflow: visible !important;
   max-height: none !important;
 }
+
+/* ===================================================================
+   De-bulk pass: sleek modals (2026-07-25)
+
+   One place for the sleek settings/routines look. Kills the tall padded
+   segmented buttons, the heavy filled boxes, and switches the routines
+   dialogs to the same centered-modal treatment as the exercise sheet.
+   The exercise *cards* on the hub are deliberately untouched.
+   =================================================================== */
+
+/* ---- Shared centered-modal close (✕) ---- */
+.modal-close-x {
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 1rem !important;
+  box-shadow: none !important;
+}
+.modal-close-x:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
+
+/* ---- Exercise settings: kill the real bulk (button padding) ---- */
+.exercise-sheet .preset-button {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 10px !important;      /* was 15px 8px — the 15px was the bulk */
+  font-size: 0.86rem !important;
+  line-height: 1 !important;
+}
+.exercise-sheet .time-preset-row,
+.exercise-sheet .nback-preset-row,
+.exercise-sheet .rrt-preset-row,
+.exercise-sheet .interval-presets {
+  padding: 3px !important;
+  border-radius: 9px !important;
+}
+.exercise-sheet .custom-duration,
+.exercise-sheet .nback-custom-duration {
+  min-height: 34px !important;
+  height: 34px !important;
+  border-radius: 7px !important;
+}
+.exercise-sheet .controls { gap: 12px !important; }
+.exercise-sheet .nback-preset-group,
+.exercise-sheet .time-preset-group { gap: 5px !important; }
+.exercise-sheet-title,
+.exercise-sheet #exercise-sheet-title { font-size: 1.2rem !important; }
+.exercise-sheet-howto { margin: 0 auto 4px !important; font-size: 0.82rem !important; }
+.exercise-sheet .exercise-sheet-body { padding: 18px 22px 20px !important; }
+.exercise-sheet #start-session,
+.exercise-sheet #start-mot-session,
+.exercise-sheet #start-rrt-session,
+.exercise-sheet #start-cct-session,
+.exercise-sheet #start-ufov-session,
+.exercise-sheet #start-ict-session {
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 0 18px !important;
+  margin-top: 2px !important;
+}
+
+/* ---- Routines: centered modal like the exercise sheet ---- */
+.routine-load-dialog,
+.routine-dialog {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: min(560px, 94vw) !important;
+  height: max-content !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 18px !important;
+  background: var(--surface) !important;
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7) !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  animation: cogni-modal-in 0.22s ease !important;
+}
+/* The builder holds more, so it can be a touch wider. */
+.routine-dialog { width: min(680px, 94vw) !important; }
+
+.routine-load-dialog::backdrop,
+.routine-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(2px);
+}
+.routine-load-dialog::-webkit-scrollbar,
+.routine-dialog::-webkit-scrollbar { width: 6px; }
+.routine-load-dialog::-webkit-scrollbar-thumb,
+.routine-dialog::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
+.routine-load-dialog::-webkit-scrollbar-track,
+.routine-dialog::-webkit-scrollbar-track { background: transparent; }
+
+.routine-load-dialog > form,
+.routine-dialog > form {
+  display: grid;
+  gap: 14px;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 18px 22px 20px !important;
+}
+
+.routine-load-dialog .routine-dialog-header h2,
+.routine-dialog .routine-dialog-header h2 { font-size: 1.2rem; }
+
+/* Empty state: flat, not a chunky filled card. Specificity must beat
+   `dialog .routine-empty { background: var(--surface-2) !important }`. */
+.routine-load-dialog .routine-empty,
+.routine-dialog .routine-empty {
+  border: 1px dashed var(--line-strong) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  background: transparent !important;
+  text-align: center;
+}
+
+/* Create button: sleek accent. */
+.routine-create-inline {
+  min-height: 44px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
+}
+.routine-create-inline:hover { background: #4F52E8 !important; }
+
+/* Builder fields: flatter, smaller. */
+.routine-dialog .routine-name-field input,
+.routine-dialog .routine-add-row select,
+.routine-dialog .routine-total-card {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--line) !important;
+}
+.routine-dialog .routine-add-row #add-routine-block {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+}
