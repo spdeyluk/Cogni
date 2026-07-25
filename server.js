@@ -28,7 +28,8 @@ const mimeTypes = new Map([
   [".jpeg", "image/jpeg"],
   [".webp", "image/webp"],
   [".ico", "image/x-icon"],
-  [".woff2", "font/woff2"]
+  [".woff2", "font/woff2"],
+  [".ttf", "font/ttf"]
 ]);
 
 const noCacheHeaders = {

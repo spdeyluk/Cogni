@@ -3062,6 +3062,9 @@ function renderProfileHexagon(sessions) {
 }
 
 const profileCalendarFullMinutes = 20;
+// A day counts as "goal reached" at this many training minutes — matches the
+// daily-streak target so the calendar and the streak agree.
+const profileDailyGoalMinutes = 5;
 
 // Accent-blue contribution ramp: the whole color ramps (not just opacity), so
 // neighbouring cells read as distinct steps. Blue not green — the Profile page
@@ -3087,6 +3090,7 @@ function renderProfileCompletionCalendar(progress, exerciseIds) {
   const cells = [];
   for (let i = 0; i < firstWeekday; i += 1) cells.push('<span class="cal-day cal-day-blank" aria-hidden="true"></span>');
   let trainedDays = 0;
+  let goalDays = 0;
   let totalMinutes = 0;
   for (let d = 1; d <= daysInMonth; d += 1) {
     const date = new Date(year, month, d);
@@ -3094,13 +3098,23 @@ function renderProfileCompletionCalendar(progress, exerciseIds) {
     const future = dateKey > todayKey;
     const minutes = future ? 0 : trainingMinutesForDate(progress, exerciseIds, dateKey);
     if (minutes > 0) { trainedDays += 1; totalMinutes += minutes; }
-    const level = minutes > 0 ? Math.ceil(clamp01(minutes / profileCalendarFullMinutes) * 5) / 5 : 0;
+    const goalMet = minutes >= profileDailyGoalMinutes;
+    if (goalMet) goalDays += 1;
     const classes = ["cal-day"];
     if (dateKey === todayKey) classes.push("is-today");
     if (future) classes.push("is-future");
-    if (minutes > 0) classes.push("is-active");
-    const style = minutes > 0 ? ` style="--cal-fill: ${activityShade(level)}"` : "";
-    cells.push(`<span class="${classes.join(" ")}"${style} title="${escapeHtml(dateKey)}: ${minutes} min"><b>${d}</b></span>`);
+    // Goal-met days get the solid accent; days with some training but under the
+    // goal get a faint tint so partial effort still shows without reading as "done".
+    let style = "";
+    if (goalMet) {
+      classes.push("is-active", "is-goal");
+      style = ` style="--cal-fill: var(--accent)"`;
+    } else if (minutes > 0) {
+      classes.push("is-active", "is-partial");
+      style = ` style="--cal-fill: color-mix(in srgb, var(--accent) 20%, var(--surface-2))"`;
+    }
+    const label = goalMet ? "goal reached" : (minutes > 0 ? "under goal" : "no training");
+    cells.push(`<span class="${classes.join(" ")}"${style} title="${escapeHtml(dateKey)}: ${minutes} min — ${label}"><b>${d}</b></span>`);
   }
 
   return `
@@ -3114,7 +3128,7 @@ function renderProfileCompletionCalendar(progress, exerciseIds) {
       </div>
       <div class="cal-weekdays" aria-hidden="true">${["M", "T", "W", "T", "F", "S", "S"].map((d) => `<span>${d}</span>`).join("")}</div>
       <div class="cal-grid">${cells.join("")}</div>
-      <p class="cal-summary">${trainedDays} day${trainedDays === 1 ? "" : "s"} trained · ${totalMinutes} min this month</p>
+      <p class="cal-summary">${goalDays} day${goalDays === 1 ? "" : "s"} on goal · ${trainedDays} trained · ${totalMinutes} min this month</p>
     </section>
   `;
 }

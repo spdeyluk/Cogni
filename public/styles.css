@@ -19,12 +19,16 @@ html.mode-play body {
   overscroll-behavior: none;
 }
 
+/* font-display: optional — the browser uses Inter only if it's ready within a
+   short block window (the preload links in index.html get it there on first
+   load, and it's cached after). Critically, it NEVER swaps late, so headings
+   don't reflow/"scale up" after the page has already painted. */
 @font-face {
   font-family: "Inter";
   src: url("assets/fonts/Inter-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -32,7 +36,7 @@ html.mode-play body {
   src: url("assets/fonts/Inter-Medium.ttf") format("truetype");
   font-weight: 500 560;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -40,7 +44,7 @@ html.mode-play body {
   src: url("assets/fonts/Inter-SemiBold.ttf") format("truetype");
   font-weight: 570 700;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 :root {
@@ -15950,3 +15954,48 @@ html.landing-active #landing { display: block; }
   border-color: var(--l-line-strong) !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
+
+/* ===================================================================
+   Landing: research-institution logo marquee + logo-blue buttons (2026-07-26)
+   =================================================================== */
+
+/* Match the landing accent (all CTAs) to the Cogni app-icon blue. */
+.landing {
+  --l-accent: #325CFF;
+  --l-accent-press: #2846E0;
+}
+
+/* Featured pricing card: shift its gradient + glow to the same blue. */
+.landing .landing-plan-featured {
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(165deg, #3E62FF 0%, #2E4BF0 55%, #2440D8 100%) !important;
+  box-shadow: 0 24px 48px -22px rgba(50, 92, 255, 0.6) !important;
+}
+
+/* University logos ride the same scrolling marquee track as before, but as
+   uniform light-grey wordmarks that read on the dark page. */
+.landing-uni-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 40px;
+  flex: none;
+}
+.landing-uni-item img {
+  height: 38px;
+  width: auto;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+.landing-marquee-viewport:hover .landing-uni-item img { opacity: 0.72; }
+
+@media (max-width: 860px) {
+  .landing-uni-item { padding: 0 26px; }
+  .landing-uni-item img { height: 30px; }
+}
+
+/* Calendar: days that reached the daily goal pop in solid accent; days with
+   some training but under goal get a faint readable tint. */
+.cal-day.is-goal b { color: #fff !important; font-weight: 700; }
+.cal-day.is-partial b { color: var(--text-2) !important; font-weight: 600; }
+.cal-day.is-goal.is-today { box-shadow: inset 0 0 0 1.5px #fff; }
