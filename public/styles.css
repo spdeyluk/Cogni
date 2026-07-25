@@ -16078,3 +16078,53 @@ html.landing-active #landing { display: block; }
   background: transparent !important;
   padding: 0 !important;
 }
+
+/* ===================================================================
+   Exercise settings polish v2 (2026-07-26)
+   =================================================================== */
+
+/* Give each settings label room above its control (they read cramped). */
+.exercise-sheet .nback-preset-group,
+.exercise-sheet .time-preset-group,
+.exercise-sheet .modality-field { gap: 11px !important; }
+
+/* Segmented: more inset + cleanly nested radii (13 − 5 = 8) so edge buttons
+   and their text sit clear of the rounded corners. */
+.exercise-sheet .time-preset-row,
+.exercise-sheet .nback-preset-row,
+.exercise-sheet .rrt-preset-row,
+.exercise-sheet .interval-presets,
+.exercise-sheet .segmented-control,
+.exercise-sheet .compact-segmented {
+  padding: 5px !important;
+  gap: 5px !important;
+  border-radius: 13px !important;
+}
+.exercise-sheet .time-preset-row .preset-button,
+.exercise-sheet .nback-preset-row .preset-button,
+.exercise-sheet .rrt-preset-row .preset-button,
+.exercise-sheet .interval-presets button,
+.exercise-sheet .segmented-control button,
+.exercise-sheet .compact-segmented button,
+.exercise-sheet .custom-duration,
+.exercise-sheet .nback-custom-duration {
+  border-radius: 8px !important;
+}
+
+/* "How it works": horizontal padding so the hover highlight fits the text. */
+.exercise-sheet-howto {
+  padding: 6px 14px !important;
+  border-radius: 999px !important;
+}
+
+/* Number fields: drop the cheap native up/down spinner for a clean field. */
+.exercise-sheet input[type="number"]::-webkit-inner-spin-button,
+.exercise-sheet input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+}
+.exercise-sheet input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
