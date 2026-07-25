@@ -15996,15 +15996,15 @@ html.landing-active #landing { display: block; }
 }
 /* Tall/square marks get more height to match the wide wordmarks' presence.
    Cambridge (crest over stacked text) needs the most. */
-.landing-uni-item.is-tall img { height: 56px; }
-.landing-uni-item.is-square img { height: 74px; }
+.landing-uni-item.is-tall img { height: 66px; }
+.landing-uni-item.is-square img { height: 84px; }
 
 @media (max-width: 860px) {
   .landing-uni-band { border-radius: 14px; padding: 16px 0; }
   .landing-uni-item { padding: 0 26px; }
   .landing-uni-item img { height: 30px; }
-  .landing-uni-item.is-tall img { height: 44px; }
-  .landing-uni-item.is-square img { height: 56px; }
+  .landing-uni-item.is-tall img { height: 50px; }
+  .landing-uni-item.is-square img { height: 64px; }
 }
 
 /* Calendar: days that reached the daily goal pop in solid accent; days with
@@ -16013,17 +16013,7 @@ html.landing-active #landing { display: block; }
 .cal-day.is-partial b { color: var(--text-2) !important; font-weight: 600; }
 .cal-day.is-goal.is-today { box-shadow: inset 0 0 0 1.5px #fff; }
 
-/* Hero: a second line on AI cognitive offloading, tucked under the lede. */
-.landing-hero-lede { margin-bottom: 15px !important; }
-.landing-hero-note {
-  max-width: 34em;
-  margin: 0 auto 34px;
-  color: var(--l-muted);
-  font-size: clamp(0.92rem, 1.15vw, 1.04rem);
-  line-height: 1.6;
-  letter-spacing: -0.006em;
-  text-wrap: balance;
-}
+/* (hero AI-offloading line merged into the single lede) */
 
 /* ===================================================================
    Exercise settings polish (2026-07-26): clean segmented corners, a slim
@@ -16139,4 +16129,15 @@ html.landing-active #landing { display: block; }
 .exercise-sheet input[type="number"] {
   -moz-appearance: textfield !important;
   appearance: textfield !important;
+}
+
+/* Flatten the settings groups: no surface box wrapping the label + segmented
+   control. That nested box was the "sharp corners / cramped label" — now the
+   segmented row is the only (rounded) box, with the label floating above it. */
+.exercise-sheet .nback-preset-group,
+.exercise-sheet .time-preset-group,
+.exercise-sheet .modality-field {
+  background: transparent !important;
+  padding: 0 !important;
+  gap: 10px !important;
 }
