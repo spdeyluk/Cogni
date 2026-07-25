@@ -2546,8 +2546,8 @@ function showCoach() {
   elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("coach-open");
   setActiveTab("coach");
-  elements.pageTitle.textContent = "Coach";
-  elements.pageLede.textContent = "Your personal, adapting brain-training plan.";
+  elements.pageTitle.textContent = "AI Chat";
+  elements.pageLede.textContent = "Your AI training coach — a plan that adapts to how you train.";
   renderCoach();
 }
 
@@ -3845,6 +3845,14 @@ function wireSidebarToggle() {
   backdrop?.addEventListener("click", closeDrawer);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && root.classList.contains("sidebar-open")) closeDrawer();
+  });
+
+  // Sidebar footer: See Pricing hands off to the landing pricing. The other
+  // three (Web Extension / Tutorials / Help) are placeholders for now.
+  document.querySelector("#sidebar-see-pricing")?.addEventListener("click", () => {
+    if (isMobile()) closeDrawer();
+    showLanding();
+    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   // A nav choice on mobile closes the drawer.
   document.querySelector(".side-nav")?.addEventListener("click", (event) => {

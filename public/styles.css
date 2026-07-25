@@ -15546,3 +15546,87 @@ html.reduce-motion *::after {
   }
   .side-nav-button:hover { background: var(--fill-subtle) !important; }
 }
+
+/* ===================================================================
+   Sidebar footer: Web Extension / Tutorials / Help + See Pricing.
+   Pinned to the bottom of the sidebar (2026-07-25).
+   =================================================================== */
+.app-sidebar { display: flex; flex-direction: column; }
+
+.sidebar-footer {
+  margin-top: auto;
+  display: grid;
+  gap: 1px;
+  padding: 8px 12px max(16px, env(safe-area-inset-bottom));
+}
+
+.sidebar-footer-link {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 9px !important;
+  min-height: 0 !important;
+  border: none !important;
+  border-radius: 8px;
+  background: transparent !important;
+  color: var(--text) !important;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.sidebar-footer-link:hover { background: var(--fill-subtle) !important; }
+
+.sidebar-footer-link .nav-icon,
+.sidebar-footer-link .nav-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--muted) !important;
+}
+.sidebar-footer-link .nav-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sidebar-see-pricing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 16px !important;
+  min-height: 0 !important;
+  border: none !important;
+  border-radius: 11px;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12) !important;
+}
+.sidebar-see-pricing:hover { background: #4F52E8 !important; }
+.sidebar-see-pricing svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Brand icons (e.g. the Chrome logo) keep their own fills — don't apply the
+   monochrome stroke treatment the other nav icons use. */
+.sidebar-footer-link .nav-icon.brand-icon svg {
+  fill: none;
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
