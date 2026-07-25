@@ -15973,25 +15973,26 @@ html.landing-active #landing { display: block; }
   box-shadow: 0 24px 48px -22px rgba(50, 92, 255, 0.6) !important;
 }
 
-/* University logos ride the same scrolling marquee track as before, but as
-   uniform light-grey wordmarks that read on the dark page. */
+/* Institutions ride the same scrolling marquee track, rendered as clean serif
+   wordmarks (uniform size, no crests) so every name reads at a glance. */
 .landing-uni-item {
   display: inline-flex;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 34px;
   flex: none;
-}
-.landing-uni-item img {
-  height: 38px;
-  width: auto;
-  opacity: 0.5;
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: 0.004em;
+  white-space: nowrap;
+  color: var(--l-ink-2);
+  opacity: 0.6;
   transition: opacity 0.2s ease;
 }
-.landing-marquee-viewport:hover .landing-uni-item img { opacity: 0.72; }
+.landing-marquee-viewport:hover .landing-uni-item { opacity: 0.85; }
 
 @media (max-width: 860px) {
-  .landing-uni-item { padding: 0 26px; }
-  .landing-uni-item img { height: 30px; }
+  .landing-uni-item { padding: 0 22px; font-size: 1.12rem; }
 }
 
 /* Calendar: days that reached the daily goal pop in solid accent; days with
@@ -15999,3 +16000,81 @@ html.landing-active #landing { display: block; }
 .cal-day.is-goal b { color: #fff !important; font-weight: 700; }
 .cal-day.is-partial b { color: var(--text-2) !important; font-weight: 600; }
 .cal-day.is-goal.is-today { box-shadow: inset 0 0 0 1.5px #fff; }
+
+/* Hero: a second line on AI cognitive offloading, tucked under the lede. */
+.landing-hero-lede { margin-bottom: 15px !important; }
+.landing-hero-note {
+  max-width: 34em;
+  margin: 0 auto 34px;
+  color: var(--l-muted);
+  font-size: clamp(0.92rem, 1.15vw, 1.04rem);
+  line-height: 1.6;
+  letter-spacing: -0.006em;
+  text-wrap: balance;
+}
+
+/* ===================================================================
+   Exercise settings polish (2026-07-26): clean segmented corners, a slim
+   centered Advanced toggle, and centered dropdown labels.
+   =================================================================== */
+
+/* Segmented control: container radius/padding and button radius nest cleanly
+   (12 − 4 = 8) so the corners are smooth and text isn't jammed into them. */
+.exercise-sheet .time-preset-row,
+.exercise-sheet .nback-preset-row,
+.exercise-sheet .rrt-preset-row,
+.exercise-sheet .interval-presets,
+.exercise-sheet .segmented-control,
+.exercise-sheet .compact-segmented {
+  padding: 4px !important;
+  gap: 4px !important;
+  border-radius: 12px !important;
+}
+.exercise-sheet .time-preset-row .preset-button,
+.exercise-sheet .nback-preset-row .preset-button,
+.exercise-sheet .rrt-preset-row .preset-button,
+.exercise-sheet .interval-presets button,
+.exercise-sheet .segmented-control button,
+.exercise-sheet .compact-segmented button,
+.exercise-sheet .custom-duration,
+.exercise-sheet .nback-custom-duration {
+  border-radius: 8px !important;
+}
+/* Custom "N min" becomes an equal segment with its unit off the rounded edge. */
+.exercise-sheet .custom-duration,
+.exercise-sheet .nback-custom-duration {
+  flex: 1 1 0 !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  padding: 0 8px !important;
+}
+
+/* Advanced settings: a slim, centered toggle instead of a tall full-width box. */
+.exercise-sheet .advanced-settings summary,
+.exercise-sheet .advanced-settings[open] summary {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: max-content !important;
+  max-width: 100% !important;
+  margin: 2px auto 6px !important;
+  min-height: 0 !important;
+  padding: 9px 22px !important;
+  border-radius: 10px !important;
+}
+
+/* Dropdown selects (e.g. Cue type): center the selected label. */
+.exercise-sheet .control-row > select {
+  text-align: center !important;
+  text-align-last: center !important;
+  min-width: 132px !important;
+  padding: 0 14px !important;
+}
+
+/* Advanced settings: the details wrapper is transparent so only the slim
+   centered summary toggle shows (its full-width surface box was the "big box"). */
+.exercise-sheet .advanced-settings {
+  background: transparent !important;
+  padding: 0 !important;
+}
