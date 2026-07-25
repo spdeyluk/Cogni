@@ -15630,3 +15630,33 @@ html.reduce-motion *::after {
   stroke: none !important;
   stroke-width: 0 !important;
 }
+
+/* ===================================================================
+   Tab-switch animation (2026-07-25)
+   The incoming page section fades + slides up when you change tabs.
+   (Sections go display:none -> block on switch, which re-triggers it.)
+   =================================================================== */
+@keyframes cogni-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.exercises-open .exercise-page,
+.assessments-open .assessment-page,
+.profile-open .profile-page,
+.stats-open .statistics-page,
+.coach-open .coach-page,
+.screentime-open .screentime-page,
+.home-open .home-page {
+  animation: cogni-page-enter 0.26s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+html.reduce-motion .exercises-open .exercise-page,
+html.reduce-motion .assessments-open .assessment-page,
+html.reduce-motion .profile-open .profile-page,
+html.reduce-motion .stats-open .statistics-page,
+html.reduce-motion .coach-open .coach-page,
+html.reduce-motion .screentime-open .screentime-page,
+html.reduce-motion .home-open .home-page {
+  animation: none;
+}
