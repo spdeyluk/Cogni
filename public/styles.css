@@ -14944,3 +14944,31 @@ html.reduce-motion *::after {
   border-radius: 12px !important;
   background: var(--fill-subtle) !important;
 }
+
+/* ===================================================================
+   Exercise settings modal — single, thin scrollbar (2026-07-25)
+
+   The dialog and the inner .controls were both scroll containers, so you
+   got two scrollbars (the stray "second line"). Let only the dialog
+   scroll, and give it a thin, sleek scrollbar.
+   =================================================================== */
+.exercise-sheet {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.exercise-sheet::-webkit-scrollbar { width: 6px; }
+.exercise-sheet::-webkit-scrollbar-track { background: transparent; }
+.exercise-sheet::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+.exercise-sheet::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* The controls no longer scroll on their own — the modal handles it. */
+.exercise-sheet .controls {
+  overflow: visible !important;
+  max-height: none !important;
+}
