@@ -15973,26 +15973,38 @@ html.landing-active #landing { display: block; }
   box-shadow: 0 24px 48px -22px rgba(50, 92, 255, 0.6) !important;
 }
 
-/* Institutions ride the same scrolling marquee track, rendered as clean serif
-   wordmarks (uniform size, no crests) so every name reads at a glance. */
+/* Institution logos in full colour on a light band — they'd disappear on the
+   dark page, so the band lets their real brand colours show. */
+.landing-uni-band {
+  width: calc(100% - 40px);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 0;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+}
 .landing-uni-item {
   display: inline-flex;
   align-items: center;
-  padding: 0 34px;
+  padding: 0 42px;
   flex: none;
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  font-weight: 500;
-  letter-spacing: 0.004em;
-  white-space: nowrap;
-  color: var(--l-ink-2);
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
 }
-.landing-marquee-viewport:hover .landing-uni-item { opacity: 0.85; }
+.landing-uni-item img {
+  height: 40px;
+  width: auto;
+}
+/* Tall/square marks get more height to match the wide wordmarks' presence.
+   Cambridge (crest over stacked text) needs the most. */
+.landing-uni-item.is-tall img { height: 56px; }
+.landing-uni-item.is-square img { height: 74px; }
 
 @media (max-width: 860px) {
-  .landing-uni-item { padding: 0 22px; font-size: 1.12rem; }
+  .landing-uni-band { border-radius: 14px; padding: 16px 0; }
+  .landing-uni-item { padding: 0 26px; }
+  .landing-uni-item img { height: 30px; }
+  .landing-uni-item.is-tall img { height: 44px; }
+  .landing-uni-item.is-square img { height: 56px; }
 }
 
 /* Calendar: days that reached the daily goal pop in solid accent; days with

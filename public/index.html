@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-polish6">
+    <link rel="stylesheet" href="styles.css?v=20260726-carousel7">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -512,14 +512,15 @@
            their research) rather than claiming any endorsement or partnership. -->
       <section class="landing-marquee landing-unis" aria-label="Research institutions">
         <p class="landing-marquee-title">Our methods are grounded in decades of peer-reviewed cognitive-science research</p>
-        <div class="landing-marquee-viewport">
-          <div class="landing-marquee-track" id="landing-marquee-track">
-            <span class="landing-uni-item">University of Oxford</span>
-            <span class="landing-uni-item">Harvard University</span>
-            <span class="landing-uni-item">Stanford University</span>
-            <span class="landing-uni-item">University of Pennsylvania</span>
-            <span class="landing-uni-item">University of Cambridge</span>
-            <span class="landing-uni-item">University of Michigan</span>
+        <div class="landing-uni-band">
+          <div class="landing-marquee-viewport">
+            <div class="landing-marquee-track" id="landing-marquee-track">
+              <span class="landing-uni-item"><img src="assets/universities/oxford.png" alt="University of Oxford"></span>
+              <span class="landing-uni-item"><img src="assets/universities/harvard.png" alt="Harvard University"></span>
+              <span class="landing-uni-item"><img src="assets/universities/stanford.png" alt="Stanford University"></span>
+              <span class="landing-uni-item is-tall"><img src="assets/universities/penn.png" alt="University of Pennsylvania"></span>
+              <span class="landing-uni-item is-square"><img src="assets/universities/cambridge.png" alt="University of Cambridge"></span>
+            </div>
           </div>
         </div>
       </section>
