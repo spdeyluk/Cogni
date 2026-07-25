@@ -14874,3 +14874,73 @@ html.reduce-motion *::after {
   background: var(--fill-subtle) !important;
   color: var(--text) !important;
 }
+
+/* ===================================================================
+   Advanced settings — flat, clean rows (2026-07-25)
+
+   The stacked filled cards read heavy; make them transparent rows with a
+   hairline divider and slimmer controls, like the reference list.
+   =================================================================== */
+.exercise-sheet .control-row,
+.exercise-sheet .setting-stat {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  padding: 12px 2px !important;
+}
+
+.exercise-sheet .control-row:last-of-type,
+.exercise-sheet .setting-stat:last-of-type { border-bottom: 0 !important; }
+
+/* Slimmer slider: smaller thumb, thin track. */
+.exercise-sheet .controls input[type="range"] { height: 20px !important; }
+
+.exercise-sheet .controls input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px !important;
+  background: var(--surface-2) !important;
+}
+
+.exercise-sheet .controls input[type="range"]::-webkit-slider-thumb {
+  width: 15px !important;
+  height: 15px !important;
+  margin-top: -5.5px !important;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+.exercise-sheet .controls input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+
+.exercise-sheet .controls input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: 0;
+  background: var(--accent);
+}
+
+/* Number inputs + selects: smaller, softer, not chunky black. */
+.exercise-sheet .control-row > input[type="number"],
+.exercise-sheet .control-row > select {
+  min-width: 76px !important;
+  min-height: 34px !important;
+  border-radius: 9px !important;
+  padding: 0 12px !important;
+  background: var(--surface-2) !important;
+  font-size: 0.9rem !important;
+}
+
+/* Checkbox uses the brand accent, not green. */
+.exercise-sheet .controls input[type="checkbox"] { accent-color: var(--accent) !important; }
+
+/* Advanced fieldset: lighter, tighter. */
+.exercise-sheet .controls fieldset,
+.exercise-sheet .progression-field {
+  gap: 12px !important;
+  padding: 14px !important;
+  border-radius: 12px !important;
+  background: var(--fill-subtle) !important;
+}
