@@ -2021,6 +2021,9 @@ function runMiniGame(id) {
   const ctx = {
     stage,
     setStatus: (text) => { statusEl.textContent = text; },
+    // Games register a function returning their current result, so quitting
+    // mid-session can still surface a partial results screen.
+    setSnapshot: (fn) => { if (miniActive) miniActive.snapshot = typeof fn === "function" ? fn : null; },
     finish: (result) => {
       if (!miniActive || miniActive.ended) return;
       miniActive.ended = true;
@@ -2032,6 +2035,20 @@ function runMiniGame(id) {
 }
 
 function closeMiniExercise() {
+  // Quitting a game in progress still surfaces a results screen for the work
+  // done so far, instead of silently discarding it.
+  if (miniActive && !miniActive.ended && typeof miniActive.snapshot === "function") {
+    let partial = null;
+    try { partial = miniActive.snapshot(); } catch { partial = null; }
+    if (partial && (partial.completedTrials ?? 0) > 0) {
+      if (miniActive.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
+      miniActive.ended = true;
+      // An early quit ends any routine run rather than continuing it.
+      activeRoutineRun = null;
+      finishMiniExercise(miniActive.id, { ...partial, headline: "Ended early", endedEarly: true });
+      return;
+    }
+  }
   if (miniActive?.cleanup) { try { miniActive.cleanup(); } catch { /* ignore */ } }
   miniActive = null;
   // Backing out of a mini mid-routine abandons the routine run.
@@ -2051,7 +2068,7 @@ function finishMiniExercise(id, result) {
     : (correct + incorrect > 0 ? correct / (correct + incorrect) : 0);
   try {
     recordExerciseProgress(id, {
-      status: "completed",
+      status: result.endedEarly ? "quit" : "completed",
       durationMs,
       completedTrials: result.completedTrials ?? (correct + incorrect),
       correct,
@@ -2071,7 +2088,7 @@ function finishMiniExercise(id, result) {
 function renderMiniResult(id, result) {
   const game = miniGames[id];
   const stage = document.querySelector("#mini-ex-stage");
-  document.querySelector("#mini-ex-status").textContent = "Session complete";
+  document.querySelector("#mini-ex-status").textContent = result.endedEarly ? "Ended early" : "Session complete";
   // Inside a routine run: one Continue button instead of replay/done.
   const actions = activeRoutineRun
     ? `<div class="mini-result-actions"><button class="mini-primary" type="button" data-mini-routine-next>Continue routine</button></div>`
@@ -2191,6 +2208,7 @@ const miniGames = {
         };
       }
 
+      ctx.setSnapshot(result);
       timers.after(flash, 400);
       return timers.clearAll;
     }
@@ -2274,6 +2292,7 @@ const miniGames = {
         };
       }
 
+      ctx.setSnapshot(result);
       setup();
       return timers.clearAll;
     }
@@ -2352,6 +2371,7 @@ const miniGames = {
         };
       }
 
+      ctx.setSnapshot(result);
       newNumber();
       return timers.clearAll;
     }
@@ -2437,6 +2457,7 @@ const miniGames = {
         };
       }
 
+      ctx.setSnapshot(result);
       nextWord();
       return timers.clearAll;
     }
@@ -2504,6 +2525,21 @@ const miniGames = {
         });
       }
 
+      ctx.setSnapshot(() => {
+        if (!times.length) return null;
+        const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        return {
+          metricValue: `${avg} ms`,
+          metricLabel: "average reaction",
+          sub: `Trials: ${times.join(", ")} ms`,
+          correct: times.length,
+          incorrect: 0,
+          accuracy: 1,
+          avgAnswerSpeedMs: avg,
+          difficultyScore: 0.5,
+          completedTrials: times.length
+        };
+      });
       waitTrial();
       return timers.clearAll;
     }
@@ -6966,6 +7002,19 @@ function quitSession() {
   clearBoard();
   clearResponseFeedback();
   elements.output.textContent = JSON.stringify(savedProgress, null, 2);
+  // Quitting after answering some trials still surfaces the results summary
+  // for what was completed, rather than ending silently.
+  if (session.results.length > 0) {
+    const score = scoreQuadNBackSession(session.results, session.config.activeModalities);
+    showSessionSummary({
+      test: `${session.config.n}-back · ${session.config.activeModalities.map(formatModalityName).join(", ")} (ended early)`,
+      durationMs: elapsedSessionMs(session.startedAt),
+      correct: score.hits,
+      misses: score.misses,
+      falseAlarms: score.falseAlarms,
+      answerSpeedMs: averageNBackReactionTime()
+    });
+  }
 }
 
 function startCountdown() {

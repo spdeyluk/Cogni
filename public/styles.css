@@ -12531,10 +12531,12 @@ html.landing-active #app-shell { display: none !important; }
   justify-content: center;
 }
 
-.mini-react.waiting { background: var(--error); }
-.mini-react.go { background: var(--success); }
-.mini-react.early { background: var(--warning); color: var(--bg); }
-.mini-react.result { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+/* !important defeats the global `button { background: ... !important }` reset
+   so the reaction states actually show red / green / amber. */
+.mini-react.waiting { background: var(--error) !important; color: var(--bg) !important; }
+.mini-react.go { background: var(--success) !important; color: var(--bg) !important; }
+.mini-react.early { background: var(--warning) !important; color: var(--bg) !important; }
+.mini-react.result { background: var(--surface-2) !important; color: var(--text) !important; border: 1px solid var(--line) !important; }
 
 .mini-result { text-align: center; max-width: 420px; }
 .mini-result h2 { font-family: var(--font-serif) !important; font-weight: 500 !important; margin: 4px 0 20px; }
