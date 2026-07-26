@@ -11293,12 +11293,8 @@ function showOnboarding() {
       }
       advance();
     });
-    // "Maybe later" on the permission slides skips the request.
-    document.querySelectorAll("[data-ob-skip]").forEach((button) => {
-      button.addEventListener("click", () => {
-        if (onboardingIndex < onboardingSlides.length - 1) showOnboardingSlide(onboardingIndex + 1);
-      });
-    });
+    // No "skip" on the permission slides — the CTA forces the system prompt and then
+    // advances whether the user grants or declines it (see onboardingRequest*).
     document.querySelector("#onboarding-back")?.addEventListener("click", () => {
       if (onboardingIndex > 0) showOnboardingSlide(onboardingIndex - 1);
     });
