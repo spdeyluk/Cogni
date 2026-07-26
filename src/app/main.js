@@ -110,6 +110,9 @@ const cogniUiMode = detectCogniUiMode();
 
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
+// When true, an N-Back session runs indefinitely (trials generated on the fly) until
+// the user quits — the "No limit" duration option.
+let nbackNoLimit = false;
 
 // Auth state lives here (not in the auth section below) because boot-time
 // calls like renderProfileOnboarding() read authUser before that section runs.
@@ -1045,9 +1048,18 @@ elements.nbackModalityToggles.forEach((button) => {
 });
 elements.nbackDurationPresets.forEach((button) => {
   button.addEventListener("click", () => {
+    nbackNoLimit = false;
+    document.querySelector("[data-nback-no-limit]")?.classList.remove("active");
     elements.sessionTimer.value = button.dataset.nbackDurationPreset;
     updateTrialCountFromSessionTimer();
   });
+});
+// "No limit": the session runs until the user quits (more trials are generated on
+// the fly). Quitting still shows the results summary with coins earned.
+document.querySelector("[data-nback-no-limit]")?.addEventListener("click", (event) => {
+  nbackNoLimit = true;
+  event.currentTarget.classList.add("active");
+  elements.nbackDurationPresets.forEach((b) => b.classList.remove("active"));
 });
 // The per-card "Open" buttons are gone (the whole card opens the exercise via
 // data-open-exercise); these guarded binds remain only for any that survive.
@@ -1475,8 +1487,9 @@ function syncNBackPresetButtons() {
   });
   const sessionMinutes = Number(elements.sessionTimer.value);
   elements.nbackDurationPresets.forEach((button) => {
-    button.classList.toggle("active", Number(button.dataset.nbackDurationPreset) === sessionMinutes);
+    button.classList.toggle("active", !nbackNoLimit && Number(button.dataset.nbackDurationPreset) === sessionMinutes);
   });
+  document.querySelector("[data-nback-no-limit]")?.classList.toggle("active", nbackNoLimit);
 }
 
 function updateTrialCountFromSessionTimer() {
@@ -2085,8 +2098,9 @@ function finishMiniExercise(id, result) {
   const accuracy = result.accuracy != null
     ? result.accuracy
     : (correct + incorrect > 0 ? correct / (correct + incorrect) : 0);
+  let coinsEarned = 0;
   try {
-    recordExerciseProgress(id, {
+    const recorded = recordExerciseProgress(id, {
       status: result.endedEarly ? "quit" : "completed",
       durationMs,
       completedTrials: result.completedTrials ?? (correct + incorrect),
@@ -2098,10 +2112,11 @@ function finishMiniExercise(id, result) {
       settings: {},
       trialData: []
     });
+    coinsEarned = recorded?.coinAward ?? 0;
   } catch (error) {
     console.error("[mini] failed to record session", error);
   }
-  renderMiniResult(id, result);
+  renderMiniResult(id, { ...result, coinsEarned });
 }
 
 function renderMiniResult(id, result) {
@@ -2122,6 +2137,7 @@ function renderMiniResult(id, result) {
       <h2>${escapeHtml(result.headline ?? "Session complete")}</h2>
       <div class="mini-result-metric"><strong>${escapeHtml(String(result.metricValue))}</strong><span>${escapeHtml(result.metricLabel ?? "")}</span></div>
       ${result.sub ? `<p class="mini-result-sub">${escapeHtml(result.sub)}</p>` : ""}
+      ${result.coinsEarned > 0 ? `<p class="mini-result-coins">+${result.coinsEarned} <img src="assets/cogni-coin-23.png" alt="coins"> earned</p>` : ""}
       ${actions}
     </div>`;
   stage.querySelector("[data-mini-routine-next]")?.addEventListener("click", () => {
@@ -3812,9 +3828,8 @@ function renderHomeQuests() {
       </div>
     `;
   }).join("");
-  const newTaskRow = homeQuestsExpanded
-    ? '<button class="home-quest-row home-quest-add" data-tasks-open type="button"><span>+ New task</span></button>'
-    : "";
+  // Custom "set task" is gone — only our preset daily quests (which reset each day).
+  const newTaskRow = "";
   const hiddenClaimable = homeQuestsExpanded ? 0 : quests.slice(3).filter((quest) => quest.claimable).length;
   const moreButton = quests.length > 3
     ? `<button class="home-quests-more" data-quests-more type="button">${homeQuestsExpanded ? "less" : "more"}${hiddenClaimable ? `<b class="quests-more-badge">${hiddenClaimable}</b>` : ""}</button>`
@@ -3907,7 +3922,6 @@ function renderHomePointsCard() {
           <strong>${wallet.balance.toLocaleString()}</strong>
           <img src="assets/cogni-coin-45.png" alt="coins">
         </div>
-        <button class="home-points-buy" data-tasks-open type="button">Set task</button>
       </div>
       <p>${screenTimeMinutesLabel(wallet.balance)} of screen time</p>
       <div class="home-points-apps">
@@ -7255,6 +7269,7 @@ function startSession() {
     interferenceChance: clampNumber(elements.interference.value, 0, 60) / 100
   });
   session.trials = generateQuadNBackTrials(session.config);
+  session.noLimit = nbackNoLimit;
   session.results = [];
   session.trialIndex = 0;
   session.startedAt = Date.now();
@@ -7317,7 +7332,8 @@ function quitSession() {
       correct: score.hits,
       misses: score.misses,
       falseAlarms: score.falseAlarms,
-      answerSpeedMs: averageNBackReactionTime()
+      answerSpeedMs: averageNBackReactionTime(),
+      coinsEarned: savedProgress?.coinAward ?? 0
     });
   }
 }
@@ -7391,8 +7407,13 @@ function clearExerciseCountdown(stageElement) {
 function showTrial() {
   if (!session.running) return;
   if (session.trialIndex >= session.trials.length) {
-    finishSession();
-    return;
+    if (session.noLimit) {
+      // Keep going forever: generate another batch and continue.
+      session.trials = session.trials.concat(generateQuadNBackTrials(session.config));
+    } else {
+      finishSession();
+      return;
+    }
   }
 
   const trial = session.trials[session.trialIndex];
@@ -7400,7 +7421,9 @@ function showTrial() {
   session.reactionTimesMs = {};
   session.trialStartedAt = performance.now();
   clearResponseFeedback();
-  elements.progress.textContent = `${session.trialIndex + 1} / ${session.trials.length}`;
+  elements.progress.textContent = session.noLimit
+    ? `${session.trialIndex + 1} / ∞`
+    : `${session.trialIndex + 1} / ${session.trials.length}`;
   elements.state.textContent = trial.trialIndex < session.config.n
     ? "Load sequence"
     : "Watch for matches";
@@ -7480,7 +7503,8 @@ function finishSession() {
     correct: score.hits,
     misses: score.misses,
     falseAlarms: score.falseAlarms,
-    answerSpeedMs: averageNBackReactionTime()
+    answerSpeedMs: averageNBackReactionTime(),
+    coinsEarned: savedProgress?.coinAward ?? 0
   });
   handleRoutineExerciseFinished({ waitForSummary: true });
 }
@@ -8753,6 +8777,7 @@ function recordExerciseProgress(exerciseId, sessionData) {
   if (elements.appShell.classList.contains("profile-open")) renderProfile();
   if (elements.socialLeaderboardDialog?.open) renderSocialLeaderboard();
   return {
+    coinAward,
     session: {
       status: sessionData.status,
       durationMinutes: roundMetric(durationMs / 60000),
@@ -9980,6 +10005,14 @@ function showSessionSummary(summary) {
   elements.summarySpeed.textContent = Number.isFinite(summary.answerSpeedMs)
     ? `${Math.round(summary.answerSpeedMs)} ms`
     : "-";
+  // Coins earned this session (play mode only).
+  const coinsCell = document.querySelector("#summary-coins-cell");
+  const coinsValue = document.querySelector("#summary-coins");
+  if (coinsCell && coinsValue) {
+    const coins = Number(summary.coinsEarned) || 0;
+    coinsValue.textContent = `+${coins}`;
+    coinsCell.hidden = coins <= 0;
+  }
   if (typeof elements.sessionSummaryDialog.showModal === "function") {
     elements.sessionSummaryDialog.showModal();
   }

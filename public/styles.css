@@ -16519,3 +16519,14 @@ html.mode-play .nav-hamburger { display: none !important; }
 
 @media (max-width: 860px) { .landing-offers { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .landing-offers { grid-template-columns: 1fr; } }
+
+/* Coins earned line on the mini-game results screen. */
+.mini-result-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-weight: 700;
+  color: #F5B300;
+}
+.mini-result-coins img { width: 18px; height: 18px; }

@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch30">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch31">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1687,6 +1687,7 @@
               <button class="preset-button active" data-nback-duration-preset="5" type="button">5 min</button>
               <button class="preset-button" data-nback-duration-preset="10" type="button">10 min</button>
               <button class="preset-button" data-nback-duration-preset="15" type="button">15 min</button>
+              <button class="preset-button" data-nback-no-limit type="button">No limit</button>
               <label class="custom-duration" for="session-timer">
                 <input id="session-timer" type="number" min="0.5" max="60" step="0.5" value="5" aria-label="Custom session minutes">
                 <span>min</span>
@@ -2277,6 +2278,10 @@
             <dt>Answer speed</dt>
             <dd id="summary-speed">-</dd>
           </div>
+          <div id="summary-coins-cell" hidden>
+            <dt>Coins earned</dt>
+            <dd id="summary-coins">0</dd>
+          </div>
         </dl>
       </form>
     </dialog>
@@ -2566,6 +2571,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch30"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch31"></script>
   </body>
 </html>
