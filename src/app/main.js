@@ -1098,6 +1098,38 @@ function applyNBackDifficulty(level) {
 document.querySelectorAll("[data-nback-difficulty]").forEach((button) => {
   button.addEventListener("click", () => applyNBackDifficulty(button.dataset.nbackDifficulty));
 });
+
+// RRT difficulty presets. Nonsense/garbage words are harder (no semantic scaffolding),
+// spatial modes and more premises push it up, a tighter timer too.
+const rrtDifficultyPresets = {
+  easy: { object: "emoji", modes: ["distinction"], premises: 2, timerSeconds: 45,
+          text: "Emojis, distinction only, generous timer. A gentle intro." },
+  medium: { object: "meaningful", modes: ["distinction", "linear"], premises: 2, timerSeconds: 30,
+            text: "Real words, distinction + linear. The standard challenge." },
+  hard: { object: "garbage", modes: ["distinction", "linear", "space2d"], premises: 3, timerSeconds: 20,
+          text: "Nonsense words, spatial modes, tight timer. Serious load." }
+};
+
+function applyRrtDifficulty(level) {
+  const preset = rrtDifficultyPresets[level];
+  if (!preset) return;
+  ["garbage", "meaningful", "emoji"].forEach((vocab) => setRrtVocabularyEnabled(vocab, preset.object === vocab));
+  ensureRrtHasActiveObject();
+  ["distinction", "linear", "space2d", "space3d"].forEach((mode) => setRrtMode(mode, preset.modes.includes(mode)));
+  ensureRrtHasActiveMode();
+  elements.rrtPremiseCount.value = preset.premises;
+  elements.rrtTimerEnabled.checked = true;
+  elements.rrtTimerSeconds.value = preset.timerSeconds;
+  syncRrtSettingLabels();
+  document.querySelectorAll("[data-rrt-difficulty]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.rrtDifficulty === level);
+  });
+  const explainer = document.querySelector("#rrt-difficulty-explainer");
+  if (explainer) explainer.textContent = preset.text;
+}
+document.querySelectorAll("[data-rrt-difficulty]").forEach((button) => {
+  button.addEventListener("click", () => applyRrtDifficulty(button.dataset.rrtDifficulty));
+});
 // The per-card "Open" buttons are gone (the whole card opens the exercise via
 // data-open-exercise); these guarded binds remain only for any that survive.
 elements.openNback?.addEventListener("click", openNBackSettings);

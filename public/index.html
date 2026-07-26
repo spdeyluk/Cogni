@@ -1440,6 +1440,19 @@
         <aside class="controls rrt-controls" aria-label="RRT session settings">
           <button class="back-button" id="back-to-exercises-rrt" type="button">Exercises</button>
 
+          <div class="nback-preset-group difficulty-group" aria-label="Difficulty">
+            <span>Difficulty</span>
+            <div class="difficulty-row">
+              <button class="difficulty-button" data-rrt-difficulty="easy" type="button">Easy</button>
+              <button class="difficulty-button active" data-rrt-difficulty="medium" type="button">Medium</button>
+              <button class="difficulty-button" data-rrt-difficulty="hard" type="button">Hard</button>
+            </div>
+            <p class="difficulty-explainer" id="rrt-difficulty-explainer">Real words, distinction + linear. The standard challenge.</p>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced</summary>
+
           <div class="time-preset-group rrt-duration-group" aria-label="RRT session time">
             <span>Time</span>
             <div class="time-preset-row">
@@ -1481,9 +1494,6 @@
               <span id="rrt-timer-seconds-value">30 sec</span>
             </div>
           </div>
-
-          <details class="advanced-settings">
-            <summary>Advanced settings</summary>
 
             <div class="control-row">
               <label for="rrt-profile">Current Profile</label>
