@@ -16715,3 +16715,156 @@ html.mode-play .nav-hamburger { display: none !important; }
   line-height: 1;
   color: var(--text);
 }
+
+/* Pricing modal refinements: strikethrough, local banner, Plus column, quote. */
+.pricing-plan { align-items: center !important; }
+.pricing-plan-info { display: grid; gap: 6px; }
+.pricing-plan-name { line-height: 1; }
+.pricing-plan-was { color: var(--muted); font-size: 1.05rem; }
+.pricing-plan-was[hidden] { display: none; }
+
+.pricing-local {
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  background: rgba(34, 197, 94, 0.10);
+  color: #4ade80;
+  font-size: 0.92rem;
+}
+.pricing-local strong { color: #86efac; }
+
+/* Continuous highlighted Plus column: move row padding onto the cells. */
+.pricing-compare-row { padding: 0 2px !important; }
+.pricing-compare-row span { padding: 11px 0; }
+.pricing-compare-row span:nth-child(2) { background: rgba(99, 102, 241, 0.12); }
+.pricing-compare-head span:nth-child(2) { border-radius: 10px 10px 0 0; }
+.pricing-compare-row:last-child span:nth-child(2) { border-radius: 0 0 10px 10px; }
+
+.pricing-quote { margin: 6px 0 0; padding-top: 18px; border-top: 1px solid var(--line-strong); }
+.pricing-quote blockquote { margin: 0; font-size: 1.02rem; color: var(--text); line-height: 1.5; font-style: italic; }
+.pricing-quote figcaption { margin-top: 8px; color: var(--muted); font-size: 0.88rem; }
+
+/* Whole-page paywall (Profile, Screen Time) — blurred content + upgrade card. */
+.page-locked { position: relative; min-height: 60vh; overflow: hidden; }
+.page-locked-content {
+  filter: blur(11px);
+  pointer-events: none;
+  user-select: none;
+  max-height: 78vh;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+.page-paywall {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.page-paywall-card {
+  pointer-events: auto;
+  width: min(420px, 100%);
+  text-align: center;
+  padding: 30px 28px 32px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+.page-paywall-lock {
+  font-size: 1.9rem;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.16);
+}
+.page-paywall-card h2 { margin: 0 0 8px; font-size: 1.35rem; }
+.page-paywall-card p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+.page-paywall-btn {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent) !important;
+  color: var(--on-accent);
+}
+.page-paywall-btn:hover { filter: brightness(1.06); }
+
+/* Home page: prominent "take the IQ test" banner above the AI composer. */
+.home-iq-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(680px, 100%);
+  margin: 8px auto 0;
+  padding: 18px 20px;
+  border-radius: 18px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--on-accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, #fff 10%);
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #8b5cf6)) !important;
+  box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--accent) 80%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.home-iq-banner:hover { transform: translateY(-2px); box-shadow: 0 24px 50px -18px color-mix(in srgb, var(--accent) 85%, transparent); }
+.home-iq-banner-icon {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.home-iq-banner-icon svg { width: 26px; height: 26px; }
+.home-iq-banner-text { display: grid; gap: 3px; flex: 1 1 auto; min-width: 0; }
+.home-iq-banner-text strong { font-size: 1.08rem; font-weight: 700; }
+.home-iq-banner-text span { font-size: 0.88rem; line-height: 1.4; color: rgba(255, 255, 255, 0.86); }
+.home-iq-banner-cta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.home-iq-banner-cta svg { width: 17px; height: 17px; }
+/* The banner takes the top slot, so the composer no longer needs the full drop. */
+.home-iq-banner + .home-ai-solo { padding-top: clamp(28px, 6vh, 64px); }
+@media (max-width: 560px) {
+  .home-iq-banner { flex-wrap: wrap; gap: 12px; }
+  .home-iq-banner-cta { width: 100%; justify-content: center; }
+}
+
+/* Free tier: advanced exercise settings are Pro-only — the summary opens the
+   pricing modal instead of expanding, and shows a lock/Pro pill. */
+html.is-free .advanced-settings > summary { cursor: pointer; }
+html.is-free .advanced-settings > summary::after {
+  content: "🔒 Pro";
+  width: auto;
+  height: auto;
+  border: none;
+  transform: none;
+  margin-left: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: none;
+}

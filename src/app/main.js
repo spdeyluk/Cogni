@@ -1275,12 +1275,64 @@ elements.catOpenHistory?.addEventListener("click", () => {
 elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
 elements.catResultBack?.addEventListener("click", showAssessmentList);
 document.querySelector("[data-cat-upgrade]")?.addEventListener("click", openPricingModal);
+// Any upgrade CTA rendered into a paywalled page opens the pricing modal.
+document.addEventListener("click", (event) => {
+  // Advanced exercise settings are Pro-only: block the <details> from opening and
+  // send free-tier users to the pricing modal instead.
+  const advancedSummary = event.target.closest(".advanced-settings > summary");
+  if (advancedSummary && !isProUser()) {
+    event.preventDefault();
+    openPricingModal();
+    return;
+  }
+  if (event.target.closest("[data-open-pricing]")) openPricingModal();
+  else if (event.target.closest("[data-open-iq]")) {
+    showAssessments();
+    showCatSection("detail");
+  }
+});
+// Reflect the entitlement on <html> so CSS can lock Pro-only affordances.
+document.documentElement.classList.toggle("is-free", !isProUser());
 
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
   wirePricingModal();
+  renderPricingLocalBanner();
   const dialog = document.querySelector("#pricing-dialog");
   if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+}
+
+// A friendly "You're in <country>" banner from the browser region. The discount % is a
+// placeholder — wire it to a real regional price before charging anyone for it.
+function renderPricingLocalBanner() {
+  const banner = document.querySelector("#pricing-local");
+  if (!banner) return;
+  let region = null;
+  try { region = new Intl.Locale(navigator.language).maximize().region; } catch { region = null; }
+  if (!region || region.length !== 2) { banner.hidden = true; return; }
+  const flag = String.fromCodePoint(...[...region].map((c) => 0x1F1E6 + c.charCodeAt(0) - 65));
+  const name = (() => { try { return new Intl.DisplayNames([navigator.language], { type: "region" }).of(region); } catch { return region; } })();
+  banner.innerHTML = `You're in <strong>${escapeHtml(name)}</strong> ${flag} — enjoy your <strong>10% local discount</strong>`;
+  banner.hidden = false;
+}
+
+// Blur a whole page and lay an upgrade card over it for free-tier users, reusing
+// the same treatment as the IQ result. Call at the end of a page's render(); it is
+// a no-op for Pro users, so they see the real content.
+function applyPagePaywall(page, { title, body } = {}) {
+  if (!page || isProUser()) return;
+  const inner = page.innerHTML;
+  page.classList.add("page-locked");
+  page.innerHTML = `
+    <div class="page-locked-content" aria-hidden="true" inert>${inner}</div>
+    <div class="page-paywall">
+      <div class="page-paywall-card">
+        <div class="page-paywall-lock" aria-hidden="true">🔒</div>
+        <h2>${escapeHtml(title || "A Pro feature")}</h2>
+        <p>${escapeHtml(body || "Upgrade to Pro to unlock this page.")}</p>
+        <button class="page-paywall-btn" type="button" data-open-pricing>Upgrade to Pro</button>
+      </div>
+    </div>`;
 }
 function closePricingModal() { document.querySelector("#pricing-dialog")?.close(); }
 
@@ -1302,6 +1354,11 @@ function wirePricingModal() {
         const per = price.querySelector(".pricing-plan-per");
         if (amount) amount.textContent = price.dataset[mode === "annual" ? "annualAmount" : "monthlyAmount"];
         if (per) per.textContent = price.dataset[mode === "annual" ? "annualPer" : "monthlyPer"];
+      });
+      dialog.querySelectorAll(".pricing-plan-was").forEach((was) => {
+        const value = was.dataset[mode === "annual" ? "annualWas" : "monthlyWas"] || "";
+        was.textContent = value;
+        was.hidden = !value;
       });
     });
   });
@@ -3234,6 +3291,16 @@ function renderCoach() {
   // user describes what they want to work on — it is no longer shown up front.
   if (cogniUiMode !== "pro") { page.innerHTML = ""; return; }
   page.innerHTML = `
+    <button type="button" class="home-iq-banner" data-open-iq aria-label="Take the Cogni IQ Test">
+      <span class="home-iq-banner-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>
+      </span>
+      <span class="home-iq-banner-text">
+        <strong>Take the Cogni IQ Test</strong>
+        <span>A 10–25 min adaptive assessment across memory, reasoning and speed. See where you really stand.</span>
+      </span>
+      <span class="home-iq-banner-cta" aria-hidden="true">Start<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </button>
     <div class="home-ai home-ai-solo">
       <h2 class="home-ai-title">What do you want to work on?</h2>
       <p class="home-ai-sub">Describe an issue — focus, memory, procrastination — and your coach will build a plan around it.</p>
@@ -3298,7 +3365,12 @@ function handleCoachPageClick(event) {
 function renderScreenTime() {
   const page = document.querySelector(".screentime-page");
   if (!page) return;
+  page.classList.remove("page-locked");
   page.innerHTML = `<div class="screentime-unavailable"><p>Feature not available currently.</p></div>`;
+  applyPagePaywall(page, {
+    title: "Screen Time is a Pro feature",
+    body: "Turn focused training into real screen-time budget. Upgrade to Pro to unlock it."
+  });
 }
 
 function renderScreenTimeLegacy() {
@@ -3409,6 +3481,7 @@ function handleProfilePageSubmit(event) {
 
 function renderProfile() {
   if (!elements.profilePage) return;
+  elements.profilePage.classList.remove("page-locked");
   const exerciseIds = ["nback", "rrt", "cct", "ict"];
   const labels = {
     nback: "N-Back",
@@ -3522,6 +3595,11 @@ function renderProfile() {
       </section>
     `}
   `;
+  applyPagePaywall(elements.profilePage, {
+    title: "Your Profile is a Pro feature",
+    body: "See your full cognition profile, trends and per-exercise breakdowns. Upgrade to Pro to unlock it."
+  });
+  if (elements.profilePage.classList.contains("page-locked")) return;
   updateSegmentedControls();
   window.requestAnimationFrame(updateSegmentedControls);
 }
@@ -4827,7 +4905,12 @@ function onAuthenticated() {
   // final URL (no phantom history entry).
   applyingRoute = true;
   let landedPath = routeTabToPath.coach;
-  if (pendingLandingDestination === "assessments") {
+  if (justSignedIn && cogniUiMode === "pro") {
+    // A brand-new sign-in / sign-up always lands on Home, which surfaces the
+    // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
+    pendingLandingDestination = null;
+    showCoach();
+  } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
     showCatSection("detail");
@@ -5821,17 +5904,12 @@ function showAssessments() {
   elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
-  elements.pageTitle.textContent = "Assessments";
-  elements.pageLede.textContent = "Your adaptive cognitive assessment.";
+  elements.pageTitle.textContent = "IQ test";
+  elements.pageLede.textContent = "Your adaptive Cogni IQ Test.";
   showAssessmentList();
 }
 
 function showAssessmentList() {
-  elements.adhdAssessmentIntro.hidden = false;
-  elements.adhdAssessmentDetail.hidden = true;
-  elements.adhdAssessmentRun.hidden = true;
-  elements.adhdAssessmentResult.hidden = true;
-  elements.adhdAssessmentHistory.hidden = true;
   // An in-flight adaptive test always resumes rather than being lost.
   if (catActive?.currentItemId) {
     showCatSection("run");
@@ -5888,13 +5966,9 @@ function saveCatSessions(sessions) {
   }
 }
 
-const assessmentIntroIds = ["cat-intro", "ocd-intro", "focus-intro", "memory-intro", "adhd-assessment-intro"];
-const assessmentSectionIds = [
-  "cat-detail", "cat-run", "cat-result", "cat-history",
-  "ocd-detail", "ocd-run", "ocd-result",
-  "focus-detail", "focus-run", "focus-result",
-  "memory-detail", "memory-run", "memory-result"
-];
+// The assessments tab is the Cogni IQ Test only; the other screens were removed.
+const assessmentIntroIds = ["cat-intro"];
+const assessmentSectionIds = ["cat-detail", "cat-run", "cat-result", "cat-history"];
 
 // One active screen at a time: null shows the list of test cards.
 function showAssessmentSection(sectionId) {
@@ -6050,7 +6124,6 @@ function abandonCatTest() {
   catActive = null;
   saveCatActive();
   showCatSection("intro");
-  elements.adhdAssessmentIntro.hidden = false;
 }
 
 // Pro entitlement. No purchase flow yet, so this is false for everyone — the full IQ

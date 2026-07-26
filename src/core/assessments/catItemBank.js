@@ -90,12 +90,15 @@ for (const [shapeA, shapeB, shapeC] of [
   for (const shape of rows) {
     for (let count = 1; count <= 3; count += 1) cells.push(row(shape, count));
   }
+  // Distractors vary count (2, 4) or shape (rows A and B at count 3). The
+  // answer is the only "three of shapeC" — no outlined twin, which would read
+  // as a second correct answer since this rule ignores fill.
   const optionCells = [
     row(shapeC, 3),
     row(shapeC, 2),
     row(shapeC, 4),
     row(shapeB, 3),
-    row(shapeC, 3, { f: 0 })
+    row(shapeA, 3)
   ];
   pushMatrix("count", 3, cells, optionCells, 0);
 }

@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch40">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch42">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -773,17 +773,17 @@
             </span>
             <span>Home</span>
           </button>
+          <button class="side-nav-button" data-section="assessments" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
+            </span>
+            <span>IQ test</span>
+          </button>
           <button class="side-nav-button" id="tab-exercises" data-section="exercises" type="button">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
             </span>
             <span>Exercises</span>
-          </button>
-          <button class="side-nav-button" data-section="assessments" type="button">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
-            </span>
-            <span>Assessments</span>
           </button>
           <button class="side-nav-button" id="tab-screentime" data-section="screentime" type="button">
             <span class="nav-icon" aria-hidden="true">
@@ -966,7 +966,7 @@
 
       </section>
 
-      <section class="assessment-page" aria-label="Assessments">
+      <section class="assessment-page" aria-label="IQ test">
         <div class="assessment-intro assessment-intro-feature" id="cat-intro" role="button" tabindex="0" aria-label="Open Cogni IQ Test">
           <span class="assessment-intro-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M9 3a4 4 0 0 0-3.5 6A4 4 0 0 0 7 16.5V19a2 2 0 0 0 2 2M15 3a4 4 0 0 1 3.5 6A4 4 0 0 1 17 16.5V19a2 2 0 0 1-2 2M12 3v18M9 3a3 3 0 0 1 3 1 3 3 0 0 1 3-1"/></svg>
@@ -1079,221 +1079,6 @@
           <h2>Previous scores</h2>
           <p class="assessment-history-copy">Saved on this device only. Item-level responses are kept for future calibration.</p>
           <div class="assessment-history-list" id="cat-history-list"></div>
-        </section>
-
-        <div class="assessment-intro" id="ocd-intro" hidden role="button" tabindex="0" aria-label="Open OCD Test">
-          <div>
-            <p class="exercise-type">Self-report</p>
-            <h2>OCD Test</h2>
-            <p class="assessment-card-meta">18 questions · ~3 min</p>
-          </div>
-        </div>
-
-        <section class="assessment-detail" id="ocd-detail" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="ocd-back-to-list" type="button">Tests</button>
-          </div>
-          <p class="exercise-type">Self-report</p>
-          <h2>OCD Test</h2>
-          <p class="assessment-history-copy">18 statements about checking, contamination, order, intrusive thoughts, rituals, and saving. Rate how much each applied over the past month.</p>
-          <p class="assessment-disclaimer">This is a self-report screening signal, not an official OCD test, medical advice, or a diagnosis.</p>
-          <div class="assessment-list-actions">
-            <button id="ocd-start" type="button">Start</button>
-          </div>
-        </section>
-
-        <section class="assessment-run" id="ocd-run" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="ocd-back-question" type="button">Back</button>
-            <span id="ocd-progress">1 of 18</span>
-          </div>
-          <div class="assessment-progress-track" aria-hidden="true"><div id="ocd-progress-bar"></div></div>
-          <p class="exercise-type" id="ocd-section-label">Checking</p>
-          <h2 id="ocd-question-text"></h2>
-          <div class="adhd-rating-buttons" id="ocd-rating-buttons" aria-label="Choose an answer"></div>
-        </section>
-
-        <section class="assessment-result" id="ocd-result" hidden aria-live="polite">
-          <p class="exercise-type">Self-report screen</p>
-          <h2>OCD screen complete</h2>
-          <article class="adhd-simple-score" aria-label="OCD screening signal">
-            <span>Screening signal</span>
-            <strong id="ocd-simple-score">0</strong>
-            <div>
-              <b id="ocd-simple-conclusion">Low</b>
-              <p>A simplified read of these answers. It is not an official OCD test or diagnosis.</p>
-            </div>
-          </article>
-          <dl class="assessment-result-grid" id="ocd-subscale-grid"></dl>
-          <p class="assessment-disclaimer">This result is a screening signal only. Consider discussing persistent, distressing, or time-consuming symptoms with a qualified clinician.</p>
-          <div class="assessment-list-actions">
-            <button id="ocd-result-back" type="button">Back to tests</button>
-            <button class="secondary-button" id="ocd-restart" type="button">Take again</button>
-          </div>
-        </section>
-
-        <div class="assessment-intro" id="focus-intro" hidden role="button" tabindex="0" aria-label="Open Focus Test">
-          <div>
-            <p class="exercise-type">Attention</p>
-            <h2>Focus Test</h2>
-            <p class="assessment-card-meta">45 digits · ~1 min</p>
-          </div>
-        </div>
-
-        <section class="assessment-detail" id="focus-detail" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="focus-back-to-list" type="button">Tests</button>
-          </div>
-          <p class="exercise-type">Attention</p>
-          <h2>Focus Test</h2>
-          <p class="assessment-history-copy">Digits flash one at a time. Tap for every digit — except 3. When you see a 3, do nothing. It measures sustained attention and impulse control.</p>
-          <p class="assessment-disclaimer">Takes about a minute. Stay with it — the rhythm makes it easy to slip.</p>
-          <div class="assessment-list-actions">
-            <button id="focus-start" type="button">Start</button>
-          </div>
-        </section>
-
-        <section class="assessment-run" id="focus-run" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="focus-quit" type="button">End test</button>
-            <span id="focus-progress">1 / 45</span>
-          </div>
-          <div class="focus-stimulus" id="focus-stimulus" aria-hidden="true">–</div>
-          <button class="focus-tap" id="focus-tap" type="button">Tap</button>
-        </section>
-
-        <section class="assessment-result" id="focus-result" hidden aria-live="polite">
-          <p class="exercise-type">Attention</p>
-          <h2>Focus score</h2>
-          <div class="cat-score-hero">
-            <strong id="focus-score">0</strong>
-            <span id="focus-score-copy"></span>
-          </div>
-          <dl class="assessment-result-grid">
-            <div><dt>Accuracy</dt><dd id="focus-accuracy">–</dd></div>
-            <div><dt>Missed taps</dt><dd id="focus-misses">–</dd></div>
-            <div><dt>Taps on 3</dt><dd id="focus-false-alarms">–</dd></div>
-            <div><dt>Median reaction</dt><dd id="focus-median-rt">–</dd></div>
-          </dl>
-          <div class="assessment-list-actions">
-            <button id="focus-result-back" type="button">Back to tests</button>
-            <button class="secondary-button" id="focus-restart" type="button">Try again</button>
-          </div>
-        </section>
-
-        <div class="assessment-intro" id="memory-intro" hidden role="button" tabindex="0" aria-label="Open Memory Test">
-          <div>
-            <p class="exercise-type">Working memory</p>
-            <h2>Memory Test</h2>
-            <p class="assessment-card-meta">Span 2–9 · ~3 min</p>
-          </div>
-        </div>
-
-        <section class="assessment-detail" id="memory-detail" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="memory-back-to-list" type="button">Tests</button>
-          </div>
-          <p class="exercise-type">Working memory</p>
-          <h2>Memory Test</h2>
-          <p class="assessment-history-copy">Tiles light up one after another. Repeat the sequence by tapping the tiles in the same order. Sequences get longer until you miss twice in a row.</p>
-          <p class="assessment-disclaimer">Takes about three minutes. Your span is the longest sequence you repeat correctly.</p>
-          <div class="assessment-list-actions">
-            <button id="memory-start" type="button">Start</button>
-          </div>
-        </section>
-
-        <section class="assessment-run" id="memory-run" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="memory-quit" type="button">End test</button>
-            <span id="memory-progress">Span 2</span>
-          </div>
-          <p class="memory-status" id="memory-status">Watch the sequence…</p>
-          <div class="memory-grid" id="memory-grid" aria-label="Memory tiles"></div>
-        </section>
-
-        <section class="assessment-result" id="memory-result" hidden aria-live="polite">
-          <p class="exercise-type">Working memory</p>
-          <h2>Memory span</h2>
-          <div class="cat-score-hero">
-            <strong id="memory-span">0</strong>
-            <span id="memory-span-copy"></span>
-          </div>
-          <dl class="assessment-result-grid">
-            <div><dt>Sequences correct</dt><dd id="memory-correct">–</dd></div>
-            <div><dt>Longest sequence</dt><dd id="memory-longest">–</dd></div>
-          </dl>
-          <div class="assessment-list-actions">
-            <button id="memory-result-back" type="button">Back to tests</button>
-            <button class="secondary-button" id="memory-restart" type="button">Try again</button>
-          </div>
-        </section>
-
-        <div class="assessment-intro" id="adhd-assessment-intro" hidden role="button" tabindex="0" aria-label="Open ADHD Assessment">
-          <div>
-            <p class="exercise-type">Self-report</p>
-            <h2>ADHD Assessment</h2>
-            <p class="assessment-card-meta">45 questions · ~5 min</p>
-          </div>
-        </div>
-
-        <section class="assessment-detail" id="adhd-assessment-detail" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="back-to-assessment-list-detail" type="button">Tests</button>
-          </div>
-          <p class="exercise-type">Self-report</p>
-          <h2>ADHD Assessment</h2>
-          <p class="assessment-history-copy">45 questions across attention, hyperactivity, impulsivity, and functional impact.</p>
-          <p class="assessment-disclaimer">This is a self-report screening tool, not an official ADHD test, medical advice, or a diagnosis.</p>
-          <div class="assessment-list-actions">
-            <button id="start-adhd-assessment" type="button">Start</button>
-            <button class="secondary-button" id="open-adhd-history" type="button">Previous scores</button>
-          </div>
-        </section>
-
-        <section class="assessment-history" id="adhd-assessment-history" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="back-to-assessment-list" type="button">Tests</button>
-          </div>
-          <p class="exercise-type">Self-report history</p>
-          <h2>Previous scores</h2>
-          <p class="assessment-history-copy">Saved on this device only.</p>
-          <div class="assessment-history-list" id="adhd-history-list"></div>
-        </section>
-
-        <section class="assessment-run" id="adhd-assessment-run" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="back-adhd-question" type="button">Back</button>
-            <span id="adhd-progress">1 of 45</span>
-          </div>
-          <div class="assessment-progress-track" aria-hidden="true"><div id="adhd-progress-bar"></div></div>
-          <p class="assessment-disclaimer">This is a self-report screening tool, not an official ADHD test, medical advice, or a diagnosis.</p>
-          <p class="exercise-type" id="adhd-section-label">Inattention</p>
-          <h2 id="adhd-question-text"></h2>
-          <div class="adhd-rating-buttons" id="adhd-rating-buttons" aria-label="Choose an answer"></div>
-        </section>
-
-        <section class="assessment-result" id="adhd-assessment-result" hidden aria-live="polite">
-          <p class="exercise-type">Self-report screen</p>
-          <h2 id="adhd-result-title">Assessment complete</h2>
-          <p id="adhd-result-summary"></p>
-          <article class="adhd-simple-score" aria-label="ADHD screening signal">
-            <span>Screening signal</span>
-            <strong id="adhd-simple-score">0</strong>
-            <div>
-              <b id="adhd-simple-conclusion">Low</b>
-              <p>A simplified read of these answers. It is not an official ADHD test or diagnosis.</p>
-            </div>
-          </article>
-          <dl class="assessment-result-grid">
-            <div><dt>Inattention</dt><dd id="adhd-inattention-score">0 / 18</dd></div>
-            <div><dt>Hyperactive / impulsive</dt><dd id="adhd-hyperactive-score">0 / 21</dd></div>
-            <div><dt>Functional impact</dt><dd id="adhd-impact-score">0.0 / 4</dd></div>
-          </dl>
-          <p class="assessment-disclaimer">This result is a screening signal only, not an official ADHD test, medical advice, or a diagnosis. Consider discussing persistent symptoms or impairment with a qualified clinician.</p>
-          <div class="assessment-list-actions">
-            <button id="back-to-assessment-list-result" type="button">Back to tests</button>
-            <button class="secondary-button" id="restart-adhd-assessment" type="button">Take again</button>
-          </div>
         </section>
       </section>
 
@@ -2366,23 +2151,31 @@
             <button class="is-active" data-pricing-billing="annual" role="tab" type="button">Annual</button>
             <button data-pricing-billing="monthly" role="tab" type="button">Monthly</button>
           </div>
-          <span class="pricing-save">Save up to 45%</span>
+          <span class="pricing-save" id="pricing-save">Save 60%</span>
         </div>
 
         <div class="pricing-plans">
           <button class="pricing-plan is-selected" data-pricing-plan="plus" type="button">
-            <div class="pricing-plan-name">Plus</div>
-            <div class="pricing-plan-price" data-annual-amount="$4.92" data-annual-per="/mo · billed $59/yr" data-monthly-amount="$9" data-monthly-per="/mo">
-              <span class="pricing-plan-amount">$4.92</span><span class="pricing-plan-per">/mo · billed $59/yr</span>
+            <div class="pricing-plan-info">
+              <div class="pricing-plan-name">Plus</div>
+              <div class="pricing-plan-price" data-annual-amount="$4.92" data-annual-per="/mo" data-monthly-amount="$9" data-monthly-per="/mo">
+                <span class="pricing-plan-amount">$4.92</span><span class="pricing-plan-per">/mo</span>
+              </div>
             </div>
+            <s class="pricing-plan-was" data-annual-was="$12.30" data-monthly-was="">$12.30</s>
           </button>
           <button class="pricing-plan" data-pricing-plan="pro" type="button">
-            <div class="pricing-plan-name">Pro</div>
-            <div class="pricing-plan-price" data-annual-amount="$12.42" data-annual-per="/mo · billed $149/yr" data-monthly-amount="$19" data-monthly-per="/mo">
-              <span class="pricing-plan-amount">$12.42</span><span class="pricing-plan-per">/mo · billed $149/yr</span>
+            <div class="pricing-plan-info">
+              <div class="pricing-plan-name">Pro</div>
+              <div class="pricing-plan-price" data-annual-amount="$12.42" data-annual-per="/mo" data-monthly-amount="$19" data-monthly-per="/mo">
+                <span class="pricing-plan-amount">$12.42</span><span class="pricing-plan-per">/mo</span>
+              </div>
             </div>
+            <s class="pricing-plan-was" data-annual-was="$25.28" data-monthly-was="">$25.28</s>
           </button>
         </div>
+
+        <div class="pricing-local" id="pricing-local" hidden></div>
 
         <div class="pricing-compare">
           <div class="pricing-compare-row pricing-compare-head"><span>Included</span><span>Plus</span><span>Pro</span></div>
@@ -2396,6 +2189,11 @@
 
         <button class="pricing-upgrade" id="pricing-upgrade" type="button">Upgrade</button>
         <p class="pricing-note" id="pricing-note"></p>
+
+        <figure class="pricing-quote">
+          <blockquote>"Point the same pull that feeds exploit at your own mind."</blockquote>
+          <figcaption>The Cogni thesis</figcaption>
+        </figure>
       </div>
     </dialog>
 
@@ -2684,6 +2482,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch40"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch42"></script>
   </body>
 </html>
