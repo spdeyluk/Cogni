@@ -10716,18 +10716,22 @@ dialog .screen-time-apps-row {
 }
 
 .cat-options-matrix {
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
 }
 
 .cat-options-matrix button {
   display: grid;
   place-items: center;
-  padding: 10px;
+  padding: 8px;
 }
 
+/* Match the matrix cell display size (matrix is ~300px / 3 ≈ 92px per cell) so a
+   shape drawn at a given `sz` renders the same size in an option as in the grid.
+   Otherwise the largest option (e.g. a size-progression answer) looked no bigger
+   than a mid-size cell in the puzzle. */
 .cat-cell {
-  width: 64px;
-  height: 64px;
+  width: 90px;
+  height: 90px;
 }
 
 .cat-score-hero {
