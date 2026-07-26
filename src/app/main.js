@@ -1072,6 +1072,7 @@ document.querySelectorAll("[data-open-mini]").forEach((card) => {
   });
 });
 document.querySelector("#mini-ex-back")?.addEventListener("click", closeMiniExercise);
+initExerciseTagFilter();
 elements.tabExercises.addEventListener("click", showExerciseHub);
 elements.tabStatistics?.addEventListener("click", showStatistics);
 elements.friendsPage?.addEventListener("click", handleFriendsPageClick);
@@ -2608,6 +2609,62 @@ function showFriendsPage() {
   elements.pageLede.textContent = "";
   renderFriendsPage();
   refreshSocialHubFriends();
+}
+
+// Category chips under the Routines box that filter the standalone exercises
+// to a single tag. Built from the cards' own "exercise-type" labels so it stays
+// in sync as exercises are added or removed.
+function initExerciseTagFilter() {
+  const page = document.querySelector(".exercise-page");
+  if (!page) return;
+  const heading = page.querySelector(".exercise-heading");
+  const cards = [...page.querySelectorAll(".exercise-card")];
+  if (!heading || cards.length === 0) return;
+  const cardTag = (card) => card.querySelector(".exercise-type")?.textContent.trim() || "";
+
+  const tags = [];
+  cards.forEach((card) => {
+    const tag = cardTag(card);
+    if (tag && !tags.includes(tag)) tags.push(tag);
+  });
+  if (tags.length < 2) return; // nothing to filter by
+
+  const bar = document.createElement("div");
+  bar.className = "exercise-tag-filter";
+  bar.setAttribute("aria-label", "Filter exercises by category");
+
+  const makeChip = (label, value) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "exercise-tag-chip";
+    chip.dataset.tag = value;
+    chip.textContent = label;
+    return chip;
+  };
+  bar.append(makeChip("All", "__all__"));
+  tags.forEach((tag) => bar.append(makeChip(tag, tag)));
+  heading.insertAdjacentElement("afterend", bar);
+
+  let active = "__all__";
+  const apply = () => {
+    cards.forEach((card) => {
+      card.classList.toggle("tag-hidden", active !== "__all__" && cardTag(card) !== active);
+    });
+    bar.querySelectorAll(".exercise-tag-chip").forEach((chip) => {
+      const on = chip.dataset.tag === active;
+      chip.classList.toggle("active", on);
+      chip.setAttribute("aria-pressed", String(on));
+    });
+  };
+
+  bar.addEventListener("click", (event) => {
+    const chip = event.target.closest(".exercise-tag-chip");
+    if (!chip) return;
+    // Tapping the already-active tag clears the filter back to All.
+    active = (active === chip.dataset.tag && chip.dataset.tag !== "__all__") ? "__all__" : chip.dataset.tag;
+    apply();
+  });
+  apply();
 }
 
 function showExerciseHub() {

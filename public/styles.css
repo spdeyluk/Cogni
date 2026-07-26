@@ -16152,3 +16152,45 @@ html.landing-active #landing { display: block; }
   border: 1px solid var(--line-strong) !important;
   box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.55) !important;
 }
+
+/* ===================================================================
+   Exercise category filter chips (2026-07-26)
+   =================================================================== */
+.exercise-tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 6px;
+}
+
+/* !important defeats the global `button { background: ... !important }` reset. */
+.exercise-tag-chip {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  border-radius: 999px !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text-2) !important;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none !important;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.exercise-tag-chip:hover {
+  border-color: #325CFF !important;
+  color: var(--text) !important;
+}
+
+.exercise-tag-chip.active {
+  background: #325CFF !important;
+  border-color: #325CFF !important;
+  color: #fff !important;
+}
+
+.exercise-card.tag-hidden {
+  display: none !important;
+}
