@@ -16447,3 +16447,25 @@ html.mode-play .nav-hamburger { display: none !important; }
 /* N-Back per-trial verdict: colour the ✓/✗ so correctness reads instantly. */
 #feedback-line[data-verdict="correct"] { color: var(--success) !important; font-weight: 600; }
 #feedback-line[data-verdict="wrong"] { color: var(--error) !important; font-weight: 600; }
+
+/* Home background glow, tinted by cognition health (hue set in renderHomePage).
+   Red at low health → green at high, echoing the brain ring. */
+.home-page { position: relative; }
+.home-page::before {
+  content: "";
+  position: absolute;
+  top: -6%;
+  left: 50%;
+  width: min(680px, 130%);
+  height: 520px;
+  transform: translateX(-50%);
+  background: radial-gradient(55% 52% at 50% 2%,
+    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.30) 0%,
+    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.14) 40%,
+    transparent 74%);
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(6px);
+  transition: background 600ms ease;
+}
+.home-page > * { position: relative; z-index: 1; }

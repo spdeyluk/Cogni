@@ -91,10 +91,16 @@ const userProfileStorageKey = "cogni.userProfile.v1";
 const xpProgressStorageKey = "cogni.xpProgress.v1";
 const screenTimeWalletStorageKey = "cogni.screenTimeWallet.v1";
 const screenTimeLocalStateStorageKey = "cogni.screenTimeState.v1";
-const screenTimePointsPerMinute = 10;
+// Economy calibration. Earning 10 coins per training minute and spending 4 per
+// screen-time minute means ~1.2 h of focused training (plus the daily detox and
+// quests) reaches the full 3 h daily allowance — accessible, but it takes real work.
+const screenTimePointsPerMinute = 4;
 // Direct earning: every minute of exercise training pays this many coins,
 // on top of the daily quest rewards.
 const sessionCoinsPerMinute = 10;
+// Every user can unlock up to this much screen time per day (a hard ceiling, so the
+// system can never hand out unlimited time no matter how much is banked).
+const screenTimeDailyCapMinutes = 180;
 
 // Two experiences from one codebase: the native mobile app is the friendly,
 // gamified coach (coins, quests, screen time); the web build is the plain
@@ -3763,6 +3769,10 @@ function renderHomePage() {
   if (!elements.homePage) return;
   const progress = loadExerciseProgress();
   const health = cognitionHealth(progress);
+
+  // Background glow tinted by cognition health — same red→green scale as the ring,
+  // so the whole page reflects how healthy the brain is (see .home-page::before).
+  elements.homePage.style.setProperty("--home-glow-hue", String(Math.round(clamp01(health / 100) * 120)));
 
   elements.homePage.innerHTML = `
     <section class="home-health" aria-label="Cognition health">
@@ -9495,6 +9505,23 @@ function creditScreenTimeWallet(amount, label, meta = {}) {
   saveScreenTimeWallet(wallet);
 }
 
+// Minutes of screen time already unlocked today, summed from the wallet ledger, so
+// the daily 3 h cap is enforced without a separate counter.
+function unlockedScreenMinutesToday() {
+  const today = localDateKey();
+  const wallet = loadScreenTimeWallet();
+  return (wallet.ledger ?? []).reduce((total, entry) => {
+    if (entry.kind !== "spend" || !entry.meta?.minutes || !entry.createdAt) return total;
+    if (localDateKey(new Date(entry.createdAt)) !== today) return total;
+    return total + Number(entry.meta.minutes || 0);
+  }, 0);
+}
+
+// Screen time still unlockable today, after the daily cap.
+function remainingScreenMinutesToday() {
+  return Math.max(0, screenTimeDailyCapMinutes - unlockedScreenMinutesToday());
+}
+
 function spendScreenTimeWallet(amount, label, meta = {}) {
   const points = Math.max(0, Math.round(Number(amount) || 0));
   const wallet = loadScreenTimeWallet();
@@ -9734,6 +9761,11 @@ async function handleScreenTimeOpenSettings() {
 }
 
 async function handleScreenTimeUnlock(minutes) {
+  // Enforce the 3 h/day ceiling before spending anything.
+  if (minutes > remainingScreenMinutesToday()) {
+    renderScreenTimeDialog();
+    return;
+  }
   const cost = minutes * screenTimePointsPerMinute;
   if (!spendScreenTimeWallet(cost, `${minutes} min screen time`, { minutes })) return;
   const native = screenTimeNativePlugin();
@@ -9785,13 +9817,17 @@ function renderScreenTimeDialog() {
   const wallet = loadScreenTimeWallet();
   const hasSelection = screenTimeStatus.selectionCount > 0;
   const alreadyUnlocked = screenTimeStatus.unlockUntil > Date.now();
-  const purchasable = hasSelection && !alreadyUnlocked;
-  let note = `Every ${screenTimePointsPerMinute} points buys 1 minute. Earn points by training.`;
+  const remainingToday = remainingScreenMinutesToday();
+  const capReached = remainingToday <= 0;
+  const purchasable = hasSelection && !alreadyUnlocked && !capReached;
+  let note = `Every ${screenTimePointsPerMinute} points buys 1 minute. ${remainingToday} of ${screenTimeDailyCapMinutes} min left today.`;
   if (!hasSelection) {
     note = "Choose apps to block first — then buy time back here.";
   } else if (alreadyUnlocked) {
     const until = new Date(screenTimeStatus.unlockUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     note = `Already unlocked until ${until}.`;
+  } else if (capReached) {
+    note = `Daily limit reached — you've unlocked your ${screenTimeDailyCapMinutes / 60} h for today. Resets tomorrow.`;
   }
   // Access was denied (in onboarding or the system prompt): iOS won't ask
   // again, so point the user to Settings to grant it.
@@ -9818,7 +9854,7 @@ function renderScreenTimeDialog() {
     <div class="screen-time-options">
       ${screenTimeUnlockOptions.map((minutes) => {
         const cost = minutes * screenTimePointsPerMinute;
-        const buyable = purchasable && wallet.balance >= cost;
+        const buyable = purchasable && wallet.balance >= cost && minutes <= remainingToday;
         return `
           <button data-screentime-buy="${minutes}" type="button" ${buyable ? "" : "disabled"}>
             <strong>${minutes} min</strong>
