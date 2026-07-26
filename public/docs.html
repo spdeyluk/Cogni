@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cogni · Docs</title>
+  <link rel="icon" href="/favicon.svg?v=5" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #ffffff; --ink: #10132b; --ink-2: #4b5164; --muted: #8a90a2;
+      --line: #e7e9f0; --line-2: #eef0f5; --accent: #4f46e5; --code-bg: #f5f6fa;
+      --serif: "Fraunces", Georgia, "Times New Roman", serif;
+      --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0f1013; --ink: #f4f4f5; --ink-2: #b9bdc9; --muted: #8a90a2;
+              --line: #26272d; --line-2: #1e1f24; --accent: #818cf8; --code-bg: #1a1b20; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--ink); line-height: 1.6; }
+    a { color: inherit; text-decoration: none; }
+
+    .docs-header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; gap: 18px;
+      padding: 14px 26px; border-bottom: 1px solid var(--line); background: var(--bg);
+    }
+    .docs-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.15rem; }
+    .docs-brand svg { width: 26px; height: 26px; }
+    .docs-brand .slash { color: var(--muted); font-weight: 400; }
+    .docs-brand .docs-tag { letter-spacing: 0.12em; font-size: 0.78rem; color: var(--ink-2); }
+    .docs-search { margin-left: auto; position: relative; width: min(340px, 40vw); }
+    .docs-search input {
+      width: 100%; padding: 9px 14px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--code-bg); color: var(--ink);
+      font-size: 0.92rem; outline: none;
+    }
+    .docs-search input:focus { border-color: var(--accent); }
+
+    .docs-layout {
+      display: grid; grid-template-columns: 250px minmax(0, 1fr) 230px;
+      gap: 0; max-width: 1360px; margin: 0 auto;
+    }
+    .docs-nav, .docs-toc {
+      position: sticky; top: 61px; align-self: start; height: calc(100dvh - 61px);
+      overflow: auto; padding: 30px 22px;
+    }
+    .docs-nav { border-right: 1px solid var(--line); }
+    .docs-toc { border-left: 1px solid var(--line); }
+    .docs-nav-group { margin-bottom: 26px; }
+    .docs-nav-group h3 {
+      text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.72rem;
+      color: var(--muted); margin: 0 0 12px;
+    }
+    .docs-nav a {
+      display: block; padding: 5px 0; color: var(--ink-2); font-size: 0.95rem; cursor: pointer;
+    }
+    .docs-nav a:hover { color: var(--ink); }
+    .docs-nav a.active { color: var(--accent); font-weight: 600; }
+    .docs-nav a[hidden] { display: none; }
+    .docs-nav-group[hidden] { display: none; }
+
+    .docs-main { padding: 44px 52px 120px; min-width: 0; }
+    .docs-eyebrow { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.76rem; color: var(--muted); margin: 0 0 8px; }
+    .docs-main h1 { font-family: var(--serif); font-weight: 500; font-size: 2.6rem; line-height: 1.1; margin: 0 0 14px; }
+    .docs-lede { font-size: 1.15rem; color: var(--ink-2); margin: 0 0 30px; }
+    .docs-main h2 {
+      font-family: var(--serif); font-weight: 500; font-size: 1.6rem; margin: 40px 0 14px;
+      padding-top: 20px; border-top: 1px solid var(--line-2); scroll-margin-top: 76px;
+    }
+    .docs-main h2:first-of-type { border-top: 0; padding-top: 0; }
+    .docs-main p { margin: 0 0 14px; color: var(--ink-2); }
+    .docs-main ul, .docs-main ol { margin: 0 0 16px; padding-left: 22px; color: var(--ink-2); }
+    .docs-main li { margin: 6px 0; }
+    .docs-main strong { color: var(--ink); }
+    .docs-main code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; font-size: 0.9em; }
+    .docs-callout {
+      border: 1px solid var(--line); border-left: 3px solid var(--accent);
+      background: var(--code-bg); border-radius: 10px; padding: 14px 18px; margin: 18px 0;
+    }
+    .docs-callout p { margin: 0; color: var(--ink); }
+
+    .docs-toc h4 { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.72rem; color: var(--muted); margin: 0 0 12px; }
+    .docs-toc a { display: block; padding: 5px 0; color: var(--ink-2); font-size: 0.9rem; cursor: pointer; }
+    .docs-toc a:hover, .docs-toc a.active { color: var(--accent); }
+
+    @media (max-width: 1080px) { .docs-toc { display: none; } .docs-layout { grid-template-columns: 240px minmax(0, 1fr); } }
+    @media (max-width: 760px) {
+      .docs-layout { grid-template-columns: 1fr; }
+      .docs-nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .docs-main { padding: 28px 22px 90px; }
+      .docs-main h1 { font-size: 2rem; }
+      .docs-search { width: 46vw; }
+    }
+  </style>
+</head>
+<body>
+  <header class="docs-header">
+    <a class="docs-brand" href="/">
+      <svg viewBox="0 0 24 18" fill="currentColor" aria-hidden="true"><rect x="5" y="1" width="13" height="3" rx="1.5"></rect><rect x="2" y="7" width="19" height="3" rx="1.5"></rect><path d="M6 13h9l-4.5 4.5z"></path></svg>
+      Cogni <span class="slash">/</span> <span class="docs-tag">DOCS</span>
+    </a>
+    <div class="docs-search">
+      <input id="docs-search-input" type="search" placeholder="Search documentation…" aria-label="Search documentation">
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation"></nav>
+    <main class="docs-main" id="docs-main"></main>
+    <aside class="docs-toc" id="docs-toc" aria-label="On this page"></aside>
+  </div>
+
+  <script>
+    // Documentation content: groups → articles. Article body is HTML with <h2> anchors.
+    const DOCS = [
+      { group: "Getting started", articles: [
+        { id: "introduction", eyebrow: "Overview", title: "Welcome to Cogni",
+          lede: "Cogni is cognitive training that keeps your mind sharp as AI takes over the thinking.",
+          body: `
+            <p>Cogni turns a few focused minutes a day into measurable gains in memory, reasoning, focus and processing speed. Instead of endless scrolling, you train — and earn back screen time for it.</p>
+            <h2 id="what">What Cogni does</h2>
+            <p>Cogni runs the actual protocols cognitive scientists use — N-back, relational reasoning, inhibitory control and more — not casual puzzles dressed up as training. Every session is scored, tracked over time, and adapts to how you perform.</p>
+            <h2 id="how-to-start">How to start</h2>
+            <ol><li>Create a free account (Apple, Google or email).</li><li>Complete the short onboarding to set a baseline.</li><li>Open <strong>Exercises</strong> and start with any card — difficulty is your choice.</li></ol>
+            <div class="docs-callout"><p>You get <strong>20 free minutes of screen time a day</strong>, no earning required. Training on top of that is upside, not a ransom.</p></div>` },
+        { id: "home", eyebrow: "Getting started", title: "The home screen",
+          lede: "Your cognition health, coins, and daily tasks at a glance.",
+          body: `
+            <h2 id="cognition-health">Cognition health</h2>
+            <p>The ring and percentage reflect your overall cognition health, shaded from red (low) to green (high). It rises as you train consistently and drifts down if you stop.</p>
+            <h2 id="coins">Coins & screen time</h2>
+            <p>Your coin balance and how much screen time it buys are shown below the ring. Earn coins by training; spend them to unlock blocked apps. See <strong>Coins & screen time</strong> for the full economy.</p>
+            <h2 id="daily-tasks">Daily tasks</h2>
+            <p>Preset daily tasks (and the Daily Detox) award flat coin bonuses and reset every day. There's no custom task creation — the tasks are curated to keep training balanced.</p>` }
+      ]},
+      { group: "Exercises", articles: [
+        { id: "exercises-overview", eyebrow: "Exercises", title: "Exercises overview",
+          lede: "One app for every part of your thinking.",
+          body: `
+            <h2 id="categories">Categories</h2>
+            <p>Exercises are grouped by what they train:</p>
+            <ul>
+              <li><strong>Memory</strong> — N-Back, Grid Memory, Sequence Memory, Number Recall, Word Memory.</li>
+              <li><strong>Reasoning</strong> — Relational Reasoning, Mental Math.</li>
+              <li><strong>Focus</strong> — Inhibitory Control, Cognitive Control, Reaction Time.</li>
+            </ul>
+            <h2 id="filtering">Filtering</h2>
+            <p>Use the category chips at the top of the exercises list to show only exercises of a given type. Tap a chip again to clear the filter.</p>` },
+        { id: "difficulty", eyebrow: "Exercises", title: "Difficulty tiers",
+          lede: "Easy, Medium and Hard — a visible, priced choice.",
+          body: `
+            <p>Every exercise with settings leads with three difficulty presets. One tap sets the whole configuration; the manual controls remain under <strong>Advanced</strong> for fine-tuning.</p>
+            <h2 id="what-changes">What each tier changes</h2>
+            <ul>
+              <li><strong>Easy</strong> — a gentle warm-up. Slower pace, fewer cues, feedback on.</li>
+              <li><strong>Medium</strong> — the standard challenge most people should train at.</li>
+              <li><strong>Hard</strong> — serious cognitive load. Faster, more cues, no feedback.</li>
+            </ul>
+            <div class="docs-callout"><p>Harder settings are genuinely harder — and are intended to reward a better coin rate as the economy rolls out.</p></div>` },
+        { id: "nback", eyebrow: "Memory", title: "N-Back",
+          lede: "The gold-standard working-memory task.",
+          body: `
+            <h2 id="how-it-works">How it works</h2>
+            <p>A stream of cues appears one at a time. Press the matching modality button whenever the current cue matches the one from <strong>N</strong> steps back. In dual or triple N-back you track position, sound, colour or shape at once.</p>
+            <h2 id="settings">Settings</h2>
+            <ul><li><strong>N level</strong> — how far back to match (1–4+).</li><li><strong>Mode</strong> — which cues to track.</li><li><strong>Time / No limit</strong> — session length, or run until you quit.</li></ul>
+            <h2 id="scoring">Scoring</h2>
+            <p>N-Back is scored on hits vs. false alarms (d-prime), not raw accuracy — never responding still yields high accuracy but a near-zero real score.</p>` }
+      ]},
+      { group: "Assessments", articles: [
+        { id: "iq-test", eyebrow: "Assessments", title: "The IQ test",
+          lede: "A computer-adaptive assessment across reasoning, verbal and quantitative ability.",
+          body: `
+            <h2 id="how-adaptive">How it adapts</h2>
+            <p>Each answer picks the next question, so the test homes in on your ability level in 20–50 items. You get a score with a confidence interval and a per-domain breakdown.</p>
+            <h2 id="comprehensive-report">The comprehensive report</h2>
+            <p>Pro members see a full report: overall band, percentile, confidence interval, strongest and weakest domains, and the item/time summary.</p>
+            <div class="docs-callout"><p>On the free tier the result is shown blurred behind an upgrade prompt. Your full score and measurement report unlock with Pro.</p></div>` }
+      ]},
+      { group: "Coins & screen time", articles: [
+        { id: "economy", eyebrow: "Coins", title: "How coins work",
+          lede: "Coins come from getting things right — not from time spent.",
+          body: `
+            <ul>
+              <li>Training earns coins; harder, more accurate sessions earn more.</li>
+              <li>Very easy configurations earn little or nothing — the challenge is the point.</li>
+              <li>The more you earn in a day, the slower coins come (daily decay).</li>
+              <li>Coins reset at midnight.</li>
+              <li>You always get <strong>20 free minutes</strong> of screen time a day.</li>
+            </ul>
+            <h2 id="screen-time">Buying screen time</h2>
+            <p>Spend coins to unlock blocked apps in fixed blocks (15 / 30 / 60 min) at a flat rate. There's a hard <strong>3-hour daily cap</strong> — no amount of banked coins unlocks more than that in a day.</p>` }
+      ]},
+      { group: "Account", articles: [
+        { id: "sync", eyebrow: "Account", title: "Sync & your data",
+          lede: "Your progress follows you across devices.",
+          body: `
+            <h2 id="how-sync">How sync works</h2>
+            <p>When you're signed in, your progress, coins and stats sync to your account, so switching devices picks up where you left off. Guest/skip sessions stay on the device only.</p>
+            <h2 id="privacy">Privacy</h2>
+            <p>Cogni stores training data to power your stats and sync. See the Privacy Policy for details on what's collected and how it's used.</p>` }
+      ]}
+    ];
+
+    const nav = document.getElementById("docs-nav");
+    const main = document.getElementById("docs-main");
+    const toc = document.getElementById("docs-toc");
+    const searchInput = document.getElementById("docs-search-input");
+    const allArticles = DOCS.flatMap((g) => g.articles);
+
+    function renderNav() {
+      nav.innerHTML = DOCS.map((group) => `
+        <div class="docs-nav-group" data-group>
+          <h3>${group.group}</h3>
+          ${group.articles.map((a) => `<a data-doc="${a.id}" data-title="${a.title.toLowerCase()}">${a.title}</a>`).join("")}
+        </div>`).join("");
+      nav.querySelectorAll("[data-doc]").forEach((link) => {
+        link.addEventListener("click", () => { location.hash = link.dataset.doc; });
+      });
+    }
+
+    function renderArticle(id) {
+      const article = allArticles.find((a) => a.id === id) || allArticles[0];
+      main.innerHTML = `
+        <p class="docs-eyebrow">${article.eyebrow}</p>
+        <h1>${article.title}</h1>
+        <p class="docs-lede">${article.lede}</p>
+        ${article.body}`;
+      nav.querySelectorAll("[data-doc]").forEach((l) => l.classList.toggle("active", l.dataset.doc === article.id));
+      renderToc();
+      main.scrollTo?.(0, 0);
+      window.scrollTo(0, 0);
+    }
+
+    function renderToc() {
+      const heads = [...main.querySelectorAll("h2[id]")];
+      if (!heads.length) { toc.innerHTML = ""; return; }
+      toc.innerHTML = `<h4>On this page</h4>` + heads.map((h) => `<a data-anchor="${h.id}">${h.textContent}</a>`).join("");
+      toc.querySelectorAll("[data-anchor]").forEach((link) => {
+        link.addEventListener("click", () => {
+          document.getElementById(link.dataset.anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim().toLowerCase();
+      nav.querySelectorAll("[data-doc]").forEach((link) => {
+        link.hidden = q && !link.dataset.title.includes(q);
+      });
+      nav.querySelectorAll("[data-group]").forEach((group) => {
+        const anyVisible = [...group.querySelectorAll("[data-doc]")].some((l) => !l.hidden);
+        group.hidden = q && !anyVisible;
+      });
+    });
+
+    window.addEventListener("hashchange", () => renderArticle(location.hash.slice(1)));
+    renderNav();
+    renderArticle(location.hash.slice(1) || "introduction");
+  </script>
+</body>
+</html>

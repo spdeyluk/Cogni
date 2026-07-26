@@ -56,6 +56,10 @@ function resolveRequestPath(url) {
   if (pathname.startsWith("/src/") || pathname.startsWith("/node_modules/")) {
     return join(root, normalize(pathname));
   }
+  // Standalone docs site.
+  if (pathname === "/docs") {
+    return join(publicDir, "docs.html");
+  }
   // Client-side routes (e.g. /exercises, /profile) carry no file extension —
   // serve the SPA shell so deep links and refreshes land on the app, which then
   // routes to the right section. Real assets always have an extension.

@@ -4508,7 +4508,12 @@ function wireSidebarToggle() {
     if (isMobile()) closeDrawer();
     openPricingModal();
   });
-  for (const id of ["#link-web-extension", "#link-tutorials", "#link-help"]) {
+  // Help opens the docs site; the other two have no content yet.
+  document.querySelector("#link-help")?.addEventListener("click", () => {
+    if (isMobile()) closeDrawer();
+    window.open("/docs", "_blank", "noopener");
+  });
+  for (const id of ["#link-web-extension", "#link-tutorials"]) {
     document.querySelector(id)?.addEventListener("click", () => {
       if (isMobile()) closeDrawer();
       showToast("Page not available currently");
