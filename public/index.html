@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch33">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch34">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1301,6 +1301,19 @@
         <aside class="controls cct-controls" aria-label="CCT session settings">
           <button class="back-button" id="back-to-exercises-cct" type="button">Exercises</button>
 
+          <div class="nback-preset-group difficulty-group" aria-label="Difficulty">
+            <span>Difficulty</span>
+            <div class="difficulty-row">
+              <button class="difficulty-button" data-cct-difficulty="easy" type="button">Easy</button>
+              <button class="difficulty-button active" data-cct-difficulty="medium" type="button">Medium</button>
+              <button class="difficulty-button" data-cct-difficulty="hard" type="button">Hard</button>
+            </div>
+            <p class="difficulty-explainer" id="cct-difficulty-explainer">Standard pace (2.5s → 1s). The standard challenge.</p>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced</summary>
+
           <div class="time-preset-group cct-duration-group" aria-label="CCT session time">
             <span>Time</span>
             <div class="time-preset-row">
@@ -1353,8 +1366,6 @@
             <span id="cct-min-interval-value">0.5 sec</span>
           </div>
 
-          <details class="advanced-settings">
-            <summary>Advanced settings</summary>
             <label class="inline-check"><input id="cct-adaptive" type="checkbox" checked> Adaptive interval</label>
             <div class="control-row">
               <label for="cct-correct-step">Correct Step</label>
@@ -1827,6 +1838,19 @@
         <aside class="controls mot-controls" aria-label="MOT session settings">
           <button class="back-button" id="back-to-exercises-mot" type="button">Exercises</button>
 
+          <div class="nback-preset-group difficulty-group" aria-label="Difficulty">
+            <span>Difficulty</span>
+            <div class="difficulty-row">
+              <button class="difficulty-button" data-mot-difficulty="easy" type="button">Easy</button>
+              <button class="difficulty-button active" data-mot-difficulty="medium" type="button">Medium</button>
+              <button class="difficulty-button" data-mot-difficulty="hard" type="button">Hard</button>
+            </div>
+            <p class="difficulty-explainer" id="mot-difficulty-explainer">4 targets, standard clutter and speed. The standard challenge.</p>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced</summary>
+
           <div class="time-preset-group mot-duration-group" aria-label="MOT session time">
             <span>Time</span>
             <div class="time-preset-row">
@@ -1888,9 +1912,6 @@
             <label for="mot-auto-continue">Trial flow</label>
             <label class="inline-check"><input id="mot-auto-continue" type="checkbox" checked> Auto continue</label>
           </div>
-
-          <details class="advanced-settings">
-            <summary>Advanced settings</summary>
 
             <div class="control-row">
               <label for="mot-box-width">Box width</label>
@@ -2023,6 +2044,19 @@
         <aside class="controls ufov-controls" aria-label="UFOV session settings">
           <button class="back-button" id="back-to-exercises-ufov" type="button">Exercises</button>
 
+          <div class="nback-preset-group difficulty-group" aria-label="Difficulty">
+            <span>Difficulty</span>
+            <div class="difficulty-row">
+              <button class="difficulty-button" data-ufov-difficulty="easy" type="button">Easy</button>
+              <button class="difficulty-button active" data-ufov-difficulty="medium" type="button">Medium</button>
+              <button class="difficulty-button" data-ufov-difficulty="hard" type="button">Hard</button>
+            </div>
+            <p class="difficulty-explainer" id="ufov-difficulty-explainer">Standard flash (900ms), 20 distractors. The standard challenge.</p>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced</summary>
+
           <div class="time-preset-group ufov-duration-group" aria-label="UFOV session time">
             <span>Time</span>
             <div class="time-preset-row">
@@ -2052,8 +2086,6 @@
             <input id="ufov-distractors" type="number" min="0" max="80" step="1" value="20">
           </div>
 
-          <details class="advanced-settings">
-            <summary>Advanced settings</summary>
             <label class="inline-check"><input id="ufov-auto-progression" type="checkbox" checked> Auto progression</label>
             <div class="control-row">
               <label for="ufov-min-duration">Minimum Duration</label>
@@ -2124,6 +2156,19 @@
         <aside class="controls ict-controls" aria-label="ICT session settings">
           <button class="back-button" id="back-to-exercises-ict" type="button">Exercises</button>
 
+          <div class="nback-preset-group difficulty-group" aria-label="Difficulty">
+            <span>Difficulty</span>
+            <div class="difficulty-row">
+              <button class="difficulty-button" data-ict-difficulty="easy" type="button">Easy</button>
+              <button class="difficulty-button active" data-ict-difficulty="medium" type="button">Medium</button>
+              <button class="difficulty-button" data-ict-difficulty="hard" type="button">Hard</button>
+            </div>
+            <p class="difficulty-explainer" id="ict-difficulty-explainer">36 trials, a standard stop rate. The standard challenge.</p>
+          </div>
+
+          <details class="advanced-settings">
+            <summary>Advanced</summary>
+
           <div class="time-preset-group ict-duration-group" aria-label="ICT session time">
             <span>Time</span>
             <div class="time-preset-row">
@@ -2161,8 +2206,6 @@
             </select>
           </div>
 
-          <details class="advanced-settings">
-            <summary>Advanced settings</summary>
             <div class="control-row">
               <label for="ict-calibration-trials">Calibration trials</label>
               <input id="ict-calibration-trials" type="number" min="0" max="40" step="1" value="8">
@@ -2582,6 +2625,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch33"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch34"></script>
   </body>
 </html>

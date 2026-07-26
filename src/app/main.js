@@ -1130,6 +1130,91 @@ function applyRrtDifficulty(level) {
 document.querySelectorAll("[data-rrt-difficulty]").forEach((button) => {
   button.addEventListener("click", () => applyRrtDifficulty(button.dataset.rrtDifficulty));
 });
+
+// ICT difficulty presets. Rarer stop signals are harder (stronger prepotent response
+// to inhibit), more trials per block and conflicting cues push it up.
+const ictDifficultyPresets = {
+  easy: { trials: 24, stopProb: 30, cue: "arrows",
+          text: "24 trials, frequent stops, arrow cues. Easier to inhibit." },
+  medium: { trials: 36, stopProb: 25, cue: "arrows",
+            text: "36 trials, a standard stop rate. The standard challenge." },
+  hard: { trials: 48, stopProb: 15, cue: "food",
+          text: "48 trials, rare stops, conflicting cues. Serious load." }
+};
+
+function applyIctDifficulty(level) {
+  const preset = ictDifficultyPresets[level];
+  if (!preset) return;
+  elements.ictTrialsPerBlock.value = preset.trials;
+  elements.ictStopProbability.value = preset.stopProb;
+  elements.ictCueType.value = preset.cue;
+  // Fire input/change so the value labels and any dependent state refresh.
+  elements.ictTrialsPerBlock.dispatchEvent(new Event("input", { bubbles: true }));
+  elements.ictStopProbability.dispatchEvent(new Event("input", { bubbles: true }));
+  elements.ictCueType.dispatchEvent(new Event("change", { bubbles: true }));
+  document.querySelectorAll("[data-ict-difficulty]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.ictDifficulty === level);
+  });
+  const explainer = document.querySelector("#ict-difficulty-explainer");
+  if (explainer) explainer.textContent = preset.text;
+}
+document.querySelectorAll("[data-ict-difficulty]").forEach((button) => {
+  button.addEventListener("click", () => applyIctDifficulty(button.dataset.ictDifficulty));
+});
+
+// Shared helper: set an input's value and fire input+change so labels/state refresh.
+function setInputValue(el, value) {
+  if (!el) return;
+  el.value = value;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function wireDifficultyGroup(attr, presets, explainerId, apply) {
+  document.querySelectorAll(`[data-${attr}]`).forEach((button) => {
+    button.addEventListener("click", () => {
+      const level = button.dataset[attr.replace(/-([a-z])/g, (_, c) => c.toUpperCase())];
+      const preset = presets[level];
+      if (!preset) return;
+      apply(preset);
+      document.querySelectorAll(`[data-${attr}]`).forEach((b) => b.classList.toggle("active", b === button));
+      const explainer = document.querySelector(`#${explainerId}`);
+      if (explainer) explainer.textContent = preset.text;
+    });
+  });
+}
+
+// CCT: faster interval = harder.
+wireDifficultyGroup("cct-difficulty", {
+  easy: { start: 3, min: 2, text: "Slower pace (3s → 2s). A gentle warm-up." },
+  medium: { start: 2.5, min: 1, text: "Standard pace (2.5s → 1s). The standard challenge." },
+  hard: { start: 1.5, min: 0.5, text: "Fast pace (1.5s → 0.5s). Serious load." }
+}, "cct-difficulty-explainer", (p) => {
+  setInputValue(elements.cctStartInterval, p.start);
+  setInputValue(elements.cctMinInterval, p.min);
+});
+
+// UFOV: shorter flash + more distractors = harder.
+wireDifficultyGroup("ufov-difficulty", {
+  easy: { duration: 1100, distractors: 8, text: "Longer flash (1100ms), few distractors. A gentle intro." },
+  medium: { duration: 900, distractors: 20, text: "Standard flash (900ms), 20 distractors. The standard challenge." },
+  hard: { duration: 500, distractors: 40, text: "Brief flash (500ms), heavy clutter. Serious load." }
+}, "ufov-difficulty-explainer", (p) => {
+  setInputValue(document.querySelector("#ufov-duration"), p.duration);
+  setInputValue(elements.ufovDistractors, p.distractors);
+});
+
+// MOT: more targets + clutter + speed = harder.
+wireDifficultyGroup("mot-difficulty", {
+  easy: { targets: 3, blue: 3, colored: 0, speed: 0.18, text: "3 targets, few distractors, slow. A gentle intro." },
+  medium: { targets: 4, blue: 4, colored: 0, speed: 0.25, text: "4 targets, standard clutter and speed. The standard challenge." },
+  hard: { targets: 6, blue: 6, colored: 2, speed: 0.45, text: "6 targets, heavy clutter, fast. Serious load." }
+}, "mot-difficulty-explainer", (p) => {
+  setInputValue(elements.motTargetCount, p.targets);
+  setInputValue(document.querySelector("#mot-blue-distractors"), p.blue);
+  setInputValue(document.querySelector("#mot-colored-distractors"), p.colored);
+  setInputValue(elements.motBallSpeed, p.speed);
+});
 // The per-card "Open" buttons are gone (the whole card opens the exercise via
 // data-open-exercise); these guarded binds remain only for any that survive.
 elements.openNback?.addEventListener("click", openNBackSettings);
