@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch35">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch36">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1021,17 +1021,30 @@
           </div>
           <p class="exercise-type">IQ Test</p>
           <h2 id="cat-result-title">Your score</h2>
-          <div class="cat-score-hero">
-            <strong id="cat-score">100</strong>
-            <span id="cat-score-ci">95% CI 92–108</span>
+          <div class="cat-measurement" id="cat-measurement">
+            <div class="cat-measurement-content">
+              <div class="cat-score-hero">
+                <strong id="cat-score">100</strong>
+                <span id="cat-score-ci">95% CI 92–108</span>
+              </div>
+              <div class="cat-curve" id="cat-curve" aria-hidden="true"></div>
+              <p id="cat-result-summary"></p>
+              <dl class="assessment-result-grid">
+                <div><dt>Fluid reasoning</dt><dd id="cat-domain-fluid">–</dd></div>
+                <div><dt>Verbal comprehension</dt><dd id="cat-domain-verbal">–</dd></div>
+                <div><dt>Quantitative reasoning</dt><dd id="cat-domain-quant">–</dd></div>
+              </dl>
+              <div class="cat-report" id="cat-report"></div>
+            </div>
+            <div class="cat-paywall" id="cat-paywall" hidden>
+              <div class="cat-paywall-card">
+                <span class="cat-paywall-lock" aria-hidden="true">🔒</span>
+                <h3>Your full result is ready</h3>
+                <p>Your score, domain breakdown and full measurement report are available on Pro.</p>
+                <button class="cat-paywall-cta" data-cat-upgrade type="button">Upgrade to Pro</button>
+              </div>
+            </div>
           </div>
-          <div class="cat-curve" id="cat-curve" aria-hidden="true"></div>
-          <p id="cat-result-summary"></p>
-          <dl class="assessment-result-grid">
-            <div><dt>Fluid reasoning</dt><dd id="cat-domain-fluid">–</dd></div>
-            <div><dt>Verbal comprehension</dt><dd id="cat-domain-verbal">–</dd></div>
-            <div><dt>Quantitative reasoning</dt><dd id="cat-domain-quant">–</dd></div>
-          </dl>
           <p class="assessment-disclaimer">Estimates come from provisional item parameters and sharpen as the item bank is calibrated with real data. Not medical or diagnostic advice.</p>
           <div class="assessment-list-actions">
             <button id="cat-result-back" type="button">Back to tests</button>
@@ -2629,6 +2642,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch35"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch36"></script>
   </body>
 </html>

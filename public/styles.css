@@ -16568,3 +16568,56 @@ html.mode-play .nav-hamburger { display: none !important; }
 .mini-result-stats > div { display: grid; justify-items: center; gap: 2px; }
 .mini-result-stats strong { font-size: 1.35rem; font-weight: 700; }
 .mini-result-stats span { color: var(--muted); font-size: 0.8rem; }
+
+/* ===================================================================
+   IQ (CAT) result paywall: blur the measurement, overlay an upgrade card
+   =================================================================== */
+.cat-measurement { position: relative; }
+
+.cat-report { margin: 18px 0 0; text-align: left; }
+.cat-report-title { font-size: 1rem; margin: 0 0 10px; }
+.cat-report-list { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+.cat-report-list li { color: var(--text-2); line-height: 1.5; }
+
+/* Locked state: heavily blur the real content so it can't be read behind the card. */
+.cat-result-locked .cat-measurement-content {
+  filter: blur(10px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.cat-paywall {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.cat-paywall[hidden] { display: none; }
+
+.cat-paywall-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 320px;
+  padding: 26px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: 0 20px 48px -20px rgba(0, 0, 0, 0.7);
+  text-align: center;
+}
+.cat-paywall-lock { font-size: 1.8rem; }
+.cat-paywall-card h3 { margin: 0; font-size: 1.15rem; }
+.cat-paywall-card p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 0.92rem; }
+.cat-paywall-cta {
+  margin-top: 6px;
+  padding: 11px 24px;
+  border-radius: 999px !important;
+  border: none !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none !important;
+}

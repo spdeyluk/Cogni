@@ -1274,6 +1274,10 @@ elements.catOpenHistory?.addEventListener("click", () => {
 });
 elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
 elements.catResultBack?.addEventListener("click", showAssessmentList);
+document.querySelector("[data-cat-upgrade]")?.addEventListener("click", () => {
+  showLanding();
+  document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 document.querySelector("#cat-share")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
   const shareUrl = window.location.origin;
@@ -5981,10 +5985,59 @@ function abandonCatTest() {
   elements.adhdAssessmentIntro.hidden = false;
 }
 
+// Pro entitlement. No purchase flow yet, so this is false for everyone — the full IQ
+// result stays behind the paywall until Pro is wired (set "cogni.pro.v1" = "1").
+function isProUser() {
+  try { return localStorage.getItem("cogni.pro.v1") === "1"; } catch { return false; }
+}
+
+// A plausible teaser score shown (blurred) to free users — deliberately NOT the real
+// score, so a de-blurred screenshot can't leak it.
+function fakeIqScore(sessionRecord) {
+  return 108 + ((sessionRecord.responses?.length ?? 0) * 3) % 25;
+}
+
+function catBandLabel(score) {
+  if (score >= 130) return "Very superior";
+  if (score >= 120) return "Superior";
+  if (score >= 110) return "High average";
+  if (score >= 90) return "Average";
+  if (score >= 80) return "Low average";
+  return "Below average";
+}
+
+function buildCatReport(sessionRecord) {
+  const percentile = scorePercentile(sessionRecord.score);
+  const band = catBandLabel(sessionRecord.score);
+  const names = { fluid: "Fluid reasoning", verbal: "Verbal comprehension", quant: "Quantitative reasoning" };
+  const entries = Object.entries(sessionRecord.domains ?? {})
+    .filter(([, v]) => v && Number.isFinite(v.score));
+  let domainLines = "";
+  if (entries.length >= 2) {
+    const sorted = entries.slice().sort((a, b) => b[1].score - a[1].score);
+    const strongest = sorted[0];
+    const weakest = sorted[sorted.length - 1];
+    domainLines = `
+      <li>Strongest area: <strong>${names[strongest[0]] ?? strongest[0]}</strong> (${strongest[1].score}).</li>
+      <li>Most room to grow: <strong>${names[weakest[0]] ?? weakest[0]}</strong> (${weakest[1].score}).</li>`;
+  }
+  return `
+    <h3 class="cat-report-title">Comprehensive report</h3>
+    <ul class="cat-report-list">
+      <li>Overall band: <strong>${band}</strong> — a score of ${sessionRecord.score}.</li>
+      <li>Higher than about <strong>${percentile}%</strong> of a typical population.</li>
+      <li>95% confidence interval ${sessionRecord.ci.low}–${sessionRecord.ci.high} (SE ${sessionRecord.se}).</li>
+      ${domainLines}
+      <li>From ${sessionRecord.responses.length} adaptive questions in ${Math.max(1, Math.round(sessionRecord.durationMs / 60000))} min.</li>
+    </ul>`;
+}
+
 function renderCatResult(sessionRecord) {
-  elements.catScore.textContent = String(sessionRecord.score);
+  const pro = isProUser();
+  const shownScore = pro ? sessionRecord.score : fakeIqScore(sessionRecord);
+  elements.catScore.textContent = String(shownScore);
   elements.catScoreCi.textContent = `95% CI ${sessionRecord.ci.low}–${sessionRecord.ci.high}`;
-  elements.catCurve.innerHTML = catBellCurveSvg(sessionRecord.score);
+  elements.catCurve.innerHTML = catBellCurveSvg(shownScore);
   const percentile = scorePercentile(sessionRecord.score);
   elements.catResultSummary.textContent = `Higher than about ${percentile}% of a typical population, from ${sessionRecord.responses.length} questions in ${Math.max(1, Math.round(sessionRecord.durationMs / 60000))} min (SE ${sessionRecord.se}).`;
   const domainNodes = {
@@ -5996,6 +6049,12 @@ function renderCatResult(sessionRecord) {
     const entry = sessionRecord.domains?.[domain];
     node.textContent = entry ? `${entry.score} · ${entry.count} items` : "Not sampled";
   }
+  const report = document.querySelector("#cat-report");
+  if (report) report.innerHTML = buildCatReport(sessionRecord);
+  // Free tier: blur the measurement + show the upgrade paywall over it.
+  elements.catResult?.classList.toggle("cat-result-locked", !pro);
+  const paywall = document.querySelector("#cat-paywall");
+  if (paywall) paywall.hidden = pro;
 }
 
 function catBellCurveSvg(score) {
