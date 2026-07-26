@@ -16454,18 +16454,18 @@ html.mode-play .nav-hamburger { display: none !important; }
 .home-page::before {
   content: "";
   position: absolute;
-  top: -6%;
-  left: 50%;
-  width: min(680px, 130%);
-  height: 520px;
-  transform: translateX(-50%);
-  background: radial-gradient(55% 52% at 50% 2%,
-    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.28) 0%,
-    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.12) 40%,
-    transparent 74%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 460px;
+  /* Centred behind the brain and using closest-side, so the glow reaches full
+     transparency at every edge — no hard cut-off line, even where the page clips.
+     No blur/transition: both repaint every frame while scrolling and caused lag. */
+  background: radial-gradient(closest-side at 50% 38%,
+    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.26) 0%,
+    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.09) 55%,
+    transparent 100%);
   pointer-events: none;
   z-index: 0;
-  /* No blur filter or gradient transition here — both repaint every frame on a
-     scrolling page and caused visible lag. The gradient is soft on its own. */
 }
 .home-page > * { position: relative; z-index: 1; }
