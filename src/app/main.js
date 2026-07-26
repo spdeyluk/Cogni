@@ -10671,6 +10671,7 @@ function clearBoard() {
 
 function clearResponseFeedback() {
   elements.responseButtons.forEach((button) => button.classList.remove("pressed", "correct", "wrong"));
+  if (elements.feedback) delete elements.feedback.dataset.verdict;
 }
 
 function schedule(callback, delayMs) {
@@ -10740,9 +10741,18 @@ function showFeedback(items) {
     if (!item) return;
     if (item.responded || item.target) button.classList.add(item.correct ? "correct" : "wrong");
   });
-  elements.feedback.textContent = items
-    .map((item) => `${item.modality}: ${item.correct ? "correct" : item.target ? "miss" : "false alarm"}`)
-    .join(" | ");
+  // A clear, plain-language verdict per trial instead of a technical breakdown.
+  const mistakes = items.filter((item) => !item.correct && (item.responded || item.target));
+  if (mistakes.length === 0) {
+    elements.feedback.textContent = "✓ Correct";
+    elements.feedback.dataset.verdict = "correct";
+  } else {
+    const parts = mistakes.map((item) => item.target && !item.responded
+      ? `missed ${formatModalityName(item.modality)}`
+      : `${formatModalityName(item.modality)} wasn't a match`);
+    elements.feedback.textContent = `✗ ${parts.join(", ")}`;
+    elements.feedback.dataset.verdict = "wrong";
+  }
 }
 
 function feedbackEnabled() {

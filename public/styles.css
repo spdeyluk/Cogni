@@ -16439,3 +16439,11 @@ html.landing-active #landing { display: block; }
 .mm-option.ok { border-color: var(--success) !important; background: rgba(34, 197, 94, 0.16) !important; }
 .mm-option.wrong { border-color: var(--error) !important; background: rgba(248, 113, 113, 0.16) !important; }
 .mm-option.reveal { border-color: var(--success) !important; }
+
+/* The native app navigates via its own bottom bar; the web sidebar hamburger is
+   redundant and non-functional there, so hide it in play (mobile) mode. */
+html.mode-play .nav-hamburger { display: none !important; }
+
+/* N-Back per-trial verdict: colour the ✓/✗ so correctness reads instantly. */
+#feedback-line[data-verdict="correct"] { color: var(--success) !important; font-weight: 600; }
+#feedback-line[data-verdict="wrong"] { color: var(--error) !important; font-weight: 600; }
