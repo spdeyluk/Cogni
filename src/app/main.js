@@ -2754,6 +2754,29 @@ function renderCoach() {
   const dayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 
   page.innerHTML = `
+    ${cogniUiMode === "pro" ? `
+    <div class="home-ai">
+      <h2 class="home-ai-title">What do you want to work on?</h2>
+      <p class="home-ai-sub">Describe an issue — focus, memory, procrastination — and your coach will build a plan around it.</p>
+      <form class="home-ai-composer" id="home-ai-form" autocomplete="off">
+        <span class="home-ai-plus" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+        <input type="text" class="home-ai-input" id="home-ai-input" placeholder="Describe what you'd like to improve…" aria-label="Describe what you'd like to improve">
+        <button type="submit" class="home-ai-send" id="home-ai-send" aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </form>
+      <div class="home-ai-suggestions">
+        <button type="button" class="home-ai-chip" data-ai-suggest="I want to sharpen my focus and stop getting distracted.">Sharpen my focus</button>
+        <button type="button" class="home-ai-chip" data-ai-suggest="I want to improve my working memory.">Improve my memory</button>
+        <button type="button" class="home-ai-chip" data-ai-suggest="I want to think and react faster.">Think faster</button>
+        <button type="button" class="home-ai-chip" data-ai-suggest="I keep procrastinating and want to build focus.">Beat procrastination</button>
+      </div>
+      <p class="home-ai-note" id="home-ai-note" role="status" hidden></p>
+    </div>
+    ` : ""}
+
     <div class="coach-hero">
       <span class="coach-badge">Pro preview</span>
       <h2>Your plan this week</h2>
@@ -2786,6 +2809,33 @@ function renderCoach() {
       <button class="coach-upsell-cta" type="button" data-coach-upgrade>Upgrade to Pro</button>
     </div>
   `;
+  wireHomeAiComposer(page);
+}
+
+// The Home AI composer is a real, typeable input, but AI coaching isn't wired
+// yet — sending surfaces a "coming soon" notice instead of dispatching anything.
+function wireHomeAiComposer(page) {
+  const form = page.querySelector("#home-ai-form");
+  const input = page.querySelector("#home-ai-input");
+  const note = page.querySelector("#home-ai-note");
+  if (!form || !input || !note) return;
+  const showNote = () => {
+    note.textContent = "AI coaching isn't available yet — it's coming soon. Your message wasn't sent.";
+    note.hidden = false;
+  };
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!input.value.trim()) { input.focus(); return; }
+    showNote();
+  });
+  input.addEventListener("input", () => { note.hidden = true; });
+  page.querySelectorAll("[data-ai-suggest]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      input.value = chip.dataset.aiSuggest;
+      note.hidden = true;
+      input.focus();
+    });
+  });
 }
 
 function handleCoachPageClick(event) {

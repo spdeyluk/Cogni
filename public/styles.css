@@ -16245,3 +16245,113 @@ html.landing-active #landing { display: block; }
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+/* ===================================================================
+   Home AI composer (web) — typeable, "coming soon" on send (2026-07-26)
+   =================================================================== */
+.home-ai {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 28px 0 34px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.home-ai-title {
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.home-ai-sub {
+  max-width: 560px;
+  margin: -4px 0 2px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.home-ai-composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(680px, 100%);
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+}
+
+.home-ai-plus {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.home-ai-plus svg { width: 20px; height: 20px; }
+
+.home-ai-composer .home-ai-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  font-size: 1rem;
+  padding: 8px 4px !important;
+  outline: none;
+}
+.home-ai-composer .home-ai-input::placeholder { color: var(--muted); }
+
+.home-ai-send {
+  flex: 0 0 auto;
+  display: grid !important;
+  place-items: center;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  border: none !important;
+  background: #325CFF !important;
+  color: #fff !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: background 140ms ease, transform 120ms ease;
+}
+.home-ai-send svg { width: 20px; height: 20px; }
+.home-ai-send:hover { background: #2846E0 !important; }
+.home-ai-send:active { transform: scale(0.94); }
+
+.home-ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 620px;
+}
+
+.home-ai-chip {
+  padding: 8px 15px;
+  border-radius: 999px !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text-2) !important;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.home-ai-chip:hover { border-color: #325CFF !important; color: var(--text) !important; }
+
+.home-ai-note {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
