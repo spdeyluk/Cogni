@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch37">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch38">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -2357,6 +2357,48 @@
       </form>
     </dialog>
 
+    <dialog class="pricing-dialog" id="pricing-dialog" data-billing="annual">
+      <button class="pricing-close" id="pricing-close" type="button" aria-label="Close">×</button>
+      <div class="pricing-dialog-inner">
+        <h2>Upgrade your account</h2>
+        <div class="pricing-billing">
+          <div class="pricing-billing-toggle" role="tablist" aria-label="Billing period">
+            <button class="is-active" data-pricing-billing="annual" role="tab" type="button">Annual</button>
+            <button data-pricing-billing="monthly" role="tab" type="button">Monthly</button>
+          </div>
+          <span class="pricing-save">Save up to 45%</span>
+        </div>
+
+        <div class="pricing-plans">
+          <button class="pricing-plan is-selected" data-pricing-plan="plus" type="button">
+            <div class="pricing-plan-name">Plus</div>
+            <div class="pricing-plan-price" data-annual-amount="$4.92" data-annual-per="/mo · billed $59/yr" data-monthly-amount="$9" data-monthly-per="/mo">
+              <span class="pricing-plan-amount">$4.92</span><span class="pricing-plan-per">/mo · billed $59/yr</span>
+            </div>
+          </button>
+          <button class="pricing-plan" data-pricing-plan="pro" type="button">
+            <div class="pricing-plan-name">Pro</div>
+            <div class="pricing-plan-price" data-annual-amount="$12.42" data-annual-per="/mo · billed $149/yr" data-monthly-amount="$19" data-monthly-per="/mo">
+              <span class="pricing-plan-amount">$12.42</span><span class="pricing-plan-per">/mo · billed $149/yr</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="pricing-compare">
+          <div class="pricing-compare-row pricing-compare-head"><span>Included</span><span>Plus</span><span>Pro</span></div>
+          <div class="pricing-compare-row"><span>Daily sessions</span><span>Unlimited</span><span>Unlimited</span></div>
+          <div class="pricing-compare-row"><span>History &amp; analytics</span><span>Full</span><span>Full</span></div>
+          <div class="pricing-compare-row"><span>IQ test breakdown</span><span>✓</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>Custom routines</span><span>✓</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>AI training coach</span><span>—</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>Weekly adaptive plan</span><span>—</span><span>✓</span></div>
+        </div>
+
+        <button class="pricing-upgrade" id="pricing-upgrade" type="button">Upgrade</button>
+        <p class="pricing-note" id="pricing-note"></p>
+      </div>
+    </dialog>
+
     <dialog class="friend-dialog" id="friend-dialog">
       <form id="friend-request-form">
         <div class="session-summary-header">
@@ -2642,6 +2684,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch37"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch38"></script>
   </body>
 </html>

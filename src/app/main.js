@@ -1274,10 +1274,47 @@ elements.catOpenHistory?.addEventListener("click", () => {
 });
 elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
 elements.catResultBack?.addEventListener("click", showAssessmentList);
-document.querySelector("[data-cat-upgrade]")?.addEventListener("click", () => {
-  showLanding();
-  document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
+document.querySelector("[data-cat-upgrade]")?.addEventListener("click", openPricingModal);
+
+// --- Pricing modal ---------------------------------------------------------
+function openPricingModal() {
+  wirePricingModal();
+  const dialog = document.querySelector("#pricing-dialog");
+  if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+}
+function closePricingModal() { document.querySelector("#pricing-dialog")?.close(); }
+
+let pricingModalWired = false;
+function wirePricingModal() {
+  if (pricingModalWired) return;
+  const dialog = document.querySelector("#pricing-dialog");
+  if (!dialog) return;
+  pricingModalWired = true;
+  document.querySelector("#pricing-close")?.addEventListener("click", closePricingModal);
+  dialog.addEventListener("click", (event) => { if (event.target === dialog) closePricingModal(); });
+  dialog.querySelectorAll("[data-pricing-billing]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const mode = button.dataset.pricingBilling;
+      dialog.dataset.billing = mode;
+      dialog.querySelectorAll("[data-pricing-billing]").forEach((b) => b.classList.toggle("is-active", b === button));
+      dialog.querySelectorAll(".pricing-plan-price").forEach((price) => {
+        const amount = price.querySelector(".pricing-plan-amount");
+        const per = price.querySelector(".pricing-plan-per");
+        if (amount) amount.textContent = price.dataset[mode === "annual" ? "annualAmount" : "monthlyAmount"];
+        if (per) per.textContent = price.dataset[mode === "annual" ? "annualPer" : "monthlyPer"];
+      });
+    });
+  });
+  dialog.querySelectorAll("[data-pricing-plan]").forEach((plan) => {
+    plan.addEventListener("click", () => {
+      dialog.querySelectorAll("[data-pricing-plan]").forEach((p) => p.classList.toggle("is-selected", p === plan));
+    });
+  });
+  document.querySelector("#pricing-upgrade")?.addEventListener("click", () => {
+    const note = document.querySelector("#pricing-note");
+    if (note) note.textContent = "Payments are coming soon — you'll be able to upgrade here shortly.";
+  });
+}
 document.querySelector("#cat-share")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
   const shareUrl = window.location.origin;
@@ -4469,8 +4506,7 @@ function wireSidebarToggle() {
   // surface a toast instead of doing nothing.
   document.querySelector("#sidebar-see-pricing")?.addEventListener("click", () => {
     if (isMobile()) closeDrawer();
-    showLanding();
-    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    openPricingModal();
   });
   for (const id of ["#link-web-extension", "#link-tutorials", "#link-help"]) {
     document.querySelector(id)?.addEventListener("click", () => {

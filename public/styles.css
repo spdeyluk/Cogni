@@ -16625,3 +16625,82 @@ html.mode-play .nav-hamburger { display: none !important; }
   cursor: pointer;
   box-shadow: none !important;
 }
+
+/* ===================================================================
+   Pricing / upgrade modal
+   =================================================================== */
+.pricing-dialog {
+  width: min(560px, calc(100% - 24px));
+  max-height: 88dvh;
+  overflow: auto;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 20px !important;
+  background: var(--surface) !important;
+  color: var(--text);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+}
+.pricing-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+.pricing-dialog-inner { padding: 28px 26px max(28px, env(safe-area-inset-bottom)); display: grid; gap: 18px; }
+.pricing-dialog h2 { margin: 0; font-size: 1.6rem; }
+
+.pricing-close {
+  position: sticky;
+  top: 12px;
+  float: right;
+  margin: 12px 12px -30px 0;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  font-size: 1.2rem; line-height: 1;
+  cursor: pointer; box-shadow: none !important;
+  z-index: 2;
+}
+
+.pricing-billing { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pricing-billing-toggle {
+  display: inline-flex; padding: 4px; gap: 2px;
+  border-radius: 999px; background: var(--surface-2);
+}
+.pricing-billing-toggle button {
+  padding: 7px 18px; border: 0 !important; border-radius: 999px !important;
+  background: transparent !important; color: var(--muted) !important;
+  font-weight: 600; cursor: pointer; box-shadow: none !important;
+}
+.pricing-billing-toggle button.is-active { background: var(--accent) !important; color: var(--on-accent) !important; }
+.pricing-save { color: var(--success); font-weight: 600; font-size: 0.9rem; }
+
+.pricing-plans { display: grid; gap: 12px; }
+.pricing-plan {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 20px 22px; text-align: left;
+  border: 1.5px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  cursor: pointer; box-shadow: none !important;
+}
+.pricing-plan.is-selected { border-color: var(--accent) !important; background: rgba(99, 102, 241, 0.12) !important; }
+.pricing-plan-name { font-size: 1.3rem; font-weight: 700; }
+.pricing-plan-amount { font-size: 1.5rem; font-weight: 700; }
+.pricing-plan-per { color: var(--muted); font-size: 0.9rem; margin-left: 4px; }
+
+.pricing-compare { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
+.pricing-compare-row {
+  display: grid; grid-template-columns: 1fr 90px 90px; align-items: center;
+  padding: 11px 2px; border-bottom: 1px solid var(--line);
+}
+.pricing-compare-row span:first-child { color: var(--text-2); }
+.pricing-compare-row span:not(:first-child) { text-align: center; color: var(--text); font-weight: 500; }
+.pricing-compare-head { font-weight: 700; color: var(--muted); border-bottom-color: var(--line-strong); }
+.pricing-compare-head span:nth-child(2) { color: var(--accent-2); }
+
+.pricing-upgrade {
+  padding: 14px; border: 0 !important; border-radius: 14px !important;
+  background: var(--accent) !important; color: var(--on-accent) !important;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: none !important;
+}
+.pricing-note { margin: 0; text-align: center; color: var(--muted); font-size: 0.86rem; min-height: 1.2em; }
