@@ -1061,6 +1061,43 @@ document.querySelector("[data-nback-no-limit]")?.addEventListener("click", (even
   event.currentTarget.classList.add("active");
   elements.nbackDurationPresets.forEach((b) => b.classList.remove("active"));
 });
+
+// Easy / Medium / Hard presets: one tap sets the whole config. The manual controls
+// still live under Advanced for anyone who wants to fine-tune.
+const nbackDifficultyPresets = {
+  easy: { n: 1, modalities: ["position"], minutes: 5, feedback: "show", interference: 0,
+          text: "1-back, one cue, feedback on. A gentle warm-up." },
+  medium: { n: 2, modalities: ["position", "audio"], minutes: 10, feedback: "show", interference: 20,
+            text: "2-back, position + sound. The standard challenge." },
+  hard: { n: 3, modalities: ["position", "audio", "color"], minutes: 10, feedback: "hide", interference: 40,
+          text: "3-back, three cues, no feedback. Serious cognitive load." }
+};
+
+function applyNBackDifficulty(level) {
+  const preset = nbackDifficultyPresets[level];
+  if (!preset) return;
+  nbackNoLimit = false;
+  document.querySelector("[data-nback-no-limit]")?.classList.remove("active");
+  elements.nLevel.value = preset.n;
+  elements.modalityInputs.forEach((input) => {
+    input.checked = preset.modalities.includes(input.dataset.modality);
+  });
+  elements.sessionTimer.value = preset.minutes;
+  if (elements.feedbackMode) elements.feedbackMode.value = preset.feedback;
+  if (elements.interference) elements.interference.value = preset.interference;
+  updateTrialCountFromSessionTimer();
+  syncNBackPresetButtons();
+  syncSettingLabels();
+  updateFeedbackVisibility();
+  document.querySelectorAll("[data-nback-difficulty]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.nbackDifficulty === level);
+  });
+  const explainer = document.querySelector("#nback-difficulty-explainer");
+  if (explainer) explainer.textContent = preset.text;
+}
+document.querySelectorAll("[data-nback-difficulty]").forEach((button) => {
+  button.addEventListener("click", () => applyNBackDifficulty(button.dataset.nbackDifficulty));
+});
 // The per-card "Open" buttons are gone (the whole card opens the exercise via
 // data-open-exercise); these guarded binds remain only for any that survive.
 elements.openNback?.addEventListener("click", openNBackSettings);

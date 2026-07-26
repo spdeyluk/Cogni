@@ -16530,3 +16530,30 @@ html.mode-play .nav-hamburger { display: none !important; }
   color: #F5B300;
 }
 .mini-result-coins img { width: 18px; height: 18px; }
+
+/* Easy / Medium / Hard difficulty presets in the exercise settings sheet. */
+.difficulty-row { display: flex; gap: 8px; }
+.difficulty-button {
+  flex: 1 1 0;
+  min-height: 46px;
+  border-radius: 12px !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text-2) !important;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.difficulty-button.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--on-accent) !important;
+}
+.difficulty-explainer {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
