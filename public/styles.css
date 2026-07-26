@@ -13725,7 +13725,12 @@ html.landing-active #app-shell { display: none !important; }
   color: #000000 !important;
 }
 
-.signin-btn-apple svg { color: #000; }
+.signin-btn-apple svg {
+  color: #000;
+  width: 17px !important;
+  height: 21px !important;   /* the mark is taller than wide — keep its aspect */
+  margin-top: -3px;          /* optical alignment, like Apple's own button */
+}
 
 .signin-btn-google {
   background: transparent !important;
