@@ -4779,11 +4779,10 @@ function wireSignInFirst() {
   }
 }
 
-// The skip is hidden on the production web domain; it appears on localhost and in
-// dev/native builds. Remove or tighten this before an App Store release.
+// The skip is a mobile-only convenience — it appears only in the native app, never on
+// the web. Remove or tighten this before an App Store release.
 function skipSignInAllowed() {
-  const host = window.location.hostname;
-  return host !== "getcogni.app" && host !== "www.getcogni.app";
+  return window.Capacitor?.isNativePlatform?.() === true;
 }
 
 // Enters the app as a local guest — no Supabase session, sync suppressed. Goes
