@@ -2864,6 +2864,7 @@ function showFriendsPage() {
 function initExerciseTagFilter() {
   const page = document.querySelector(".exercise-page");
   if (!page) return;
+  if (page.querySelector(".exercise-tag-filter")) return; // already built — keep it
   const heading = page.querySelector(".exercise-heading");
   const cards = [...page.querySelectorAll(".exercise-card")];
   if (!heading || cards.length === 0) return;
@@ -2919,6 +2920,7 @@ function showExerciseHub() {
   showPendingSessionCoinFloat();
   elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("exercises-open");
+  initExerciseTagFilter(); // ensure the category chips are always present
   setActiveTab("exercises");
   elements.pageTitle.textContent = "Exercises";
   elements.pageLede.textContent = "Build routines first, or open a standalone cognitive training module below.";
@@ -10898,7 +10900,7 @@ const onboardingSlides = [
   "analyzing", "health", "compare", "potential",
   "engineered", "notdoing", "feel", "loop", "cost",
   "aidecay", "aicost",
-  "plastic", "flip", "how", "proof", "minutes",
+  "plastic", "flip", "methods", "how", "proof", "minutes",
   "notify", "screentime", "curve", "pledge", "ready"
 ];
 const onboardingCtaLabels = {

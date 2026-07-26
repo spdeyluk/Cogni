@@ -16469,3 +16469,49 @@ html.mode-play .nav-hamburger { display: none !important; }
   z-index: 0;
 }
 .home-page > * { position: relative; z-index: 1; }
+
+/* ===================================================================
+   Landing: "what you'll train" offers grid (under the carousel)
+   =================================================================== */
+.landing-section-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--l-accent);
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.landing-offers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.landing-offer {
+  padding: 24px 22px;
+  border: 1px solid var(--l-line);
+  border-radius: 16px;
+  background: var(--l-surface);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+.landing-offer:hover { border-color: var(--l-accent); transform: translateY(-2px); }
+
+.landing-offer-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(50, 92, 255, 0.10);
+  color: var(--l-accent);
+  margin-bottom: 14px;
+}
+.landing-offer-icon svg { width: 23px; height: 23px; }
+
+.landing-offer h3 { font-size: 1.05rem; margin: 0 0 6px; color: var(--l-ink); }
+.landing-offer p { color: var(--l-ink-2); line-height: 1.55; margin: 0; font-size: 0.95rem; }
+
+@media (max-width: 860px) { .landing-offers { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .landing-offers { grid-template-columns: 1fr; } }
