@@ -14829,10 +14829,10 @@ html.reduce-motion *::after {
 .exercise-sheet .segmented-control button.active,
 .exercise-sheet .seg-sliding > .preset-button.active,
 .exercise-sheet .seg-sliding > button.active {
-  background: #325CFF !important;
-  border-color: #325CFF !important;
-  color: #fff !important;
-  box-shadow: 0 6px 16px rgba(50, 92, 255, 0.32) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--on-accent) !important;
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.32) !important;
 }
 
 /* Hide the dark sliding pill in the sheet; the solid blue box above is the
@@ -16181,14 +16181,14 @@ html.landing-active #landing { display: block; }
 }
 
 .exercise-tag-chip:hover {
-  border-color: #325CFF !important;
+  border-color: var(--accent) !important;
   color: var(--text) !important;
 }
 
 .exercise-tag-chip.active {
-  background: #325CFF !important;
-  border-color: #325CFF !important;
-  color: #fff !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--on-accent) !important;
 }
 
 .exercise-card.tag-hidden {
@@ -16228,7 +16228,7 @@ html.landing-active #landing { display: block; }
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #325CFF, #6C8BFF);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
   transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -16256,7 +16256,12 @@ html.landing-active #landing { display: block; }
   text-align: center;
   padding: 28px 0 34px;
   margin-bottom: 10px;
-  border-bottom: 1px solid var(--line-strong);
+}
+
+/* When the composer is the whole Home page, give it breathing room. */
+.home-ai-solo {
+  padding: min(12vh, 120px) 0 34px;
+  margin-bottom: 0;
 }
 
 .home-ai-title {
@@ -16318,14 +16323,14 @@ html.landing-active #landing { display: block; }
   padding: 0 !important;
   border-radius: 999px !important;
   border: none !important;
-  background: #325CFF !important;
-  color: #fff !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
   cursor: pointer;
   box-shadow: none !important;
   transition: background 140ms ease, transform 120ms ease;
 }
 .home-ai-send svg { width: 20px; height: 20px; }
-.home-ai-send:hover { background: #2846E0 !important; }
+.home-ai-send:hover { background: #4F46E5 !important; }
 .home-ai-send:active { transform: scale(0.94); }
 
 .home-ai-suggestions {
@@ -16348,10 +16353,70 @@ html.landing-active #landing { display: block; }
   box-shadow: none !important;
   transition: border-color 140ms ease, color 140ms ease;
 }
-.home-ai-chip:hover { border-color: #325CFF !important; color: var(--text) !important; }
+.home-ai-chip:hover { border-color: var(--accent) !important; color: var(--text) !important; }
 
 .home-ai-note {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 0.88rem;
 }
+
+/* ===================================================================
+   Mental Math mini-game (2026-07-26)
+   =================================================================== */
+.mm-stage {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  padding: 12px 0;
+  width: 100%;
+}
+
+.mm-prompt {
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.mm-entry {
+  min-width: 150px;
+  min-height: 56px;
+  padding: 8px 24px;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+.mm-entry.ok { border-color: var(--success); color: var(--success); }
+.mm-entry.wrong { border-color: var(--error); color: var(--error); }
+
+.mm-options {
+  display: grid;
+  gap: 12px;
+  width: min(440px, 92vw);
+}
+
+.mm-option {
+  min-height: 60px;
+  padding: 0 18px;
+  border-radius: 14px !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.mm-option:not(:disabled):hover { border-color: var(--accent) !important; }
+.mm-option.ok { border-color: var(--success) !important; background: rgba(34, 197, 94, 0.16) !important; }
+.mm-option.wrong { border-color: var(--error) !important; background: rgba(248, 113, 113, 0.16) !important; }
+.mm-option.reveal { border-color: var(--success) !important; }

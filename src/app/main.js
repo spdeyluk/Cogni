@@ -1960,6 +1960,15 @@ const miniIntros = {
       "The instant it turns green, tap as fast as you can.",
       "Tap too early and the trial restarts. Five trials, then your average."
     ]
+  },
+  mentalmath: {
+    tag: "Numerical reasoning",
+    title: "Mental Math",
+    steps: [
+      "Ten quick questions: arithmetic, estimation, and odd-one-out.",
+      "Type your answer or tap a choice — no calculator.",
+      "It gets harder as you go. You're scored on how many you get right and how fast."
+    ]
   }
 };
 
@@ -2544,6 +2553,235 @@ const miniGames = {
       waitTrial();
       return timers.clearAll;
     }
+  },
+
+  mentalmath: {
+    label: "Mental Math",
+    start(ctx) {
+      const timers = miniTimers();
+      const total = 10;
+      let index = 0;
+      let correct = 0;
+      const times = [];
+      let current = null;
+      let shownAt = 0;
+      let accepting = false;
+      let entry = "";
+
+      // --- item generators (validity rules ported from the Swift math engine) ---
+      const rInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      const digitSum = (n) => String(Math.abs(n)).split("").reduce((s, d) => s + Number(d), 0);
+      const isPrime = (n) => { if (n < 2) return false; for (let i = 2; i * i <= n; i += 1) if (n % i === 0) return false; return true; };
+      const isSquare = (n) => { const r = Math.round(Math.sqrt(n)); return r * r === n; };
+      // Full property set for the odd-one-out ambiguity check.
+      const props = [
+        (n) => isPrime(n), (n) => isSquare(n), (n) => n >= 1 && (n & (n - 1)) === 0,
+        (n) => n >= 10 && String(n) === String(n).split("").reverse().join(""),
+        ...[3, 4, 5, 6, 7, 9].map((k) => (n) => n % k === 0),
+        ...Array.from({ length: 27 }, (_, i) => (n) => digitSum(n) === i + 1)
+      ];
+
+      function arithmetic(level) {
+        const op = level < 3 ? pick(["+", "−"]) : pick(["+", "−", "×"]);
+        let a, b, answer;
+        if (op === "×") { a = rInt(level < 5 ? 2 : 6, level < 5 ? 9 : 19); b = rInt(2, 9); answer = a * b; }
+        else {
+          const hi = level < 2 ? 9 : level < 4 ? 99 : 999;
+          const lo = level < 2 ? 1 : 10;
+          a = rInt(lo, hi); b = rInt(lo, hi);
+          if (op === "−" && b > a) { const t = a; a = b; b = t; }
+          answer = op === "+" ? a + b : a - b;
+        }
+        return { format: "typed", prompt: `${a} ${op} ${b}`, answer: String(answer) };
+      }
+
+      function verify(level) {
+        const base = arithmetic(level);
+        const truth = Number(base.answer);
+        let shown = truth;
+        if (Math.random() >= 0.5) {
+          // A plausible slip, not a random number.
+          const deltas = [1, -1, 2, -2, 10, -10].filter((d) => truth + d >= 0 && d !== 0);
+          shown = truth + pick(deltas);
+        }
+        return { format: "truefalse", prompt: `${base.prompt} = ${shown}`, answer: shown === truth ? "true" : "false" };
+      }
+
+      function estimation(level) {
+        for (let outer = 0; outer < 30; outer += 1) {
+          const target = rInt(200, 800 + level * 700);
+          const factorHi = 20 + level * 8;
+          const sep = Math.max(80, 150 - (level - 1) * 8); // 15% → 8% floor, per-mille
+          let correctOpt = null;
+          for (let t = 0; t < 200 && !correctOpt; t += 1) {
+            const a = rInt(5, factorHi);
+            const b = Math.max(2, Math.round(target / a) + rInt(-2, 2));
+            const v = a * b;
+            if (Math.abs(v - target) * 1000 <= target * 50) correctOpt = { a, b, v }; // within 5%
+          }
+          if (!correctOpt) continue;
+          const opts = [correctOpt];
+          const want = level >= 6 ? 4 : 3;
+          let tries = 0;
+          while (opts.length < want && tries < 400) {
+            tries += 1;
+            const a = rInt(5, factorHi), b = rInt(5, factorHi), v = a * b;
+            const dev = Math.abs(v - target) * 1000;
+            if (dev >= target * sep && dev <= target * 600 && !opts.some((o) => o.v === v)) opts.push({ a, b, v });
+          }
+          if (opts.length < want) continue;
+          miniShuffle(opts);
+          return { format: "choice", prompt: `Closest to ${target.toLocaleString()}`, options: opts.map((o) => `${o.a} × ${o.b}`), correctIndex: opts.findIndex((o) => o === correctOpt) };
+        }
+        return arithmetic(level);
+      }
+
+      function unambiguous(nums, oddIndex) {
+        // Exactly one number can be the odd one via some property the other four share.
+        const valid = new Set();
+        for (let j = 0; j < nums.length; j += 1) {
+          for (const p of props) {
+            let othersShare = true;
+            for (let i = 0; i < nums.length; i += 1) { if (i !== j && !p(nums[i])) { othersShare = false; break; } }
+            if (othersShare && !p(nums[j])) { valid.add(j); break; }
+          }
+        }
+        return valid.size === 1 && valid.has(oddIndex);
+      }
+
+      function oddOneOut(level) {
+        const hi = 60 + level * 60;
+        const targetable = level < 3
+          ? [(n) => n % 5 === 0, (n) => n % 3 === 0, isSquare]
+          : [isPrime, isSquare, (n) => n >= 1 && (n & (n - 1)) === 0, (n) => n % 7 === 0];
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          const P = pick(targetable);
+          const pool = [], others = [];
+          for (let n = 10; n <= hi; n += 1) (P(n) ? pool : others).push(n);
+          if (pool.length < 4 || others.length < 1) continue;
+          const group = miniShuffle(pool.slice()).slice(0, 4);
+          const odd = pick(others);
+          const nums = miniShuffle([...group, odd]);
+          const oddIndex = nums.indexOf(odd);
+          if (unambiguous(nums, oddIndex)) return { format: "choice", prompt: "Which is the odd one out?", options: nums.map(String), correctIndex: oddIndex };
+        }
+        return arithmetic(level);
+      }
+
+      function makeItem(level) {
+        const r = Math.random();
+        if (r < 0.4) return Math.random() < 0.7 ? arithmetic(level) : verify(level);
+        if (r < 0.7) return estimation(level);
+        return oddOneOut(level);
+      }
+
+      // --- flow + rendering ---
+      function status() { ctx.setStatus(`Question ${Math.min(index + 1, total)} of ${total} · ${correct} correct`); }
+
+      function nextQuestion() {
+        if (index >= total) { finish(); return; }
+        current = makeItem(1 + Math.floor(index / 2)); // level ramps 1 → 5
+        entry = "";
+        status();
+        if (current.format === "typed") renderTyped();
+        else if (current.format === "truefalse") renderChoices(["True", "False"], ["true", "false"]);
+        else renderChoices(current.options, current.options.map((_, i) => i));
+        shownAt = performance.now();
+        accepting = true;
+      }
+
+      function renderTyped() {
+        ctx.stage.innerHTML = `
+          <div class="mm-stage">
+            <div class="mm-prompt">${escapeHtml(current.prompt)} =</div>
+            <div class="mm-entry" id="mm-entry">–</div>
+            <div class="mini-keypad">
+              ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-k="${n}" type="button">${n}</button>`).join("")}
+              <button data-k="del" type="button">⌫</button>
+              <button data-k="0" type="button">0</button>
+              <button data-k="ok" class="ok" type="button">✓</button>
+            </div>
+          </div>`;
+        const entryEl = ctx.stage.querySelector("#mm-entry");
+        ctx.stage.querySelectorAll(".mini-keypad button").forEach((b) => {
+          b.addEventListener("click", () => {
+            if (!accepting) return;
+            const k = b.dataset.k;
+            if (k === "del") entry = entry.slice(0, -1);
+            else if (k === "ok") { submitTyped(); return; }
+            else if (entry.length < 6) entry += k;
+            entryEl.textContent = entry || "–";
+          });
+        });
+      }
+
+      function submitTyped() {
+        const ok = entry.length > 0 && entry === current.answer;
+        if (entry.length === 0) return;
+        judge(ok, () => {
+          const el = ctx.stage.querySelector("#mm-entry");
+          if (el) { el.textContent = entry; el.classList.add(ok ? "ok" : "wrong"); }
+        });
+      }
+
+      function renderChoices(labels, values) {
+        ctx.stage.innerHTML = `
+          <div class="mm-stage">
+            <div class="mm-prompt">${escapeHtml(current.prompt)}</div>
+            <div class="mm-options">
+              ${labels.map((label, i) => `<button class="mm-option" data-i="${i}" type="button">${escapeHtml(String(label))}</button>`).join("")}
+            </div>
+          </div>`;
+        ctx.stage.querySelectorAll(".mm-option").forEach((btn, i) => {
+          btn.addEventListener("click", () => {
+            if (!accepting) return;
+            const value = values[i];
+            const ok = current.format === "truefalse" ? value === current.answer : value === current.correctIndex;
+            judge(ok, () => {
+              btn.classList.add(ok ? "ok" : "wrong");
+              if (!ok) {
+                const correctI = current.format === "truefalse" ? values.indexOf(current.answer) : current.correctIndex;
+                ctx.stage.querySelector(`.mm-option[data-i="${correctI}"]`)?.classList.add("reveal");
+              }
+            });
+          });
+        });
+      }
+
+      function judge(ok, decorate) {
+        if (!accepting) return;
+        accepting = false;
+        times.push(performance.now() - shownAt);
+        if (ok) correct += 1;
+        decorate();
+        ctx.stage.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+        status();
+        timers.after(() => { index += 1; nextQuestion(); }, 720);
+      }
+
+      function summary(answered) {
+        const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+        return {
+          metricValue: `${correct}/${answered}`,
+          metricLabel: "correct",
+          headline: correct >= 9 ? "Sharp!" : "Session complete",
+          sub: avg ? `Avg ${avg} ms per answer` : "",
+          correct,
+          incorrect: answered - correct,
+          accuracy: answered ? correct / answered : 0,
+          avgAnswerSpeedMs: avg,
+          difficultyScore: 0.5,
+          completedTrials: answered
+        };
+      }
+
+      function finish() { ctx.finish(summary(total)); }
+
+      ctx.setSnapshot(() => (index > 0 ? summary(index) : null));
+      nextQuestion();
+      return timers.clearAll;
+    }
   }
 };
 
@@ -2727,35 +2965,18 @@ function showScreenTime() {
   renderScreenTime();
 }
 
-// --- Coach: a personal, adapting training plan ---------------------------
-// The plan is a Pro feature; until AI planning is wired this renders a real,
-// data-aware weekly structure so the surface is complete and honest about
-// what's coming.
-const coachPlanExercises = ["nback", "rrt", "cct", "ict"];
+// --- Home: AI composer only -----------------------------------------------
+// The weekly plan is no longer shown up front — a plan is only produced once the
+// user describes what they want to work on (AI coaching, coming soon).
 
 function renderCoach() {
   const page = document.querySelector(".coach-page");
   if (!page) return;
-  const progress = loadExerciseProgress();
-  const streak = Math.max(0, Math.round(calculateDailyTrainingStreak(progress, coachPlanExercises)));
-  const today = localDateKey(new Date());
-  const doneToday = trainingMinutesForDate(progress, coachPlanExercises, today) > 0;
-
-  // A fixed weekly shape for now; the focus line is chosen from the plan.
-  const week = [
-    { day: "Mon", label: "N-Back", sub: "Working memory", id: "nback" },
-    { day: "Tue", label: "Relational Reasoning", sub: "Fluid logic", id: "rrt" },
-    { day: "Wed", label: "Cognitive Control", sub: "Focus & inhibition", id: "cct" },
-    { day: "Thu", label: "Light day", sub: "One short session", id: null },
-    { day: "Fri", label: "N-Back", sub: "Working memory", id: "nback" },
-    { day: "Sat", label: "Inhibitory Control", sub: "Impulse control", id: "ict" },
-    { day: "Sun", label: "Rest", sub: "Recover", id: null }
-  ];
-  const dayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
-
+  // The Home page is just the AI composer now. A training plan is only built once the
+  // user describes what they want to work on — it is no longer shown up front.
+  if (cogniUiMode !== "pro") { page.innerHTML = ""; return; }
   page.innerHTML = `
-    ${cogniUiMode === "pro" ? `
-    <div class="home-ai">
+    <div class="home-ai home-ai-solo">
       <h2 class="home-ai-title">What do you want to work on?</h2>
       <p class="home-ai-sub">Describe an issue — focus, memory, procrastination — and your coach will build a plan around it.</p>
       <form class="home-ai-composer" id="home-ai-form" autocomplete="off">
@@ -2774,39 +2995,6 @@ function renderCoach() {
         <button type="button" class="home-ai-chip" data-ai-suggest="I keep procrastinating and want to build focus.">Beat procrastination</button>
       </div>
       <p class="home-ai-note" id="home-ai-note" role="status" hidden></p>
-    </div>
-    ` : ""}
-
-    <div class="coach-hero">
-      <span class="coach-badge">Pro preview</span>
-      <h2>Your plan this week</h2>
-      <p>Focus: <strong>working memory</strong> — it's the skill your other scores lean on most. A coached plan adapts this every week from how you actually train.</p>
-      <div class="coach-hero-stats">
-        <div><strong>${streak}</strong><span>day streak</span></div>
-        <div><strong>${doneToday ? "Done" : "0/1"}</strong><span>today's session</span></div>
-        <div><strong>${week.filter((d) => d.id).length}</strong><span>sessions planned</span></div>
-      </div>
-    </div>
-
-    <div class="coach-week">
-      ${week.map((d, i) => `
-        <div class="coach-day ${i === dayIndex ? "is-today" : ""} ${d.id ? "" : "is-rest"}" ${d.id ? `data-coach-open="${d.id}"` : ""} ${d.id ? 'role="button" tabindex="0"' : ""}>
-          <span class="coach-day-name">${d.day}${i === dayIndex ? " · Today" : ""}</span>
-          <div class="coach-day-body">
-            <strong>${escapeHtml(d.label)}</strong>
-            <span>${escapeHtml(d.sub)}</span>
-          </div>
-          ${d.id ? '<span class="coach-day-arrow" aria-hidden="true">›</span>' : '<span class="coach-day-rest">—</span>'}
-        </div>
-      `).join("")}
-    </div>
-
-    <div class="coach-upsell">
-      <div>
-        <strong>Get a coach that plans for you</strong>
-        <p>Pro reads your scores each week and rewrites this plan around your weakest skill — no guessing what to train.</p>
-      </div>
-      <button class="coach-upsell-cta" type="button" data-coach-upgrade>Upgrade to Pro</button>
     </div>
   `;
   wireHomeAiComposer(page);
