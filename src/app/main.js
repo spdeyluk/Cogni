@@ -91,11 +91,10 @@ const userProfileStorageKey = "cogni.userProfile.v1";
 const xpProgressStorageKey = "cogni.xpProgress.v1";
 const screenTimeWalletStorageKey = "cogni.screenTimeWallet.v1";
 const screenTimeLocalStateStorageKey = "cogni.screenTimeState.v1";
-// Economy calibration. Earning 10 coins/training-minute plus chests, detox and quests,
-// against 7 coins per screen-time-minute, means a committed ~45-60 min day of training
-// reaches the full 3 h allowance — coins feel abundant, but 3 h still takes real work
-// and is hard-capped below.
-const screenTimePointsPerMinute = 7;
+// Economy calibration. Earning 10 coins/training-minute (plus the daily detox and
+// quests) against 5 coins per screen-time-minute means a committed ~1 h day of training
+// reaches the full 3 h allowance — accessible, but real work, and hard-capped below.
+const screenTimePointsPerMinute = 5;
 // Direct earning: every minute of exercise training pays this many coins,
 // on top of the daily quest rewards.
 const sessionCoinsPerMinute = 10;
@@ -213,18 +212,6 @@ if (cogniUiMode === "pro") {
 const screenTimeUnlockOptions = [15, 30, 60];
 const dailyQuestsStorageKey = "cogni.dailyQuests.v1";
 const customTasksStorageKey = "cogni.customTasks.v1";
-
-// Reward chests: a Clash-Royale-style loop. Training fills a chest; when it's full you
-// tap to open it for a coin burst, then the tier cycles up. Coins are deliberately
-// abundant (the dopamine), while the hard 3 h/day screen-time cap stays the restraint.
-const chestStorageKey = "cogni.chest.v1";
-const chestGoalMinutes = 15; // minutes of training to fill one chest
-const chestTiers = [
-  { name: "Wooden", coins: 80, className: "chest-wooden" },
-  { name: "Silver", coins: 130, className: "chest-silver" },
-  { name: "Golden", coins: 220, className: "chest-golden" },
-  { name: "Legendary", coins: 380, className: "chest-legendary" }
-];
 const homeShowcaseApps = [
   { name: "TikTok", slug: "tiktok" },
   { name: "Instagram", slug: "instagram" },
@@ -3799,42 +3786,9 @@ function renderHomePage() {
 
     ${cogniUiMode === "play" ? renderHomePointsCard() : ""}
 
-    ${cogniUiMode === "play" ? renderHomeChest() : ""}
-
     ${cogniUiMode === "play" ? renderHomeQuests() : ""}
   `;
   renderTopStatus();
-}
-
-function renderHomeChest() {
-  const state = loadChest();
-  const tier = chestTier(state);
-  const ready = chestReady(state);
-  const pct = Math.round(clamp01(state.minutes / chestGoalMinutes) * 100);
-  const remaining = Math.max(0, Math.ceil(chestGoalMinutes - state.minutes));
-  return `
-    <article class="home-chest ${ready ? "is-ready" : ""} ${tier.className}" aria-label="Reward chest">
-      <div class="home-chest-icon" ${ready ? 'data-chest-open="1" role="button" tabindex="0"' : ""}>
-        <svg viewBox="0 0 48 40" aria-hidden="true">
-          <path class="chest-lid" d="M4 16 A20 12 0 0 1 44 16 L44 20 L4 20 Z"/>
-          <rect class="chest-base" x="4" y="19" width="40" height="18" rx="3"/>
-          <rect class="chest-band" x="21" y="19" width="6" height="18"/>
-          <circle class="chest-lock" cx="24" cy="27" r="3.4"/>
-        </svg>
-      </div>
-      <div class="home-chest-body">
-        <div class="home-chest-top">
-          <strong>${tier.name} chest</strong>
-          ${ready
-            ? `<span class="home-chest-reward">+${tier.coins} <img src="assets/cogni-coin-23.png" alt="coins"></span>`
-            : `<span class="home-chest-count">${remaining} min left</span>`}
-        </div>
-        ${ready
-          ? `<button class="home-chest-open" data-chest-open="1" type="button">Open chest</button>`
-          : `<div class="home-chest-bar"><i style="width:${pct}%"></i></div>`}
-      </div>
-    </article>
-  `;
 }
 
 function renderHomeQuests() {
@@ -4982,8 +4936,6 @@ function handleHomePageClick(_event) {
   if (_event.target.closest("[data-home-train]")) showExerciseHub();
   if (_event.target.closest("[data-screentime-buy-time]")) openScreenTimeDialog();
   if (_event.target.closest("[data-tasks-open]")) openTasksDialog();
-  const chestOpen = _event.target.closest("[data-chest-open]");
-  if (chestOpen) openHomeChest(chestOpen);
   const questButton = _event.target.closest("[data-quest-claim]");
   if (questButton) {
     spawnCoinClaimBurst(questButton);
@@ -4996,22 +4948,6 @@ function handleHomePageClick(_event) {
     homeQuestsExpanded = !homeQuestsExpanded;
     renderHomePage();
   }
-}
-
-// Opening a ready chest: a short shake/burst, then award the coins and re-render with
-// the next tier's fresh chest.
-function openHomeChest(trigger) {
-  if (!chestReady()) return;
-  const card = trigger.closest(".home-chest");
-  if (card) card.classList.add("chest-opening");
-  try { hapticSuccess(); } catch { /* haptics optional */ }
-  window.setTimeout(() => {
-    const source = card?.querySelector(".home-chest-icon") || trigger;
-    spawnCoinClaimBurst(source);
-    claimChest();
-    pulseHomeBalance();
-    renderHomePage();
-  }, 640);
 }
 
 // Claim feedback: a "+N coins" float that rises from the tapped pill (added to
@@ -8786,7 +8722,6 @@ function recordExerciseProgress(exerciseId, sessionData) {
     creditScreenTimeWallet(coinAward, `${exerciseId.toUpperCase()} training`, { session: sessionRecord.id });
     pendingSessionCoinFloat += coinAward;
   }
-  addTrainingToChest(durationMs / 60000); // fill the reward chest with training minutes
   sessionRecord.coinAward = coinAward;
 
   exercise.sessions += 1;
@@ -9568,57 +9503,6 @@ function creditScreenTimeWallet(amount, label, meta = {}) {
     createdAt: new Date().toISOString()
   }, ...(wallet.ledger ?? [])].slice(0, 300);
   saveScreenTimeWallet(wallet);
-}
-
-// --- Reward chests -------------------------------------------------------------
-function loadChest() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(chestStorageKey));
-    return {
-      minutes: Math.max(0, Number(saved?.minutes) || 0),
-      tierIndex: Math.max(0, Math.round(Number(saved?.tierIndex) || 0))
-    };
-  } catch {
-    return { minutes: 0, tierIndex: 0 };
-  }
-}
-
-function saveChest(state) {
-  try {
-    localStorage.setItem(chestStorageKey, JSON.stringify({
-      minutes: Math.max(0, state.minutes),
-      tierIndex: Math.max(0, state.tierIndex)
-    }));
-  } catch { /* local-first; syncs with the rest of cogni.* */ }
-}
-
-function chestTier(state = loadChest()) {
-  return chestTiers[state.tierIndex % chestTiers.length];
-}
-
-function chestReady(state = loadChest()) {
-  return state.minutes >= chestGoalMinutes;
-}
-
-// Training credits the chest (capped so a marathon session doesn't overfill past ready).
-function addTrainingToChest(minutes) {
-  if (cogniUiMode !== "play" || !(minutes > 0)) return;
-  const state = loadChest();
-  state.minutes = Math.min(chestGoalMinutes, state.minutes + minutes);
-  saveChest(state);
-}
-
-// Opens a ready chest: awards its coin bundle, cycles the tier up, resets progress
-// (carrying nothing over — a fresh chest each time), and returns the reward for the
-// open animation.
-function claimChest() {
-  const state = loadChest();
-  if (!chestReady(state)) return null;
-  const tier = chestTier(state);
-  creditScreenTimeWallet(tier.coins, `${tier.name} chest`, { chest: tier.name });
-  pendingSessionCoinFloat += tier.coins;
-  saveChest({ minutes: 0, tierIndex: state.tierIndex + 1 });
-  return tier;
 }
 
 // Minutes of screen time already unlocked today, summed from the wallet ledger, so
