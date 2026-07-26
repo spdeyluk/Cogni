@@ -3869,7 +3869,7 @@ kbd {
   display: grid;
   place-items: center;
   border-radius: inherit;
-  background: rgba(0, 0, 0, 0.82);
+  background: var(--bg);
   color: var(--text);
   font-size: clamp(6rem, 18vw, 9rem);
   font-weight: 500;
@@ -16096,4 +16096,43 @@ html.landing-active #landing { display: block; }
   background: transparent !important;
   padding: 0 !important;
   gap: 10px !important;
+}
+
+/* ===================================================================
+   Exercise/nav polish (2026-07-26)
+   =================================================================== */
+
+/* Screen Time: just a "not available" message. */
+.screentime-unavailable {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* ICT answer buttons: label + key centered together, identical on both sides. */
+.ict-game-active .ict-response-grid button {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* RRT: the premise card shouldn't span the whole screen. */
+.rrt-open .rrt-stage-card,
+.rrt-game-active .rrt-stage-card,
+.workbench .rrt-stage-card {
+  max-width: 760px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Sidebar reopen button: a solid floating button so it sits cleanly on top of
+   scrolled content instead of overlapping it transparently. */
+.nav-hamburger {
+  background: var(--surface) !important;
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.55) !important;
 }

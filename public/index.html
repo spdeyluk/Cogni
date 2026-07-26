@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-nback12">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch13">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1574,8 +1574,8 @@
           <div class="rrt-result-strip" id="rrt-result-strip" aria-label="RRT answers"></div>
 
           <div class="rrt-answer-grid">
-            <button id="rrt-true" type="button" disabled><span>TRUE</span><kbd>J</kbd></button>
-            <button id="rrt-false" type="button" disabled><span>FALSE</span><kbd>F</kbd></button>
+            <button id="rrt-true" type="button" disabled><span>TRUE</span><kbd>F</kbd></button>
+            <button id="rrt-false" type="button" disabled><span>FALSE</span><kbd>J</kbd></button>
           </div>
 
           <span class="sr-only" id="rrt-correct">0</span>
@@ -2089,13 +2089,13 @@
             </div>
             <div class="control-row">
               <label for="ict-fixation-ms">Fixation</label>
-              <input id="ict-fixation-ms" type="number" min="100" max="2000" step="50" value="500">
+              <input id="ict-fixation-ms" type="number" min="100" max="2000" step="50" value="1000">
               <span>ms</span>
             </div>
             <div class="control-row">
               <label for="ict-ssd">Initial SSD</label>
-              <input id="ict-ssd" type="number" min="80" max="900" step="10" value="250">
-              <span id="ict-ssd-value">250 ms</span>
+              <input id="ict-ssd" type="number" min="0" max="900" step="10" value="0">
+              <span id="ict-ssd-value">0 ms</span>
             </div>
             <div class="control-row">
               <label for="ict-ssd-step">SSD step</label>
@@ -2136,7 +2136,7 @@
           </div>
 
           <div class="ict-response-grid">
-            <button id="ict-left-button" type="button" data-ict-response="left"><kbd>F</kbd><span>Left</span></button>
+            <button id="ict-left-button" type="button" data-ict-response="left"><span>Left</span><kbd>F</kbd></button>
             <button id="ict-right-button" type="button" data-ict-response="right"><span>Right</span><kbd>J</kbd></button>
           </div>
 
@@ -2498,6 +2498,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-nback12"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch13"></script>
   </body>
 </html>

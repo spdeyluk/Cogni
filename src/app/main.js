@@ -1386,7 +1386,7 @@ document.addEventListener("keydown", (event) => {
   // RRT: J answers TRUE, F answers FALSE (only while the buttons are live).
   if (rrt.running && ["KeyJ", "KeyF"].includes(event.code) && !elements.rrtTrue.disabled) {
     event.preventDefault();
-    answerRrt(event.code === "KeyJ");
+    answerRrt(event.code === "KeyF"); // F = TRUE (left button), J = FALSE (right button)
     return;
   }
   const modality = modalityKeys[event.code];
@@ -2707,6 +2707,12 @@ function handleCoachPageClick(event) {
 
 // --- Screen Time: minutes reclaimed into focused training ----------------
 function renderScreenTime() {
+  const page = document.querySelector(".screentime-page");
+  if (!page) return;
+  page.innerHTML = `<div class="screentime-unavailable"><p>Feature not available currently.</p></div>`;
+}
+
+function renderScreenTimeLegacy() {
   const page = document.querySelector(".screentime-page");
   if (!page) return;
   const progress = loadExerciseProgress();
@@ -6257,7 +6263,7 @@ function defaultRoutineSettings(exerciseId) {
     nback: { n: 2, modalities: ["position", "color", "shape", "audio"], trialTimeMs: nBackTrialTimeLimits.defaultValue, matchChance: 25, interference: 20, feedback: "show", autoProgression: true },
     rrt: { premiseCount: 2, timerSeconds: 30, timerEnabled: true, vocabulary: "nonsense", useNouns: true, useAdjectives: false, visualNoise: 5, scrambleFactor: 80 },
     cct: { durationMinutes: 5, startingIntervalSeconds: 3, minimumIntervalSeconds: 0.5, adaptive: true, correctStepMs: 120, wrongStepMs: 220 },
-    ict: { cueType: "arrows", stopProbability: 25, calibrationTrials: 8, fixationMs: 500, stopSignalDelayMs: 250, stopSignalStepMs: 50, stopSignalMode: "triangle", softDeadlineMs: 1200 },
+    ict: { cueType: "arrows", stopProbability: 25, calibrationTrials: 8, fixationMs: 1000, stopSignalDelayMs: 0, stopSignalStepMs: 50, stopSignalMode: "triangle", softDeadlineMs: 1200 },
     mot: { targetCount: 4, blueDistractors: 4, coloredDistractors: 0, ballSpeed: 0.25, ballSize: 1.8, trackingDurationMs: 7500, highlightDurationMs: 1800, autoContinue: true },
     ufov: { trialCount: 16, stimulusDurationMs: 900, minStimulusDurationMs: 180, distractors: 20, autoProgression: true }
   };
@@ -6975,10 +6981,14 @@ function startCountdown() {
       elements.countdown.textContent = "";
       elements.countdown.hidden = true;
       elements.stage.classList.remove("countdown-active");
-      session.countingDown = false;
-      session.running = true;
-      updateResponseButtons();
-      showTrial();
+      // Show the empty grid (base mode) for a beat before stimuli start.
+      clearBoard();
+      schedule(() => {
+        session.countingDown = false;
+        session.running = true;
+        updateResponseButtons();
+        showTrial();
+      }, 1000);
       return;
     }
 
@@ -8226,7 +8236,7 @@ function updateIctStats() {
 }
 
 function readIctConfig() {
-  const ssd = clampNumber(elements.ictSsd.value, 80, 900);
+  const ssd = clampNumber(elements.ictSsd.value, 0, 900);
   return createIctConfig({
     blocks: clampNumber(elements.ictBlocks.value, 1, 8),
     trialsPerBlock: clampNumber(elements.ictTrialsPerBlock.value, 8, 80),
@@ -8235,7 +8245,7 @@ function readIctConfig() {
     fixationMs: clampNumber(elements.ictFixationMs.value, 100, 2000),
     stopProbability: clampNumber(elements.ictStopProbability.value, 5, 50) / 100,
     stopSignalDelayMs: ssd,
-    minStopSignalDelayMs: 80,
+    minStopSignalDelayMs: 0,
     maxStopSignalDelayMs: 900,
     stopSignalStepMs: clampNumber(elements.ictSsdStep.value, 10, 150),
     stopSignalMode: elements.ictStopSignalMode.value,
