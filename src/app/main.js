@@ -1699,8 +1699,8 @@ function ensureRrtHasActiveMode() {
     || elements.rrtEnableSpace2d.checked
     || elements.rrtEnableSpace3d.checked;
   if (hasMode) return;
+  // Never snap back to two — keep a single mode so the toggles stay predictable.
   setRrtMode("distinction", true);
-  setRrtMode("linear", true);
 }
 
 function ensureRrtHasActiveObject() {
@@ -7055,7 +7055,14 @@ function markModality(modality) {
   session.responses[modality] = true;
   session.reactionTimesMs[modality] = Math.round(performance.now() - session.trialStartedAt);
   const button = elements.responseButtons.find((item) => item.dataset.response === modality);
-  button?.classList.add(trial.targets[modality] ? "correct" : "wrong");
+  if (button) {
+    // Press flash — so keyboard answers get the same visible feedback a click
+    // gets from :active (you can tell the key registered).
+    button.classList.add("pressed");
+    setTimeout(() => button.classList.remove("pressed"), 160);
+    // Right/wrong colour only when the setting is on.
+    if (feedbackEnabled()) button.classList.add(trial.targets[modality] ? "correct" : "wrong");
+  }
 }
 
 function finishTrial() {
