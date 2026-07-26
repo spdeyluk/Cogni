@@ -16180,6 +16180,10 @@ html.landing-active #landing { display: block; }
   flex-wrap: wrap;
   gap: 8px;
   margin: 2px 0 6px;
+  /* The exercises grid is multi-column on wide screens; span every column so the
+     chips lay out across the full width instead of being trapped in column one. */
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
 /* !important defeats the global `button { background: ... !important }` reset. */
