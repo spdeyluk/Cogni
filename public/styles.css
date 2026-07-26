@@ -14821,10 +14821,24 @@ html.reduce-motion *::after {
   flex: 1 1 0 !important;
 }
 
+/* One consistent blue selection box across every settings segmented control
+   (N-level, Mode, Time, RRT modes) — including single selections. This wins
+   over the sliding-pill's transparent-active rule, so multi-select MODE and
+   the single-select rows all read the same. */
 .exercise-sheet .preset-button.active,
-.exercise-sheet .segmented-control button.active {
-  background: var(--accent) !important;
+.exercise-sheet .segmented-control button.active,
+.exercise-sheet .seg-sliding > .preset-button.active,
+.exercise-sheet .seg-sliding > button.active {
+  background: #325CFF !important;
+  border-color: #325CFF !important;
   color: #fff !important;
+  box-shadow: 0 6px 16px rgba(50, 92, 255, 0.32) !important;
+}
+
+/* Hide the dark sliding pill in the sheet; the solid blue box above is the
+   selection indicator now. */
+.exercise-sheet .seg-sliding::after {
+  display: none !important;
 }
 
 /* Rows and stat blocks: tighter. */
