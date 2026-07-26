@@ -16194,3 +16194,54 @@ html.landing-active #landing { display: block; }
 .exercise-card.tag-hidden {
   display: none !important;
 }
+
+/* ===================================================================
+   Profile abilities — horizontal bar chart (replaces the radar, 2026-07-26)
+   =================================================================== */
+.ability-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.ability-bar {
+  display: grid;
+  grid-template-columns: 74px 1fr 30px;
+  align-items: center;
+  gap: 12px;
+}
+
+.ability-bar-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.ability-bar-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.ability-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #325CFF, #6C8BFF);
+  transition: width 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ability-bar-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ability-empty {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

@@ -3108,54 +3108,27 @@ function profileHexagonStats(sessions) {
 }
 
 function renderProfileHexagon(sessions) {
-  const stats = profileHexagonStats(sessions);
-  const cx = 160;
-  const cy = 116;
-  const radius = 76;
-  // Vertex angles in screen coordinates, clockwise from the top-left corner:
-  // Focus, Memory (top), Speed (right), Logic, Verbal (bottom), Math (left).
-  const angles = [240, 300, 0, 60, 120, 180];
-  const point = (angle, distance) => {
-    const rad = (angle * Math.PI) / 180;
-    return [cx + distance * Math.cos(rad), cy + distance * Math.sin(rad)];
-  };
-  const ringPoints = (distance) => angles
-    .map((angle) => point(angle, distance).map((value) => value.toFixed(1)).join(","))
-    .join(" ");
-  const spokes = angles.map((angle) => {
-    const [x, y] = point(angle, radius);
-    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`;
-  }).join("");
-  const shape = stats
-    .map((stat, index) => point(angles[index], radius * clamp01(stat.value / 100)).map((value) => value.toFixed(1)).join(","))
-    .join(" ");
-  const labels = stats.map((stat, index) => {
-    const angle = angles[index];
-    const [x, y] = point(angle, radius + 14);
-    const cos = Math.cos((angle * Math.PI) / 180);
-    const anchor = cos > 0.5 ? "start" : cos < -0.5 ? "end" : "middle";
-    const dy = angle === 60 || angle === 120 ? 14 : angle === 240 || angle === 300 ? -6 : 4;
+  // A plain horizontal bar chart — one bar per ability, sorted strongest first —
+  // reads far more easily than the old radar/hexagon.
+  const stats = profileHexagonStats(sessions).slice().sort((a, b) => b.value - a.value);
+  const hasData = stats.some((stat) => stat.value > 0);
+  const bars = stats.map((stat) => {
+    const value = Math.max(0, Math.min(100, Math.round(stat.value)));
     return `
-      <text x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}">
-        ${escapeHtml(stat.label)}
-        <tspan class="hexagon-value" dx="4">${stat.value}</tspan>
-      </text>
+      <div class="ability-bar">
+        <span class="ability-bar-label">${escapeHtml(stat.label)}</span>
+        <span class="ability-bar-track"><span class="ability-bar-fill" style="width:${value}%"></span></span>
+        <span class="ability-bar-value">${value}</span>
+      </div>
     `;
   }).join("");
   return `
-    <section class="profile-hexagon-card" aria-label="Cognitive profile">
+    <section class="profile-hexagon-card profile-abilities-card" aria-label="Cognitive profile">
       <div class="profile-section-heading">
         <div><p class="exercise-type">Cognitive profile</p><h2>Abilities</h2></div>
       </div>
-      <svg class="profile-hexagon" viewBox="0 0 320 232" aria-hidden="true">
-        <g class="hexagon-grid">
-          <polygon points="${ringPoints(radius)}"></polygon>
-          <polygon points="${ringPoints(radius * 0.5)}"></polygon>
-          ${spokes}
-        </g>
-        <polygon class="hexagon-shape" points="${shape}"></polygon>
-        ${labels}
-      </svg>
+      <div class="ability-bars">${bars}</div>
+      ${hasData ? "" : `<p class="ability-empty">Train a few sessions to build your profile.</p>`}
     </section>
   `;
 }
