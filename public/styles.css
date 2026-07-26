@@ -16704,3 +16704,14 @@ html.mode-play .nav-hamburger { display: none !important; }
   font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: none !important;
 }
 .pricing-note { margin: 0; text-align: center; color: var(--muted); font-size: 0.86rem; min-height: 1.2em; }
+
+/* 3-2-1 countdown shown before every mini-game starts. */
+.mini-countdown {
+  display: grid;
+  place-items: center;
+  min-height: 44vh;
+  font-size: clamp(5rem, 22vw, 9rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text);
+}

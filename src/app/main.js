@@ -2244,7 +2244,7 @@ function runMiniGame(id) {
   const statusEl = document.querySelector("#mini-ex-status");
   stage.innerHTML = "";
   statusEl.textContent = game.label;
-  miniActive = { id, startedAt: Date.now(), cleanup: null, ended: false };
+  miniActive = { id, startedAt: Date.now(), cleanup: null, ended: false, countdownTimers: [] };
   const ctx = {
     stage,
     setStatus: (text) => { statusEl.textContent = text; },
@@ -2257,11 +2257,38 @@ function runMiniGame(id) {
       finishMiniExercise(id, result);
     }
   };
-  const cleanup = game.start(ctx);
-  if (miniActive) miniActive.cleanup = typeof cleanup === "function" ? cleanup : null;
+  // A clean 3-2-1 countdown before every game, then start (and reset the clock so
+  // the countdown isn't counted as play time).
+  runMiniCountdown(stage, () => {
+    if (!miniActive || miniActive.id !== id) return;
+    miniActive.startedAt = Date.now();
+    const cleanup = game.start(ctx);
+    if (miniActive) miniActive.cleanup = typeof cleanup === "function" ? cleanup : null;
+  });
+}
+
+function runMiniCountdown(stage, onComplete) {
+  const steps = ["3", "2", "1"];
+  let index = 0;
+  stage.innerHTML = `<div class="mini-countdown" id="mini-countdown" aria-live="assertive"></div>`;
+  const el = stage.querySelector("#mini-countdown");
+  const tick = () => {
+    if (!miniActive || !el.isConnected) return;
+    if (index >= steps.length) { onComplete(); return; }
+    el.textContent = steps[index];
+    el.classList.remove("countdown-pop");
+    void el.offsetWidth;
+    el.classList.add("countdown-pop");
+    index += 1;
+    const timer = window.setTimeout(tick, 750);
+    miniActive.countdownTimers.push(timer);
+  };
+  tick();
 }
 
 function closeMiniExercise() {
+  // Cancel any in-flight 3-2-1 countdown.
+  miniActive?.countdownTimers?.forEach((timer) => window.clearTimeout(timer));
   // Quitting a game in progress still surfaces a results screen for the work
   // done so far, instead of silently discarding it.
   if (miniActive && !miniActive.ended && typeof miniActive.snapshot === "function") {
