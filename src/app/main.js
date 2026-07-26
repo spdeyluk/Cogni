@@ -1316,6 +1316,94 @@ function renderPricingLocalBanner() {
   banner.hidden = false;
 }
 
+// A short, persuasive intro shown once on the web after a fresh sign-in, before
+// the user lands on Home. Motivational framing only — no fabricated citations.
+const WEB_ONBOARDING_KEY = "cogni.webOnboarding.v1";
+function hasSeenWebOnboarding() {
+  try { return localStorage.getItem(WEB_ONBOARDING_KEY) === "1"; } catch { return false; }
+}
+function markWebOnboardingSeen() {
+  try { localStorage.setItem(WEB_ONBOARDING_KEY, "1"); } catch { /* private mode */ }
+}
+
+const WEB_ONBOARDING_SLIDES = [
+  {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 3.5 3.5 0 0 0-1 6.8V17a3 3 0 0 0 5 2.2A3 3 0 0 0 17 17v-3.2A3.5 3.5 0 0 0 16 7a4 4 0 0 0-4-4Z"/><path d="M12 3v16"/></svg>`,
+    eyebrow: "The rules just changed",
+    title: "AI now does the easy thinking",
+    body: "Routine tasks, lookups, first drafts — machines handle them now. What's left, and what's rewarded, is sharp reasoning, focus and judgment. A degree alone no longer sets you apart. How well you think does."
+  },
+  {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M9.5 6.5h5M9.5 9.5h5M9.5 12.5h3"/></svg>`,
+    eyebrow: "You're already being trained",
+    title: "Just by the wrong things",
+    body: "Endless scrolling rewires your attention for distraction. Offloading every decision to AI lets the mental muscles you stop using quietly weaken. Cognitive ability isn't fixed — but it fades when it's never challenged."
+  },
+  {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3.5-4 3 3L21 7"/><path d="M21 11V7h-4"/></svg>`,
+    eyebrow: "It predicts more than you'd think",
+    title: "Cognition compounds",
+    body: "Decades of research place cognitive ability among the strongest single predictors of job performance, learning speed, income and long-term health — ahead of experience, interviews or years of schooling."
+  },
+  {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6 4.5 4.5M18 6l1.5-1.5M6 18l-1.5 1.5M18 18l1.5 1.5"/><circle cx="12" cy="12" r="3.4"/></svg>`,
+    eyebrow: "The good news",
+    title: "It's trainable",
+    body: "Like any capacity, focus, memory and reasoning grow when you train them deliberately. Cogni turns that into a few focused minutes a day — real cognitive training, not puzzle games. Let's begin."
+  }
+];
+
+function showWebOnboarding(onDone = () => {}) {
+  if (document.querySelector("#web-onboarding")) return;
+  const dialog = document.createElement("dialog");
+  dialog.className = "web-onboarding";
+  dialog.id = "web-onboarding";
+  let index = 0;
+  const render = () => {
+    const slide = WEB_ONBOARDING_SLIDES[index];
+    const isLast = index === WEB_ONBOARDING_SLIDES.length - 1;
+    dialog.innerHTML = `
+      <div class="web-onboarding-inner">
+        <button type="button" class="web-onboarding-skip" data-onboard-skip>Skip</button>
+        <div class="web-onboarding-slide">
+          <div class="web-onboarding-icon" aria-hidden="true">${slide.icon}</div>
+          <p class="web-onboarding-eyebrow">${escapeHtml(slide.eyebrow)}</p>
+          <h2 class="web-onboarding-title">${escapeHtml(slide.title)}</h2>
+          <p class="web-onboarding-body">${escapeHtml(slide.body)}</p>
+        </div>
+        <div class="web-onboarding-footer">
+          <div class="web-onboarding-dots" aria-hidden="true">
+            ${WEB_ONBOARDING_SLIDES.map((_, i) => `<span class="${i === index ? "is-active" : ""}"></span>`).join("")}
+          </div>
+          <div class="web-onboarding-actions">
+            ${index > 0 ? `<button type="button" class="web-onboarding-back" data-onboard-back>Back</button>` : ""}
+            <button type="button" class="web-onboarding-next" data-onboard-next>${isLast ? "Start training" : "Next"}</button>
+          </div>
+        </div>
+      </div>`;
+  };
+  const finish = () => {
+    markWebOnboardingSeen();
+    if (dialog.open) dialog.close();
+    dialog.remove();
+    onDone();
+  };
+  dialog.addEventListener("click", (event) => {
+    if (event.target.closest("[data-onboard-skip]")) { finish(); return; }
+    if (event.target.closest("[data-onboard-back]")) { index = Math.max(0, index - 1); render(); return; }
+    if (event.target.closest("[data-onboard-next]")) {
+      if (index >= WEB_ONBOARDING_SLIDES.length - 1) finish();
+      else { index += 1; render(); }
+    }
+  });
+  // Esc closes the whole intro rather than a single slide.
+  dialog.addEventListener("cancel", (event) => { event.preventDefault(); finish(); });
+  render();
+  document.body.appendChild(dialog);
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+}
+
 // Blur a whole page and lay an upgrade card over it for free-tier users, reusing
 // the same treatment as the IQ result. Call at the end of a page's render(); it is
 // a no-op for Pro users, so they see the real content.
@@ -4908,8 +4996,10 @@ function onAuthenticated() {
   if (justSignedIn && cogniUiMode === "pro") {
     // A brand-new sign-in / sign-up always lands on Home, which surfaces the
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
+    // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
     showCoach();
+    if (!hasSeenWebOnboarding()) showWebOnboarding();
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();

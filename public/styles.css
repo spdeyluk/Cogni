@@ -16868,3 +16868,121 @@ html.is-free .advanced-settings > summary::after {
   color: var(--on-accent);
   transition: none;
 }
+
+/* Post-sign-in web onboarding: full-screen 4-slide "why cognition matters" intro. */
+.web-onboarding {
+  width: 100vw;
+  height: 100dvh;
+  max-width: 100vw;
+  max-height: 100dvh;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+.web-onboarding::backdrop { background: var(--bg); }
+.web-onboarding-inner {
+  height: 100%;
+  width: min(540px, 100%);
+  margin: 0 auto;
+  padding: 26px 24px 40px;
+  display: flex;
+  flex-direction: column;
+}
+.web-onboarding-skip {
+  align-self: flex-end;
+  background: transparent !important;
+  border: none;
+  color: var(--muted);
+  font-size: 0.92rem;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+.web-onboarding-skip:hover { color: var(--text); }
+.web-onboarding-slide {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  animation: web-onboarding-in 0.32s ease;
+}
+@keyframes web-onboarding-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.web-onboarding-icon {
+  width: 86px;
+  height: 86px;
+  margin: 0 auto 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.web-onboarding-icon svg { width: 46px; height: 46px; }
+.web-onboarding-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.web-onboarding-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4.6vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.14;
+}
+.web-onboarding-body {
+  margin: 4px auto 0;
+  max-width: 44ch;
+  color: var(--muted);
+  font-size: 1.04rem;
+  line-height: 1.62;
+}
+.web-onboarding-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+}
+.web-onboarding-dots { display: flex; gap: 8px; }
+.web-onboarding-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.web-onboarding-dots span.is-active { background: var(--accent); width: 24px; }
+.web-onboarding-actions { display: flex; align-items: center; gap: 8px; }
+.web-onboarding-back {
+  background: transparent !important;
+  border: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.98rem;
+  cursor: pointer;
+  padding: 12px 10px;
+}
+.web-onboarding-back:hover { color: var(--text); }
+.web-onboarding-next {
+  background: var(--accent) !important;
+  color: var(--on-accent);
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 13px 28px;
+  cursor: pointer;
+}
+.web-onboarding-next:hover { filter: brightness(1.06); }
