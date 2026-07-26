@@ -13752,6 +13752,20 @@ html.landing-active #app-shell { display: none !important; }
   cursor: pointer;
 }
 
+/* Dev-only skip: subtle, set apart from the real sign-in options with a dashed pill. */
+.signin-first-skip {
+  margin: 12px auto 0;
+  padding: 7px 16px;
+  border: 1px dashed var(--line-strong) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.signin-first-skip:hover { color: var(--text) !important; border-color: var(--accent) !important; }
+
 .signin-first-legal {
   margin: 26px auto 0;
   max-width: 24em;

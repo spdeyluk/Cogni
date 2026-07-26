@@ -108,6 +108,9 @@ let pendingSessionCoinFloat = 0;
 // Auth state lives here (not in the auth section below) because boot-time
 // calls like renderProfileOnboarding() read authUser before that section runs.
 let authUser = null;
+// Dev-only "Skip for now": enters as a local guest with no Supabase session so the
+// app + onboarding can be tested quickly. Cloud sync is suppressed while set.
+let guestMode = false;
 // Hoisted for the same reason: needsOnboarding() runs during boot.
 const onboardingSeenKey = "cogni.onboardingSeen.v1";
 const onboardingAnswersKey = "cogni.onboardingAnswers.v1";
@@ -4395,7 +4398,7 @@ function applySyncState(state) {
 // Cloud sync lives in the Supabase `user_state` table: one private row per
 // account, guarded by RLS so a user can only ever touch their own.
 async function pushSyncState() {
-  if (!authUser || authSyncing) return;
+  if (guestMode || !authUser || authSyncing) return;
   authSyncing = true;
   authSyncDirty = false;
   try {
@@ -4415,7 +4418,7 @@ async function pushSyncState() {
 // Pull the account's snapshot when another device wrote a newer one. Returns
 // true when it triggered a reload, so callers stop what they were doing.
 async function pullSyncState() {
-  if (!authUser) return false;
+  if (guestMode || !authUser) return false;
   try {
     const { data, error } = await supabase
       .from("user_state")
@@ -4768,6 +4771,29 @@ function wireSignInFirst() {
     wireAuthGate();
     showAuthGate("login");
   });
+  // Dev-only skip, so the app + onboarding can be tested without a real account.
+  const skip = document.querySelector("#signin-skip");
+  if (skip && skipSignInAllowed()) {
+    skip.hidden = false;
+    skip.addEventListener("click", enterAsGuest);
+  }
+}
+
+// The skip is hidden on the production web domain; it appears on localhost and in
+// dev/native builds. Remove or tighten this before an App Store release.
+function skipSignInAllowed() {
+  const host = window.location.hostname;
+  return host !== "getcogni.app" && host !== "www.getcogni.app";
+}
+
+// Enters the app as a local guest — no Supabase session, sync suppressed. Goes
+// through the normal post-auth path so onboarding still runs.
+function enterAsGuest() {
+  setSignInError("");
+  guestMode = true;
+  authUser = { id: "guest-local", email: "guest@local", provider: "guest" };
+  markEnterAfterAuth();
+  onAuthenticated();
 }
 
 function showAuthGate(mode, message) {
