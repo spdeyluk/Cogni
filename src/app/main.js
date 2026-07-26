@@ -2285,11 +2285,20 @@ function renderMiniResult(id, result) {
         <button class="mini-secondary" type="button" data-mini-done>Done</button>
       </div>
       <button class="mini-howto" type="button" data-mini-howto>How to play</button>`;
+  const statCells = [];
+  if (Number.isFinite(result.accuracy)) {
+    statCells.push(`<div><strong>${Math.round(result.accuracy * 100)}%</strong><span>accuracy</span></div>`);
+  }
+  if (Number.isFinite(result.avgAnswerSpeedMs) && result.avgAnswerSpeedMs > 0) {
+    statCells.push(`<div><strong>${Math.round(result.avgAnswerSpeedMs)} ms</strong><span>avg speed</span></div>`);
+  }
+  const statsRow = statCells.length ? `<div class="mini-result-stats">${statCells.join("")}</div>` : "";
   stage.innerHTML = `
     <div class="mini-result">
       <p class="exercise-type">${game.label}</p>
       <h2>${escapeHtml(result.headline ?? "Session complete")}</h2>
       <div class="mini-result-metric"><strong>${escapeHtml(String(result.metricValue))}</strong><span>${escapeHtml(result.metricLabel ?? "")}</span></div>
+      ${statsRow}
       ${result.sub ? `<p class="mini-result-sub">${escapeHtml(result.sub)}</p>` : ""}
       ${result.coinsEarned > 0 ? `<p class="mini-result-coins">+${result.coinsEarned} <img src="assets/cogni-coin-23.png" alt="coins"> earned</p>` : ""}
       ${actions}
@@ -7487,6 +7496,7 @@ function quitSession() {
       misses: score.misses,
       falseAlarms: score.falseAlarms,
       answerSpeedMs: averageNBackReactionTime(),
+      accuracy: score.accuracy,
       coinsEarned: savedProgress?.coinAward ?? 0
     });
   }
@@ -7658,6 +7668,7 @@ function finishSession() {
     misses: score.misses,
     falseAlarms: score.falseAlarms,
     answerSpeedMs: averageNBackReactionTime(),
+    accuracy: score.accuracy,
     coinsEarned: savedProgress?.coinAward ?? 0
   });
   handleRoutineExerciseFinished({ waitForSummary: true });
@@ -10159,6 +10170,12 @@ function showSessionSummary(summary) {
   elements.summarySpeed.textContent = Number.isFinite(summary.answerSpeedMs)
     ? `${Math.round(summary.answerSpeedMs)} ms`
     : "-";
+  const accuracyCell = document.querySelector("#summary-accuracy");
+  if (accuracyCell) {
+    accuracyCell.textContent = Number.isFinite(summary.accuracy)
+      ? `${Math.round(summary.accuracy * 100)}%`
+      : "-";
+  }
   // Coins earned this session (play mode only).
   const coinsCell = document.querySelector("#summary-coins-cell");
   const coinsValue = document.querySelector("#summary-coins");

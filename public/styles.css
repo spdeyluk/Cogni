@@ -16557,3 +16557,14 @@ html.mode-play .nav-hamburger { display: none !important; }
   font-size: 0.86rem;
   line-height: 1.45;
 }
+
+/* Accuracy / speed stats on the mini-game results screen. */
+.mini-result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin: 6px 0 2px;
+}
+.mini-result-stats > div { display: grid; justify-items: center; gap: 2px; }
+.mini-result-stats strong { font-size: 1.35rem; font-weight: 700; }
+.mini-result-stats span { color: var(--muted); font-size: 0.8rem; }
