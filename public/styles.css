@@ -11400,14 +11400,16 @@ kbd {
   inset: 0;
   z-index: 9000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
   background: var(--bg);
   overflow-y: auto;
 }
 
 .auth-card {
+  /* margin:auto centers the card when it fits and aligns it to the top when it's
+     taller than the viewport — so on short mobile screens the form starts at the
+     top and scrolls, instead of being centered below the fold. */
+  margin: auto;
   width: min(420px, 100%);
   padding: 34px 30px;
   border: 1px solid var(--line);
