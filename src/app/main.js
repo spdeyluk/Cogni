@@ -1280,10 +1280,10 @@ elements.catResultBack?.addEventListener("click", showAssessmentList);
 document.querySelector("[data-cat-upgrade]")?.addEventListener("click", openPricingModal);
 // Any upgrade CTA rendered into a paywalled page opens the pricing modal.
 document.addEventListener("click", (event) => {
-  // Advanced exercise settings are Pro-only: block the <details> from opening and
-  // send free-tier users to the pricing modal instead.
+  // Advanced exercise settings come with any paid plan: block the <details> from
+  // opening and send free-tier users to the pricing modal instead.
   const advancedSummary = event.target.closest(".advanced-settings > summary");
-  if (advancedSummary && !isProUser()) {
+  if (advancedSummary && !hasPaidPlan()) {
     event.preventDefault();
     openPricingModal();
     return;
@@ -1294,8 +1294,8 @@ document.addEventListener("click", (event) => {
     showCatSection("detail");
   }
 });
-// Reflect the entitlement on <html> so CSS can lock Pro-only affordances.
-document.documentElement.classList.toggle("is-free", !isProUser());
+// Reflect the entitlement on <html> so CSS can lock plan-gated affordances.
+document.documentElement.classList.toggle("is-free", !hasPaidPlan());
 
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
@@ -1399,9 +1399,9 @@ function showWebOnboarding(onDone = () => {}) {
 
 // Blur a whole page and lay an upgrade card over it for free-tier users, reusing
 // the same treatment as the IQ result. Call at the end of a page's render(); it is
-// a no-op for Pro users, so they see the real content.
+// a no-op for anyone on a paid plan (these are Basic-level data pages).
 function applyPagePaywall(page, { title, body } = {}) {
-  if (!page || isProUser()) return;
+  if (!page || hasPaidPlan()) return;
   const inner = page.innerHTML;
   page.classList.add("page-locked");
   page.innerHTML = `
@@ -1409,9 +1409,9 @@ function applyPagePaywall(page, { title, body } = {}) {
     <div class="page-paywall">
       <div class="page-paywall-card">
         <div class="page-paywall-lock" aria-hidden="true">🔒</div>
-        <h2>${escapeHtml(title || "A Pro feature")}</h2>
-        <p>${escapeHtml(body || "Upgrade to Pro to unlock this page.")}</p>
-        <button class="page-paywall-btn" type="button" data-open-pricing>Upgrade to Pro</button>
+        <h2>${escapeHtml(title || "A members feature")}</h2>
+        <p>${escapeHtml(body || "Upgrade to unlock this page.")}</p>
+        <button class="page-paywall-btn" type="button" data-open-pricing>See plans</button>
       </div>
     </div>`;
 }
@@ -1475,7 +1475,7 @@ async function startCheckout() {
     if (note) note.textContent = "Payments aren't available right now.";
     return;
   }
-  const plan = dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "plus";
+  const plan = dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "basic";
   const billing = dialog.dataset.billing === "monthly" ? "monthly" : "annual";
   if (note) note.textContent = "";
   if (button) { button.disabled = true; button.textContent = "Redirecting…"; }
@@ -1596,7 +1596,11 @@ elements.closeSocialLeaderboard?.addEventListener("click", closeSocialLeaderboar
 elements.socialLeaderboardContent?.addEventListener("click", handleSocialLeaderboardClick);
 document.addEventListener("submit", handleProfileOnboardingSubmit);
 document.querySelector("#start-daily-detox")?.addEventListener("click", () => startRoutine(buildDailyDetoxRoutine()));
-document.querySelector("#open-routines")?.addEventListener("click", () => openRoutineLoader());
+document.querySelector("#open-routines")?.addEventListener("click", () => {
+  // Custom routines are a Pro feature.
+  if (!isProUser()) { openPricingModal(); return; }
+  openRoutineLoader();
+});
 document.querySelector("#routine-load-create")?.addEventListener("click", () => {
   closeRoutineLoadDialog();
   openRoutineBuilder();
@@ -3484,8 +3488,8 @@ function renderScreenTime() {
   page.classList.remove("page-locked");
   page.innerHTML = `<div class="screentime-unavailable"><p>Feature not available currently.</p></div>`;
   applyPagePaywall(page, {
-    title: "Screen Time is a Pro feature",
-    body: "Turn focused training into real screen-time budget. Upgrade to Pro to unlock it."
+    title: "Screen Time needs a plan",
+    body: "Turn focused training into real screen-time budget. Included with Basic and Pro."
   });
 }
 
@@ -3712,8 +3716,8 @@ function renderProfile() {
     `}
   `;
   applyPagePaywall(elements.profilePage, {
-    title: "Your Profile is a Pro feature",
-    body: "See your full cognition profile, trends and per-exercise breakdowns. Upgrade to Pro to unlock it."
+    title: "Your data needs a plan",
+    body: "See your full cognition profile, trends and per-exercise breakdowns. Included with Basic and Pro."
   });
   if (elements.profilePage.classList.contains("page-locked")) return;
   updateSegmentedControls();
@@ -6264,15 +6268,25 @@ function abandonCatTest() {
   showCatSection("intro");
 }
 
-// Pro entitlement. No purchase flow yet, so this is false for everyone — the full IQ
-// result stays behind the paywall until Pro is wired (set "cogni.pro.v1" = "1").
-// isProUser() stays synchronous (the paywall calls it everywhere) by reading a
-// local cache. refreshEntitlement() keeps that cache honest against Supabase,
-// which is itself only ever written by the verified Stripe webhook.
-const entitlementCacheKey = "cogni.pro.v1";
-function isProUser() {
-  try { return localStorage.getItem(entitlementCacheKey) === "1"; } catch { return false; }
+// Entitlement tiers. Two paid tiers:
+//   basic → all exercises + data (unlocks Profile, Screen Time, Advanced settings)
+//   pro   → everything Basic has, plus routines, AI coach and the IQ test
+// These stay synchronous (the paywall calls them everywhere) by reading a local
+// cache. refreshEntitlement() keeps that cache honest against Supabase, which is
+// itself only ever written by the verified Stripe webhook.
+const entitlementCacheKey = "cogni.tier.v1";
+function currentTier() {
+  try {
+    const t = localStorage.getItem(entitlementCacheKey);
+    // Migrate the old boolean Pro flag if it's still around.
+    if (!t && localStorage.getItem("cogni.pro.v1") === "1") return "pro";
+    return (t === "basic" || t === "pro") ? t : "free";
+  } catch { return "free"; }
 }
+// Pro-only features: routines, AI coach, IQ test.
+function isProUser() { return currentTier() === "pro"; }
+// Any paid plan: unlocks exercises' advanced settings + data (Profile, Screen Time).
+function hasPaidPlan() { const t = currentTier(); return t === "basic" || t === "pro"; }
 
 // Pull the account's real entitlement and mirror it into the local cache, then
 // re-render whatever paywalled surface is on screen. Called after sign-in and
@@ -6285,14 +6299,15 @@ async function refreshEntitlement() {
       .select("tier, status")
       .eq("user_id", authUser.id)
       .maybeSingle();
-    const pro = !!data
-      && (data.tier === "plus" || data.tier === "pro")
-      && (data.status === "active" || data.status === "trialing");
+    const active = !!data && (data.status === "active" || data.status === "trialing");
+    // Treat a legacy "plus" tier as "basic".
+    let tier = active ? (data.tier === "plus" ? "basic" : data.tier) : "free";
+    if (tier !== "basic" && tier !== "pro") tier = "free";
     try {
-      if (pro) localStorage.setItem(entitlementCacheKey, "1");
-      else localStorage.removeItem(entitlementCacheKey);
+      localStorage.setItem(entitlementCacheKey, tier);
+      localStorage.removeItem("cogni.pro.v1"); // superseded by the tier key
     } catch { /* private mode */ }
-    document.documentElement.classList.toggle("is-free", !isProUser());
+    document.documentElement.classList.toggle("is-free", !hasPaidPlan());
     // Refresh the visible paywalled surface so the unlock (or lock) shows now.
     const shell = elements.appShell;
     if (shell?.classList.contains("profile-open")) renderProfile();
@@ -6309,7 +6324,7 @@ async function refreshEntitlement() {
 function handleCheckoutReturn() {
   if (!bootCheckoutParam) return;
   if (bootCheckoutParam === "success") {
-    showToast("Welcome to Pro — unlocking your account…");
+    showToast("Payment received — unlocking your account…");
     // The webhook can land a beat after the redirect, so poll a few times.
     let tries = 0;
     const tick = () => { refreshEntitlement(); if (++tries < 6) window.setTimeout(tick, 1500); };

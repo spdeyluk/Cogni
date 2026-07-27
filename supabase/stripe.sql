@@ -13,7 +13,7 @@
 
 create table if not exists public.entitlements (
   user_id                uuid primary key references auth.users(id) on delete cascade,
-  tier                   text not null default 'free' check (tier in ('free','plus','pro')),
+  tier                   text not null default 'free' check (tier in ('free','basic','pro')),
   status                 text not null default 'inactive',   -- raw Stripe subscription status
   stripe_customer_id     text,
   stripe_subscription_id text,

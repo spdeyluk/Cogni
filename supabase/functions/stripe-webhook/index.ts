@@ -7,7 +7,7 @@
 // Secrets (share the same STRIPE_SECRET_KEY + price ids as create-checkout):
 //   STRIPE_SECRET_KEY            sk_live_... / sk_test_...
 //   STRIPE_WEBHOOK_SECRET        whsec_...  (from the Stripe webhook endpoint you create)
-//   STRIPE_PRICE_PLUS_MONTHLY / _ANNUAL / STRIPE_PRICE_PRO_MONTHLY / _ANNUAL
+//   STRIPE_PRICE_BASIC_MONTHLY / _ANNUAL / STRIPE_PRICE_PRO_MONTHLY / _ANNUAL
 //
 // Deploy WITHOUT JWT verification (Stripe doesn't send a Supabase token):
 //   supabase functions deploy stripe-webhook --no-verify-jwt
@@ -34,10 +34,10 @@ const admin = createClient(
 );
 
 // Map each configured Stripe price id to the tier it grants.
-const PRICE_TIER: Record<string, "plus" | "pro"> = {};
-const plusIds = [Deno.env.get("STRIPE_PRICE_PLUS_MONTHLY"), Deno.env.get("STRIPE_PRICE_PLUS_ANNUAL")];
+const PRICE_TIER: Record<string, "basic" | "pro"> = {};
+const basicIds = [Deno.env.get("STRIPE_PRICE_BASIC_MONTHLY"), Deno.env.get("STRIPE_PRICE_BASIC_ANNUAL")];
 const proIds = [Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"), Deno.env.get("STRIPE_PRICE_PRO_ANNUAL")];
-for (const id of plusIds) if (id) PRICE_TIER[id] = "plus";
+for (const id of basicIds) if (id) PRICE_TIER[id] = "basic";
 for (const id of proIds) if (id) PRICE_TIER[id] = "pro";
 
 async function applySubscription(sub: Stripe.Subscription, fallbackUserId?: string) {

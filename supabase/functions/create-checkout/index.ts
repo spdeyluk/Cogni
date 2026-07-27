@@ -7,8 +7,8 @@
 // Secrets (Dashboard -> Edge Functions -> create-checkout -> Secrets, or
 // `supabase secrets set KEY=value`):
 //   STRIPE_SECRET_KEY            sk_live_... (or sk_test_...)
-//   STRIPE_PRICE_PLUS_MONTHLY    price_...   (create these 4 in Stripe -> Products)
-//   STRIPE_PRICE_PLUS_ANNUAL     price_...
+//   STRIPE_PRICE_BASIC_MONTHLY   price_...   (create these 4 in Stripe -> Products)
+//   STRIPE_PRICE_BASIC_ANNUAL    price_...
 //   STRIPE_PRICE_PRO_MONTHLY     price_...
 //   STRIPE_PRICE_PRO_ANNUAL      price_...
 //   SITE_URL                     https://getcogni.app   (where Stripe returns to)
@@ -31,8 +31,8 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://getcogni.app";
 
 const PRICES: Record<string, string | undefined> = {
-  "plus:monthly": Deno.env.get("STRIPE_PRICE_PLUS_MONTHLY"),
-  "plus:annual": Deno.env.get("STRIPE_PRICE_PLUS_ANNUAL"),
+  "basic:monthly": Deno.env.get("STRIPE_PRICE_BASIC_MONTHLY"),
+  "basic:annual": Deno.env.get("STRIPE_PRICE_BASIC_ANNUAL"),
   "pro:monthly": Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"),
   "pro:annual": Deno.env.get("STRIPE_PRICE_PRO_ANNUAL"),
 };

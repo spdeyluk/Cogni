@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch49">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch50">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -628,10 +628,8 @@
             </div>
             <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="free" type="button">Start free</button>
             <ul class="landing-plan-features">
-              <li>All 8 training exercises</li>
+              <li>Try the training exercises</li>
               <li>One session per day</li>
-              <li>7 days of progress history</li>
-              <li>IQ test — score only</li>
               <li>Community access</li>
             </ul>
           </article>
@@ -639,8 +637,8 @@
           <article class="landing-plan landing-plan-featured">
             <span class="landing-plan-badge">Most popular</span>
             <div class="landing-plan-head">
-              <h3>Plus</h3>
-              <p class="landing-plan-tag">For serious daily training.</p>
+              <h3>Basic</h3>
+              <p class="landing-plan-tag">All the training, all your data.</p>
             </div>
             <div class="landing-plan-price"
                  data-price-annual="$4.92" data-per-annual="/mo · billed $59/yr"
@@ -648,21 +646,20 @@
               <span class="landing-plan-amount">$4.92</span>
               <span class="landing-plan-per">/mo · billed $59/yr</span>
             </div>
-            <button class="landing-plan-cta" data-plan-cta="plus" type="button">Start 3-day free trial</button>
+            <button class="landing-plan-cta" data-plan-cta="basic" type="button">Start 3-day free trial</button>
             <ul class="landing-plan-features">
               <li>Everything in Free</li>
-              <li>Unlimited sessions</li>
-              <li>Full history &amp; trend analytics</li>
-              <li>IQ test — full breakdown + retests</li>
-              <li>Custom training routines</li>
-              <li>Friends &amp; leaderboards</li>
+              <li>All training exercises, unlimited</li>
+              <li>Full progress &amp; data</li>
+              <li>Trend analytics</li>
+              <li>Screen Time budgeting</li>
             </ul>
           </article>
 
           <article class="landing-plan">
             <div class="landing-plan-head">
               <h3>Pro</h3>
-              <p class="landing-plan-tag">For a coached, adaptive plan.</p>
+              <p class="landing-plan-tag">Coaching, routines and your IQ.</p>
             </div>
             <div class="landing-plan-price"
                  data-price-annual="$12.42" data-per-annual="/mo · billed $149/yr"
@@ -672,12 +669,10 @@
             </div>
             <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="pro" type="button">Start 3-day free trial</button>
             <ul class="landing-plan-features">
-              <li>Everything in Plus</li>
+              <li>Everything in Basic</li>
+              <li>Custom training routines</li>
               <li>Personal AI training coach</li>
-              <li>A weekly plan built around your scores</li>
-              <li>Plan adapts as you improve</li>
-              <li>Advanced cognitive reports</li>
-              <li>Early access to new exercises</li>
+              <li>The Cogni IQ Test — full report</li>
             </ul>
           </article>
         </div>
@@ -2155,9 +2150,9 @@
         </div>
 
         <div class="pricing-plans">
-          <button class="pricing-plan is-selected" data-pricing-plan="plus" type="button">
+          <button class="pricing-plan is-selected" data-pricing-plan="basic" type="button">
             <div class="pricing-plan-info">
-              <div class="pricing-plan-name">Plus</div>
+              <div class="pricing-plan-name">Basic</div>
               <div class="pricing-plan-price" data-annual-amount="$4.92" data-annual-per="/mo" data-monthly-amount="$9" data-monthly-per="/mo">
                 <span class="pricing-plan-amount">$4.92</span><span class="pricing-plan-per">/mo</span>
               </div>
@@ -2177,13 +2172,12 @@
 
 
         <div class="pricing-compare">
-          <div class="pricing-compare-row pricing-compare-head"><span>Included</span><span>Plus</span><span>Pro</span></div>
-          <div class="pricing-compare-row"><span>Daily sessions</span><span>Unlimited</span><span>Unlimited</span></div>
-          <div class="pricing-compare-row"><span>History &amp; analytics</span><span>Full</span><span>Full</span></div>
-          <div class="pricing-compare-row"><span>IQ test breakdown</span><span>✓</span><span>✓</span></div>
-          <div class="pricing-compare-row"><span>Custom routines</span><span>✓</span><span>✓</span></div>
+          <div class="pricing-compare-row pricing-compare-head"><span>Included</span><span>Basic</span><span>Pro</span></div>
+          <div class="pricing-compare-row"><span>All exercises</span><span>✓</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>Progress &amp; data</span><span>✓</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>Custom routines</span><span>—</span><span>✓</span></div>
           <div class="pricing-compare-row"><span>AI training coach</span><span>—</span><span>✓</span></div>
-          <div class="pricing-compare-row"><span>Weekly adaptive plan</span><span>—</span><span>✓</span></div>
+          <div class="pricing-compare-row"><span>Cogni IQ Test</span><span>—</span><span>✓</span></div>
         </div>
 
         <button class="pricing-upgrade" id="pricing-upgrade" type="button">Upgrade</button>
@@ -2481,6 +2475,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch49"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch50"></script>
   </body>
 </html>

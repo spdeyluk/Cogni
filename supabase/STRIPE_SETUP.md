@@ -21,10 +21,12 @@ Copy each **Price ID** (`price_...`):
 
 | Plan | Billing | Amount | Shown in app as |
 |------|---------|--------|-----------------|
-| Plus | Monthly | **$9 / month** | $9/mo |
-| Plus | Yearly  | **$59 / year** | $4.92/mo |
+| Basic | Monthly | **$9 / month** | $9/mo |
+| Basic | Yearly  | **$59 / year** | $4.92/mo |
 | Pro  | Monthly | **$19 / month** | $19/mo |
 | Pro  | Yearly  | **$149 / year** | $12.42/mo |
+
+(**Basic** = all exercises + data. **Pro** = also routines, AI coach and the IQ test.)
 
 ## 3. Deploy the two functions (2 min)
 
@@ -42,8 +44,8 @@ supabase functions deploy stripe-webhook --no-verify-jwt
 ```bash
 supabase secrets set \
   STRIPE_SECRET_KEY=sk_live_xxx \
-  STRIPE_PRICE_PLUS_MONTHLY=price_xxx \
-  STRIPE_PRICE_PLUS_ANNUAL=price_xxx \
+  STRIPE_PRICE_BASIC_MONTHLY=price_xxx \
+  STRIPE_PRICE_BASIC_ANNUAL=price_xxx \
   STRIPE_PRICE_PRO_MONTHLY=price_xxx \
   STRIPE_PRICE_PRO_ANNUAL=price_xxx \
   SITE_URL=https://getcogni.app
