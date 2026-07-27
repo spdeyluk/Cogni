@@ -5034,13 +5034,25 @@ function onAuthenticated() {
 function showSignInFirst() {
   const wall = document.querySelector("#signin-first");
   if (wall) wall.hidden = false;
+  updateOverlayScrollLock();
   syncNativeNavigationChrome();
 }
 
 function hideSignInFirst() {
   const wall = document.querySelector("#signin-first");
   if (wall) wall.hidden = true;
+  updateOverlayScrollLock();
   syncNativeNavigationChrome();
+}
+
+// Lock the page behind a full-screen auth overlay so scrolling the overlay on
+// iOS can't chain through to the landing underneath (which left the landing
+// scrolled down, hiding the "Get sharper" CTA after closing the overlay).
+function updateOverlayScrollLock() {
+  const gate = document.querySelector("#auth-gate");
+  const wall = document.querySelector("#signin-first");
+  const open = (gate && !gate.hidden) || (wall && !wall.hidden);
+  document.documentElement.classList.toggle("overlay-open", !!open);
 }
 
 function setSignInError(message) {
@@ -5254,11 +5266,13 @@ function showAuthGate(mode, message) {
   const pw = document.querySelector("#auth-form")?.password;
   if (pw) pw.autocomplete = isSignup ? "new-password" : "current-password";
   setAuthError("");
+  updateOverlayScrollLock();
 }
 
 function hideAuthGate() {
   const gate = document.querySelector("#auth-gate");
   if (gate) gate.hidden = true;
+  updateOverlayScrollLock();
 }
 
 function setAuthError(message) {

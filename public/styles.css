@@ -11403,6 +11403,8 @@ kbd {
   padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
   background: var(--bg);
   overflow-y: auto;
+  /* Keep scrolling inside the overlay from chaining into the page behind it. */
+  overscroll-behavior: contain;
 }
 
 .auth-card {
@@ -11416,6 +11418,18 @@ kbd {
   border-radius: var(--radius);
   background: var(--surface);
 }
+
+/* On phones, pin the login to the top so it's always in view from the top edge,
+   never vertically centered below the fold. */
+@media (max-width: 560px) {
+  .auth-gate { display: block; }
+  .auth-card { margin: 0 auto; }
+}
+
+/* Freeze the page behind any full-screen auth overlay (belt-and-braces with
+   overscroll-behavior above). */
+html.overlay-open,
+html.overlay-open body { overflow: hidden; }
 
 .auth-brand {
   display: flex;
@@ -13652,6 +13666,7 @@ html.landing-active #app-shell { display: none !important; }
   background: var(--bg);
   color: var(--text);
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
 }
 
