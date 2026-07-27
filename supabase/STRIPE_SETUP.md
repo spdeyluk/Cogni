@@ -82,8 +82,3 @@ Advanced settings paywalls should unlock within a few seconds. Flip to live keys
 - The app calls `refreshEntitlement()` on sign-in and after checkout, mirroring the row into
   a local flag that `isProUser()` reads. Someone editing localStorage gains nothing —
   a page reload re-reads the real entitlement.
-
-### One thing to decide
-The pricing modal shows a green "10% local discount" banner. That's **cosmetic** — it is
-**not** applied at checkout. Either remove that banner, or create a Stripe coupon/promotion
-code (checkout already allows promo codes) so the claim is real.

@@ -1300,23 +1300,8 @@ document.documentElement.classList.toggle("is-free", !isProUser());
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
   wirePricingModal();
-  renderPricingLocalBanner();
   const dialog = document.querySelector("#pricing-dialog");
   if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
-}
-
-// A friendly "You're in <country>" banner from the browser region. The discount % is a
-// placeholder — wire it to a real regional price before charging anyone for it.
-function renderPricingLocalBanner() {
-  const banner = document.querySelector("#pricing-local");
-  if (!banner) return;
-  let region = null;
-  try { region = new Intl.Locale(navigator.language).maximize().region; } catch { region = null; }
-  if (!region || region.length !== 2) { banner.hidden = true; return; }
-  const flag = String.fromCodePoint(...[...region].map((c) => 0x1F1E6 + c.charCodeAt(0) - 65));
-  const name = (() => { try { return new Intl.DisplayNames([navigator.language], { type: "region" }).of(region); } catch { return region; } })();
-  banner.innerHTML = `You're in <strong>${escapeHtml(name)}</strong> ${flag} — enjoy your <strong>10% local discount</strong>`;
-  banner.hidden = false;
 }
 
 // A short, persuasive intro shown once on the web after a fresh sign-in, before
