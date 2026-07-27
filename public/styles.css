@@ -17046,3 +17046,55 @@ html.web-onboarding-open { overflow: hidden; }
 .cat-immersive #cat-domain-label { margin-top: auto; }
 .cat-immersive #cat-options { margin-bottom: auto; }
 .cat-immersive .cat-prompt { font-size: clamp(1.6rem, 4.5vw, 2.4rem); line-height: 1.12; }
+
+/* ===================================================================
+   Outlined-surface polish (2026-07-27)
+   Extend the exercises-page card treatment — a crisp 1px outline + a
+   subtle layered shadow, accent outline on hover — across the app so
+   panels/cards/tiles read premium instead of flat.
+   =================================================================== */
+:root { --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.30), 0 10px 26px -20px rgba(0, 0, 0, 0.70); }
+
+/* Routines tile — was borderless; match the exercise cards it sits with. */
+.routines-tile {
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: var(--card-shadow) !important;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+.routines-tile:hover { transform: translateY(-2px); border-color: var(--accent) !important; }
+
+/* Daily detox card — crisper outline + depth. */
+.daily-detox-card { box-shadow: var(--card-shadow) !important; }
+
+/* Profile panels + stat cards — stronger outline and the same layered shadow. */
+.profile-identity-card,
+.profile-brain-score-card,
+.profile-overview article,
+.exercise-stats-section,
+.profile-detail-summary article,
+.profile-weight-breakdown,
+.profile-trend-empty,
+.profile-completion-card,
+.profile-improvement-card {
+  border: 1px solid var(--line-strong) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+.profile-overview article,
+.exercise-stats-section,
+.profile-detail-summary article,
+.profile-weight-breakdown,
+.profile-trend-empty { border-radius: 14px !important; }
+
+/* Profile exercise picker cards — outline + accent hover like the exercise cards. */
+.profile-exercise-card {
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--card-shadow) !important;
+  transition: transform 0.16s ease, border-color 0.16s ease !important;
+}
+.profile-exercise-card:hover { transform: translateY(-2px); border-color: var(--accent) !important; }
+.profile-exercise-card.active { border-color: var(--accent) !important; }
+
+/* Segmented toggles — a touch more definition. */
+.profile-view-switch,
+.profile-timeframe-control { border-color: var(--line-strong) !important; }

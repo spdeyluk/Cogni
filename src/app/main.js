@@ -3488,8 +3488,8 @@ function renderScreenTime() {
   page.classList.remove("page-locked");
   page.innerHTML = `<div class="screentime-unavailable"><p>Feature not available currently.</p></div>`;
   applyPagePaywall(page, {
-    title: "Screen Time needs a plan",
-    body: "Turn focused training into real screen-time budget. Included with Basic and Pro."
+    title: "Upgrade to unlock Screen Time",
+    body: "Turn focused training into real screen-time budget — included with Basic and Pro."
   });
 }
 
@@ -3716,8 +3716,8 @@ function renderProfile() {
     `}
   `;
   applyPagePaywall(elements.profilePage, {
-    title: "Your data needs a plan",
-    body: "See your full cognition profile, trends and per-exercise breakdowns. Included with Basic and Pro."
+    title: "Upgrade to access your statistics",
+    body: "Your full cognition profile, trends and per-exercise breakdowns — included with Basic and Pro."
   });
   if (elements.profilePage.classList.contains("page-locked")) return;
   updateSegmentedControls();
