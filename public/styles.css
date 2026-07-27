@@ -16857,25 +16857,10 @@ html.mode-play .nav-hamburger { display: none !important; }
   .home-iq-banner-cta { width: 100%; justify-content: center; }
 }
 
-/* Free tier: advanced exercise settings are Pro-only — the summary opens the
-   pricing modal instead of expanding, and shows a lock/Pro pill. */
+/* Free tier: advanced exercise settings are gated — the summary opens the
+   pricing modal instead of expanding (handled in JS). No persistent lock label;
+   the gate only shows when the user actually taps it. */
 html.is-free .advanced-settings > summary { cursor: pointer; }
-html.is-free .advanced-settings > summary::after {
-  content: "🔒 Pro";
-  width: auto;
-  height: auto;
-  border: none;
-  transform: none;
-  margin-left: 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  transition: none;
-}
 
 /* Post-sign-in web onboarding: full-screen 4-slide "why cognition matters" intro.
    A plain fixed overlay (not a <dialog>) for maximum browser compatibility. */
@@ -17062,9 +17047,6 @@ html.web-onboarding-open { overflow: hidden; }
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
 }
 .routines-tile:hover { transform: translateY(-2px); border-color: var(--accent) !important; }
-
-/* Daily detox card — crisper outline + depth. */
-.daily-detox-card { box-shadow: var(--card-shadow) !important; }
 
 /* Profile panels + stat cards — stronger outline and the same layered shadow. */
 .profile-identity-card,
