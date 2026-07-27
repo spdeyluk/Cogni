@@ -172,6 +172,9 @@ function routeTabHandler(tab) {
 }
 // The path the page was opened with, captured before the router mutates it.
 const routeBootPath = cogniUiMode === "pro" ? window.location.pathname : "/";
+// Stripe Checkout returns to /home?checkout=success|cancelled; capture it now,
+// before the router replaceStates the query away.
+const bootCheckoutParam = new URLSearchParams(window.location.search).get("checkout");
 // True once boot routing has settled — until then, section changes must not
 // push history (the page is still deciding what to show).
 let routerReady = false;
@@ -1460,10 +1463,45 @@ function wirePricingModal() {
       dialog.querySelectorAll("[data-pricing-plan]").forEach((p) => p.classList.toggle("is-selected", p === plan));
     });
   });
-  document.querySelector("#pricing-upgrade")?.addEventListener("click", () => {
-    const note = document.querySelector("#pricing-note");
-    if (note) note.textContent = "Payments are coming soon — you'll be able to upgrade here shortly.";
-  });
+  document.querySelector("#pricing-upgrade")?.addEventListener("click", startCheckout);
+}
+
+// Kick off Stripe Checkout for the selected plan + billing period. The heavy
+// lifting is in the create-checkout Edge Function; here we just collect the
+// choice, hand it the user's session, and redirect to Stripe's hosted page.
+async function startCheckout() {
+  const dialog = document.querySelector("#pricing-dialog");
+  const note = document.querySelector("#pricing-note");
+  const button = document.querySelector("#pricing-upgrade");
+  if (!dialog) return;
+  // The native app can't use Stripe (Apple requires in-app purchase), so point
+  // to the web until StoreKit IAP is wired.
+  if (cogniUiMode === "play") {
+    if (note) note.textContent = "Manage your Cogni Pro subscription at getcogni.app.";
+    return;
+  }
+  // A purchase has to attach to an account, so require sign-in first.
+  if (!authUser) {
+    closePricingModal();
+    requireAuth("Sign in to upgrade to Pro.");
+    return;
+  }
+  if (!supabase) {
+    if (note) note.textContent = "Payments aren't available right now.";
+    return;
+  }
+  const plan = dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "plus";
+  const billing = dialog.dataset.billing === "monthly" ? "monthly" : "annual";
+  if (note) note.textContent = "";
+  if (button) { button.disabled = true; button.textContent = "Redirecting…"; }
+  try {
+    const { data, error } = await supabase.functions.invoke("create-checkout", { body: { plan, billing } });
+    if (error || !data?.url) throw error || new Error("no checkout url");
+    window.location.href = data.url;
+  } catch (err) {
+    if (button) { button.disabled = false; button.textContent = "Upgrade"; }
+    if (note) note.textContent = "Couldn't start checkout — please try again.";
+  }
 }
 document.querySelector("#cat-share")?.addEventListener("click", async (event) => {
   const button = event.currentTarget;
@@ -4962,6 +5000,8 @@ function onAuthenticated() {
   if (emailNode) emailNode.textContent = authUser.email;
   if (accountBlock) accountBlock.hidden = false;
   startSyncLoop();
+  // Load the real Pro entitlement (paywall unlocks reflect it once it resolves).
+  refreshEntitlement();
   // First launch on mobile: the story onboarding runs before the app.
   if (needsOnboarding()) {
     showOnboarding();
@@ -5025,6 +5065,7 @@ function onAuthenticated() {
   }
   routerReady = true;
   renderProfileOnboarding();
+  handleCheckoutReturn();
 }
 
 // ---------------------------------------------------------------------------
@@ -6238,8 +6279,57 @@ function abandonCatTest() {
 
 // Pro entitlement. No purchase flow yet, so this is false for everyone — the full IQ
 // result stays behind the paywall until Pro is wired (set "cogni.pro.v1" = "1").
+// isProUser() stays synchronous (the paywall calls it everywhere) by reading a
+// local cache. refreshEntitlement() keeps that cache honest against Supabase,
+// which is itself only ever written by the verified Stripe webhook.
+const entitlementCacheKey = "cogni.pro.v1";
 function isProUser() {
-  try { return localStorage.getItem("cogni.pro.v1") === "1"; } catch { return false; }
+  try { return localStorage.getItem(entitlementCacheKey) === "1"; } catch { return false; }
+}
+
+// Pull the account's real entitlement and mirror it into the local cache, then
+// re-render whatever paywalled surface is on screen. Called after sign-in and
+// after returning from Stripe Checkout.
+async function refreshEntitlement() {
+  if (!supabase || !authUser) return;
+  try {
+    const { data } = await supabase
+      .from("entitlements")
+      .select("tier, status")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+    const pro = !!data
+      && (data.tier === "plus" || data.tier === "pro")
+      && (data.status === "active" || data.status === "trialing");
+    try {
+      if (pro) localStorage.setItem(entitlementCacheKey, "1");
+      else localStorage.removeItem(entitlementCacheKey);
+    } catch { /* private mode */ }
+    document.documentElement.classList.toggle("is-free", !isProUser());
+    // Refresh the visible paywalled surface so the unlock (or lock) shows now.
+    const shell = elements.appShell;
+    if (shell?.classList.contains("profile-open")) renderProfile();
+    if (shell?.classList.contains("screentime-open")) renderScreenTime();
+    if (shell?.classList.contains("coach-open")) renderCoach();
+    if (elements.catResult && !elements.catResult.hidden) {
+      const last = loadCatSessions().at(-1);
+      if (last) renderCatResult(last);
+    }
+  } catch { /* keep the cached value if the lookup fails */ }
+}
+
+// Handle the redirect back from Stripe Checkout (success_url / cancel_url).
+function handleCheckoutReturn() {
+  if (!bootCheckoutParam) return;
+  if (bootCheckoutParam === "success") {
+    showToast("Welcome to Pro — unlocking your account…");
+    // The webhook can land a beat after the redirect, so poll a few times.
+    let tries = 0;
+    const tick = () => { refreshEntitlement(); if (++tries < 6) window.setTimeout(tick, 1500); };
+    tick();
+  } else if (bootCheckoutParam === "cancelled") {
+    showToast("Checkout cancelled — no charge was made.");
+  }
 }
 
 // A plausible teaser score shown (blurred) to free users — deliberately NOT the real
