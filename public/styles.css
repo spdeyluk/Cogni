@@ -16996,3 +16996,53 @@ html.web-onboarding-open { overflow: hidden; }
   cursor: pointer;
 }
 .web-onboarding-next:hover { filter: brightness(1.06); }
+
+/* ===================================================================
+   IQ test: full-screen immersive run (like the exercises)
+   =================================================================== */
+/* The feature card uses display:flex !important, which overrides the [hidden]
+   attribute — so it stayed visible above a running test. Respect [hidden]. */
+.assessment-intro-feature[hidden] { display: none !important; }
+
+/* When a question is on screen, drop all the app chrome and fill the viewport. */
+.cat-immersive { display: block !important; }
+.cat-immersive .app-sidebar,
+.cat-immersive .hero { display: none !important; }
+
+.cat-immersive .app-content {
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.cat-immersive .assessment-page {
+  display: block;
+  min-height: 100dvh;
+  padding: 0;
+  gap: 0;
+}
+
+.cat-immersive #cat-intro { display: none !important; }
+
+.cat-immersive #cat-run {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: min(720px, 100%);
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 20px;
+  padding: max(26px, env(safe-area-inset-top)) 24px max(34px, env(safe-area-inset-bottom));
+}
+/* Pin the End-test / Question N header + progress bar at the top, and centre the
+   question, stage and options in the space beneath. */
+.cat-immersive #cat-domain-label { margin-top: auto; }
+.cat-immersive #cat-options { margin-bottom: auto; }
+.cat-immersive .cat-prompt { font-size: clamp(1.6rem, 4.5vw, 2.4rem); line-height: 1.12; }

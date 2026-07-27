@@ -6119,6 +6119,8 @@ function showAssessmentSection(sectionId) {
   if (sectionId !== "cat-run") stopCatTimer();
   if (sectionId !== "focus-run") stopFocusTimer();
   if (sectionId !== "memory-run") stopMemoryTimers();
+  // While a question is showing, go full-screen immersive like the exercises.
+  elements.appShell?.classList.toggle("cat-immersive", sectionId === "cat-run");
 }
 
 function showCatSection(section) {
