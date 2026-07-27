@@ -4217,9 +4217,7 @@ function renderHomePage() {
   const progress = loadExerciseProgress();
   const health = cognitionHealth(progress);
 
-  // Background glow tinted by cognition health — same red→green scale as the ring,
-  // so the whole page reflects how healthy the brain is (see .home-page::before).
-  elements.homePage.style.setProperty("--home-glow-hue", String(Math.round(clamp01(health / 100) * 120)));
+  // The home background glow is a fixed broad purple now (see .home-page::before).
 
   elements.homePage.innerHTML = `
     <section class="home-health" aria-label="Cognition health">

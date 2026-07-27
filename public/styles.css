@@ -16479,17 +16479,20 @@ html.mode-play .nav-hamburger { display: none !important; }
 .home-page::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 460px;
-  /* Centred behind the brain and using closest-side, so the glow reaches full
-     transparency at every edge — no hard cut-off line, even where the page clips.
-     No blur/transition: both repaint every frame while scrolling and caused lag. */
-  background: radial-gradient(closest-side at 50% 38%,
-    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.26) 0%,
-    hsla(var(--home-glow-hue, 60), 88%, 56%, 0.09) 55%,
-    transparent 100%);
+  top: -140px;
+  left: 50%;
+  width: 170%;
+  height: 820px;
+  transform: translateX(-50%);
+  /* A broad, soft purple ambient glow centred behind the brain. A wide ellipse
+     (radii relative to this oversized box) fades to full transparency well before
+     the edges, so there's no hard cut-off. No blur/transition — both repaint every
+     frame while scrolling and caused lag. */
+  background: radial-gradient(ellipse 52% 44% at 50% 32%,
+    rgba(122, 110, 246, 0.34) 0%,
+    rgba(99, 102, 241, 0.17) 40%,
+    rgba(99, 102, 241, 0.06) 64%,
+    transparent 82%);
   pointer-events: none;
   z-index: 0;
 }
