@@ -4217,8 +4217,6 @@ function renderHomePage() {
   const progress = loadExerciseProgress();
   const health = cognitionHealth(progress);
 
-  // The home background glow is a fixed broad purple now (see .home-page::before).
-
   elements.homePage.innerHTML = `
     <section class="home-health" aria-label="Cognition health">
       <div class="home-health-gauge">

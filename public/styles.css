@@ -16475,29 +16475,6 @@ html.mode-play .nav-hamburger { display: none !important; }
 
 /* Home background glow, tinted by cognition health (hue set in renderHomePage).
    Red at low health → green at high, echoing the brain ring. */
-.home-page { position: relative; }
-.home-page::before {
-  content: "";
-  position: absolute;
-  top: -140px;
-  left: 50%;
-  width: 170%;
-  height: 820px;
-  transform: translateX(-50%);
-  /* A broad, soft purple ambient glow centred behind the brain. A wide ellipse
-     (radii relative to this oversized box) fades to full transparency well before
-     the edges, so there's no hard cut-off. No blur/transition — both repaint every
-     frame while scrolling and caused lag. */
-  background: radial-gradient(ellipse 52% 44% at 50% 32%,
-    rgba(122, 110, 246, 0.34) 0%,
-    rgba(99, 102, 241, 0.17) 40%,
-    rgba(99, 102, 241, 0.06) 64%,
-    transparent 82%);
-  pointer-events: none;
-  z-index: 0;
-}
-.home-page > * { position: relative; z-index: 1; }
-
 /* ===================================================================
    Landing: "what you'll train" offers grid (under the carousel)
    =================================================================== */
