@@ -1353,16 +1353,21 @@ const WEB_ONBOARDING_SLIDES = [
   }
 ];
 
+// A plain fixed-position overlay (not a <dialog>) so it works identically on
+// every browser — no showModal()/::backdrop/dvh, which vary across iOS Safari
+// versions and were the likeliest cause of a blank screen after sign-in.
 function showWebOnboarding(onDone = () => {}) {
   if (document.querySelector("#web-onboarding")) return;
-  const dialog = document.createElement("dialog");
-  dialog.className = "web-onboarding";
-  dialog.id = "web-onboarding";
+  const overlay = document.createElement("div");
+  overlay.className = "web-onboarding";
+  overlay.id = "web-onboarding";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
   let index = 0;
   const render = () => {
     const slide = WEB_ONBOARDING_SLIDES[index];
     const isLast = index === WEB_ONBOARDING_SLIDES.length - 1;
-    dialog.innerHTML = `
+    overlay.innerHTML = `
       <div class="web-onboarding-inner">
         <button type="button" class="web-onboarding-skip" data-onboard-skip>Skip</button>
         <div class="web-onboarding-slide">
@@ -1384,11 +1389,13 @@ function showWebOnboarding(onDone = () => {}) {
   };
   const finish = () => {
     markWebOnboardingSeen();
-    if (dialog.open) dialog.close();
-    dialog.remove();
+    document.removeEventListener("keydown", onKey);
+    overlay.remove();
+    document.documentElement.classList.remove("web-onboarding-open");
     onDone();
   };
-  dialog.addEventListener("click", (event) => {
+  function onKey(event) { if (event.key === "Escape") finish(); }
+  overlay.addEventListener("click", (event) => {
     if (event.target.closest("[data-onboard-skip]")) { finish(); return; }
     if (event.target.closest("[data-onboard-back]")) { index = Math.max(0, index - 1); render(); return; }
     if (event.target.closest("[data-onboard-next]")) {
@@ -1396,12 +1403,10 @@ function showWebOnboarding(onDone = () => {}) {
       else { index += 1; render(); }
     }
   });
-  // Esc closes the whole intro rather than a single slide.
-  dialog.addEventListener("cancel", (event) => { event.preventDefault(); finish(); });
+  document.addEventListener("keydown", onKey);
   render();
-  document.body.appendChild(dialog);
-  if (typeof dialog.showModal === "function") dialog.showModal();
-  else dialog.setAttribute("open", "");
+  document.documentElement.classList.add("web-onboarding-open");
+  document.body.appendChild(overlay);
 }
 
 // Blur a whole page and lay an upgrade card over it for free-tier users, reusing
@@ -4999,7 +5004,8 @@ function onAuthenticated() {
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
     showCoach();
-    if (!hasSeenWebOnboarding()) showWebOnboarding();
+    // Never let the intro blank the app: Home is already rendered underneath.
+    try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
