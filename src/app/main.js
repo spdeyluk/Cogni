@@ -1297,6 +1297,18 @@ document.addEventListener("click", (event) => {
 // Reflect the entitlement on <html> so CSS can lock plan-gated affordances.
 document.documentElement.classList.toggle("is-free", !hasPaidPlan());
 
+// Show how coins are earned on every exercise's difficulty menu (native only —
+// coins are a play-mode feature). Injected so all exercises stay in sync.
+if (cogniUiMode === "play") {
+  document.querySelectorAll(".difficulty-group").forEach((group) => {
+    if (group.querySelector(".difficulty-reward")) return;
+    const reward = document.createElement("p");
+    reward.className = "difficulty-reward";
+    reward.innerHTML = `<img src="assets/cogni-coin-23.png" alt="" aria-hidden="true"><span>Earn <strong>${sessionCoinsPerMinute} coins</strong> for every minute you train — any difficulty.</span>`;
+    group.append(reward);
+  });
+}
+
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
   wirePricingModal();
@@ -4329,6 +4341,7 @@ function renderHomePointsCard() {
   return `
     <article class="home-points-card" aria-label="Cogni coins">
       <div class="home-points-main">
+        <p class="home-points-label">Balance</p>
         <div class="home-points-balance">
           <strong>${wallet.balance.toLocaleString()}</strong>
           <img src="assets/cogni-coin-45.png" alt="coins">

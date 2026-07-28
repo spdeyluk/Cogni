@@ -17060,3 +17060,39 @@ html.web-onboarding-open { overflow: hidden; }
 /* Segmented toggles — a touch more definition. */
 .profile-view-switch,
 .profile-timeframe-control { border-color: var(--line-strong) !important; }
+
+/* The 3-2-1 countdown overlay is position:absolute; inset:0 appended inside
+   these stage cards — the cards must be positioned or the overlay won't anchor
+   to them, leaving the trial frame visible behind the countdown (seen on RRT). */
+.rrt-stage-card,
+.cct-stage-card,
+.ufov-stage-card,
+.ict-stage-card,
+.mot-stage-card { position: relative; }
+
+/* "Balance" label above the Cogni coin balance on the home coins card. */
+.home-points-label {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Coin-reward line on each exercise's difficulty menu (native/play mode). */
+.difficulty-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: rgba(250, 204, 21, 0.06);
+  color: var(--text-2);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+.difficulty-reward img { width: 20px; height: 20px; flex: none; }
+.difficulty-reward strong { color: var(--text); font-weight: 700; }
