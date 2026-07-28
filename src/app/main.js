@@ -4228,8 +4228,6 @@ function renderHomePage() {
     </section>
 
     ${cogniUiMode === "play" ? renderHomePointsCard() : ""}
-
-    ${cogniUiMode === "play" ? renderHomeQuests() : ""}
   `;
   renderTopStatus();
 }
