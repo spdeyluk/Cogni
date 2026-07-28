@@ -4214,19 +4214,7 @@ function renderProfileTrend(sessions) {
 
 function renderHomePage() {
   if (!elements.homePage) return;
-  const progress = loadExerciseProgress();
-  const health = cognitionHealth(progress);
-
   elements.homePage.innerHTML = `
-    <section class="home-health" aria-label="Cognition health">
-      <div class="home-health-gauge">
-        ${homeHealthGaugeSvg(health)}
-        ${homeHealthHeadLayers(health)}
-      </div>
-      <strong>${health}%</strong>
-      <span>Cognition health</span>
-    </section>
-
     ${cogniUiMode === "play" ? renderHomePointsCard() : ""}
   `;
   renderTopStatus();
