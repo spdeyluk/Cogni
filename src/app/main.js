@@ -1298,17 +1298,21 @@ document.addEventListener("click", (event) => {
 // Reflect the entitlement on <html> so CSS can lock plan-gated affordances.
 document.documentElement.classList.toggle("is-free", !hasPaidPlan());
 
-// Show how coins are earned on every exercise's difficulty menu (native only —
-// coins are a play-mode feature). Injected so all exercises stay in sync.
-if (cogniUiMode === "play") {
-  document.querySelectorAll(".difficulty-group").forEach((group) => {
-    if (group.querySelector(".difficulty-reward")) return;
-    const reward = document.createElement("p");
-    reward.className = "difficulty-reward";
-    reward.innerHTML = `<img src="assets/cogni-coin-23.png" alt="" aria-hidden="true"><span>Earn <strong>${sessionCoinsPerMinute} coins</strong> for every minute you train — any difficulty.</span>`;
-    group.append(reward);
-  });
+// The coin-earning promise, shown on whatever screen follows tapping an
+// exercise. One source of truth so the classic difficulty menus and the mini
+// games always quote the same rate. Empty on the web — coins are play-mode only.
+function coinRewardBannerHtml(extraClass = "") {
+  if (cogniUiMode !== "play") return "";
+  const cls = extraClass ? `difficulty-reward ${extraClass}` : "difficulty-reward";
+  return `<p class="${cls}"><img src="assets/cogni-coin-23.png" alt="" aria-hidden="true"><span>Earn <strong>${sessionCoinsPerMinute} coins</strong> for every minute you train — any difficulty.</span></p>`;
 }
+
+// Classic exercises: the banner sits at the foot of the difficulty menu.
+// Injected once at boot so every workbench stays in sync.
+document.querySelectorAll(".difficulty-group").forEach((group) => {
+  if (group.querySelector(".difficulty-reward")) return;
+  group.insertAdjacentHTML("beforeend", coinRewardBannerHtml());
+});
 
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
@@ -2427,6 +2431,7 @@ function renderMiniIntro(id) {
       <p class="exercise-type">${escapeHtml(info.tag)}</p>
       <h2>${escapeHtml(info.title)}</h2>
       <ol class="mini-intro-steps">${info.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+      ${coinRewardBannerHtml("difficulty-reward-mini")}
       <button class="mini-primary" type="button" data-mini-begin>Start</button>
     </div>`;
   stage.querySelector("[data-mini-begin]").addEventListener("click", () => {
@@ -2470,7 +2475,9 @@ function runMiniGame(id) {
 function runMiniCountdown(stage, onComplete) {
   const steps = ["3", "2", "1"];
   let index = 0;
-  stage.innerHTML = `<div class="mini-countdown" id="mini-countdown" aria-live="assertive"></div>`;
+  // The coin banner rides along with the countdown so returning players — who
+  // skip the tutorial — still see the reward on the way into every session.
+  stage.innerHTML = `<div class="mini-countdown" id="mini-countdown" aria-live="assertive"></div>${coinRewardBannerHtml("difficulty-reward-mini")}`;
   const el = stage.querySelector("#mini-countdown");
   const tick = () => {
     if (!miniActive || !el.isConnected) return;

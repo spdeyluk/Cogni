@@ -17097,6 +17097,17 @@ html.web-onboarding-open { overflow: hidden; }
 .difficulty-reward img { width: 20px; height: 20px; flex: none; }
 .difficulty-reward strong { color: var(--text); font-weight: 700; }
 
+/* Same banner inside the mini-game overlay (tutorial + 3-2-1 countdown), where
+   it is a free-standing block rather than the tail of a difficulty menu. */
+.difficulty-reward-mini {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: left;
+}
+.mini-intro .difficulty-reward-mini { margin-bottom: 22px; }
+
 /* ===================================================================
    Spot the Fallacy exercise (2026-07-28)
    =================================================================== */
