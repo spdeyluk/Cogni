@@ -1,0 +1,29 @@
+{
+  "_note": "PLACEHOLDER fallacy metadata for Spot the Fallacy. Replace with the generated bank. Each id maps to a display name + a 2-line description used on first-exposure teaching cards.",
+  "fallacies": {
+    "ad_hominem": {
+      "name": "Ad Hominem",
+      "description": "Attacking the person instead of their argument. Whether they're likeable, qualified, or a hypocrite says nothing about whether their point is actually true."
+    },
+    "appeal_to_popularity": {
+      "name": "Appeal to Popularity",
+      "description": "Claiming something is true or good because lots of people believe it or do it. How many people agree isn't evidence that they're right."
+    },
+    "false_dilemma": {
+      "name": "False Dilemma",
+      "description": "Presenting only two options when more exist. It forces a choice between two extremes and hides the middle ground."
+    },
+    "hasty_generalization": {
+      "name": "Hasty Generalization",
+      "description": "Drawing a broad conclusion from too few or unrepresentative examples. A tiny sample can't speak for the whole group."
+    },
+    "appeal_to_authority": {
+      "name": "Appeal to Authority",
+      "description": "Treating a claim as true just because an authority or celebrity said it — especially when they're famous rather than an expert on the topic."
+    },
+    "valid": {
+      "name": "Valid argument",
+      "description": "The conclusion genuinely follows from the reasons given. Nothing is wrong with the reasoning."
+    }
+  }
+}

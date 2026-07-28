@@ -17096,3 +17096,101 @@ html.web-onboarding-open { overflow: hidden; }
 }
 .difficulty-reward img { width: 20px; height: 20px; flex: none; }
 .difficulty-reward strong { color: var(--text); font-weight: 700; }
+
+/* ===================================================================
+   Spot the Fallacy exercise (2026-07-28)
+   =================================================================== */
+.fallacy-loading { padding: 40px 0; text-align: center; color: var(--muted); }
+
+.fallacy-item { display: grid; gap: 16px; }
+
+/* Soft 15s timer bar — visual pressure only, never hard-fails. */
+.fallacy-timer {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.fallacy-timer-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 15s linear;
+}
+
+.fallacy-question {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fallacy-arg {
+  margin: 0;
+  padding: 4px 0 0;
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 650;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.fallacy-options { display: grid; gap: 10px; }
+.fallacy-option {
+  min-height: 52px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  font-size: 1rem;
+  font-weight: 550;
+  box-shadow: none !important;
+  transition: border-color 0.14s ease, transform 0.1s ease;
+}
+.fallacy-option:hover { border-color: var(--accent) !important; }
+.fallacy-option:active { transform: scale(0.99); }
+.fallacy-option:disabled { opacity: 1; }
+.fallacy-option.is-correct {
+  border-color: var(--success) !important;
+  background: rgba(34, 197, 94, 0.12) !important;
+}
+.fallacy-option.is-wrong {
+  border-color: var(--error) !important;
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+.fallacy-explain {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.fallacy-explain[hidden] { display: none; }
+.fallacy-explain.is-correct { border-color: var(--success); }
+.fallacy-explain.is-wrong { border-color: var(--error); }
+.fallacy-explain strong { color: var(--text); }
+
+.fallacy-next { width: 100%; }
+
+/* First-exposure teaching card. */
+.fallacy-teach { display: grid; gap: 12px; padding: 8px 0; text-align: center; }
+.fallacy-teach-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fallacy-teach h2 { margin: 0; font-size: 1.7rem; letter-spacing: -0.02em; }
+.fallacy-teach-desc { margin: 0 auto; max-width: 40ch; color: var(--muted); line-height: 1.55; }
+.fallacy-teach .mini-primary { margin-top: 6px; }

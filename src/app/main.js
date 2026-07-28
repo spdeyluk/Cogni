@@ -315,7 +315,8 @@ const routineExerciseMeta = {
   seqrecall: { label: "Sequence Memory", defaultMinutes: 1, mini: true },
   numrecall: { label: "Number Recall", defaultMinutes: 1, mini: true },
   verbal: { label: "Word Memory", defaultMinutes: 1.5, mini: true },
-  reaction: { label: "Reaction Time", defaultMinutes: 0.5, mini: true }
+  reaction: { label: "Reaction Time", defaultMinutes: 0.5, mini: true },
+  fallacy: { label: "Spot the Fallacy", defaultMinutes: 2, mini: true }
 };
 
 const nBackTrialTimeLimits = {
@@ -2375,6 +2376,16 @@ const miniIntros = {
       "Type your answer or tap a choice — no calculator.",
       "It gets harder as you go. You're scored on how many you get right and how fast."
     ]
+  },
+  fallacy: {
+    tag: "Verbal reasoning",
+    title: "Spot the Fallacy",
+    steps: [
+      "Read a short everyday argument, then pick what's wrong with it.",
+      "Answer fast — the score bonus fades over ~15 seconds, but it never runs out.",
+      "Some arguments are actually fine: pick \"Nothing — the argument is valid\" when nothing's wrong.",
+      "Keep it up and harder arguments unlock; slip and it eases off."
+    ]
   }
 };
 
@@ -2587,6 +2598,90 @@ const miniWordPool = [
   "canyon", "feather", "kettle", "meteor", "nectar", "prairie", "raven", "sable", "timber", "violet",
   "willow", "zephyr", "acorn", "basket", "clover", "dagger", "engine", "fabric", "gravel", "hollow"
 ];
+
+// --- Spot the Fallacy: local item-bank exercise (content in public/data/*.json) ---
+const FALLACY_STATE_KEY = "cogni.fallacyState.v1";
+const FALLACY_SEEN_KEY = "cogni.fallacySeen.v1";
+const FALLACY_MAX_TIER = 4;
+const FALLACY_ROUND_SIZE = 8;
+const FALLACY_SOFT_TIMER_MS = 15000;
+let fallacyBank = null; // { items, meta, fallacyIds } once loaded from JSON
+
+async function ensureFallacyBank() {
+  if (fallacyBank) return fallacyBank;
+  const [itemsRes, metaRes] = await Promise.all([
+    fetch("data/fallacy-items.json"),
+    fetch("data/fallacy-fallacies.json")
+  ]);
+  const itemsJson = await itemsRes.json();
+  const metaJson = await metaRes.json();
+  const meta = metaJson.fallacies || {};
+  const fallacyIds = Object.keys(meta).filter((id) => id !== "valid"); // real fallacies only
+  fallacyBank = { items: itemsJson.items || [], meta, fallacyIds };
+  return fallacyBank;
+}
+
+function loadFallacyState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(FALLACY_STATE_KEY));
+    if (s && Number.isFinite(s.tier)) {
+      return { tier: Math.min(FALLACY_MAX_TIER, Math.max(1, s.tier)), recent: Array.isArray(s.recent) ? s.recent.slice(-20) : [] };
+    }
+  } catch { /* default below */ }
+  return { tier: 1, recent: [] };
+}
+function saveFallacyState(state) {
+  try { localStorage.setItem(FALLACY_STATE_KEY, JSON.stringify({ tier: state.tier, recent: state.recent.slice(-20) })); } catch { /* best effort */ }
+}
+
+// Rolling accuracy over the last 20 answers gates the tier: >=80% up, <50% down.
+function updateFallacyTier(state, wasCorrect) {
+  state.recent.push(wasCorrect ? 1 : 0);
+  state.recent = state.recent.slice(-20);
+  if (state.recent.length >= 20) {
+    const acc = state.recent.reduce((a, b) => a + b, 0) / state.recent.length;
+    if (acc >= 0.8 && state.tier < FALLACY_MAX_TIER) { state.tier += 1; state.recent = []; }
+    else if (acc < 0.5 && state.tier > 1) { state.tier -= 1; state.recent = []; }
+  }
+  saveFallacyState(state);
+}
+
+function fallacySeen(id) {
+  try { return (JSON.parse(localStorage.getItem(FALLACY_SEEN_KEY)) || []).includes(id); } catch { return false; }
+}
+function markFallacySeen(id) {
+  try {
+    const set = new Set(JSON.parse(localStorage.getItem(FALLACY_SEEN_KEY)) || []);
+    set.add(id);
+    localStorage.setItem(FALLACY_SEEN_KEY, JSON.stringify([...set]));
+  } catch { /* best effort */ }
+}
+
+// Options = correct + 2 confusable (from the item's pool) + 1 wildcard fallacy +
+// the "valid" option; for a genuinely valid argument, "valid" + 4 fallacies.
+function buildFallacyOptions(item) {
+  const bank = fallacyBank;
+  const chosen = [];
+  const add = (id) => { if (id && !chosen.includes(id)) chosen.push(id); };
+  if (item.is_valid_argument) {
+    add("valid");
+    for (const id of miniShuffle([...bank.fallacyIds])) { if (chosen.length >= 5) break; add(id); }
+  } else {
+    add(item.answer);
+    for (const id of (item.distractor_pool || [])) { if (chosen.length >= 3) break; add(id); }
+    for (const id of miniShuffle([...bank.fallacyIds])) { if (chosen.length >= 4) break; add(id); }
+    add("valid");
+    for (const id of miniShuffle([...bank.fallacyIds, "valid"])) { if (chosen.length >= 5) break; add(id); }
+  }
+  return miniShuffle(chosen.slice(0, 5)).map((id) => ({ id, label: bank.meta[id]?.name || id }));
+}
+
+// A round of items at (or below) the user's tier, no repeats.
+function buildFallacyRound(state) {
+  const eligible = fallacyBank.items.filter((it) => (it.tier || 1) <= state.tier);
+  const pool = eligible.length ? eligible : fallacyBank.items;
+  return miniShuffle([...pool]).slice(0, Math.min(FALLACY_ROUND_SIZE, pool.length));
+}
 
 const miniGames = {
   gridmemory: {
@@ -3227,6 +3322,145 @@ const miniGames = {
       nextQuestion();
       return timers.clearAll;
     }
+  },
+  fallacy: {
+    label: "Spot the Fallacy",
+    start(ctx) {
+      const timers = miniTimers();
+      let cancelled = false;
+      const state = loadFallacyState();
+      const stats = { correct: 0, incorrect: 0, times: [], score: 0, index: 0, items: [] };
+      let itemShownAt = 0;
+      let answered = false;
+
+      ctx.setSnapshot(() => ({
+        completedTrials: stats.correct + stats.incorrect,
+        correct: stats.correct,
+        incorrect: stats.incorrect,
+        accuracy: (stats.correct + stats.incorrect) ? stats.correct / (stats.correct + stats.incorrect) : 0,
+        avgAnswerSpeedMs: stats.times.length ? stats.times.reduce((a, b) => a + b, 0) / stats.times.length : null,
+        metricValue: stats.score,
+        metricLabel: "points",
+        headline: "Ended early"
+      }));
+
+      ctx.stage.innerHTML = `<div class="fallacy-loading">Loading…</div>`;
+      ensureFallacyBank().then(() => {
+        if (cancelled || !miniActive || miniActive.id !== "fallacy") return;
+        stats.items = buildFallacyRound(state);
+        advance();
+      }).catch(() => {
+        if (!cancelled) ctx.stage.innerHTML = `<div class="mini-intro"><h2>Couldn't load</h2><p>Please try again.</p></div>`;
+      });
+
+      function advance() {
+        if (cancelled) return;
+        if (stats.index >= stats.items.length) return finish();
+        const item = stats.items[stats.index];
+        // First exposure to this fallacy → teach it before the question.
+        const teachId = item.is_valid_argument ? null : item.answer;
+        if (teachId && !fallacySeen(teachId) && fallacyBank.meta[teachId]) {
+          markFallacySeen(teachId);
+          renderTeach(item, teachId);
+          return;
+        }
+        renderItem(item);
+      }
+
+      function renderTeach(item, id) {
+        const info = fallacyBank.meta[id];
+        ctx.setStatus("New fallacy");
+        ctx.stage.innerHTML = `
+          <div class="fallacy-teach">
+            <p class="fallacy-teach-eyebrow">New fallacy</p>
+            <h2>${escapeHtml(info.name)}</h2>
+            <p class="fallacy-teach-desc">${escapeHtml(info.description)}</p>
+            <button class="mini-primary" type="button" data-fallacy-teach-next>Got it</button>
+          </div>`;
+        ctx.stage.querySelector("[data-fallacy-teach-next]").addEventListener("click", () => renderItem(item));
+      }
+
+      function renderItem(item) {
+        if (cancelled) return;
+        answered = false;
+        itemShownAt = performance.now();
+        ctx.setStatus(`Question ${stats.index + 1} of ${stats.items.length}`);
+        const options = buildFallacyOptions(item);
+        ctx.stage.innerHTML = `
+          <div class="fallacy-item">
+            <div class="fallacy-timer" aria-hidden="true"><span class="fallacy-timer-fill"></span></div>
+            <p class="fallacy-question">What's wrong with this argument?</p>
+            <blockquote class="fallacy-arg">${escapeHtml(item.text)}</blockquote>
+            <div class="fallacy-options">
+              ${options.map((o) => `<button class="fallacy-option" type="button" data-fallacy-answer="${escapeHtml(o.id)}">${escapeHtml(o.label)}</button>`).join("")}
+            </div>
+            <p class="fallacy-explain" hidden></p>
+            <button class="mini-primary fallacy-next" type="button" hidden data-fallacy-next>Next</button>
+          </div>`;
+        // Start the soft timer bar (visual only; scoring uses the real elapsed time).
+        const fill = ctx.stage.querySelector(".fallacy-timer-fill");
+        requestAnimationFrame(() => { if (fill && !cancelled) fill.style.width = "100%"; });
+        ctx.stage.querySelectorAll("[data-fallacy-answer]").forEach((btn) => {
+          btn.addEventListener("click", () => onAnswer(item, btn.dataset.fallacyAnswer));
+        });
+      }
+
+      function onAnswer(item, chosenId) {
+        if (answered || cancelled) return;
+        answered = true;
+        const elapsed = performance.now() - itemShownAt;
+        stats.times.push(elapsed);
+        const correctId = item.is_valid_argument ? "valid" : item.answer;
+        const isCorrect = chosenId === correctId;
+        if (isCorrect) stats.correct += 1; else stats.incorrect += 1;
+        // Score = base × time-decay (1 → 0.4 over 15 s) × tier multiplier.
+        const decay = Math.max(0.4, 1 - (Math.min(elapsed, FALLACY_SOFT_TIMER_MS) / FALLACY_SOFT_TIMER_MS) * 0.6);
+        const tierMult = 1 + (state.tier - 1) * 0.25;
+        if (isCorrect) stats.score += Math.round(100 * decay * tierMult);
+        updateFallacyTier(state, isCorrect);
+        // Freeze the timer bar at its current width.
+        const fill = ctx.stage.querySelector(".fallacy-timer-fill");
+        if (fill) { const w = getComputedStyle(fill).width; fill.style.transition = "none"; fill.style.width = w; }
+        ctx.stage.querySelectorAll(".fallacy-option").forEach((btn) => {
+          btn.disabled = true;
+          const id = btn.dataset.fallacyAnswer;
+          if (id === correctId) btn.classList.add("is-correct");
+          else if (id === chosenId) btn.classList.add("is-wrong");
+        });
+        const explain = ctx.stage.querySelector(".fallacy-explain");
+        if (explain) {
+          explain.innerHTML = `<strong>${isCorrect ? "Correct." : "Not quite."}</strong> ${escapeHtml(item.explanation)}`;
+          explain.classList.add(isCorrect ? "is-correct" : "is-wrong");
+          explain.hidden = false;
+        }
+        const next = ctx.stage.querySelector("[data-fallacy-next]");
+        if (next) {
+          next.hidden = false;
+          next.textContent = stats.index + 1 >= stats.items.length ? "Finish" : "Next";
+          next.addEventListener("click", () => { stats.index += 1; advance(); });
+        }
+      }
+
+      function finish() {
+        const total = stats.correct + stats.incorrect;
+        const accuracy = total ? stats.correct / total : 0;
+        const avg = stats.times.length ? stats.times.reduce((a, b) => a + b, 0) / stats.times.length : null;
+        ctx.finish({
+          correct: stats.correct,
+          incorrect: stats.incorrect,
+          completedTrials: total,
+          accuracy,
+          avgAnswerSpeedMs: avg,
+          difficultyScore: state.tier,
+          metricValue: stats.score,
+          metricLabel: "points",
+          headline: accuracy >= 0.75 ? "Sharp thinking" : "Round complete",
+          sub: `Tier ${state.tier} · ${stats.correct}/${Math.max(1, total)} correct`
+        });
+      }
+
+      return () => { cancelled = true; timers.clearAll(); };
+    }
   }
 };
 
@@ -3808,7 +4042,7 @@ function profileHexagonStats(sessions) {
     { label: "Memory", value: axisScore(byExercise(["nback"])) },
     { label: "Speed", value: speedScore },
     { label: "Logic", value: axisScore(byExercise(["rrt"])) },
-    { label: "Verbal", value: 0 },
+    { label: "Verbal", value: axisScore(byExercise(["verbal", "fallacy"])) },
     { label: "Math", value: axisScore(byExercise(["cct"])) }
   ];
 }
@@ -10211,7 +10445,8 @@ const customTaskExerciseLabels = {
   seqrecall: "Sequence Memory",
   numrecall: "Number Recall",
   verbal: "Word Memory",
-  reaction: "Reaction Time"
+  reaction: "Reaction Time",
+  fallacy: "Spot the Fallacy"
 };
 // Every trainable exercise (classic + minis); "Any exercise" tasks count all.
 const allTrainableExerciseIds = Object.keys(customTaskExerciseLabels).filter((id) => id !== "any");
