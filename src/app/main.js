@@ -4512,6 +4512,29 @@ function wireSettings() {
     window.location.reload();
   });
 
+  // Permanent account deletion (required by App Store guideline 5.1.1(v)). The
+  // actual delete happens server-side in the delete-account Edge Function, which
+  // removes the auth user and their data with the service_role key.
+  document.querySelector("#settings-delete-account")?.addEventListener("click", async () => {
+    if (!supabase || !authUser) return;
+    if (!window.confirm("Permanently delete your account and all training data? This cannot be undone.")) return;
+    const btn = document.querySelector("#settings-delete-account");
+    if (btn) { btn.disabled = true; btn.textContent = "Deleting…"; }
+    try {
+      const { error } = await supabase.functions.invoke("delete-account", { body: {} });
+      if (error) throw error;
+      try { await supabase.auth.signOut(); } catch { /* clearing below regardless */ }
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("cogni.") || key.startsWith("brainer."))) localStorage.removeItem(key);
+      }
+      window.location.href = "/";
+    } catch {
+      if (btn) { btn.disabled = false; btn.textContent = "Delete"; }
+      showToast("Couldn't delete your account. Please try again or email support.");
+    }
+  });
+
   // Reduce motion: reflect + persist as a root class the CSS already keys off.
   const motionKey = "cogni.pref.reduceMotion.v1";
   const motion = document.querySelector("#pref-reduce-motion");
@@ -5851,7 +5874,7 @@ async function shareCogniInvite() {
 
 function buildCogniInviteUrl(handle) {
   const cleanHandle = normalizeProfileHandle(handle).replace(/^@/, "");
-  return `https://cogni.app/invite?from=${encodeURIComponent(cleanHandle)}`;
+  return `https://getcogni.app/invite?from=${encodeURIComponent(cleanHandle)}`;
 }
 
 async function handleSocialFriendRequestSubmit(sourceButton = null) {

@@ -12,7 +12,7 @@
     <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="styles.css?v=20260726-batch54">
+    <link rel="stylesheet" href="styles.css?v=20260726-batch55">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -73,7 +73,7 @@
         <p class="signin-first-error" id="signin-first-error" hidden></p>
         <button class="signin-first-email" id="signin-email" type="button">Use email instead</button>
         <button class="signin-first-skip" id="signin-skip" type="button" hidden>Skip for now (test mode)</button>
-        <p class="signin-first-legal">By continuing you agree to our Terms and acknowledge our Privacy Policy.</p>
+        <p class="signin-first-legal">By continuing you agree to our <a href="https://getcogni.app/terms" target="_blank" rel="noopener">Terms</a> and acknowledge our <a href="https://getcogni.app/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       </div>
     </div>
 
@@ -2349,6 +2349,13 @@
                 </div>
                 <button class="settings-danger-button" id="settings-reset-local" type="button">Reset</button>
               </div>
+              <div class="settings-row">
+                <div>
+                  <strong>Delete account</strong>
+                  <p>Permanently deletes your account and all training data. This can't be undone.</p>
+                </div>
+                <button class="settings-danger-button" id="settings-delete-account" type="button">Delete</button>
+              </div>
             </section>
 
             <section class="settings-panel" data-settings-panel="preferences" hidden>
@@ -2398,17 +2405,13 @@
 
               <p class="settings-section-label">Legal</p>
               <nav class="settings-links" aria-label="Agreements">
-                <a href="https://cogni.app/terms" target="_blank" rel="noopener">
+                <a href="https://getcogni.app/terms" target="_blank" rel="noopener">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h6l4 4v14H8zM14 3v4h4M10 12h6M10 16h6"/></svg>
                   <span>Terms of Service</span>
                 </a>
-                <a href="https://cogni.app/privacy" target="_blank" rel="noopener">
+                <a href="https://getcogni.app/privacy" target="_blank" rel="noopener">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
                   <span>Privacy Policy</span>
-                </a>
-                <a href="https://cogni.app/user-agreement" target="_blank" rel="noopener">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l2 2 4-5M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>
-                  <span>User Agreement</span>
                 </a>
               </nav>
 
@@ -2466,6 +2469,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260726-batch54"></script>
+    <script type="module" src="src/app/main.js?v=20260726-batch55"></script>
   </body>
 </html>

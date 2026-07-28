@@ -60,6 +60,9 @@ function resolveRequestPath(url) {
   if (pathname === "/docs") {
     return join(publicDir, "docs.html");
   }
+  // Legal pages.
+  if (pathname === "/privacy") return join(publicDir, "privacy.html");
+  if (pathname === "/terms" || pathname === "/user-agreement") return join(publicDir, "terms.html");
   // Client-side routes (e.g. /exercises, /profile) carry no file extension —
   // serve the SPA shell so deep links and refreshes land on the app, which then
   // routes to the right section. Real assets always have an extension.
