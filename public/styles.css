@@ -17214,48 +17214,10 @@ html.web-onboarding-open { overflow: hidden; }
    =================================================================== */
 
 /* The page is a 2-col grid; every hub block spans it. */
-.train-modes,
 .train-focus,
 .train-sections,
 .train-empty {
   grid-column: 1 / -1;
-}
-
-/* --- Mode tiles ---------------------------------------------------- */
-.train-modes {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.train-mode {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding: 16px 10px;
-  /* !important throughout: later layers in this file blanket-style buttons. */
-  border: 1px solid var(--line-strong) !important;
-  border-radius: var(--radius);
-  background: var(--surface) !important;
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.train-mode svg { width: 24px; height: 24px; }
-
-.train-mode-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.train-mode:hover { color: var(--text-2); border-color: var(--muted) !important; }
-
-.train-mode.is-active {
-  border-color: var(--accent) !important;
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface)) !important;
 }
 
 /* --- Focus row ----------------------------------------------------- */
@@ -17451,20 +17413,19 @@ html.web-onboarding-open { overflow: hidden; }
     grid-auto-columns: 46%;
     grid-auto-columns: 46cqi;
   }
-  .train-modes { max-width: 460px; }
 }
 
 /* Both hubs ship in the markup; the ui-mode class on <html> picks one. The web
    build keeps the original flat list it always had, the native app gets the
    browse-by-domain rails. */
-html.mode-play .exercise-page > .routines-tile,
+html.mode-play .exercise-page > #open-routines,
 html.mode-play .exercise-page > .exercise-heading,
 html.mode-play .exercise-page > .exercise-tag-filter,
 html.mode-play .exercise-page > .exercise-card {
   display: none !important;
 }
 
-html.mode-pro .exercise-page > .train-modes,
+html.mode-pro .exercise-page > #train-open-routines,
 html.mode-pro .exercise-page > .train-focus,
 html.mode-pro .exercise-page > .train-sections,
 html.mode-pro .exercise-page > .train-empty {

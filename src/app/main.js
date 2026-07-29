@@ -152,7 +152,6 @@ function trainSvg(paths) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 }
 
-let trainMode = "classic";
 let trainFocus = "__all__";
 
 
@@ -1706,11 +1705,13 @@ elements.closeSocialLeaderboard?.addEventListener("click", closeSocialLeaderboar
 elements.socialLeaderboardContent?.addEventListener("click", handleSocialLeaderboardClick);
 document.addEventListener("submit", handleProfileOnboardingSubmit);
 document.querySelector("#start-daily-detox")?.addEventListener("click", () => startRoutine(buildDailyDetoxRoutine()));
-document.querySelector("#open-routines")?.addEventListener("click", () => {
+function openRoutinesOrUpsell() {
   // Custom routines are a Pro feature.
   if (!isProUser()) { openPricingModal(); return; }
   openRoutineLoader();
-});
+}
+document.querySelector("#open-routines")?.addEventListener("click", openRoutinesOrUpsell);
+document.querySelector("#train-open-routines")?.addEventListener("click", openRoutinesOrUpsell);
 document.querySelector("#routine-load-create")?.addEventListener("click", () => {
   closeRoutineLoadDialog();
   openRoutineBuilder();
@@ -3689,10 +3690,10 @@ function initExerciseTagFilter() {
 // --- Train hub -------------------------------------------------------------
 // Cards render from the catalogue rather than hand-written markup, so the minutes
 // and coins on a tile can't drift away from what the session actually pays.
-// Routines is a Pro dialog rather than a browsable list, so it stays out of the
-// mode pool — its tile opens the loader and leaves the active mode alone.
-function trainModePool(mode) {
-  return trainingCatalog.filter((entry) => (mode === "games" ? entry.kind === "game" : entry.kind === "classic"));
+// Every exercise is browsable in one pass now; the domain sections do the
+// sorting and Routines has its own tile above them.
+function trainModePool() {
+  return trainingCatalog;
 }
 function trainDomainsFor(entries) {
   const domains = trainingDomainOrder.filter((domain) => entries.some((entry) => entry.domain === domain));
@@ -3728,7 +3729,7 @@ function renderTrainSections() {
   const host = document.querySelector("#train-sections");
   const empty = document.querySelector("#train-empty");
   if (!host) return;
-  const entries = trainModePool(trainMode)
+  const entries = trainModePool()
     .filter((entry) => trainFocus === "__all__" || entry.domain === trainFocus);
   const html = trainDomainsFor(entries).map((domain) => {
     const items = entries.filter((entry) => entry.domain === domain);
@@ -3748,7 +3749,7 @@ function renderTrainSections() {
 function renderTrainFocusOptions() {
   const select = document.querySelector("#train-focus-select");
   if (!select) return;
-  const domains = trainDomainsFor(trainModePool(trainMode));
+  const domains = trainDomainsFor(trainModePool());
   // Switching modes can strand a focus that no longer exists — fall back to All.
   if (trainFocus !== "__all__" && !domains.includes(trainFocus)) trainFocus = "__all__";
   select.innerHTML = [`<option value="__all__">All</option>`]
@@ -3762,23 +3763,6 @@ function openTrainCard(card) {
   else if (card.dataset.openExercise) openExerciseById(card.dataset.openExercise);
 }
 
-function selectTrainMode(mode) {
-  if (mode === "routines") {
-    // Custom routines are a Pro feature.
-    if (!isProUser()) { openPricingModal(); return; }
-    openRoutineLoader();
-    return;
-  }
-  trainMode = mode;
-  document.querySelectorAll("[data-train-mode]").forEach((button) => {
-    const on = button.dataset.trainMode === mode;
-    button.classList.toggle("is-active", on);
-    button.setAttribute("aria-selected", String(on));
-  });
-  renderTrainFocusOptions();
-  renderTrainSections();
-}
-
 function initTrainHub() {
   const page = document.querySelector(".exercise-page");
   if (!page) return;
@@ -3786,8 +3770,6 @@ function initTrainHub() {
   renderTrainSections();
   // Delegated so re-rendering a rail never drops its handlers.
   page.addEventListener("click", (event) => {
-    const mode = event.target.closest("[data-train-mode]");
-    if (mode) { selectTrainMode(mode.dataset.trainMode); return; }
     const card = event.target.closest(".train-card");
     if (card) openTrainCard(card);
   });
