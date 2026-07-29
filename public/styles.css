@@ -17326,22 +17326,27 @@ html.web-onboarding-open { overflow: hidden; }
 }
 .train-section-icon svg { width: 20px; height: 20px; }
 
+/* Establish a container so rail cards can be sized against the content column
+   rather than the viewport — .train-sections is a plain block, so its inline
+   size is exactly the width a card is allowed to occupy. */
+.train-sections { container-type: inline-size; }
+
 /* Two rows deep, scrolling sideways — same shape as the reference. */
 .train-rail {
   display: grid;
   grid-auto-flow: column;
   grid-template-rows: repeat(2, auto);
-  /* One card fills the phone width bar a sliver, so the next one peeks in and
-     advertises the sideways scroll. Percentages resolve unpredictably against a
-     scrolling grid container, hence the viewport calc. */
-  grid-auto-columns: calc(100vw - 76px);
+  /* A card fills the column bar a sliver so the next one peeks in and advertises
+     the scroll. cqi (not vw) because the viewport ignores the page gutters and
+     includes the scrollbar, which overflowed the rail and clipped both edges.
+     The % first line is the fallback for engines without container units. */
+  grid-auto-columns: 86%;
+  grid-auto-columns: 86cqi;
   gap: 10px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
   padding-bottom: 4px;
-  /* Bleed to the screen edge so a partial next card hints at the scroll. */
-  margin-inline: -17px;
-  padding-inline: 17px;
   scrollbar-width: none;
 }
 .train-rail::-webkit-scrollbar { display: none; }
@@ -17443,9 +17448,8 @@ html.web-onboarding-open { overflow: hidden; }
 /* Roomier layout once there's width for it. */
 @media (min-width: 720px) {
   .train-rail {
-    grid-auto-columns: minmax(280px, 42%);
-    margin-inline: 0;
-    padding-inline: 0;
+    grid-auto-columns: 46%;
+    grid-auto-columns: 46cqi;
   }
   .train-modes { max-width: 460px; }
 }
@@ -17465,4 +17469,57 @@ html.mode-pro .exercise-page > .train-focus,
 html.mode-pro .exercise-page > .train-sections,
 html.mode-pro .exercise-page > .train-empty {
   display: none !important;
+}
+
+/* ===================================================================
+   N-Back right/wrong feedback (2026-07-29)
+   markModality() already tags the pressed button .correct/.wrong, but a
+   later layer restyles every in-game button with !important and ties on
+   specificity, which flattened the verdict back to the default surface.
+   Re-asserted last, and qualified with .nback-game-active so it cannot
+   lose that tie.
+   =================================================================== */
+.nback-game-active .response-grid button.correct,
+.response-grid button.correct {
+  border-color: var(--success) !important;
+  background: color-mix(in srgb, var(--success) 45%, var(--surface)) !important;
+  color: #fff !important;
+}
+
+.nback-game-active .response-grid button.wrong,
+.response-grid button.wrong {
+  border-color: var(--error) !important;
+  background: color-mix(in srgb, var(--error) 45%, var(--surface)) !important;
+  color: #fff !important;
+}
+
+/* ===================================================================
+   Settings: Home gear + drawer fit (2026-07-29)
+   =================================================================== */
+
+/* The gear belongs to Home only — every other page keeps just the bell. */
+.app-shell:not(.home-open) #top-settings-button { display: none !important; }
+
+/* A later layer zeroes the body padding and moves spacing onto the header, which
+   had a flat 20px top — so the title sat under the clock and notch. Everything
+   else in this file pairs env() with a floor via max(); match that here. */
+.settings-drawer .settings-drawer-header {
+  padding-top: max(58px, calc(env(safe-area-inset-top, 0px) + 18px)) !important;
+}
+
+@media (max-width: 720px) {
+  /* Three tabs, evenly split, so "About" can't be cut off mid-word. Dropping
+     the glyphs is what buys the room on a narrow phone. */
+  .settings-drawer .settings-nav {
+    gap: 4px;
+    padding: 10px;
+    overflow-x: visible;
+  }
+  .settings-drawer .settings-nav-item {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 0.9rem;
+  }
+  .settings-drawer .settings-nav-item svg { display: none; }
 }
