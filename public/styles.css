@@ -17205,3 +17205,247 @@ html.web-onboarding-open { overflow: hidden; }
 .fallacy-teach h2 { margin: 0; font-size: 1.7rem; letter-spacing: -0.02em; }
 .fallacy-teach-desc { margin: 0 auto; max-width: 40ch; color: var(--muted); line-height: 1.55; }
 .fallacy-teach .mini-primary { margin-top: 6px; }
+
+/* ===================================================================
+   Train hub (2026-07-29)
+   Mode tiles → focus filter → one horizontally-scrolling rail per
+   cognitive domain. Layout only: colour comes from the existing tokens
+   so both themes and the pro build stay consistent.
+   =================================================================== */
+
+/* The page is a 2-col grid; every hub block spans it. */
+.train-modes,
+.train-focus,
+.train-sections,
+.train-empty {
+  grid-column: 1 / -1;
+}
+
+/* --- Mode tiles ---------------------------------------------------- */
+.train-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.train-mode {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px 10px;
+  /* !important throughout: later layers in this file blanket-style buttons. */
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius);
+  background: var(--surface) !important;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.train-mode svg { width: 24px; height: 24px; }
+
+.train-mode-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.train-mode:hover { color: var(--text-2); border-color: var(--muted) !important; }
+
+.train-mode.is-active {
+  border-color: var(--accent) !important;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface)) !important;
+}
+
+/* --- Focus row ----------------------------------------------------- */
+.train-focus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.train-focus-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.train-focus-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.train-focus-picker select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 34px 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.train-focus-caret {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  color: var(--text);
+}
+
+/* --- Domain sections ----------------------------------------------- */
+.train-sections { display: grid; gap: 26px; }
+
+.train-section { display: grid; gap: 12px; }
+
+.train-section-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.train-section-icon {
+  display: flex;
+  color: var(--accent);
+}
+.train-section-icon svg { width: 20px; height: 20px; }
+
+/* Two rows deep, scrolling sideways — same shape as the reference. */
+.train-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  /* One card fills the phone width bar a sliver, so the next one peeks in and
+     advertises the sideways scroll. Percentages resolve unpredictably against a
+     scrolling grid container, hence the viewport calc. */
+  grid-auto-columns: calc(100vw - 76px);
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  /* Bleed to the screen edge so a partial next card hints at the scroll. */
+  margin-inline: -17px;
+  padding-inline: 17px;
+  scrollbar-width: none;
+}
+.train-rail::-webkit-scrollbar { display: none; }
+
+/* A single-item domain shouldn't leave an empty second row. */
+.train-rail:has(> :only-child) { grid-template-rows: auto; }
+
+.train-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.train-card:hover,
+.train-card:focus-visible {
+  border-color: var(--muted);
+  outline: none;
+}
+
+.train-card-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 58px;
+  height: 68px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.train-card-icon svg { width: 26px; height: 26px; }
+
+.train-card-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.train-card-name {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.train-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.train-card-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.train-card-time svg { width: 15px; height: 15px; }
+
+.train-card-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(250, 204, 21, 0.08);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.train-card-coins img { width: 14px; height: 14px; }
+
+.train-card-chevron {
+  flex: none;
+  display: flex;
+  color: var(--muted);
+}
+.train-card-chevron svg { width: 18px; height: 18px; }
+
+.train-empty {
+  margin: 0;
+  padding: 30px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Roomier layout once there's width for it. */
+@media (min-width: 720px) {
+  .train-rail {
+    grid-auto-columns: minmax(280px, 42%);
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+  .train-modes { max-width: 460px; }
+}

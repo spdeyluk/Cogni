@@ -95,9 +95,83 @@ const screenTimeLocalStateStorageKey = "cogni.screenTimeState.v1";
 // quests) against 5 coins per screen-time-minute means a committed ~1 h day of training
 // reaches the full 3 h allowance — accessible, but real work, and hard-capped below.
 const screenTimePointsPerMinute = 5;
-// Direct earning: every minute of exercise training pays this many coins,
-// on top of the daily quest rewards.
-const sessionCoinsPerMinute = 10;
+// Direct earning: coins are paid per finished session rather than per minute, so
+// the incentive is to sit down for a real block of training instead of dipping in
+// and out. Timed exercises earn on a curve — the first 5 minutes pay 12/min and
+// everything past that pays 14/min, so one 10-minute sit beats two 5-minute ones.
+const sessionCoinBaseMinutes = 5;
+const sessionCoinBaseRate = 12;
+const sessionCoinExtraRate = 14;
+function sessionCoinReward(minutes) {
+  const m = Math.max(0, minutes || 0);
+  if (m <= sessionCoinBaseMinutes) return Math.round(m * sessionCoinBaseRate);
+  return Math.round(sessionCoinBaseMinutes * sessionCoinBaseRate + (m - sessionCoinBaseMinutes) * sessionCoinExtraRate);
+}
+
+// The training catalogue drives both the Train hub and the payout, so a card can
+// never advertise a reward the session doesn't actually pay. `minutes` is the
+// default session length; timed protocols recompute their reward from the clock,
+// games pay their flat `coins` on completion.
+const trainingCatalog = [
+  { id: "nback", kind: "classic", open: "exercise", domain: "Memory", name: "N-Back", minutes: 5, icon: "layers" },
+  { id: "rrt", kind: "classic", open: "exercise", domain: "Focus", name: "Relational Reasoning", minutes: 6, icon: "branch" },
+  { id: "cct", kind: "classic", open: "exercise", domain: "Focus", name: "Cognitive Control", minutes: 5, icon: "gauge" },
+  { id: "ict", kind: "classic", open: "exercise", domain: "Focus", name: "Inhibitory Control", minutes: 5, icon: "block" },
+  { id: "gridmemory", kind: "game", open: "mini", domain: "Memory", name: "Grid Memory", minutes: 2, coins: 30, icon: "grid" },
+  { id: "seqrecall", kind: "game", open: "mini", domain: "Memory", name: "Sequence Memory", minutes: 2, coins: 30, icon: "list" },
+  { id: "numrecall", kind: "game", open: "mini", domain: "Memory", name: "Number Recall", minutes: 2, coins: 30, icon: "hash" },
+  { id: "verbal", kind: "game", open: "mini", domain: "Verbal", name: "Word Memory", minutes: 3, coins: 40, icon: "book" },
+  { id: "fallacy", kind: "game", open: "mini", domain: "Verbal", name: "Spot the Fallacy", minutes: 3, coins: 40, icon: "scales" },
+  { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 3, coins: 40, icon: "sigma" },
+  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 1, coins: 15, icon: "bolt" }
+];
+// Section order for the hub; anything tagged outside this list falls in after.
+const trainingDomainOrder = ["Memory", "Focus", "Verbal", "Math"];
+
+const trainIconPaths = {
+  layers: `<path d="m12 3.5 8.5 4.2-8.5 4.3L3.5 7.7 12 3.5Z"/><path d="m3.5 12 8.5 4.3 8.5-4.3"/><path d="m3.5 16.3 8.5 4.2 8.5-4.2"/>`,
+  branch: `<circle cx="6" cy="5.5" r="2.2"/><circle cx="18" cy="5.5" r="2.2"/><circle cx="12" cy="18.5" r="2.2"/><path d="M6 7.7v1.8a3 3 0 0 0 3 3h1M18 7.7v1.8a3 3 0 0 1-3 3h-1M12 12.5v3.8"/>`,
+  gauge: `<path d="M4 18a8 8 0 1 1 16 0"/><circle cx="12" cy="18" r="1.6"/><path d="m13.4 16.6 3.1-3.1"/>`,
+  block: `<circle cx="12" cy="12" r="8.5"/><path d="M6.4 6.4 17.6 17.6"/>`,
+  grid: `<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>`,
+  list: `<path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><circle cx="4.6" cy="6.5" r="1.3"/><circle cx="4.6" cy="12" r="1.3"/><circle cx="4.6" cy="17.5" r="1.3"/>`,
+  hash: `<path d="M9.5 3.5 7.5 20.5M16.5 3.5l-2 17M4 8.5h16M3.2 15.5h16"/>`,
+  book: `<path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v14.5H7a2.5 2.5 0 0 0-2.5 2.5V5.5Z"/><path d="M4.5 20A2.5 2.5 0 0 1 7 17.5h12.5V21H7a2.5 2.5 0 0 1-2.5-1Z"/>`,
+  scales: `<path d="M12 4.5v15M7.5 19.5h9M4.5 8.5h15"/><path d="M4.5 8.5 2 14.5a2.8 2.8 0 0 0 5 0l-2.5-6ZM19.5 8.5 17 14.5a2.8 2.8 0 0 0 5 0l-2.5-6Z"/><circle cx="12" cy="4.6" r="1.2"/>`,
+  sigma: `<path d="M17.5 5.5H7l6 6.5-6 6.5h10.5"/>`,
+  bolt: `<path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6l1-8Z"/>`
+};
+const trainDomainIcons = {
+  Memory: `<path d="M12 4.5a3.5 3.5 0 0 0-3.4 4.3A3 3 0 0 0 7.5 14v2.2a3 3 0 0 0 4.5 2.6 3 3 0 0 0 4.5-2.6V14a3 3 0 0 0-1.1-5.2A3.5 3.5 0 0 0 12 4.5Z"/><path d="M12 5v13.5"/>`,
+  Focus: `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>`,
+  Verbal: `<path d="M20.5 12.5a8 8 0 0 1-8 8H4l2.2-3.2a8 8 0 1 1 14.3-4.8Z"/>`,
+  Math: `<path d="M17.5 5.5H7l6 6.5-6 6.5h10.5"/>`
+};
+function trainSvg(paths) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+}
+
+let trainMode = "classic";
+let trainFocus = "__all__";
+
+
+function catalogEntry(id) {
+  return trainingCatalog.find((entry) => entry.id === id) ?? null;
+}
+// What a card advertises: the flat payout for a game, the default-length payout
+// for a timed protocol (which pays more if you dial the session up).
+function catalogCoins(entry) {
+  return entry.kind === "classic" ? sessionCoinReward(entry.minutes) : entry.coins;
+}
+// Games pay a pro-rated share when abandoned so an early quit still banks the
+// work already done — it just forfeits the completion payout.
+function sessionCoinAward(exerciseId, durationMs, status) {
+  const minutes = durationMs / 60000;
+  const entry = catalogEntry(exerciseId);
+  if (!entry || entry.kind === "classic") return sessionCoinReward(minutes);
+  if (status === "completed") return entry.coins;
+  return Math.min(entry.coins, Math.round(entry.coins * (minutes / entry.minutes)));
+}
 // Every user can unlock up to this much screen time per day (a hard ceiling, so the
 // system can never hand out unlimited time no matter how much is banked).
 const screenTimeDailyCapMinutes = 180;
@@ -370,7 +444,6 @@ const elements = {
   pageLede: document.querySelector("#page-lede"),
   sideNav: document.querySelector(".side-nav"),
   sideNavButtons: [...document.querySelectorAll("[data-section]")],
-  exerciseCards: [...document.querySelectorAll("[data-open-exercise]")],
   homePage: document.querySelector(".home-page"),
   friendsPage: document.querySelector(".friends-page"),
   tabExercises: document.querySelector("#tab-exercises"),
@@ -1227,31 +1300,8 @@ elements.openRrt?.addEventListener("click", openRrtSettings);
 elements.openCct?.addEventListener("click", openCctSettings);
 elements.openUfov?.addEventListener("click", openUfovSettings);
 elements.openIct?.addEventListener("click", openIctSettings);
-elements.exerciseCards.forEach((card) => {
-  card.addEventListener("click", (event) => {
-    if (event.target.closest("button")) return;
-    openExerciseById(card.dataset.openExercise);
-  });
-  card.addEventListener("keydown", (event) => {
-    if (!["Enter", " "].includes(event.key)) return;
-    event.preventDefault();
-    openExerciseById(card.dataset.openExercise);
-  });
-});
-document.querySelectorAll("[data-open-mini]").forEach((card) => {
-  const open = () => openMiniExercise(card.dataset.openMini);
-  card.addEventListener("click", (event) => {
-    if (event.target.closest("button") && !event.target.closest("[data-open-mini] button")) return;
-    open();
-  });
-  card.addEventListener("keydown", (event) => {
-    if (!["Enter", " "].includes(event.key)) return;
-    event.preventDefault();
-    open();
-  });
-});
 document.querySelector("#mini-ex-back")?.addEventListener("click", closeMiniExercise);
-initExerciseTagFilter();
+initTrainHub();
 elements.tabExercises.addEventListener("click", showExerciseHub);
 elements.tabStatistics?.addEventListener("click", showStatistics);
 elements.friendsPage?.addEventListener("click", handleFriendsPageClick);
@@ -1299,19 +1349,28 @@ document.addEventListener("click", (event) => {
 document.documentElement.classList.toggle("is-free", !hasPaidPlan());
 
 // The coin-earning promise, shown on whatever screen follows tapping an
-// exercise. One source of truth so the classic difficulty menus and the mini
-// games always quote the same rate. Empty on the web — coins are play-mode only.
-function coinRewardBannerHtml(extraClass = "") {
-  if (cogniUiMode !== "play") return "";
+// exercise. One source of truth so the difficulty menus and the mini games can
+// never quote a reward the session won't pay. Empty on the web — play mode only.
+function coinRewardBannerHtml(text, extraClass = "") {
+  if (cogniUiMode !== "play" || !text) return "";
   const cls = extraClass ? `difficulty-reward ${extraClass}` : "difficulty-reward";
-  return `<p class="${cls}"><img src="assets/cogni-coin-23.png" alt="" aria-hidden="true"><span>Earn <strong>${sessionCoinsPerMinute} coins</strong> for every minute you train — any difficulty.</span></p>`;
+  return `<p class="${cls}"><img src="assets/cogni-coin-23.png" alt="" aria-hidden="true"><span>${text}</span></p>`;
+}
+// Timed protocols quote both anchors, since the payout follows the session
+// length the user picks rather than a flat per-exercise figure.
+function classicCoinBannerText() {
+  return `Earn <strong>${sessionCoinReward(5)} coins</strong> for a 5-minute session, <strong>${sessionCoinReward(10)}</strong> for 10 — finish it to bank them.`;
+}
+function miniCoinBannerText(id) {
+  const entry = catalogEntry(id);
+  return `Finish this session to earn <strong>${entry ? entry.coins : sessionCoinReward(2)} coins</strong>.`;
 }
 
 // Classic exercises: the banner sits at the foot of the difficulty menu.
 // Injected once at boot so every workbench stays in sync.
 document.querySelectorAll(".difficulty-group").forEach((group) => {
   if (group.querySelector(".difficulty-reward")) return;
-  group.insertAdjacentHTML("beforeend", coinRewardBannerHtml());
+  group.insertAdjacentHTML("beforeend", coinRewardBannerHtml(classicCoinBannerText()));
 });
 
 // --- Pricing modal ---------------------------------------------------------
@@ -2431,7 +2490,7 @@ function renderMiniIntro(id) {
       <p class="exercise-type">${escapeHtml(info.tag)}</p>
       <h2>${escapeHtml(info.title)}</h2>
       <ol class="mini-intro-steps">${info.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
-      ${coinRewardBannerHtml("difficulty-reward-mini")}
+      ${coinRewardBannerHtml(miniCoinBannerText(id), "difficulty-reward-mini")}
       <button class="mini-primary" type="button" data-mini-begin>Start</button>
     </div>`;
   stage.querySelector("[data-mini-begin]").addEventListener("click", () => {
@@ -2464,7 +2523,7 @@ function runMiniGame(id) {
   };
   // A clean 3-2-1 countdown before every game, then start (and reset the clock so
   // the countdown isn't counted as play time).
-  runMiniCountdown(stage, () => {
+  runMiniCountdown(stage, id, () => {
     if (!miniActive || miniActive.id !== id) return;
     miniActive.startedAt = Date.now();
     const cleanup = game.start(ctx);
@@ -2472,12 +2531,12 @@ function runMiniGame(id) {
   });
 }
 
-function runMiniCountdown(stage, onComplete) {
+function runMiniCountdown(stage, id, onComplete) {
   const steps = ["3", "2", "1"];
   let index = 0;
   // The coin banner rides along with the countdown so returning players — who
   // skip the tutorial — still see the reward on the way into every session.
-  stage.innerHTML = `<div class="mini-countdown" id="mini-countdown" aria-live="assertive"></div>${coinRewardBannerHtml("difficulty-reward-mini")}`;
+  stage.innerHTML = `<div class="mini-countdown" id="mini-countdown" aria-live="assertive"></div>${coinRewardBannerHtml(miniCoinBannerText(id), "difficulty-reward-mini")}`;
   const el = stage.querySelector("#mini-countdown");
   const tick = () => {
     if (!miniActive || !el.isConnected) return;
@@ -3498,8 +3557,6 @@ function openExerciseSheet(exerciseId) {
   exerciseSheetHome = { controls, parent: controls.parentElement, nextSibling: controls.nextElementSibling };
   elements.exerciseSheetType.textContent = info.type;
   elements.exerciseSheetTitle.textContent = info.label;
-  const rateNode = document.querySelector("#exercise-sheet-rate");
-  if (rateNode) rateNode.textContent = String(sessionCoinsPerMinute);
   elements.exerciseSheetContent.appendChild(controls);
   exerciseSheetStarting = false;
   sheet.scrollTop = 0;
@@ -3538,58 +3595,122 @@ function showFriendsPage() {
 // Category chips under the Routines box that filter the standalone exercises
 // to a single tag. Built from the cards' own "exercise-type" labels so it stays
 // in sync as exercises are added or removed.
-function initExerciseTagFilter() {
+// --- Train hub -------------------------------------------------------------
+// Cards render from the catalogue rather than hand-written markup, so the minutes
+// and coins on a tile can't drift away from what the session actually pays.
+// Routines is a Pro dialog rather than a browsable list, so it stays out of the
+// mode pool — its tile opens the loader and leaves the active mode alone.
+function trainModePool(mode) {
+  return trainingCatalog.filter((entry) => (mode === "games" ? entry.kind === "game" : entry.kind === "classic"));
+}
+function trainDomainsFor(entries) {
+  const domains = trainingDomainOrder.filter((domain) => entries.some((entry) => entry.domain === domain));
+  entries.forEach((entry) => { if (!domains.includes(entry.domain)) domains.push(entry.domain); });
+  return domains;
+}
+
+function trainCardHtml(entry) {
+  const coins = catalogCoins(entry);
+  const openAttr = entry.open === "mini" ? `data-open-mini="${entry.id}"` : `data-open-exercise="${entry.id}"`;
+  // Coins are a play-mode feature; the web build shows duration only.
+  const coinPill = cogniUiMode === "play"
+    ? `<span class="train-card-coins"><img src="assets/cogni-coin-23.png" alt="" aria-hidden="true">${coins}</span>`
+    : "";
+  const spoken = `${entry.minutes} minute${entry.minutes === 1 ? "" : "s"}`;
+  const label = cogniUiMode === "play"
+    ? `${entry.name}, ${spoken}, ${coins} coins`
+    : `${entry.name}, ${spoken}`;
+  return `<article class="train-card" ${openAttr} tabindex="0" role="button" aria-label="${escapeHtml(label)}">
+      <span class="train-card-icon" aria-hidden="true">${trainSvg(trainIconPaths[entry.icon] ?? trainIconPaths.grid)}</span>
+      <span class="train-card-body">
+        <span class="train-card-name">${escapeHtml(entry.name)}</span>
+        <span class="train-card-meta">
+          <span class="train-card-time">${trainSvg(`<circle cx="12" cy="13" r="7.6"/><path d="M12 9.4V13l2.6 1.6M9.6 2.5h4.8"/>`)}${entry.minutes} min</span>
+          ${coinPill}
+        </span>
+      </span>
+      <span class="train-card-chevron" aria-hidden="true">${trainSvg(`<path d="m9.5 6 6 6-6 6"/>`)}</span>
+    </article>`;
+}
+
+function renderTrainSections() {
+  const host = document.querySelector("#train-sections");
+  const empty = document.querySelector("#train-empty");
+  if (!host) return;
+  const entries = trainModePool(trainMode)
+    .filter((entry) => trainFocus === "__all__" || entry.domain === trainFocus);
+  const html = trainDomainsFor(entries).map((domain) => {
+    const items = entries.filter((entry) => entry.domain === domain);
+    if (items.length === 0) return "";
+    return `<section class="train-section">
+        <h3 class="train-section-head">
+          <span class="train-section-icon" aria-hidden="true">${trainSvg(trainDomainIcons[domain] ?? trainDomainIcons.Focus)}</span>
+          ${escapeHtml(domain)}
+        </h3>
+        <div class="train-rail">${items.map(trainCardHtml).join("")}</div>
+      </section>`;
+  }).join("");
+  host.innerHTML = html;
+  if (empty) empty.hidden = html !== "";
+}
+
+function renderTrainFocusOptions() {
+  const select = document.querySelector("#train-focus-select");
+  if (!select) return;
+  const domains = trainDomainsFor(trainModePool(trainMode));
+  // Switching modes can strand a focus that no longer exists — fall back to All.
+  if (trainFocus !== "__all__" && !domains.includes(trainFocus)) trainFocus = "__all__";
+  select.innerHTML = [`<option value="__all__">All</option>`]
+    .concat(domains.map((domain) => `<option value="${escapeHtml(domain)}">${escapeHtml(domain)}</option>`))
+    .join("");
+  select.value = trainFocus;
+}
+
+function openTrainCard(card) {
+  if (card.dataset.openMini) openMiniExercise(card.dataset.openMini);
+  else if (card.dataset.openExercise) openExerciseById(card.dataset.openExercise);
+}
+
+function selectTrainMode(mode) {
+  if (mode === "routines") {
+    // Custom routines are a Pro feature.
+    if (!isProUser()) { openPricingModal(); return; }
+    openRoutineLoader();
+    return;
+  }
+  trainMode = mode;
+  document.querySelectorAll("[data-train-mode]").forEach((button) => {
+    const on = button.dataset.trainMode === mode;
+    button.classList.toggle("is-active", on);
+    button.setAttribute("aria-selected", String(on));
+  });
+  renderTrainFocusOptions();
+  renderTrainSections();
+}
+
+function initTrainHub() {
   const page = document.querySelector(".exercise-page");
   if (!page) return;
-  if (page.querySelector(".exercise-tag-filter")) return; // already built — keep it
-  const heading = page.querySelector(".exercise-heading");
-  const cards = [...page.querySelectorAll(".exercise-card")];
-  if (!heading || cards.length === 0) return;
-  const cardTag = (card) => card.querySelector(".exercise-type")?.textContent.trim() || "";
-
-  const tags = [];
-  cards.forEach((card) => {
-    const tag = cardTag(card);
-    if (tag && !tags.includes(tag)) tags.push(tag);
+  renderTrainFocusOptions();
+  renderTrainSections();
+  // Delegated so re-rendering a rail never drops its handlers.
+  page.addEventListener("click", (event) => {
+    const mode = event.target.closest("[data-train-mode]");
+    if (mode) { selectTrainMode(mode.dataset.trainMode); return; }
+    const card = event.target.closest(".train-card");
+    if (card) openTrainCard(card);
   });
-  if (tags.length < 2) return; // nothing to filter by
-
-  const bar = document.createElement("div");
-  bar.className = "exercise-tag-filter";
-  bar.setAttribute("aria-label", "Filter exercises by category");
-
-  const makeChip = (label, value) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "exercise-tag-chip";
-    chip.dataset.tag = value;
-    chip.textContent = label;
-    return chip;
-  };
-  bar.append(makeChip("All", "__all__"));
-  tags.forEach((tag) => bar.append(makeChip(tag, tag)));
-  heading.insertAdjacentElement("afterend", bar);
-
-  let active = "__all__";
-  const apply = () => {
-    cards.forEach((card) => {
-      card.classList.toggle("tag-hidden", active !== "__all__" && cardTag(card) !== active);
-    });
-    bar.querySelectorAll(".exercise-tag-chip").forEach((chip) => {
-      const on = chip.dataset.tag === active;
-      chip.classList.toggle("active", on);
-      chip.setAttribute("aria-pressed", String(on));
-    });
-  };
-
-  bar.addEventListener("click", (event) => {
-    const chip = event.target.closest(".exercise-tag-chip");
-    if (!chip) return;
-    // Tapping the already-active tag clears the filter back to All.
-    active = (active === chip.dataset.tag && chip.dataset.tag !== "__all__") ? "__all__" : chip.dataset.tag;
-    apply();
+  page.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key)) return;
+    const card = event.target.closest(".train-card");
+    if (!card) return;
+    event.preventDefault();
+    openTrainCard(card);
   });
-  apply();
+  document.querySelector("#train-focus-select")?.addEventListener("change", (event) => {
+    trainFocus = event.target.value;
+    renderTrainSections();
+  });
 }
 
 function showExerciseHub() {
@@ -3597,7 +3718,7 @@ function showExerciseHub() {
   showPendingSessionCoinFloat();
   elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("exercises-open");
-  initExerciseTagFilter(); // ensure the category chips are always present
+  renderTrainSections(); // ensure the rails are always present
   setActiveTab("exercises");
   elements.pageTitle.textContent = "Exercises";
   elements.pageLede.textContent = "Build routines first, or open a standalone cognitive training module below.";
@@ -9569,7 +9690,7 @@ function recordExerciseProgress(exerciseId, sessionData) {
   };
   const xpAward = awardSessionXp(progress, sessionRecord);
   sessionRecord.xpAward = xpAward;
-  const coinAward = cogniUiMode === "play" ? Math.round((durationMs / 60000) * sessionCoinsPerMinute) : 0;
+  const coinAward = cogniUiMode === "play" ? sessionCoinAward(exerciseId, durationMs, sessionData.status) : 0;
   if (coinAward > 0) {
     creditScreenTimeWallet(coinAward, `${exerciseId.toUpperCase()} training`, { session: sessionRecord.id });
     pendingSessionCoinFloat += coinAward;
