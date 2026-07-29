@@ -17301,9 +17301,12 @@ html.web-onboarding-open { overflow: hidden; }
   /* A card fills the column bar a sliver so the next one peeks in and advertises
      the scroll. cqi (not vw) because the viewport ignores the page gutters and
      includes the scrollbar, which overflowed the rail and clipped both edges.
-     The % first line is the fallback for engines without container units. */
-  grid-auto-columns: 86%;
-  grid-auto-columns: 86cqi;
+     The % first line is the fallback for engines without container units.
+     Sized so the leftover strip is a ~10px sliver of the next card's rounded
+     edge: any wider and it exposes part of that card's icon tile, which on a
+     two-row rail stacks into what reads as a grey wall down the screen. */
+  grid-auto-columns: 94%;
+  grid-auto-columns: 94cqi;
   gap: 10px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -17410,8 +17413,8 @@ html.web-onboarding-open { overflow: hidden; }
 /* Roomier layout once there's width for it. */
 @media (min-width: 720px) {
   .train-rail {
-    grid-auto-columns: 46%;
-    grid-auto-columns: 46cqi;
+    grid-auto-columns: 48%;
+    grid-auto-columns: 48cqi;
   }
 }
 
