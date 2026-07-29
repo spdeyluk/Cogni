@@ -17449,3 +17449,20 @@ html.web-onboarding-open { overflow: hidden; }
   }
   .train-modes { max-width: 460px; }
 }
+
+/* Both hubs ship in the markup; the ui-mode class on <html> picks one. The web
+   build keeps the original flat list it always had, the native app gets the
+   browse-by-domain rails. */
+html.mode-play .exercise-page > .routines-tile,
+html.mode-play .exercise-page > .exercise-heading,
+html.mode-play .exercise-page > .exercise-tag-filter,
+html.mode-play .exercise-page > .exercise-card {
+  display: none !important;
+}
+
+html.mode-pro .exercise-page > .train-modes,
+html.mode-pro .exercise-page > .train-focus,
+html.mode-pro .exercise-page > .train-sections,
+html.mode-pro .exercise-page > .train-empty {
+  display: none !important;
+}

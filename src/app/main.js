@@ -444,6 +444,8 @@ const elements = {
   pageLede: document.querySelector("#page-lede"),
   sideNav: document.querySelector(".side-nav"),
   sideNavButtons: [...document.querySelectorAll("[data-section]")],
+  // Static markup only — the native hub renders its own cards at runtime.
+  exerciseCards: [...document.querySelectorAll("[data-open-exercise]")],
   homePage: document.querySelector(".home-page"),
   friendsPage: document.querySelector(".friends-page"),
   tabExercises: document.querySelector("#tab-exercises"),
@@ -1301,7 +1303,36 @@ elements.openCct?.addEventListener("click", openCctSettings);
 elements.openUfov?.addEventListener("click", openUfovSettings);
 elements.openIct?.addEventListener("click", openIctSettings);
 document.querySelector("#mini-ex-back")?.addEventListener("click", closeMiniExercise);
-initTrainHub();
+// The native app gets the browse-by-domain hub; the web keeps its original
+// flat list. Only one is ever wired, so the other's markup stays inert.
+function initExerciseHub() {
+  if (cogniUiMode === "play") { initTrainHub(); return; }
+  elements.exerciseCards.forEach((card) => {
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      openExerciseById(card.dataset.openExercise);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      openExerciseById(card.dataset.openExercise);
+    });
+  });
+  document.querySelectorAll("[data-open-mini]").forEach((card) => {
+    const open = () => openMiniExercise(card.dataset.openMini);
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button") && !event.target.closest("[data-open-mini] button")) return;
+      open();
+    });
+    card.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      open();
+    });
+  });
+  initExerciseTagFilter();
+}
+initExerciseHub();
 elements.tabExercises.addEventListener("click", showExerciseHub);
 elements.tabStatistics?.addEventListener("click", showStatistics);
 elements.friendsPage?.addEventListener("click", handleFriendsPageClick);
@@ -3595,6 +3626,63 @@ function showFriendsPage() {
 // Category chips under the Routines box that filter the standalone exercises
 // to a single tag. Built from the cards' own "exercise-type" labels so it stays
 // in sync as exercises are added or removed.
+// Legacy hub (web only): the original flat card list with tag chips. Kept
+// verbatim so the web build behaves exactly as it did before the native
+// redesign — see the mode gate in initExerciseHub().
+function initExerciseTagFilter() {
+  const page = document.querySelector(".exercise-page");
+  if (!page) return;
+  if (page.querySelector(".exercise-tag-filter")) return; // already built — keep it
+  const heading = page.querySelector(".exercise-heading");
+  const cards = [...page.querySelectorAll(".exercise-card")];
+  if (!heading || cards.length === 0) return;
+  const cardTag = (card) => card.querySelector(".exercise-type")?.textContent.trim() || "";
+
+  const tags = [];
+  cards.forEach((card) => {
+    const tag = cardTag(card);
+    if (tag && !tags.includes(tag)) tags.push(tag);
+  });
+  if (tags.length < 2) return; // nothing to filter by
+
+  const bar = document.createElement("div");
+  bar.className = "exercise-tag-filter";
+  bar.setAttribute("aria-label", "Filter exercises by category");
+
+  const makeChip = (label, value) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "exercise-tag-chip";
+    chip.dataset.tag = value;
+    chip.textContent = label;
+    return chip;
+  };
+  bar.append(makeChip("All", "__all__"));
+  tags.forEach((tag) => bar.append(makeChip(tag, tag)));
+  heading.insertAdjacentElement("afterend", bar);
+
+  let active = "__all__";
+  const apply = () => {
+    cards.forEach((card) => {
+      card.classList.toggle("tag-hidden", active !== "__all__" && cardTag(card) !== active);
+    });
+    bar.querySelectorAll(".exercise-tag-chip").forEach((chip) => {
+      const on = chip.dataset.tag === active;
+      chip.classList.toggle("active", on);
+      chip.setAttribute("aria-pressed", String(on));
+    });
+  };
+
+  bar.addEventListener("click", (event) => {
+    const chip = event.target.closest(".exercise-tag-chip");
+    if (!chip) return;
+    // Tapping the already-active tag clears the filter back to All.
+    active = (active === chip.dataset.tag && chip.dataset.tag !== "__all__") ? "__all__" : chip.dataset.tag;
+    apply();
+  });
+  apply();
+}
+
 // --- Train hub -------------------------------------------------------------
 // Cards render from the catalogue rather than hand-written markup, so the minutes
 // and coins on a tile can't drift away from what the session actually pays.
@@ -3718,7 +3806,8 @@ function showExerciseHub() {
   showPendingSessionCoinFloat();
   elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("exercises-open");
-  renderTrainSections(); // ensure the rails are always present
+  // Keep whichever hub this build uses populated.
+  if (cogniUiMode === "play") renderTrainSections(); else initExerciseTagFilter();
   setActiveTab("exercises");
   elements.pageTitle.textContent = "Exercises";
   elements.pageLede.textContent = "Build routines first, or open a standalone cognitive training module below.";
