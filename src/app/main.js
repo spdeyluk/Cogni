@@ -114,19 +114,19 @@ function sessionCoinReward(minutes) {
 // games pay their flat `coins` on completion.
 const trainingCatalog = [
   { id: "nback", kind: "classic", open: "exercise", domain: "Memory", name: "N-Back", minutes: 5, icon: "layers" },
-  { id: "rrt", kind: "classic", open: "exercise", domain: "Focus", name: "Relational Reasoning", minutes: 6, icon: "branch" },
+  { id: "rrt", kind: "classic", open: "exercise", domain: "Logic", name: "Relational Reasoning", minutes: 6, icon: "branch" },
   { id: "cct", kind: "classic", open: "exercise", domain: "Focus", name: "Cognitive Control", minutes: 5, icon: "gauge" },
   { id: "ict", kind: "classic", open: "exercise", domain: "Focus", name: "Inhibitory Control", minutes: 5, icon: "block" },
   { id: "gridmemory", kind: "game", open: "mini", domain: "Memory", name: "Grid Memory", minutes: 2, coins: 30, icon: "grid" },
   { id: "seqrecall", kind: "game", open: "mini", domain: "Memory", name: "Sequence Memory", minutes: 2, coins: 30, icon: "list" },
   { id: "numrecall", kind: "game", open: "mini", domain: "Memory", name: "Number Recall", minutes: 2, coins: 30, icon: "hash" },
-  { id: "verbal", kind: "game", open: "mini", domain: "Verbal", name: "Word Memory", minutes: 3, coins: 40, icon: "book" },
-  { id: "fallacy", kind: "game", open: "mini", domain: "Verbal", name: "Spot the Fallacy", minutes: 3, coins: 40, icon: "scales" },
+  { id: "verbal", kind: "game", open: "mini", domain: "Language", name: "Word Memory", minutes: 3, coins: 40, icon: "book" },
+  { id: "fallacy", kind: "game", open: "mini", domain: "Logic", name: "Spot the Fallacy", minutes: 3, coins: 40, icon: "scales" },
   { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 3, coins: 40, icon: "sigma" },
   { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 1, coins: 15, icon: "bolt" }
 ];
 // Section order for the hub; anything tagged outside this list falls in after.
-const trainingDomainOrder = ["Memory", "Focus", "Verbal", "Math"];
+const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
 
 const trainIconPaths = {
   layers: `<path d="m12 3.5 8.5 4.2-8.5 4.3L3.5 7.7 12 3.5Z"/><path d="m3.5 12 8.5 4.3 8.5-4.3"/><path d="m3.5 16.3 8.5 4.2 8.5-4.2"/>`,
@@ -144,7 +144,8 @@ const trainIconPaths = {
 const trainDomainIcons = {
   Memory: `<path d="M12 4.5a3.5 3.5 0 0 0-3.4 4.3A3 3 0 0 0 7.5 14v2.2a3 3 0 0 0 4.5 2.6 3 3 0 0 0 4.5-2.6V14a3 3 0 0 0-1.1-5.2A3.5 3.5 0 0 0 12 4.5Z"/><path d="M12 5v13.5"/>`,
   Focus: `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>`,
-  Verbal: `<path d="M20.5 12.5a8 8 0 0 1-8 8H4l2.2-3.2a8 8 0 1 1 14.3-4.8Z"/>`,
+  Logic: `<circle cx="9.2" cy="12" r="5.8"/><circle cx="14.8" cy="12" r="5.8"/>`,
+  Language: `<path d="M20.5 12.5a8 8 0 0 1-8 8H4l2.2-3.2a8 8 0 1 1 14.3-4.8Z"/>`,
   Math: `<path d="M17.5 5.5H7l6 6.5-6 6.5h10.5"/>`
 };
 function trainSvg(paths) {
@@ -1338,6 +1339,8 @@ elements.tabStatistics?.addEventListener("click", showStatistics);
 elements.friendsPage?.addEventListener("click", handleFriendsPageClick);
 elements.friendsPage?.addEventListener("keydown", handleFriendsPageKeydown);
 elements.topNotificationButton?.addEventListener("click", handleTopActionClick);
+// Settings is reachable from Home's top-right gear, not just the Profile page.
+document.querySelector("#top-settings-button")?.addEventListener("click", openSettingsDrawer);
 document.querySelector("#close-settings-drawer")?.addEventListener("click", () => document.querySelector("#settings-drawer")?.close());
 document.querySelector("#settings-drawer")?.addEventListener("click", (event) => {
   if (event.target === event.currentTarget) event.currentTarget.close();
