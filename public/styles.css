@@ -18047,7 +18047,7 @@ html.mode-play .paywall-plan-price i { font-size: 0.8rem; }
 html.mode-play .paywall-plan { padding: 14px 12px !important; }
 
 /* Keep the headline clear of the close button. */
-html.mode-play .pricing-dialog-inner > h2 { padding-right: 44px; }
+html.mode-play .pricing-dialog-inner > h2 { padding-inline: 44px; }
 html.mode-play .pricing-close { top: 14px; right: 14px; }
 
 /* ===================================================================
@@ -18143,4 +18143,19 @@ html.mode-play .pricing-close {
   margin: 0;
   top: max(16px, calc(env(safe-area-inset-top, 0px) + 8px));
   right: 16px;
+}
+
+/* The close button never reset the global `button { padding: 15px 18px }`, so
+   its glyph was laid out inside a squeezed content box instead of the bubble's
+   centre. Pin the size and clear the padding so grid centring actually applies. */
+html.mode-play .pricing-close {
+  box-sizing: border-box;
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+  font-size: 1.1rem !important;
 }
