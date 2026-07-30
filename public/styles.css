@@ -17496,14 +17496,7 @@ html.mode-pro #top-settings-button { display: none !important; }
 
 /* Native Home needs no "Home" heading — the tab bar already says where you
    are, and dropping it lets the balance sit higher on the screen. */
-html.mode-play .app-shell.home-open .hero .eyebrow,
-html.mode-play .app-shell.home-open .hero #page-title,
-html.mode-play .app-shell.home-open .hero .brand-logo,
-html.mode-play .app-shell.home-open .hero .lede {
-  display: none !important;
-}
-/* Keep enough hero height for the settings gear, which anchors to its corner. */
-html.mode-play .app-shell.home-open .hero { min-height: 44px; }
+html.mode-play .app-shell.home-open .hero { display: none !important; }
 
 /* One centred column: label, then the number, then the conversion. */
 html.mode-play .home-points-card {
@@ -17543,3 +17536,103 @@ html.mode-play .home-points-sub {
   color: var(--muted);
   font-size: 1rem;
 }
+
+/* ===================================================================
+   Home layout: brand + streak, balance & goal, actions, picks (2026-07-30)
+   =================================================================== */
+html.mode-play .home-page { display: grid; gap: 16px; }
+
+.home-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.home-brand { height: 34px; width: auto; }
+
+.home-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.home-streak svg { width: 18px; height: 18px; color: #FB923C; }
+
+/* --- Daily goal, inside the balance card ---------------------------- */
+.home-goal {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-strong);
+  display: grid;
+  gap: 9px;
+  text-align: left;
+}
+
+.home-goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.home-goal-label { color: var(--text-2); font-size: 0.95rem; font-weight: 600; }
+
+.home-goal-count { color: var(--muted); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.home-goal-count b { color: var(--accent); font-size: 1.05rem; font-weight: 700; }
+
+.home-goal-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.home-goal-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* --- Action row ----------------------------------------------------- */
+.home-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+}
+
+.home-action {
+  display: grid;
+  place-items: center;
+  min-height: 52px;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius);
+  background: var(--surface) !important;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.home-action svg { width: 22px; height: 22px; }
+.home-action:hover { color: var(--text); border-color: var(--muted) !important; }
+
+/* --- Recommendations ------------------------------------------------ */
+.home-recs { display: grid; gap: 12px; }
+
+.home-recs-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.home-recs-list { display: grid; gap: 10px; }

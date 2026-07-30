@@ -303,6 +303,8 @@ const dailyQuestDefs = [
   { id: "train5", label: "Train 5 minutes", reward: 60, kind: "minutes", target: 5 },
   { id: "train10", label: "Train 10 minutes", reward: 100, kind: "minutes", target: 10 }
 ];
+// Home's daily training target, one rung above the 10-minute quest ladder.
+const dailyTrainingGoalMinutes = 20;
 const dailyDetoxDoneStorageKey = "cogni.dailyDetoxDone.v1";
 const screenTimeStatus = {
   available: false,
@@ -1331,6 +1333,22 @@ elements.friendsPage?.addEventListener("keydown", handleFriendsPageKeydown);
 elements.topNotificationButton?.addEventListener("click", handleTopActionClick);
 // Settings is reachable from Home's top-right gear, not just the Profile page.
 document.querySelector("#top-settings-button")?.addEventListener("click", openSettingsDrawer);
+// Home renders its own action row, so both live buttons delegate from the page.
+elements.homePage?.addEventListener("click", (event) => {
+  if (event.target.closest("#home-settings-button")) { openSettingsDrawer(); return; }
+  if (event.target.closest("[data-home-social]")) { showToast("Friends are coming soon."); return; }
+  // Recommendation cards reuse the hub's markup, so they need its opener too —
+  // the hub's own delegation only covers the exercise page.
+  const card = event.target.closest(".train-card");
+  if (card) openTrainCard(card);
+});
+elements.homePage?.addEventListener("keydown", (event) => {
+  if (!["Enter", " "].includes(event.key)) return;
+  const card = event.target.closest(".train-card");
+  if (!card) return;
+  event.preventDefault();
+  openTrainCard(card);
+});
 document.querySelector("#close-settings-drawer")?.addEventListener("click", () => document.querySelector("#settings-drawer")?.close());
 document.querySelector("#settings-drawer")?.addEventListener("click", (event) => {
   if (event.target === event.currentTarget) event.currentTarget.close();
@@ -4652,10 +4670,70 @@ function renderProfileTrend(sessions) {
 
 function renderHomePage() {
   if (!elements.homePage) return;
-  elements.homePage.innerHTML = `
-    ${cogniUiMode === "play" ? renderHomePointsCard() : ""}
-  `;
+  elements.homePage.innerHTML = cogniUiMode === "play" ? renderPlayHome() : "";
   renderTopStatus();
+}
+
+// Minutes trained today across everything in the catalogue — games included,
+// since they earn coins the same way the timed protocols do.
+function trainedMinutesToday(progress) {
+  return trainingMinutesForDate(progress, trainingCatalog.map((entry) => entry.id), localDateKey());
+}
+
+// Most recent day-key an exercise was trained on; "" when it never has been.
+function lastTrainedDayKey(progress, exerciseId) {
+  const days = progress.days ?? {};
+  let latest = "";
+  for (const key of Object.keys(days)) {
+    if (days[key]?.[exerciseId] && key > latest) latest = key;
+  }
+  return latest;
+}
+
+// Suggest what's been neglected: nothing already done today, never-trained
+// first, then longest-untouched — so the list rotates on its own.
+function homeRecommendations(progress, limit = 3) {
+  const today = progress.days?.[localDateKey()] ?? {};
+  return trainingCatalog
+    .filter((entry) => !today[entry.id])
+    .map((entry) => ({ entry, last: lastTrainedDayKey(progress, entry.id) }))
+    .sort((a, b) => a.last.localeCompare(b.last))
+    .slice(0, limit)
+    .map((item) => item.entry);
+}
+
+function renderPlayHome() {
+  const progress = loadExerciseProgress();
+  const streak = daysTrainedStreak(progress);
+  const minutes = trainedMinutesToday(progress);
+  const goalPct = Math.min(100, Math.round((minutes / dailyTrainingGoalMinutes) * 100));
+  const recommendations = homeRecommendations(progress);
+  return `
+    <header class="home-top">
+      <img class="home-brand" src="assets/brand/logo-white.png" alt="Cogni">
+      <span class="home-streak" aria-label="${streak} day training streak">
+        ${trainSvg(`<path d="M12 3.2s.6 2.6-1.1 4.4c-1.6 1.7-3.6 2.7-3.6 5.6a4.7 4.7 0 0 0 9.4 0c0-1.5-.6-2.6-1.3-3.4 0 1.2-.9 1.9-1.6 1.9-1 0-1.5-.8-1.2-2 .5-2.2 1-4.5-.6-6.5Z"/>`)}
+        <b>${streak}</b>
+      </span>
+    </header>
+
+    ${renderHomePointsCard(minutes, goalPct)}
+
+    <div class="home-actions">
+      <button class="home-action" type="button" data-home-social aria-label="Friends — coming soon">
+        ${trainSvg(`<circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.5 5.3a3.4 3.4 0 0 1 0 5.4M18.4 20a6.2 6.2 0 0 0-2.2-4.8"/>`)}
+      </button>
+      <button class="home-action" type="button" id="home-settings-button" aria-label="Settings">
+        ${trainSvg(`<circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.4a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-2.6 1.1v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-2.6-1.1l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0-1.1-2.6h-.2a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.1-2.6l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 2.6-1.1V3.3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 2.6 1.1l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0 1.1 2.6h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9Z"/>`)}
+      </button>
+    </div>
+
+    ${recommendations.length ? `
+      <section class="home-recs" aria-label="Recommended exercises">
+        <h2 class="home-recs-title">Recommended</h2>
+        <div class="home-recs-list">${recommendations.map(trainCardHtml).join("")}</div>
+      </section>` : ""}
+  `;
 }
 
 function renderHomeQuests() {
@@ -4764,7 +4842,7 @@ function screenTimeMinutesLabel(points) {
 // Home leads with the coin balance and nothing else — the rotating app strip
 // and its Unlock button moved out, so the number is the whole card. Unlocking
 // still lives on the Screen Time tab.
-function renderHomePointsCard() {
+function renderHomePointsCard(minutesToday = 0, goalPct = 0) {
   const wallet = loadScreenTimeWallet();
   return `
     <article class="home-points-card" aria-label="Cogni coins">
@@ -4774,6 +4852,15 @@ function renderHomePointsCard() {
         <img src="assets/cogni-coin-45.png" alt="coins">
       </div>
       <p class="home-points-sub">${screenTimeMinutesLabel(wallet.balance)} of screen time</p>
+      <div class="home-goal">
+        <div class="home-goal-head">
+          <span class="home-goal-label">Daily Goal</span>
+          <span class="home-goal-count"><b>${minutesToday}</b> / ${dailyTrainingGoalMinutes} min</span>
+        </div>
+        <div class="home-goal-track" role="progressbar" aria-valuenow="${minutesToday}" aria-valuemin="0" aria-valuemax="${dailyTrainingGoalMinutes}">
+          <i style="width: ${goalPct}%"></i>
+        </div>
+      </div>
     </article>
   `;
 }
