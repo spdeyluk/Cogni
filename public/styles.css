@@ -18217,9 +18217,12 @@ html.reduce-motion .pricing-dialog[open]::backdrop {
 /* Tinted tile with a matching glyph; falls back to the old grey if a new
    domain ever appears without a colour. */
 .train-card-icon {
-  background: color-mix(in srgb, var(--domain, var(--surface-2)) 20%, var(--surface-2));
-  color: var(--domain, var(--text));
-  border: 1px solid color-mix(in srgb, var(--domain, var(--line-strong)) 34%, transparent);
+  /* Glyph stays white; the colour lives in the tile. Tint pushed a little
+     harder than the coloured-glyph version needed, so the box still reads as
+     its domain colour behind a white mark. */
+  background: color-mix(in srgb, var(--domain, var(--surface-2)) 34%, var(--surface-2));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--domain, var(--line-strong)) 42%, transparent);
 }
 
 .train-section-icon { color: var(--domain, var(--accent)); }
