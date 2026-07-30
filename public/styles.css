@@ -18202,3 +18202,24 @@ html.reduce-motion .pricing-dialog[open]::backdrop {
   line-height: 1.45;
 }
 .fallacy-teach-inline b { color: var(--text); }
+
+/* ===================================================================
+   Domain colour on exercise icons (2026-07-30)
+   One hue per cognitive domain, applied to the card's icon tile and its
+   section heading, so colour carries meaning rather than decoration.
+   =================================================================== */
+.train-card[data-domain="Memory"],   .train-section[data-domain="Memory"]   { --domain: #5B8DEF; }
+.train-card[data-domain="Focus"],    .train-section[data-domain="Focus"]    { --domain: #14B8A6; }
+.train-card[data-domain="Logic"],    .train-section[data-domain="Logic"]    { --domain: #A855F7; }
+.train-card[data-domain="Language"], .train-section[data-domain="Language"] { --domain: #F59E0B; }
+.train-card[data-domain="Math"],     .train-section[data-domain="Math"]     { --domain: #22C55E; }
+
+/* Tinted tile with a matching glyph; falls back to the old grey if a new
+   domain ever appears without a colour. */
+.train-card-icon {
+  background: color-mix(in srgb, var(--domain, var(--surface-2)) 20%, var(--surface-2));
+  color: var(--domain, var(--text));
+  border: 1px solid color-mix(in srgb, var(--domain, var(--line-strong)) 34%, transparent);
+}
+
+.train-section-icon { color: var(--domain, var(--accent)); }
