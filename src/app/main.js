@@ -3624,28 +3624,7 @@ const miniGames = {
       function advance() {
         if (cancelled) return;
         if (stats.index >= stats.items.length) return finish();
-        const item = stats.items[stats.index];
-        // First exposure to this fallacy → teach it before the question.
-        const teachId = item.is_valid_argument ? null : item.answer;
-        if (teachId && !fallacySeen(teachId) && fallacyBank.meta[teachId]) {
-          markFallacySeen(teachId);
-          renderTeach(item, teachId);
-          return;
-        }
-        renderItem(item);
-      }
-
-      function renderTeach(item, id) {
-        const info = fallacyBank.meta[id];
-        ctx.setStatus("New fallacy");
-        ctx.stage.innerHTML = `
-          <div class="fallacy-teach">
-            <p class="fallacy-teach-eyebrow">New fallacy</p>
-            <h2>${escapeHtml(info.name)}</h2>
-            <p class="fallacy-teach-desc">${escapeHtml(info.description)}</p>
-            <button class="mini-primary" type="button" data-fallacy-teach-next>Got it</button>
-          </div>`;
-        ctx.stage.querySelector("[data-fallacy-teach-next]").addEventListener("click", () => renderItem(item));
+        renderItem(stats.items[stats.index]);
       }
 
       function renderItem(item) {
@@ -3695,9 +3674,16 @@ const miniGames = {
           if (id === correctId) btn.classList.add("is-correct");
           else if (id === chosenId) btn.classList.add("is-wrong");
         });
+        // First time this fallacy has come up, name and define it here — doing
+        // that before the question announced the answer, and even the "New
+        // fallacy" heading gave away that the argument wasn't a valid one.
+        const teachId = item.is_valid_argument ? null : item.answer;
+        const teach = teachId && !fallacySeen(teachId) ? fallacyBank.meta[teachId] : null;
+        if (teach) markFallacySeen(teachId);
         const explain = ctx.stage.querySelector(".fallacy-explain");
         if (explain) {
-          explain.innerHTML = `<strong>${isCorrect ? "Correct." : "Not quite."}</strong> ${escapeHtml(item.explanation)}`;
+          explain.innerHTML = `<strong>${isCorrect ? "Correct." : "Not quite."}</strong> ${escapeHtml(item.explanation)}`
+            + (teach ? `<span class="fallacy-teach-inline"><b>${escapeHtml(teach.name)}</b> — ${escapeHtml(teach.description)}</span>` : "");
           explain.classList.add(isCorrect ? "is-correct" : "is-wrong");
           explain.hidden = false;
         }
