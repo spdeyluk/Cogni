@@ -127,6 +127,10 @@ const trainingCatalog = [
 ];
 // Section order for the hub; anything tagged outside this list falls in after.
 const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
+// Home's shortlist — see homeRecommendations(). Declared here because Home
+// renders during module init, before the function-level declarations below.
+const homeRecommendedIds = ["nback", "rrt", "cct", "ict", "mentalmath"];
+
 
 const trainIconPaths = {
   layers: `<path d="m12 3.5 8.5 4.2-8.5 4.3L3.5 7.7 12 3.5Z"/><path d="m3.5 12 8.5 4.3 8.5-4.3"/><path d="m3.5 16.3 8.5 4.2 8.5-4.2"/>`,
@@ -4680,24 +4684,18 @@ function trainedMinutesToday(progress) {
   return trainingMinutesForDate(progress, trainingCatalog.map((entry) => entry.id), localDateKey());
 }
 
-// Most recent day-key an exercise was trained on; "" when it never has been.
-function lastTrainedDayKey(progress, exerciseId) {
-  const days = progress.days ?? {};
-  let latest = "";
-  for (const key of Object.keys(days)) {
-    if (days[key]?.[exerciseId] && key > latest) latest = key;
-  }
-  return latest;
-}
+// Home is a shortlist, not a catalogue: the four adaptive protocols that carry
+// the strongest training evidence, plus mental math. The full set lives on the
+// Exercises tab. Anything already trained today sinks to the bottom rather than
+// disappearing, so the list stays a stable five.
 
-// Suggest what's been neglected: nothing already done today, never-trained
-// first, then longest-untouched — so the list rotates on its own.
-function homeRecommendations(progress, limit = 3) {
+function homeRecommendations(progress, limit = 5) {
   const today = progress.days?.[localDateKey()] ?? {};
-  return trainingCatalog
-    .filter((entry) => !today[entry.id])
-    .map((entry) => ({ entry, last: lastTrainedDayKey(progress, entry.id) }))
-    .sort((a, b) => a.last.localeCompare(b.last))
+  return homeRecommendedIds
+    .map((id) => catalogEntry(id))
+    .filter(Boolean)
+    .map((entry) => ({ entry, doneToday: today[entry.id] ? 1 : 0 }))
+    .sort((a, b) => a.doneToday - b.doneToday)
     .slice(0, limit)
     .map((item) => item.entry);
 }

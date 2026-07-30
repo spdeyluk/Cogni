@@ -17540,7 +17540,9 @@ html.mode-play .home-points-sub {
 /* ===================================================================
    Home layout: brand + streak, balance & goal, actions, picks (2026-07-30)
    =================================================================== */
-html.mode-play .home-page { display: grid; gap: 16px; }
+/* Must stay qualified with .home-open: unqualified it beats the base
+   `.home-page { display: none }` and leaks Home onto every other tab. */
+html.mode-play .home-open .home-page { display: grid; gap: 16px; }
 
 .home-top {
   display: flex;
@@ -17636,3 +17638,8 @@ html.mode-play .home-page { display: grid; gap: 16px; }
 }
 
 .home-recs-list { display: grid; gap: 10px; }
+
+/* The hero eyebrow is hardcoded "Home" in the markup and never updated per
+   page, so it mislabels every screen it appears on. Hidden on native; the web
+   is left exactly as it was. */
+html.mode-play .hero .eyebrow { display: none !important; }
