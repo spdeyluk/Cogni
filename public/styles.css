@@ -17461,8 +17461,10 @@ html.mode-pro .exercise-page > .train-empty {
    Settings: Home gear + drawer fit (2026-07-29)
    =================================================================== */
 
-/* The gear belongs to Home only — every other page keeps just the bell. */
-.app-shell:not(.home-open) #top-settings-button { display: none !important; }
+/* The gear belongs to native Home only — every other page keeps just the bell,
+   and the web reaches Settings from Profile exactly as it always has. */
+.app-shell:not(.home-open) #top-settings-button,
+html.mode-pro #top-settings-button { display: none !important; }
 
 /* A later layer zeroes the body padding and moves spacing onto the header, which
    had a flat 20px top — so the title sat under the clock and notch. Everything
@@ -17486,4 +17488,58 @@ html.mode-pro .exercise-page > .train-empty {
     font-size: 0.9rem;
   }
   .settings-drawer .settings-nav-item svg { display: none; }
+}
+
+/* ===================================================================
+   Home: coin balance as the hero (2026-07-30)
+   =================================================================== */
+
+/* Native Home needs no "Home" heading — the tab bar already says where you
+   are, and dropping it lets the balance sit higher on the screen. */
+html.mode-play .app-shell.home-open .hero .eyebrow,
+html.mode-play .app-shell.home-open .hero #page-title,
+html.mode-play .app-shell.home-open .hero .brand-logo,
+html.mode-play .app-shell.home-open .hero .lede {
+  display: none !important;
+}
+/* Keep enough hero height for the settings gear, which anchors to its corner. */
+html.mode-play .app-shell.home-open .hero { min-height: 44px; }
+
+/* One centred column: label, then the number, then the conversion. */
+html.mode-play .home-points-card {
+  justify-items: center;
+  gap: 10px;
+  padding: 30px 22px 26px;
+  text-align: center;
+}
+
+html.mode-play .home-points-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+html.mode-play .home-points-balance {
+  justify-content: center;
+  gap: 14px;
+}
+
+html.mode-play .home-points-balance strong {
+  font-size: clamp(3.2rem, 17vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+html.mode-play .home-points-balance img {
+  width: 54px;
+  height: 54px;
+}
+
+html.mode-play .home-points-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
 }

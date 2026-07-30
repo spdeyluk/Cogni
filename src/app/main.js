@@ -292,15 +292,6 @@ if (cogniUiMode === "pro") {
 const screenTimeUnlockOptions = [15, 30, 60];
 const dailyQuestsStorageKey = "cogni.dailyQuests.v1";
 const customTasksStorageKey = "cogni.customTasks.v1";
-const homeShowcaseApps = [
-  { name: "TikTok", slug: "tiktok" },
-  { name: "Instagram", slug: "instagram" },
-  { name: "YouTube", slug: "youtube" },
-  { name: "Snapchat", slug: "snapchat" },
-  { name: "X", slug: "x" },
-  { name: "Reddit", slug: "reddit" }
-];
-let homeAppCycleIndex = 0;
 let homeQuestsExpanded = false;
 const cognitionHealthStart = 58;
 const cognitionHealthFloor = 18;
@@ -1696,7 +1687,6 @@ elements.tasksDialogContent?.addEventListener("click", handleTasksDialogClick);
 elements.tasksDialogContent?.addEventListener("submit", handleTasksDialogSubmit);
 elements.tasksDialog?.addEventListener("close", renderHomePage);
 refreshScreenTimeStatus({ rerender: true });
-startHomeAppCycle();
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) refreshScreenTimeStatus();
 });
@@ -4771,47 +4761,21 @@ function screenTimeMinutesLabel(points) {
   return `${rest}m`;
 }
 
+// Home leads with the coin balance and nothing else — the rotating app strip
+// and its Unlock button moved out, so the number is the whole card. Unlocking
+// still lives on the Screen Time tab.
 function renderHomePointsCard() {
   const wallet = loadScreenTimeWallet();
-  const app = homeShowcaseApps[homeAppCycleIndex % homeShowcaseApps.length];
   return `
     <article class="home-points-card" aria-label="Cogni coins">
-      <div class="home-points-main">
-        <p class="home-points-label">Balance</p>
-        <div class="home-points-balance">
-          <strong>${wallet.balance.toLocaleString()}</strong>
-          <img src="assets/cogni-coin-45.png" alt="coins">
-        </div>
+      <p class="home-points-label">Balance</p>
+      <div class="home-points-balance">
+        <strong>${wallet.balance.toLocaleString()}</strong>
+        <img src="assets/cogni-coin-45.png" alt="coins">
       </div>
-      <p>${screenTimeMinutesLabel(wallet.balance)} of screen time</p>
-      <div class="home-points-apps">
-        <div class="home-app-cycle" data-app-cycle>${homeAppCycleInner(app)}</div>
-        <button data-screentime-buy-time type="button">Unlock time</button>
-      </div>
+      <p class="home-points-sub">${screenTimeMinutesLabel(wallet.balance)} of screen time</p>
     </article>
   `;
-}
-
-function homeAppCycleInner(app) {
-  return `
-    <span class="home-app-icon" data-letter="${escapeHtml(app.name[0])}">
-      <img src="assets/apps/${app.slug}.png" alt="" onerror="this.remove()">
-    </span>
-    <span class="home-app-name">${escapeHtml(app.name)}</span>
-  `;
-}
-
-function startHomeAppCycle() {
-  setInterval(() => {
-    const el = document.querySelector("[data-app-cycle]");
-    if (!el) return;
-    homeAppCycleIndex = (homeAppCycleIndex + 1) % homeShowcaseApps.length;
-    el.classList.add("app-cycle-out");
-    setTimeout(() => {
-      el.innerHTML = homeAppCycleInner(homeShowcaseApps[homeAppCycleIndex]);
-      el.classList.remove("app-cycle-out");
-    }, 240);
-  }, 2600);
 }
 
 function openTasksDialog() {
