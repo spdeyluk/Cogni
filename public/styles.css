@@ -18002,15 +18002,16 @@ html.mode-play .pricing-dialog-inner {
 }
 
 html.mode-play .pricing-dialog-inner > h2 {
-  font-size: clamp(1.5rem, 5.4vw, 1.95rem);
-  max-width: 18ch;
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  max-width: 22ch;
 }
 
 /* Timeline takes the slack, so the plans and CTA stay pinned in view. */
 html.mode-play .paywall-timeline {
-  flex: 1 1 auto;
-  min-height: 0;
-  align-content: center;
+  /* Must not shrink below its content: with min-height:0 and centred content
+     the overflow spilled upward and ran into the headline. */
+  flex: 0 1 auto;
+  align-content: start;
   gap: 0;
 }
 
@@ -18047,7 +18048,7 @@ html.mode-play .paywall-plan-price i { font-size: 0.8rem; }
 html.mode-play .paywall-plan { padding: 14px 12px !important; }
 
 /* Keep the headline clear of the close button. */
-html.mode-play .pricing-dialog-inner > h2 { padding-inline: 44px; }
+html.mode-play .pricing-dialog-inner > h2 { padding-inline: 40px; }
 html.mode-play .pricing-close { top: 14px; right: 14px; }
 
 /* ===================================================================
@@ -18226,3 +18227,109 @@ html.reduce-motion .pricing-dialog[open]::backdrop {
 }
 
 .train-section-icon { color: var(--domain, var(--accent)); }
+
+/* ===================================================================
+   Paywall: what a paid plan unlocks (2026-07-30)
+   =================================================================== */
+.paywall-includes { display: none; }
+html.mode-play .paywall-includes {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.paywall-includes-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.paywall-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paywall-feature {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.paywall-feature-tick { display: flex; color: var(--accent); padding-top: 1px; }
+.paywall-feature-tick svg { width: 16px; height: 16px; stroke-width: 2.4; }
+
+/* The Pro feature list added a block to an already-full screen. Tighten the
+   vertical rhythm so everything still lands above the fold on a short phone. */
+html.mode-play .pricing-dialog-inner { gap: clamp(6px, 1.1vh, 12px); }
+html.mode-play .pricing-dialog-inner > h2 { font-size: clamp(1.32rem, 4.6vw, 1.66rem); }
+
+html.mode-play .paywall-step { padding-bottom: clamp(7px, 1.5vh, 14px); gap: 10px; }
+html.mode-play .paywall-step-icon { width: 34px; height: 34px; }
+html.mode-play .paywall-step-icon svg { width: 17px; height: 17px; }
+html.mode-play .paywall-step:not(:last-child)::before { left: 16px; top: 31px; }
+html.mode-play .paywall-step-copy strong { font-size: clamp(0.9rem, 3.7vw, 0.98rem); }
+html.mode-play .paywall-step-copy span { font-size: clamp(0.79rem, 3.2vw, 0.86rem); line-height: 1.32; }
+
+html.mode-play .paywall-includes { gap: 6px; padding-top: 10px; }
+html.mode-play .paywall-includes-title { font-size: 0.86rem; }
+html.mode-play .paywall-features { gap: 4px 10px; }
+html.mode-play .paywall-feature { font-size: 0.84rem; }
+
+html.mode-play .paywall-plan { min-height: 82px; }
+html.mode-play .pricing-upgrade { min-height: 50px; font-size: 1.05rem; }
+
+/* Final trim so the offer clears the fold on shorter handsets too. */
+html.mode-play .paywall-plan { min-height: 74px; padding: 12px 10px !important; }
+html.mode-play .pricing-upgrade { min-height: 48px; }
+html.mode-play .paywall-renew { font-size: 0.78rem; }
+html.mode-play .paywall-links { font-size: 0.76rem; }
+html.mode-play .paywall-step { padding-bottom: clamp(6px, 1.3vh, 12px); }
+
+/* ===================================================================
+   Native: deeper background, fewer outlines (2026-07-30)
+   Scoped to play mode — these tokens are shared with the web build, which
+   keeps its current palette. Cards separate by fill against a near-black
+   page instead of by a drawn border, which is what made it read flat.
+   =================================================================== */
+html.mode-play {
+  --bg: #0B0B0D;
+  --surface: #17171A;
+  --surface-2: #232328;
+  --line: #1E1E22;
+  --line-strong: #2A2A31;
+}
+
+/* Drop the borders that were doing the separating. Selected/active states keep
+   theirs, since there the outline carries meaning. */
+html.mode-play .train-card,
+html.mode-play .routines-tile,
+html.mode-play .home-points-card,
+html.mode-play .home-action,
+html.mode-play .home-streak,
+html.mode-play .train-card-icon,
+html.mode-play .paywall-step-icon,
+html.mode-play .paywall-plan:not(.is-selected),
+html.mode-play .train-card-coins,
+html.mode-play .paywall-stat,
+html.mode-play .paywall-quote {
+  border-color: transparent !important;
+}
+
+/* Shadows were carrying the old outlined look too. */
+html.mode-play .routines-tile,
+html.mode-play .train-card { box-shadow: none !important; }
+
+/* A darker --surface-2 mutes the domain tint, so lift it back. */
+html.mode-play .train-card-icon {
+  background: color-mix(in srgb, var(--domain, var(--surface-2)) 42%, var(--surface-2));
+}
