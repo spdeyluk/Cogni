@@ -17643,3 +17643,24 @@ html.mode-play .home-open .home-page { display: grid; gap: 16px; }
    page, so it mislabels every screen it appears on. Hidden on native; the web
    is left exactly as it was. */
 html.mode-play .hero .eyebrow { display: none !important; }
+
+/* ===================================================================
+   IQ test spacing on native (2026-07-30)
+   The immersive run centred the question block with margin-top/bottom:auto.
+   On a phone that reserved ~130px of dead space under the progress bar for a
+   short item, and on a long one it pushed the final option under the native
+   iOS tab bar — which sits above the WebView, so no CSS can measure it.
+   Top-align with a bounded offset, and reserve real room at the bottom.
+   =================================================================== */
+html.mode-play .cat-immersive #cat-run {
+  justify-content: flex-start;
+  gap: 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 104px);
+}
+
+html.mode-play .cat-immersive #cat-domain-label { margin-top: clamp(16px, 4vh, 40px); }
+html.mode-play .cat-immersive #cat-options { margin-bottom: 0; }
+
+/* The prompt reserves height so the options don't jump as prompt length varies
+   between items — keep that, just less of it than the 3.2em the wide layout uses. */
+html.mode-play .cat-immersive .cat-prompt { min-height: 2.4em; margin-bottom: 4px; }

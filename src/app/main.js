@@ -114,22 +114,22 @@ function sessionCoinReward(minutes) {
 // games pay their flat `coins` on completion.
 const trainingCatalog = [
   { id: "nback", kind: "classic", open: "exercise", domain: "Memory", name: "N-Back", minutes: 5, icon: "layers" },
-  { id: "rrt", kind: "classic", open: "exercise", domain: "Logic", name: "Relational Reasoning", minutes: 6, icon: "branch" },
+  { id: "rrt", kind: "classic", open: "exercise", domain: "Logic", name: "Relational Reasoning", minutes: 5, icon: "branch" },
   { id: "cct", kind: "classic", open: "exercise", domain: "Focus", name: "Cognitive Control", minutes: 5, icon: "gauge" },
   { id: "ict", kind: "classic", open: "exercise", domain: "Focus", name: "Inhibitory Control", minutes: 5, icon: "block" },
-  { id: "gridmemory", kind: "game", open: "mini", domain: "Memory", name: "Grid Memory", minutes: 2, coins: 30, icon: "grid" },
-  { id: "seqrecall", kind: "game", open: "mini", domain: "Memory", name: "Sequence Memory", minutes: 2, coins: 30, icon: "list" },
-  { id: "numrecall", kind: "game", open: "mini", domain: "Memory", name: "Number Recall", minutes: 2, coins: 30, icon: "hash" },
-  { id: "verbal", kind: "game", open: "mini", domain: "Language", name: "Word Memory", minutes: 3, coins: 40, icon: "book" },
-  { id: "fallacy", kind: "game", open: "mini", domain: "Logic", name: "Spot the Fallacy", minutes: 3, coins: 40, icon: "scales" },
-  { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 3, coins: 40, icon: "sigma" },
-  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 1, coins: 0, icon: "bolt" }
+  { id: "gridmemory", kind: "game", open: "mini", domain: "Memory", name: "Grid Memory", minutes: 5, coins: 60, icon: "grid" },
+  { id: "seqrecall", kind: "game", open: "mini", domain: "Memory", name: "Sequence Memory", minutes: 5, coins: 60, icon: "list" },
+  { id: "numrecall", kind: "game", open: "mini", domain: "Memory", name: "Number Recall", minutes: 5, coins: 60, icon: "hash" },
+  { id: "verbal", kind: "game", open: "mini", domain: "Language", name: "Word Memory", minutes: 5, coins: 60, icon: "book" },
+  { id: "fallacy", kind: "game", open: "mini", domain: "Logic", name: "Spot the Fallacy", minutes: 5, coins: 60, icon: "scales" },
+  { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 5, coins: 60, icon: "sigma" },
+  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 5, coins: 0, icon: "bolt" }
 ];
 // Section order for the hub; anything tagged outside this list falls in after.
 const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
 // Home's shortlist — see homeRecommendations(). Declared here because Home
 // renders during module init, before the function-level declarations below.
-const homeRecommendedIds = ["nback", "rrt", "cct", "ict", "mentalmath"];
+const homeRecommendedIds = ["nback", "rrt", "mentalmath", "fallacy"];
 
 
 const trainIconPaths = {
@@ -382,12 +382,12 @@ const routineExerciseMeta = {
   mot: { label: "3D MOT", defaultMinutes: 4, secondsPerTrial: 10 },
   ufov: { label: "UFOV", defaultMinutes: 3, secondsPerTrial: 1.2 },
   // Mini games run one full round per block (no time/trial settings).
-  gridmemory: { label: "Grid Memory", defaultMinutes: 1, mini: true },
-  seqrecall: { label: "Sequence Memory", defaultMinutes: 1, mini: true },
-  numrecall: { label: "Number Recall", defaultMinutes: 1, mini: true },
-  verbal: { label: "Word Memory", defaultMinutes: 1.5, mini: true },
-  reaction: { label: "Reaction Time", defaultMinutes: 0.5, mini: true },
-  fallacy: { label: "Spot the Fallacy", defaultMinutes: 2, mini: true }
+  gridmemory: { label: "Grid Memory", defaultMinutes: 5, mini: true },
+  seqrecall: { label: "Sequence Memory", defaultMinutes: 5, mini: true },
+  numrecall: { label: "Number Recall", defaultMinutes: 5, mini: true },
+  verbal: { label: "Word Memory", defaultMinutes: 5, mini: true },
+  reaction: { label: "Reaction Time", defaultMinutes: 5, mini: true },
+  fallacy: { label: "Spot the Fallacy", defaultMinutes: 5, mini: true }
 };
 
 const nBackTrialTimeLimits = {
@@ -2719,7 +2719,7 @@ const miniWordPool = [
 const FALLACY_STATE_KEY = "cogni.fallacyState.v1";
 const FALLACY_SEEN_KEY = "cogni.fallacySeen.v1";
 const FALLACY_MAX_TIER = 4;
-const FALLACY_ROUND_SIZE = 8;
+const FALLACY_ROUND_SIZE = 16;
 const FALLACY_SOFT_TIMER_MS = 15000;
 let fallacyBank = null; // { items, meta, fallacyIds } once loaded from JSON
 
@@ -2806,12 +2806,12 @@ const miniGames = {
       const timers = miniTimers();
       const size = 5;
       let level = 1;
-      let lives = 3;
+      let lives = 5;
       let accepting = false;
       let pattern = new Set();
       let picked = new Set();
 
-      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 5 - lives))}`);
 
       function board(hint) {
         status();
@@ -2886,12 +2886,12 @@ const miniGames = {
       const timers = miniTimers();
       const size = 5;
       let level = 1;
-      let lives = 3;
+      let lives = 5;
       let order = [];
       let next = 0;
       let accepting = false;
 
-      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 5 - lives))}`);
 
       function board(showNumbers) {
         status();
@@ -2969,11 +2969,11 @@ const miniGames = {
     start(ctx) {
       const timers = miniTimers();
       let level = 1;
-      let lives = 3;
+      let lives = 5;
       let number = "";
       let entry = "";
 
-      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+      const status = () => ctx.setStatus(`Level ${level} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 5 - lives))}`);
 
       function newNumber() {
         const len = level + 2;
@@ -3050,10 +3050,10 @@ const miniGames = {
       const available = miniShuffle([...miniWordPool]);
       const seen = [];
       const seenSet = new Set();
-      let lives = 3;
+      let lives = 5;
       let score = 0;
 
-      const status = () => ctx.setStatus(`Score ${score} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 3 - lives))}`);
+      const status = () => ctx.setStatus(`Score ${score} · ${"●".repeat(Math.max(0, lives))}${"○".repeat(Math.max(0, 5 - lives))}`);
 
       function nextWord() {
         const canNew = available.length > 0;
@@ -3133,7 +3133,7 @@ const miniGames = {
     label: "Reaction Time",
     start(ctx) {
       const timers = miniTimers();
-      const trials = 5;
+      const trials = 25;
       let done = 0;
       const times = [];
       let state = "idle";
@@ -3215,7 +3215,7 @@ const miniGames = {
     label: "Mental Math",
     start(ctx) {
       const timers = miniTimers();
-      const total = 10;
+      const total = 20;
       let index = 0;
       let correct = 0;
       const times = [];
