@@ -131,6 +131,13 @@ const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
 // renders during module init, before the function-level declarations below.
 const homeRecommendedIds = ["nback", "rrt", "mentalmath", "fallacy"];
 
+// Which tab is showing, and the one before it. Opening You on the free tier
+// throws up the paywall; dismissing it should put the user back where they
+// were rather than stranding them on the locked page behind it.
+let activeTabId = null;
+let previousTabId = null;
+let paywallReturnTab = null;
+
 
 const trainIconPaths = {
   layers: `<path d="m12 3.5 8.5 4.2-8.5 4.3L3.5 7.7 12 3.5Z"/><path d="m3.5 12 8.5 4.3 8.5-4.3"/><path d="m3.5 16.3 8.5 4.2 8.5-4.2"/>`,
@@ -1544,7 +1551,24 @@ function applyPagePaywall(page, { title, body } = {}) {
       </div>
     </div>`;
 }
-function closePricingModal() { document.querySelector("#pricing-dialog")?.close(); }
+function closePricingModal() {
+  document.querySelector("#pricing-dialog")?.close();
+  returnFromPaywall();
+}
+
+// The paywall raised by opening You on the free tier came from somewhere;
+// dismissing it should go back there rather than leaving the user on the
+// locked page behind it.
+function returnFromPaywall() {
+  const target = paywallReturnTab;
+  paywallReturnTab = null;
+  if (!target) return;
+  const back = { home: showHome, coach: showCoach, exercises: showExerciseHub,
+                 assessments: showAssessments, screentime: showScreenTime };
+  // "statistics" is the locked page that raised this, so returning there would
+  // just reopen the paywall — fall back to Home.
+  (back[target] ?? showCoach)();
+}
 
 let pricingModalWired = false;
 // --- Paywall social proof ---------------------------------------------------
@@ -1674,6 +1698,9 @@ function wirePricingModal() {
   if (!dialog) return;
   pricingModalWired = true;
   document.querySelector("#pricing-close")?.addEventListener("click", closePricingModal);
+  // Escape dismisses without going through closePricingModal, so cover it here.
+  // returnFromPaywall clears its own target, making the double-call harmless.
+  dialog.addEventListener("close", returnFromPaywall);
   dialog.addEventListener("click", (event) => { if (event.target === dialog) closePricingModal(); });
   dialog.querySelectorAll("[data-pricing-billing]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -4308,7 +4335,10 @@ function renderProfile() {
   });
   if (elements.profilePage.classList.contains("page-locked")) {
     // Native goes straight to the offer rather than making you tap "See plans".
-    if (cogniUiMode === "play") openPricingModal();
+    if (cogniUiMode === "play") {
+      paywallReturnTab = previousTabId;
+      openPricingModal();
+    }
     return;
   }
   updateSegmentedControls();
@@ -7527,6 +7557,8 @@ function toggleProfileDataPanel(panel) {
 }
 
 function setActiveTab(tab) {
+  // Track the previous tab so a paywall bounce can return the user there.
+  if (tab !== activeTabId) { previousTabId = activeTabId; activeTabId = tab; }
   elements.sideNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.section === tab);
   });
