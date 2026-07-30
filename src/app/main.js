@@ -4301,7 +4301,11 @@ function renderProfile() {
     title: "Upgrade to access your statistics",
     body: "Your full cognition profile, trends and per-exercise breakdowns — included with Basic and Pro."
   });
-  if (elements.profilePage.classList.contains("page-locked")) return;
+  if (elements.profilePage.classList.contains("page-locked")) {
+    // Native goes straight to the offer rather than making you tap "See plans".
+    if (cogniUiMode === "play") openPricingModal();
+    return;
+  }
   updateSegmentedControls();
   window.requestAnimationFrame(updateSegmentedControls);
 }

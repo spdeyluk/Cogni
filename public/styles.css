@@ -18124,3 +18124,23 @@ html.mode-play .paywall-plan-sub {
   font-size: 0.76rem;
   line-height: 1.25;
 }
+
+/* ===================================================================
+   Paywall alignment (2026-07-30)
+   The content column stretched edge to edge, so on anything wider than a
+   phone it read as left-shifted; and the close button floated at a fixed
+   14px, landing inside the status bar on a notched device.
+   =================================================================== */
+html.mode-play .pricing-dialog-inner {
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+}
+
+html.mode-play .pricing-close {
+  position: absolute;
+  float: none;
+  margin: 0;
+  top: max(16px, calc(env(safe-area-inset-top, 0px) + 8px));
+  right: 16px;
+}
