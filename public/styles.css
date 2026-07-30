@@ -17839,3 +17839,136 @@ html.mode-play .paywall-links a:hover { color: var(--text); text-decoration: und
 
 /* The comparison grid stays, but reads as a quiet list under the CTA. */
 html.mode-play .pricing-compare { font-size: 0.9rem; }
+
+/* ===================================================================
+   Paywall v2, native: timeline + single-product plan pair (2026-07-30)
+   =================================================================== */
+/* The Basic/Pro grid, billing toggle and compare table are the web's
+   presentation of the same subscription; native uses the two cards below. */
+html.mode-play .pricing-dialog .pricing-billing,
+html.mode-play .pricing-dialog .pricing-plans,
+html.mode-play .pricing-dialog .pricing-compare,
+html.mode-play .pricing-dialog .pricing-quote { display: none !important; }
+
+html.mode-play .pricing-dialog-inner > h2 { max-width: 15ch; margin-inline: auto; }
+
+/* --- Four-week timeline --------------------------------------------- */
+.paywall-timeline {
+  display: none;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  gap: 0;
+}
+html.mode-play .paywall-timeline { display: grid; }
+
+.paywall-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  padding-bottom: 20px;
+}
+.paywall-step:last-child { padding-bottom: 0; }
+
+/* Connector runs between the icon pucks, not past the last one. */
+.paywall-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 40px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+
+.paywall-step-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem;
+}
+.paywall-step:first-child .paywall-step-icon {
+  border-color: transparent;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.paywall-step-copy { display: grid; gap: 3px; padding-top: 3px; }
+.paywall-step-copy strong { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; }
+.paywall-step-copy span { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
+
+/* --- Plan pair ------------------------------------------------------- */
+.paywall-plans { display: none; }
+html.mode-play .paywall-plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 4px;
+}
+
+.paywall-plan {
+  position: relative;
+  display: grid !important;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  min-height: 92px;
+  padding: 18px 16px !important;
+  border: 2px solid var(--line-strong) !important;
+  border-radius: 18px !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  text-align: left;
+  cursor: pointer;
+}
+.paywall-plan.is-selected { border-color: var(--text) !important; }
+
+.paywall-plan-name { color: var(--muted); font-size: 1.02rem; font-weight: 500; }
+.paywall-plan-price b { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+.paywall-plan-price i { color: var(--muted); font-size: 0.92rem; font-style: normal; }
+
+.paywall-plan-flag {
+  position: absolute;
+  top: -11px;
+  right: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #F5C542;
+  color: #1A1A1A;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.paywall-plan-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.paywall-plan.is-selected .paywall-plan-check { opacity: 1; }
+
+/* CTA reads as the primary action on the screen. */
+html.mode-play .pricing-upgrade {
+  border-radius: 999px !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+}

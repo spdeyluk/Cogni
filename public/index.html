@@ -2170,6 +2170,24 @@
         <p class="paywall-sub">Unlock every exercise, your full history, and the tools that keep the habit going.</p>
         <div class="paywall-stats" id="paywall-stats" hidden></div>
         <div class="paywall-quotes" id="paywall-quotes" hidden></div>
+
+        <!-- Native: what the first four weeks actually look like. -->
+        <ol class="paywall-timeline" id="paywall-timeline"></ol>
+
+        <!-- Native: one product, two billing periods. The web keeps the
+             Basic/Pro grid + billing toggle below. -->
+        <div class="paywall-plans" id="paywall-plans" role="radiogroup" aria-label="Billing period">
+          <button class="paywall-plan" type="button" role="radio" aria-checked="false" data-paywall-billing="monthly">
+            <span class="paywall-plan-name">Monthly</span>
+            <span class="paywall-plan-price"><b>9,99 €</b></span>
+          </button>
+          <button class="paywall-plan is-selected" type="button" role="radio" aria-checked="true" data-paywall-billing="annual">
+            <span class="paywall-plan-flag">Popular</span>
+            <span class="paywall-plan-name">Yearly</span>
+            <span class="paywall-plan-price"><b>7,50 €</b><i>/month</i></span>
+            <span class="paywall-plan-check" aria-hidden="true">✓</span>
+          </button>
+        </div>
         <div class="pricing-billing">
           <div class="pricing-billing-toggle" role="tablist" aria-label="Billing period">
             <button class="is-active" data-pricing-billing="annual" role="tab" type="button">Annual</button>
@@ -2209,8 +2227,8 @@
           <div class="pricing-compare-row"><span>Cogni IQ Test</span><span>—</span><span>✓</span></div>
         </div>
 
-        <p class="paywall-renew">Renews automatically. Cancel anytime.</p>
         <button class="pricing-upgrade" id="pricing-upgrade" type="button">Continue</button>
+        <p class="paywall-renew">Renews automatically. Cancel anytime.</p>
         <p class="pricing-note" id="pricing-note"></p>
         <div class="paywall-links">
           <a href="terms.html" target="_blank" rel="noopener">Terms</a>
