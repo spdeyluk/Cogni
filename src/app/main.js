@@ -123,7 +123,7 @@ const trainingCatalog = [
   { id: "verbal", kind: "game", open: "mini", domain: "Language", name: "Word Memory", minutes: 3, coins: 40, icon: "book" },
   { id: "fallacy", kind: "game", open: "mini", domain: "Logic", name: "Spot the Fallacy", minutes: 3, coins: 40, icon: "scales" },
   { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 3, coins: 40, icon: "sigma" },
-  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 1, coins: 15, icon: "bolt" }
+  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 1, coins: 0, icon: "bolt" }
 ];
 // Section order for the hub; anything tagged outside this list falls in after.
 const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
@@ -1409,7 +1409,10 @@ function classicCoinBannerText() {
 }
 function miniCoinBannerText(id) {
   const entry = catalogEntry(id);
-  return `Finish this session to earn <strong>${entry ? entry.coins : sessionCoinReward(2)} coins</strong>.`;
+  const coins = entry ? entry.coins : sessionCoinReward(2);
+  // Exercises that pay nothing promise nothing — the banner is dropped.
+  if (!coins) return "";
+  return `Finish this session to earn <strong>${coins} coins</strong>.`;
 }
 
 // Classic exercises: the banner sits at the foot of the difficulty menu.
@@ -3717,13 +3720,12 @@ function trainCardHtml(entry) {
   const coins = catalogCoins(entry);
   const openAttr = entry.open === "mini" ? `data-open-mini="${entry.id}"` : `data-open-exercise="${entry.id}"`;
   // Coins are a play-mode feature; the web build shows duration only.
-  const coinPill = cogniUiMode === "play"
+  const paysCoins = cogniUiMode === "play" && coins > 0;
+  const coinPill = paysCoins
     ? `<span class="train-card-coins"><img src="assets/cogni-coin-23.png" alt="" aria-hidden="true">${coins}</span>`
     : "";
   const spoken = `${entry.minutes} minute${entry.minutes === 1 ? "" : "s"}`;
-  const label = cogniUiMode === "play"
-    ? `${entry.name}, ${spoken}, ${coins} coins`
-    : `${entry.name}, ${spoken}`;
+  const label = paysCoins ? `${entry.name}, ${spoken}, ${coins} coins` : `${entry.name}, ${spoken}`;
   return `<article class="train-card" ${openAttr} tabindex="0" role="button" aria-label="${escapeHtml(label)}">
       <span class="train-card-icon" aria-hidden="true">${trainSvg(trainIconPaths[entry.icon] ?? trainIconPaths.grid)}</span>
       <span class="train-card-body">
