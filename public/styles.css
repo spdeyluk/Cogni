@@ -18159,3 +18159,33 @@ html.mode-play .pricing-close {
   line-height: 1 !important;
   font-size: 1.1rem !important;
 }
+
+/* ===================================================================
+   Paywall entrance (2026-07-30)
+   The sheet appeared instantly. Slide it up from the bottom with the
+   backdrop fading in behind, matching the settings drawer's easing.
+   =================================================================== */
+@keyframes paywall-sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes paywall-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+html.mode-play .pricing-dialog[open] {
+  animation: paywall-sheet-in 0.36s cubic-bezier(0.32, 0.72, 0.35, 1);
+  will-change: transform;
+}
+
+html.mode-play .pricing-dialog[open]::backdrop {
+  animation: paywall-backdrop-in 0.36s ease-out;
+}
+
+/* The blanket reduce-motion rule uses *, which never matches ::backdrop. */
+html.reduce-motion .pricing-dialog[open],
+html.reduce-motion .pricing-dialog[open]::backdrop {
+  animation-duration: 0.001ms !important;
+}
