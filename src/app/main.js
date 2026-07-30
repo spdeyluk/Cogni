@@ -1610,7 +1610,7 @@ function renderPaywallCta() {
   if (renew) {
     renew.textContent = paywallTrialDays > 0
       ? `${paywallTrialDays}-day free trial · No payment right now`
-      : "Renews automatically. Cancel anytime.";
+      : "Renews automatically, Cancel anytime";
   }
 }
 
