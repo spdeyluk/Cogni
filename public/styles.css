@@ -18348,3 +18348,20 @@ html.mode-play .train-card-icon {
 }
 .exercise-countdown-overlay,
 .countdown { animation: none !important; opacity: 1 !important; }
+
+/* The mobile content padding reserves 58px above the safe area for the sidebar
+   hamburger — which play mode hides, since the native app has its own tab bar.
+   On a notched phone that left ~117px of dead space at the top of Home. Clear
+   the status bar and no more. */
+html.mode-play .app-content {
+  padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 14px)) !important;
+}
+
+/* Tightening the column to fit the Pro list left a gap under the CTA on tall
+   phones. Let the timeline take the slack and spread its steps into it. It may
+   grow but not shrink below its content, so this can't reproduce the earlier
+   overlap; on a short screen there is no free space and nothing moves. */
+html.mode-play .paywall-timeline {
+  flex: 1 1 auto;
+  align-content: space-between;
+}
