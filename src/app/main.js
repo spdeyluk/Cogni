@@ -1425,6 +1425,7 @@ document.querySelectorAll(".difficulty-group").forEach((group) => {
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
   wirePricingModal();
+  renderPaywallProof();
   const dialog = document.querySelector("#pricing-dialog");
   if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
 }
@@ -1543,6 +1544,38 @@ function applyPagePaywall(page, { title, body } = {}) {
 function closePricingModal() { document.querySelector("#pricing-dialog")?.close(); }
 
 let pricingModalWired = false;
+// --- Paywall social proof ---------------------------------------------------
+// Deliberately empty. These are public claims about a shipping product, so they
+// must come from real data — the App Store listing, or actual reviews with the
+// reviewer's permission. Both sections stay hidden while their array is empty
+// rather than shipping invented numbers or testimonials.
+// Shape: paywallStats     -> [{ value: "4.8", label: "Average rating" }]
+//        paywallTestimonials -> [{ name: "…", region: "🇺🇸", stars: 5, quote: "…" }]
+const paywallStats = [];
+const paywallTestimonials = [];
+
+function renderPaywallProof() {
+  const stats = document.querySelector("#paywall-stats");
+  if (stats) {
+    stats.hidden = paywallStats.length === 0;
+    stats.innerHTML = paywallStats.map((stat) => `
+      <div class="paywall-stat">
+        <strong>${escapeHtml(String(stat.value))}</strong>
+        <span>${escapeHtml(stat.label)}</span>
+      </div>`).join("");
+  }
+  const quotes = document.querySelector("#paywall-quotes");
+  if (quotes) {
+    quotes.hidden = paywallTestimonials.length === 0;
+    quotes.innerHTML = paywallTestimonials.map((item) => `
+      <figure class="paywall-quote">
+        <div class="paywall-quote-stars" aria-label="${Number(item.stars) || 5} out of 5">${"★".repeat(Math.max(1, Math.min(5, Number(item.stars) || 5)))}</div>
+        <figcaption>${escapeHtml(item.name)}${item.region ? ` <span aria-hidden="true">${escapeHtml(item.region)}</span>` : ""}</figcaption>
+        <blockquote>${escapeHtml(item.quote)}</blockquote>
+      </figure>`).join("");
+  }
+}
+
 function wirePricingModal() {
   if (pricingModalWired) return;
   const dialog = document.querySelector("#pricing-dialog");

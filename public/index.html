@@ -2161,7 +2161,15 @@
     <dialog class="pricing-dialog" id="pricing-dialog" data-billing="annual">
       <button class="pricing-close" id="pricing-close" type="button" aria-label="Close">×</button>
       <div class="pricing-dialog-inner">
-        <h2>Upgrade your account</h2>
+        <!-- Native paywall header: hero, headline, then social proof. The proof
+             blocks render from data that is empty until real figures exist. -->
+        <div class="paywall-hero" aria-hidden="true">
+          <img src="assets/brand/logo-star.png" alt="">
+        </div>
+        <h2>Train the mind behind everything you do.</h2>
+        <p class="paywall-sub">Unlock every exercise, your full history, and the tools that keep the habit going.</p>
+        <div class="paywall-stats" id="paywall-stats" hidden></div>
+        <div class="paywall-quotes" id="paywall-quotes" hidden></div>
         <div class="pricing-billing">
           <div class="pricing-billing-toggle" role="tablist" aria-label="Billing period">
             <button class="is-active" data-pricing-billing="annual" role="tab" type="button">Annual</button>
@@ -2201,8 +2209,14 @@
           <div class="pricing-compare-row"><span>Cogni IQ Test</span><span>—</span><span>✓</span></div>
         </div>
 
-        <button class="pricing-upgrade" id="pricing-upgrade" type="button">Upgrade</button>
+        <p class="paywall-renew">Renews automatically. Cancel anytime.</p>
+        <button class="pricing-upgrade" id="pricing-upgrade" type="button">Continue</button>
         <p class="pricing-note" id="pricing-note"></p>
+        <div class="paywall-links">
+          <a href="terms.html" target="_blank" rel="noopener">Terms</a>
+          <span aria-hidden="true">·</span>
+          <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+        </div>
 
         <figure class="pricing-quote">
           <blockquote>"Point the same pull that feeds exploit at your own mind."</blockquote>

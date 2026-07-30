@@ -17664,3 +17664,178 @@ html.mode-play .cat-immersive #cat-options { margin-bottom: 0; }
 /* The prompt reserves height so the options don't jump as prompt length varies
    between items — keep that, just less of it than the 3.2em the wide layout uses. */
 html.mode-play .cat-immersive .cat-prompt { min-height: 2.4em; margin-bottom: 4px; }
+
+/* ===================================================================
+   Paywall, native layout (2026-07-30)
+   Hero → headline → social proof → plan cards → CTA → legal links.
+   Scoped to play mode; the web checkout keeps the layout it had.
+   =================================================================== */
+html.mode-play .pricing-dialog-inner {
+  display: grid;
+  gap: 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+html.mode-play .paywall-hero {
+  display: grid;
+  place-items: center;
+  min-height: 132px;
+  margin: -8px -8px 0;
+  border-radius: 18px;
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 26%, var(--surface)) 0%, var(--surface) 72%);
+}
+html.mode-play .paywall-hero img { width: 84px; height: 84px; object-fit: contain; }
+
+html.mode-play .pricing-dialog-inner > h2 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.6rem, 6.4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+html.mode-play .paywall-sub {
+  margin: -6px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+/* --- Social proof (hidden until real data exists) -------------------- */
+html.mode-play .paywall-stats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 12px;
+}
+
+html.mode-play .paywall-stat {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+}
+html.mode-play .paywall-stat strong { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+html.mode-play .paywall-stat span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+html.mode-play .paywall-quotes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 82%;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+html.mode-play .paywall-quotes::-webkit-scrollbar { display: none; }
+
+html.mode-play .paywall-quote {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  scroll-snap-align: start;
+}
+html.mode-play .paywall-quote-stars { color: #FBBF24; font-size: 0.95rem; letter-spacing: 0.06em; }
+html.mode-play .paywall-quote figcaption { font-weight: 700; font-size: 0.95rem; }
+html.mode-play .paywall-quote blockquote {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+/* --- Plan cards: two big side-by-side tiles -------------------------- */
+html.mode-play .pricing-plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+html.mode-play .pricing-plan {
+  position: relative;
+  display: grid !important;
+  align-content: start;
+  gap: 6px;
+  min-height: 104px;
+  padding: 18px 14px 14px !important;
+  border: 2px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  text-align: left;
+}
+html.mode-play .pricing-plan.is-selected {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)) !important;
+}
+html.mode-play .pricing-plan-name { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+html.mode-play .pricing-plan-amount { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+html.mode-play .pricing-plan-per { font-size: 0.9rem; color: var(--muted); }
+
+/* Savings badge sits beside the billing toggle it describes, rather than
+   floating over it. */
+html.mode-play .pricing-billing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+html.mode-play .pricing-save {
+  position: static;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+html.mode-play .paywall-renew {
+  margin: 2px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+html.mode-play .pricing-upgrade {
+  width: 100%;
+  min-height: 56px;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+html.mode-play .paywall-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+html.mode-play .paywall-links a { color: var(--muted); text-decoration: none; }
+html.mode-play .paywall-links a:hover { color: var(--text); text-decoration: underline; }
+
+/* The comparison grid stays, but reads as a quiet list under the CTA. */
+html.mode-play .pricing-compare { font-size: 0.9rem; }
