@@ -3864,7 +3864,9 @@ function trainCardHtml(entry) {
     : "";
   const spoken = `${entry.minutes} minute${entry.minutes === 1 ? "" : "s"}`;
   const label = paysCoins ? `${entry.name}, ${spoken}, ${coins} coins` : `${entry.name}, ${spoken}`;
-  return `<article class="train-card" ${openAttr} tabindex="0" role="button" aria-label="${escapeHtml(label)}">
+  // data-domain drives the icon tint, so a card carries its domain colour
+  // wherever it renders — the hub rails and Home's recommendations alike.
+  return `<article class="train-card" data-domain="${escapeHtml(entry.domain)}" ${openAttr} tabindex="0" role="button" aria-label="${escapeHtml(label)}">
       <span class="train-card-icon" aria-hidden="true">${trainSvg(trainIconPaths[entry.icon] ?? trainIconPaths.grid)}</span>
       <span class="train-card-body">
         <span class="train-card-name">${escapeHtml(entry.name)}</span>
@@ -3886,7 +3888,7 @@ function renderTrainSections() {
   const html = trainDomainsFor(entries).map((domain) => {
     const items = entries.filter((entry) => entry.domain === domain);
     if (items.length === 0) return "";
-    return `<section class="train-section">
+    return `<section class="train-section" data-domain="${escapeHtml(domain)}">
         <h3 class="train-section-head">
           <span class="train-section-icon" aria-hidden="true">${trainSvg(trainDomainIcons[domain] ?? trainDomainIcons.Focus)}</span>
           ${escapeHtml(domain)}
