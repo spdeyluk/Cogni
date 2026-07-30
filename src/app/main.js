@@ -1572,6 +1572,11 @@ const paywallTimeline = [
     body: "A short test sets your starting focus, memory and speed."
   },
   {
+    icon: `<path d="M7.6 3h8.8M7.6 21h8.8"/><path d="M8.6 3v3.1c0 2 3.4 3.4 3.4 5.9s-3.4 3.9-3.4 5.9V21"/><path d="M15.4 3v3.1c0 2-3.4 3.4-3.4 5.9s3.4 3.9 3.4 5.9V21"/>`,
+    title: "Day 3 — Training buys time",
+    body: "Every minute you train adds to a screen-time balance you control."
+  },
+  {
     icon: `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.8v2.6M12 19.6v2.6M22.2 12h-2.6M4.4 12H1.8"/>`,
     title: "Week 2 — Better focus",
     body: "Holding attention through a full session takes less effort."
@@ -1582,9 +1587,9 @@ const paywallTimeline = [
     body: "New material needs fewer passes before it sticks."
   },
   {
-    icon: `<path d="M6.4 2.8h7.4l4.2 4.2v14.2H6.4z"/><path d="M13.6 2.8V7h4.4"/><path d="M9.4 17.4v-3M12 17.4v-5.4M14.6 17.4v-2"/>`,
+    icon: `<path d="M4.5 19.5h15"/><path d="M7.4 19.5v-5.2M12 19.5V7.8M16.6 19.5v-8.4"/><path d="m5.2 9.6 4.4-4 3.6 2.6 5.6-4.8"/>`,
     title: "Week 4 — Your first report",
-    body: "See exactly what improved, and what to train next."
+    body: "See what improved, how much time you took back, and what to train next."
   }
 ];
 
