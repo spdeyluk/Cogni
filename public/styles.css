@@ -3853,8 +3853,11 @@ kbd {
 .countdown {
   position: absolute;
   inset: 0;
+  z-index: 6;
   display: grid;
   place-items: center;
+  border-radius: inherit;
+  background: var(--bg);
   color: var(--text);
   font-size: clamp(6rem, 20vw, 9rem);
   font-weight: 500;
@@ -18333,3 +18336,15 @@ html.mode-play .train-card { box-shadow: none !important; }
 html.mode-play .train-card-icon {
   background: color-mix(in srgb, var(--domain, var(--surface-2)) 42%, var(--surface-2));
 }
+
+/* The countdown digit animates; its backdrop does not. Running countdown-fade
+   on the overlay faded the opaque background too, so the exercise showed
+   through for most of each step. */
+.countdown-digit {
+  display: block;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 1;
+}
+.exercise-countdown-overlay,
+.countdown { animation: none !important; opacity: 1 !important; }

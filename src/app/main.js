@@ -8598,10 +8598,17 @@ function startCountdown() {
       return;
     }
 
-    elements.countdown.textContent = steps[index];
-    elements.countdown.classList.remove("countdown-pop");
-    void elements.countdown.offsetWidth;
-    elements.countdown.classList.add("countdown-pop");
+    let digit = elements.countdown.querySelector(".countdown-digit");
+    if (!digit) {
+      elements.countdown.textContent = "";
+      digit = document.createElement("span");
+      digit.className = "countdown-digit";
+      elements.countdown.append(digit);
+    }
+    digit.textContent = steps[index];
+    digit.classList.remove("countdown-pop");
+    void digit.offsetWidth;
+    digit.classList.add("countdown-pop");
     index += 1;
     schedule(showCountdownStep, 850);
   }
@@ -8612,6 +8619,12 @@ function startExerciseCountdown(stageElement, scheduleFn, isActive, onComplete) 
   let index = 0;
   const countdown = document.createElement("div");
   countdown.className = "exercise-countdown-overlay";
+  // The digit lives in its own element: the pop animation fades opacity to 0,
+  // and running that on the overlay took its opaque backdrop with it, showing
+  // the exercise underneath for most of each step.
+  const digit = document.createElement("span");
+  digit.className = "countdown-digit";
+  countdown.append(digit);
   stageElement.append(countdown);
   showStep();
 
@@ -8627,10 +8640,10 @@ function startExerciseCountdown(stageElement, scheduleFn, isActive, onComplete) 
       return;
     }
 
-    countdown.textContent = steps[index];
-    countdown.classList.remove("countdown-pop");
-    void countdown.offsetWidth;
-    countdown.classList.add("countdown-pop");
+    digit.textContent = steps[index];
+    digit.classList.remove("countdown-pop");
+    void digit.offsetWidth;
+    digit.classList.add("countdown-pop");
     index += 1;
     scheduleFn(showStep, 850);
   }
