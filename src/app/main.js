@@ -1434,6 +1434,7 @@ function openPricingModal() {
   wirePricingModal();
   renderPaywallProof();
   renderPaywallTimeline();
+  renderPaywallFeatures();
   renderPaywallCta();
   wirePaywallPlans();
   const dialog = document.querySelector("#pricing-dialog");
@@ -1587,6 +1588,26 @@ const paywallTestimonials = [];
 // the "Try for free" copy turns itself on.
 const paywallTrialDays = 0;
 
+// What the subscription actually unlocks. Each line maps to a real gate:
+// the Profile page and its history (applyPagePaywall), the IQ test and custom
+// routines (isProUser), and the advanced settings <details> (hasPaidPlan).
+const paywallProFeatures = [
+  "All stats and history",
+  "Full IQ test",
+  "Advanced training settings",
+  "Screen-time control"
+];
+
+function renderPaywallFeatures() {
+  const host = document.querySelector("#paywall-features");
+  if (!host) return;
+  host.innerHTML = paywallProFeatures.map((feature) => `
+    <li class="paywall-feature">
+      <span class="paywall-feature-tick" aria-hidden="true">${trainSvg(`<path d="m5 12.5 4.5 4.5L19 7"/>`)}</span>
+      <span>${escapeHtml(feature)}</span>
+    </li>`).join("");
+}
+
 // The first four weeks, stated as outcomes rather than process. These are
 // efficacy claims about training — keep them defensible if the copy grows.
 const paywallTimeline = [
@@ -1602,13 +1623,8 @@ const paywallTimeline = [
   },
   {
     icon: `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.8v2.6M12 19.6v2.6M22.2 12h-2.6M4.4 12H1.8"/>`,
-    title: "Week 2 — Better focus",
-    body: "Holding attention through a full session takes less effort."
-  },
-  {
-    icon: `<path d="M12 4.4a3.4 3.4 0 0 0-3.3 4.2A2.9 2.9 0 0 0 7.4 13.4v2.1a2.9 2.9 0 0 0 4.6 2.5 2.9 2.9 0 0 0 4.6-2.5v-2.1a2.9 2.9 0 0 0-1.3-4.8A3.4 3.4 0 0 0 12 4.4Z"/><path d="M12 4.9v13.4"/>`,
-    title: "Week 3 — Learning gets easier",
-    body: "New material needs fewer passes before it sticks."
+    title: "Week 2 — Better focus, easier learning",
+    body: "Attention holds longer and new material sticks in fewer passes."
   },
   {
     icon: `<path d="M4.5 19.5h15"/><path d="M7.4 19.5v-5.2M12 19.5V7.8M16.6 19.5v-8.4"/><path d="m5.2 9.6 4.4-4 3.6 2.6 5.6-4.8"/>`,
