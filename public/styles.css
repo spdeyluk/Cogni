@@ -18049,3 +18049,78 @@ html.mode-play .paywall-plan { padding: 14px 12px !important; }
 /* Keep the headline clear of the close button. */
 html.mode-play .pricing-dialog-inner > h2 { padding-right: 44px; }
 html.mode-play .pricing-close { top: 14px; right: 14px; }
+
+/* ===================================================================
+   Paywall plan cards, exact treatment (2026-07-30)
+   Selected card carries a notched SAVE badge and a solid outline; the
+   other is a plain filled tile. Cogni's accent stands in for the
+   reference's green so the cards still belong to this app.
+   =================================================================== */
+html.mode-play .paywall-plans { gap: 12px; overflow: visible; padding-top: 10px; }
+
+html.mode-play .paywall-plan {
+  align-content: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 16px 14px !important;
+  border: 2px solid transparent !important;
+  border-radius: 18px !important;
+  background: var(--surface-2) !important;
+  overflow: visible;
+}
+
+html.mode-play .paywall-plan.is-selected {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface)) !important;
+}
+
+/* Notched over the top-left corner, like the reference. */
+html.mode-play .paywall-plan-flag {
+  top: -11px;
+  left: 14px;
+  right: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+html.mode-play .paywall-plan-price { gap: 0; }
+html.mode-play .paywall-plan-price b {
+  font-size: clamp(1.12rem, 4.6vw, 1.34rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+html.mode-play .paywall-plan-price i {
+  font-size: clamp(1.12rem, 4.6vw, 1.34rem);
+  font-weight: 700;
+  font-style: normal;
+  color: var(--text);
+}
+
+html.mode-play .paywall-plan-sub {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.3;
+}
+html.mode-play .paywall-plan.is-selected .paywall-plan-sub {
+  color: color-mix(in srgb, var(--accent) 55%, var(--text-2));
+}
+
+/* No name row or tick in this treatment — the price is the label. */
+html.mode-play .paywall-plan-name,
+html.mode-play .paywall-plan-check { display: none !important; }
+
+/* Fit the price inside the card: at two columns on a 390px screen each tile
+   only has ~114px of inner width, and the price was rendering ~131px wide. */
+html.mode-play .paywall-plan { padding: 15px 10px !important; }
+html.mode-play .paywall-plan-price b,
+html.mode-play .paywall-plan-price i { font-size: clamp(0.95rem, 4.2vw, 1.1rem); }
+html.mode-play .paywall-plan-sub {
+  white-space: normal;
+  font-size: 0.76rem;
+  line-height: 1.25;
+}

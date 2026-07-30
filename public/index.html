@@ -2177,15 +2177,14 @@
         <!-- Native: one product, two billing periods. The web keeps the
              Basic/Pro grid + billing toggle below. -->
         <div class="paywall-plans" id="paywall-plans" role="radiogroup" aria-label="Billing period">
-          <button class="paywall-plan" type="button" role="radio" aria-checked="false" data-paywall-billing="monthly">
-            <span class="paywall-plan-name">Monthly</span>
-            <span class="paywall-plan-price"><b>9,99 €</b></span>
-          </button>
           <button class="paywall-plan is-selected" type="button" role="radio" aria-checked="true" data-paywall-billing="annual">
-            <span class="paywall-plan-flag">Popular</span>
-            <span class="paywall-plan-name">Yearly</span>
-            <span class="paywall-plan-price"><b>7,50 €</b><i>/month</i></span>
-            <span class="paywall-plan-check" aria-hidden="true">✓</span>
+            <span class="paywall-plan-flag">SAVE 86%</span>
+            <span class="paywall-plan-price"><b>59,99 €</b><i>/year</i></span>
+            <span class="paywall-plan-sub">(1,15 €/week)</span>
+          </button>
+          <button class="paywall-plan" type="button" role="radio" aria-checked="false" data-paywall-billing="weekly">
+            <span class="paywall-plan-price"><b>8,99 €</b><i>/week</i></span>
+            <span class="paywall-plan-sub">8,99 € billed weekly</span>
           </button>
         </div>
         <div class="pricing-billing">
@@ -2228,7 +2227,7 @@
         </div>
 
         <button class="pricing-upgrade" id="pricing-upgrade" type="button">Continue</button>
-        <p class="paywall-renew">Renews automatically. Cancel anytime.</p>
+        <p class="paywall-renew">Renews automatically, Cancel anytime</p>
         <p class="pricing-note" id="pricing-note"></p>
         <div class="paywall-links">
           <a href="terms.html" target="_blank" rel="noopener">Terms</a>

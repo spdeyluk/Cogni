@@ -11,6 +11,7 @@
 //   STRIPE_PRICE_BASIC_ANNUAL    price_...
 //   STRIPE_PRICE_PRO_MONTHLY     price_...
 //   STRIPE_PRICE_PRO_ANNUAL      price_...
+//   STRIPE_PRICE_PRO_WEEKLY      price_...   (the native paywall's weekly plan)
 //   SITE_URL                     https://getcogni.app   (where Stripe returns to)
 // SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY are injected
 // automatically by the platform.
@@ -35,6 +36,9 @@ const PRICES: Record<string, string | undefined> = {
   "basic:annual": Deno.env.get("STRIPE_PRICE_BASIC_ANNUAL"),
   "pro:monthly": Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"),
   "pro:annual": Deno.env.get("STRIPE_PRICE_PRO_ANNUAL"),
+  // The native paywall sells yearly or weekly. Until this price exists in
+  // Stripe and the secret is set, a weekly checkout returns "unknown plan".
+  "pro:weekly": Deno.env.get("STRIPE_PRICE_PRO_WEEKLY"),
 };
 
 const cors = {
