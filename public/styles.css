@@ -11090,9 +11090,9 @@ dialog .screen-time-apps-row {
   --line: #27272A;          /* zinc-800  — dividers read on --bg, vanish on cards (intended: cards are flat) */
   --line-strong: #3F3F46;   /* zinc-700  — borders that must read on a card */
   --fill-subtle: rgba(244, 244, 245, 0.06);
-  --accent: #6366F1;        /* indigo-500 */
+  --accent: #2D41FF;        /* brand blue */
   --on-accent: #FFFFFF;
-  --accent-2: #818CF8;      /* indigo-400 */
+  --accent-2: #6C7AFF;      /* brand blue, lightened for hovers */
   --success: #22C55E;
   --error: #F87171;
   --warning: #FACC15;
@@ -13839,7 +13839,7 @@ html.landing-active #app-shell { display: none !important; }
   .side-nav-button.active .nav-icon,
   .side-nav-button.active .nav-icon svg {
     background: transparent !important;
-    color: #818CF8 !important;
+    color: #6C7AFF !important;
   }
 }
 
@@ -14460,7 +14460,7 @@ html.reduce-motion *::after {
   height: 52px;
   flex: none;
   border-radius: 14px;
-  background: rgba(99, 102, 241, 0.14);
+  background: rgba(45, 65, 255, 0.14);
 }
 
 .assessment-intro-icon svg {
@@ -14599,7 +14599,7 @@ html.reduce-motion *::after {
   margin: 0 0 6px !important;
   padding: 3px 9px !important;
   border-radius: 6px !important;
-  background: rgba(129, 140, 248, 0.12) !important;
+  background: rgba(108, 122, 255, 0.12) !important;
   color: var(--accent-2) !important;
   font-size: 0.68rem !important;
   font-weight: 600 !important;
@@ -14872,7 +14872,7 @@ html.reduce-motion *::after {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
   color: var(--on-accent) !important;
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.32) !important;
+  box-shadow: 0 6px 16px rgba(45, 65, 255, 0.32) !important;
 }
 
 /* Hide the dark sliding pill in the sheet; the solid blue box above is the
@@ -15305,7 +15305,7 @@ html.reduce-motion *::after {
   .side-nav-button.active,
   .side-nav-button.active .nav-icon,
   .side-nav-button.active .nav-icon svg {
-    color: #818CF8 !important;
+    color: #6C7AFF !important;
     background: transparent !important;
   }
 }
@@ -15592,7 +15592,7 @@ html.reduce-motion *::after {
   }
   .side-nav-button.active,
   .side-nav-button.active .nav-icon,
-  .side-nav-button.active .nav-icon svg { color: #818CF8 !important; }
+  .side-nav-button.active .nav-icon svg { color: #6C7AFF !important; }
 
   /* No bottom bar now: normal content padding + room for the hamburger. */
   :root { --mobile-nav-height: 0px; }
@@ -16680,7 +16680,7 @@ html.mode-play .nav-hamburger { display: none !important; }
   color: var(--text) !important;
   cursor: pointer; box-shadow: none !important;
 }
-.pricing-plan.is-selected { border-color: var(--accent) !important; background: rgba(99, 102, 241, 0.12) !important; }
+.pricing-plan.is-selected { border-color: var(--accent) !important; background: rgba(45, 65, 255, 0.12) !important; }
 .pricing-plan-name { font-size: 1.3rem; font-weight: 700; }
 .pricing-plan-amount { font-size: 1.5rem; font-weight: 700; }
 .pricing-plan-per { color: var(--muted); font-size: 0.9rem; margin-left: 4px; }
@@ -16723,7 +16723,7 @@ html.mode-play .nav-hamburger { display: none !important; }
 /* Continuous highlighted Plus column: move row padding onto the cells. */
 .pricing-compare-row { padding: 0 2px !important; }
 .pricing-compare-row span { padding: 11px 0; }
-.pricing-compare-row span:nth-child(2) { background: rgba(99, 102, 241, 0.12); }
+.pricing-compare-row span:nth-child(2) { background: rgba(45, 65, 255, 0.12); }
 .pricing-compare-head span:nth-child(2) { border-radius: 10px 10px 0 0; }
 .pricing-compare-row:last-child span:nth-child(2) { border-radius: 0 0 10px 10px; }
 
@@ -16769,7 +16769,7 @@ html.mode-play .nav-hamburger { display: none !important; }
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: rgba(99, 102, 241, 0.16);
+  background: rgba(45, 65, 255, 0.16);
 }
 .page-paywall-card h2 { margin: 0 0 8px; font-size: 1.35rem; }
 .page-paywall-card p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
@@ -16798,10 +16798,10 @@ html.mode-play .nav-hamburger { display: none !important; }
   text-align: left;
   cursor: pointer;
   color: var(--on-accent);
-  border: 1px solid rgba(129, 140, 248, 0.6);
+  border: 1px solid rgba(108, 122, 255, 0.6);
   background: var(--accent) !important;
   background: linear-gradient(135deg, var(--accent), #7c6cf0) !important;
-  box-shadow: 0 18px 40px -18px rgba(99, 102, 241, 0.8);
+  box-shadow: 0 18px 40px -18px rgba(45, 65, 255, 0.8);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .home-iq-banner:hover { transform: translateY(-2px); box-shadow: 0 24px 50px -18px color-mix(in srgb, var(--accent) 85%, transparent); }
@@ -16898,7 +16898,7 @@ html.web-onboarding-open { overflow: hidden; }
   place-items: center;
   border-radius: 24px;
   color: var(--accent);
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(45, 65, 255, 0.15);
 }
 .web-onboarding-icon svg { width: 46px; height: 46px; }
 .web-onboarding-eyebrow {
