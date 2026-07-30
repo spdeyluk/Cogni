@@ -1563,13 +1563,29 @@ const paywallTestimonials = [];
 // the "Try for free" copy turns itself on.
 const paywallTrialDays = 0;
 
-// What the first four weeks look like. Deliberately describes what the app
-// does, not what the user's brain will do — no efficacy promises.
+// The first four weeks, stated as outcomes rather than process. These are
+// efficacy claims about training — keep them defensible if the copy grows.
 const paywallTimeline = [
-  { icon: "✓", title: "Your baseline", body: "A short assessment sets where you're starting from." },
-  { icon: "◈", title: "Training begins", body: "Daily sessions adapt to how you actually perform." },
-  { icon: "◉", title: "Week 3 — Patterns emerge", body: "Enough sessions logged to show trends, not noise." },
-  { icon: "▤", title: "Week 4 — Your report", body: "A full picture of your progress and what to train next." }
+  {
+    icon: `<circle cx="12" cy="12" r="8.6"/><path d="m8.6 12.2 2.4 2.4 4.6-5"/>`,
+    title: "Day 1 — Your baseline",
+    body: "A short test sets your starting focus, memory and speed."
+  },
+  {
+    icon: `<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 1.8v2.6M12 19.6v2.6M22.2 12h-2.6M4.4 12H1.8"/>`,
+    title: "Week 2 — Better focus",
+    body: "Holding attention through a full session takes less effort."
+  },
+  {
+    icon: `<path d="M12 4.4a3.4 3.4 0 0 0-3.3 4.2A2.9 2.9 0 0 0 7.4 13.4v2.1a2.9 2.9 0 0 0 4.6 2.5 2.9 2.9 0 0 0 4.6-2.5v-2.1a2.9 2.9 0 0 0-1.3-4.8A3.4 3.4 0 0 0 12 4.4Z"/><path d="M12 4.9v13.4"/>`,
+    title: "Week 3 — Learning gets easier",
+    body: "New material needs fewer passes before it sticks."
+  },
+  {
+    icon: `<path d="M6.4 2.8h7.4l4.2 4.2v14.2H6.4z"/><path d="M13.6 2.8V7h4.4"/><path d="M9.4 17.4v-3M12 17.4v-5.4M14.6 17.4v-2"/>`,
+    title: "Week 4 — Your first report",
+    body: "See exactly what improved, and what to train next."
+  }
 ];
 
 function renderPaywallTimeline() {
@@ -1577,7 +1593,7 @@ function renderPaywallTimeline() {
   if (!host) return;
   host.innerHTML = paywallTimeline.map((step) => `
     <li class="paywall-step">
-      <span class="paywall-step-icon" aria-hidden="true">${escapeHtml(step.icon)}</span>
+      <span class="paywall-step-icon" aria-hidden="true">${trainSvg(step.icon)}</span>
       <span class="paywall-step-copy">
         <strong>${escapeHtml(step.title)}</strong>
         <span>${escapeHtml(step.body)}</span>
