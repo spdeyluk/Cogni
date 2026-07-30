@@ -1426,6 +1426,9 @@ document.querySelectorAll(".difficulty-group").forEach((group) => {
 function openPricingModal() {
   wirePricingModal();
   renderPaywallProof();
+  renderPaywallTimeline();
+  renderPaywallCta();
+  wirePaywallPlans();
   const dialog = document.querySelector("#pricing-dialog");
   if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
 }
@@ -1553,6 +1556,74 @@ let pricingModalWired = false;
 //        paywallTestimonials -> [{ name: "…", region: "🇺🇸", stars: 5, quote: "…" }]
 const paywallStats = [];
 const paywallTestimonials = [];
+
+// Trial length actually configured in Stripe. create-checkout sets no
+// trial_period_days today, so this stays 0 and the paywall promises nothing it
+// can't honour. Set it to the real number once the price carries a trial and
+// the "Try for free" copy turns itself on.
+const paywallTrialDays = 0;
+
+// What the first four weeks look like. Deliberately describes what the app
+// does, not what the user's brain will do — no efficacy promises.
+const paywallTimeline = [
+  { icon: "✓", title: "Your baseline", body: "A short assessment sets where you're starting from." },
+  { icon: "◈", title: "Training begins", body: "Daily sessions adapt to how you actually perform." },
+  { icon: "◉", title: "Week 3 — Patterns emerge", body: "Enough sessions logged to show trends, not noise." },
+  { icon: "▤", title: "Week 4 — Your report", body: "A full picture of your progress and what to train next." }
+];
+
+function renderPaywallTimeline() {
+  const host = document.querySelector("#paywall-timeline");
+  if (!host) return;
+  host.innerHTML = paywallTimeline.map((step) => `
+    <li class="paywall-step">
+      <span class="paywall-step-icon" aria-hidden="true">${escapeHtml(step.icon)}</span>
+      <span class="paywall-step-copy">
+        <strong>${escapeHtml(step.title)}</strong>
+        <span>${escapeHtml(step.body)}</span>
+      </span>
+    </li>`).join("");
+}
+
+// The CTA only advertises a free trial when one exists.
+function renderPaywallCta() {
+  const button = document.querySelector("#pricing-upgrade");
+  const renew = document.querySelector(".paywall-renew");
+  if (cogniUiMode !== "play") return;
+  if (button) button.textContent = paywallTrialDays > 0 ? "Try for free" : "Continue";
+  if (renew) {
+    renew.textContent = paywallTrialDays > 0
+      ? `${paywallTrialDays}-day free trial · No payment right now`
+      : "Renews automatically. Cancel anytime.";
+  }
+}
+
+// Native sells one plan at two billing periods; keep the shared dialog state in
+// sync so startCheckout still sees a plan + billing pair it understands.
+let paywallPlansWired = false;
+function wirePaywallPlans() {
+  const dialog = document.querySelector("#pricing-dialog");
+  const group = document.querySelector("#paywall-plans");
+  if (!dialog || !group) return;
+  // Reset selection on every open, but only bind the handler once.
+  if (paywallPlansWired) { dialog.dataset.billing = dialog.dataset.billing || "annual"; return; }
+  paywallPlansWired = true;
+  group.addEventListener("click", (event) => {
+    const card = event.target.closest("[data-paywall-billing]");
+    if (!card) return;
+    group.querySelectorAll("[data-paywall-billing]").forEach((item) => {
+      const on = item === card;
+      item.classList.toggle("is-selected", on);
+      item.setAttribute("aria-checked", String(on));
+    });
+    dialog.dataset.billing = card.dataset.paywallBilling;
+  });
+  // Full access is the only thing the native screen sells.
+  dialog.querySelectorAll("[data-pricing-plan]").forEach((plan) => {
+    plan.classList.toggle("is-selected", plan.dataset.pricingPlan === "pro");
+  });
+  dialog.dataset.billing = "annual";
+}
 
 function renderPaywallProof() {
   const stats = document.querySelector("#paywall-stats");
