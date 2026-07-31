@@ -11,3 +11,6 @@ ios/DerivedData/
 .build/
 *.xcodeproj
 .swiftpm/
+
+# Claude Code worktrees live inside the repo; never commit them.
+.claude/worktrees/
