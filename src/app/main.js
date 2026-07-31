@@ -1595,7 +1595,14 @@ async function loadApplePaywallPrices() {
   } catch {
     return; // leave the fallback markup in place
   }
-  if (!result?.available || !Array.isArray(result.products) || !result.products.length) return;
+  if (!result?.available || !Array.isArray(result.products) || !result.products.length) {
+    // Nothing came back: products missing from App Store Connect, the Paid Apps
+    // agreement unsigned, or a bundle-id mismatch. Leave the fallback markup up
+    // but record why, so the purchase error can be specific.
+    applePaywallProducts = [];
+    console.warn("[iap] StoreKit returned no products", result?.error ?? "(no error given)");
+    return;
+  }
   applePaywallProducts = result.products;
 
   const byId = new Map(result.products.map((p) => [p.id, p]));
@@ -1701,6 +1708,10 @@ async function startApplePurchase() {
   const productId = card?.dataset.appleProduct;
   if (!productId) return;
 
+  if (Array.isArray(applePaywallProducts) && applePaywallProducts.length === 0) {
+    if (note) note.textContent = "No subscriptions came back from the App Store. Check the products exist and are Ready to Submit, the Paid Apps agreement is active, and you're signed into a Sandbox account.";
+    return;
+  }
   const label = button?.textContent;
   if (button) { button.disabled = true; button.textContent = "Contacting App Store…"; }
   if (note) note.textContent = "";
@@ -1715,7 +1726,14 @@ async function startApplePurchase() {
     if (ok) { closePricingModal(); showToast("You're on Cogni Pro."); }
     else if (note) note.textContent = "Purchase went through but we couldn't confirm it — try Restore.";
   } catch (err) {
-    if (note) note.textContent = "Couldn't complete the purchase — please try again.";
+    // A blanket "try again" hides the usual cause, which is configuration
+    // rather than a transient failure. Show what StoreKit actually said.
+    const detail = String(err?.message ?? err ?? "").trim();
+    if (note) {
+      note.textContent = /not available|unknown product|no products/i.test(detail)
+        ? "This subscription isn't available from the App Store yet — check the product is Ready to Submit in App Store Connect and that you're signed into a Sandbox account."
+        : detail ? `Purchase failed: ${detail}` : "Couldn't complete the purchase — please try again.";
+    }
     console.error("[iap] purchase failed", err);
   } finally {
     if (button) { button.disabled = false; if (label) button.textContent = label; }
