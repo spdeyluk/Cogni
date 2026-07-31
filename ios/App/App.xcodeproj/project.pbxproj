@@ -19,6 +19,7 @@
 		7B240705A001000000000003 /* NativeLiquidGlassNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */; };
 		7B240705A001000000000012 /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000011 /* ScreenTimeShared.swift */; };
 		7B240705A001000000000014 /* ScreenTimePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000013 /* ScreenTimePlugin.swift */; };
+		7B240705A001000000000032 /* PurchasesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000031 /* PurchasesPlugin.swift */; };
 		7B240705A001000000000017 /* ShieldMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000016 /* ShieldMonitor.swift */; };
 		7B240705A001000000000018 /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B240705A001000000000011 /* ScreenTimeShared.swift */; };
 		7B240705A00100000000001C /* CogniShieldMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7B240705A00100000000001B /* CogniShieldMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -62,6 +63,7 @@
 		7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLiquidGlassNavBar.swift; sourceTree = "<group>"; };
 		7B240705A001000000000011 /* ScreenTimeShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeShared.swift; sourceTree = "<group>"; };
 		7B240705A001000000000013 /* ScreenTimePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimePlugin.swift; sourceTree = "<group>"; };
+		7B240705A001000000000031 /* PurchasesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesPlugin.swift; sourceTree = "<group>"; };
 		7B240705A001000000000015 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		7B240705A001000000000016 /* ShieldMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldMonitor.swift; sourceTree = "<group>"; };
 		7B240705A001000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 				7B240705A001000000000004 /* NativeLiquidGlassNavBar.swift */,
 				7B240705A001000000000011 /* ScreenTimeShared.swift */,
 				7B240705A001000000000013 /* ScreenTimePlugin.swift */,
+				7B240705A001000000000031 /* PurchasesPlugin.swift */,
 				7B240705A001000000000015 /* App.entitlements */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -256,6 +259,7 @@
 				7B240705A001000000000003 /* NativeLiquidGlassNavBar.swift in Sources */,
 				7B240705A001000000000012 /* ScreenTimeShared.swift in Sources */,
 				7B240705A001000000000014 /* ScreenTimePlugin.swift in Sources */,
+				7B240705A001000000000032 /* PurchasesPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
