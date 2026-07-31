@@ -18401,3 +18401,17 @@ html.mode-play .paywall-step:not(:last-child)::before {
   left: 16px;
   width: 2px;
 }
+
+/* Restore Purchases sits with the legal links; Apple requires it once real
+   subscriptions exist. Hidden until StoreKit confirms products are available. */
+html.mode-play .paywall-restore {
+  padding: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  color: var(--muted) !important;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+html.mode-play .paywall-restore:hover { color: var(--text) !important; text-decoration: underline; }
