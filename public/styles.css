@@ -18320,7 +18320,6 @@ html.mode-play .home-points-card,
 html.mode-play .home-action,
 html.mode-play .home-streak,
 html.mode-play .train-card-icon,
-html.mode-play .paywall-step-icon,
 html.mode-play .paywall-plan:not(.is-selected),
 html.mode-play .train-card-coins,
 html.mode-play .paywall-stat,
@@ -18364,4 +18363,41 @@ html.mode-play .app-content {
 html.mode-play .paywall-timeline {
   flex: 1 1 auto;
   align-content: space-between;
+}
+
+/* ===================================================================
+   Paywall timeline: even, symmetrical steps (2026-07-31)
+   Two problems. The borderless pass removed the icon rings, so only the
+   first step (which is filled) still read as a puck. And align-content:
+   space-between opened gaps *between* grid rows, which the per-step
+   connector segments could not reach across, leaving a broken line.
+   Slack now goes between the page's major blocks instead, so the steps
+   sit on a uniform rhythm with one continuous rail.
+   =================================================================== */
+html.mode-play .pricing-dialog-inner { justify-content: space-between; }
+
+html.mode-play .paywall-timeline {
+  flex: 0 0 auto;
+  align-content: start;
+}
+
+/* Every step gets the same ring; the first stays filled as the "done" mark. */
+html.mode-play .paywall-step-icon {
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface);
+}
+html.mode-play .paywall-step:first-child .paywall-step-icon {
+  border-color: transparent !important;
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* Uniform step height and a rail that runs from each puck to the next. */
+html.mode-play .paywall-step { padding-bottom: 16px; align-items: start; }
+html.mode-play .paywall-step:last-child { padding-bottom: 0; }
+html.mode-play .paywall-step:not(:last-child)::before {
+  top: 34px;
+  bottom: 0;
+  left: 16px;
+  width: 2px;
 }
