@@ -113,7 +113,11 @@ public class PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
             do {
                 let products = try await Product.products(for: [productId])
                 guard let product = products.first else {
-                    call.reject("Unknown product: \(productId)")
+                    // StoreKit returns an empty set (rather than an error) when
+                    // the id is unknown to the store: missing from App Store
+                    // Connect, not yet Ready to Submit, the Paid Apps agreement
+                    // unsigned, or a bundle-id mismatch.
+                    call.reject("No products available for \(productId) — check it exists in App Store Connect and the Paid Apps agreement is active.")
                     return
                 }
                 let result = try await product.purchase()
