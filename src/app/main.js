@@ -1435,6 +1435,7 @@ function openPricingModal() {
   renderPaywallProof();
   renderPaywallTimeline();
   renderPaywallFeatures();
+  if (cogniUiMode === "play") loadApplePaywallPrices();
   renderPaywallCta();
   wirePaywallPlans();
   const dialog = document.querySelector("#pricing-dialog");
@@ -1572,6 +1573,172 @@ function returnFromPaywall() {
 }
 
 let pricingModalWired = false;
+// --- Apple In-App Purchase -------------------------------------------------
+// Apple requires IAP for anything that unlocks features in the app, so the
+// native build cannot use the Stripe flow the web uses. The plugin returns
+// localized prices (a US user must see dollars, not euros) and a signed
+// transaction, which apple-verify re-checks with Apple before granting a tier.
+function purchasesNativePlugin() {
+  return window.Capacitor?.Plugins?.Purchases ?? null;
+}
+
+let applePaywallProducts = null;
+
+// Fill the plan cards from StoreKit rather than the hardcoded euro markup, and
+// switch the trial copy on only if the product really carries an intro offer.
+async function loadApplePaywallPrices() {
+  const plugin = purchasesNativePlugin();
+  if (!plugin) return;
+  let result;
+  try {
+    result = await plugin.getProducts();
+  } catch {
+    return; // leave the fallback markup in place
+  }
+  if (!result?.available || !Array.isArray(result.products) || !result.products.length) return;
+  applePaywallProducts = result.products;
+
+  const byId = new Map(result.products.map((p) => [p.id, p]));
+  const perWeek = (product) => {
+    if (!product || !product.price) return null;
+    const weeks = product.periodUnit === "year" ? 52
+      : product.periodUnit === "month" ? 4.345
+      : product.periodUnit === "week" ? 1
+      : null;
+    if (!weeks) return null;
+    return product.price / (weeks * (product.periodValue || 1));
+  };
+  const money = (amount, product) => {
+    try {
+      return new Intl.NumberFormat(undefined, { style: "currency", currency: product.currencyCode })
+        .format(amount);
+    } catch {
+      return `${amount.toFixed(2)}`;
+    }
+  };
+
+  document.querySelectorAll("[data-apple-product]").forEach((card) => {
+    const product = byId.get(card.dataset.appleProduct);
+    if (!product) return;
+    const unit = product.periodUnit === "year" ? "/year"
+      : product.periodUnit === "month" ? "/month"
+      : product.periodUnit === "week" ? "/week" : "";
+    const price = card.querySelector(".paywall-plan-price");
+    if (price) price.innerHTML = `<b>${escapeHtml(product.displayPrice)}</b><i>${unit}</i>`;
+    const sub = card.querySelector(".paywall-plan-sub");
+    if (sub) {
+      const weekly = perWeek(product);
+      sub.textContent = product.periodUnit === "week"
+        ? `${product.displayPrice} billed weekly`
+        : weekly ? `${money(weekly, product)}/week` : "";
+    }
+  });
+
+  // "Save X%" has to come from the real prices, not a fixed number.
+  const yearly = byId.get("com.spidey.cogni.pro.yearly");
+  const weekly = byId.get("com.spidey.cogni.pro.weekly");
+  // The visible badge on native is the flag on the yearly card; #pricing-save
+  // belongs to the web billing toggle, which is hidden here.
+  const badge = document.querySelector('[data-apple-product="com.spidey.cogni.pro.yearly"] .paywall-plan-flag');
+  if (badge && yearly && weekly) {
+    const yearlyPerWeek = perWeek(yearly);
+    const weeklyPerWeek = perWeek(weekly);
+    if (yearlyPerWeek && weeklyPerWeek && weeklyPerWeek > 0) {
+      const save = Math.round((1 - yearlyPerWeek / weeklyPerWeek) * 100);
+      badge.textContent = save > 0 ? `SAVE ${save}%` : "";
+      badge.hidden = save <= 0;
+    }
+  }
+
+  // Only promise a free trial when a product actually carries one.
+  const trial = result.products.find((p) => p.introIsFreeTrial && p.introPeriodValue);
+  if (trial) {
+    const unit = trial.introPeriodUnit === "day" ? "day"
+      : trial.introPeriodUnit === "week" ? "week"
+      : trial.introPeriodUnit === "month" ? "month" : "day";
+    const n = trial.introPeriodValue;
+    const button = document.querySelector("#pricing-upgrade");
+    const renew = document.querySelector(".paywall-renew");
+    if (button) button.textContent = "Try for free";
+    if (renew) renew.textContent = `${n} ${unit}${n === 1 ? "" : "s"} free, then ${trial.displayPrice} · Cancel anytime`;
+  }
+
+  const restore = document.querySelector("#paywall-restore");
+  if (restore) {
+    restore.hidden = false;
+    document.querySelector(".paywall-restore-sep")?.removeAttribute("hidden");
+  }
+}
+
+// Hand the signed transaction to the server, which asks Apple what it's worth.
+async function applyAppleTransaction(jws) {
+  if (!supabase || !jws) return false;
+  try {
+    const { data, error } = await supabase.functions.invoke("apple-verify", { body: { jws } });
+    if (error) throw error;
+    await refreshEntitlement();
+    return data?.tier === "pro" || data?.tier === "basic";
+  } catch (err) {
+    console.error("[iap] verification failed", err);
+    return false;
+  }
+}
+
+async function startApplePurchase() {
+  const plugin = purchasesNativePlugin();
+  const note = document.querySelector("#pricing-note");
+  const button = document.querySelector("#pricing-upgrade");
+  if (!plugin) {
+    if (note) note.textContent = "Purchases aren't available on this device.";
+    return;
+  }
+  if (!authUser) {
+    closePricingModal();
+    requireAuth("Sign in first so your subscription follows your account.");
+    return;
+  }
+  const card = document.querySelector(".paywall-plan.is-selected") ?? document.querySelector("[data-apple-product]");
+  const productId = card?.dataset.appleProduct;
+  if (!productId) return;
+
+  const label = button?.textContent;
+  if (button) { button.disabled = true; button.textContent = "Contacting App Store…"; }
+  if (note) note.textContent = "";
+  try {
+    const result = await plugin.purchase({ productId });
+    if (result?.status === "cancelled") return;
+    if (result?.status === "pending") {
+      if (note) note.textContent = "Waiting for approval — this unlocks once it's confirmed.";
+      return;
+    }
+    const ok = await applyAppleTransaction(result?.jws);
+    if (ok) { closePricingModal(); showToast("You're on Cogni Pro."); }
+    else if (note) note.textContent = "Purchase went through but we couldn't confirm it — try Restore.";
+  } catch (err) {
+    if (note) note.textContent = "Couldn't complete the purchase — please try again.";
+    console.error("[iap] purchase failed", err);
+  } finally {
+    if (button) { button.disabled = false; if (label) button.textContent = label; }
+  }
+}
+
+async function restoreApplePurchases() {
+  const plugin = purchasesNativePlugin();
+  const note = document.querySelector("#pricing-note");
+  if (!plugin) return;
+  if (!authUser) { closePricingModal(); requireAuth("Sign in to restore your subscription."); return; }
+  if (note) note.textContent = "Restoring…";
+  try {
+    const state = await plugin.restore();
+    if (!state?.active) { if (note) note.textContent = "No active subscription found on this Apple ID."; return; }
+    const ok = await applyAppleTransaction(state.jws);
+    if (ok) { closePricingModal(); showToast("Subscription restored."); }
+    else if (note) note.textContent = "Couldn't confirm the subscription.";
+  } catch {
+    if (note) note.textContent = "Restore failed — please try again.";
+  }
+}
+
 // --- Paywall social proof ---------------------------------------------------
 // Deliberately empty. These are public claims about a shipping product, so they
 // must come from real data — the App Store listing, or actual reviews with the
@@ -1742,6 +1909,7 @@ function wirePricingModal() {
     });
   });
   document.querySelector("#pricing-upgrade")?.addEventListener("click", startCheckout);
+  document.querySelector("#paywall-restore")?.addEventListener("click", restoreApplePurchases);
 }
 
 // Kick off Stripe Checkout for the selected plan + billing period. The heavy
@@ -1755,7 +1923,7 @@ async function startCheckout() {
   // The native app can't use Stripe (Apple requires in-app purchase), so point
   // to the web until StoreKit IAP is wired.
   if (cogniUiMode === "play") {
-    if (note) note.textContent = "Manage your Cogni Pro subscription at getcogni.app.";
+    await startApplePurchase();
     return;
   }
   // A purchase has to attach to an account, so require sign-in first.
@@ -6967,7 +7135,7 @@ async function refreshEntitlement() {
       .select("tier, status")
       .eq("user_id", authUser.id)
       .maybeSingle();
-    const active = !!data && (data.status === "active" || data.status === "trialing");
+    const active = !!data && ["active", "trialing", "grace_period"].includes(data.status);
     // Treat a legacy "plus" tier as "basic".
     let tier = active ? (data.tier === "plus" ? "basic" : data.tier) : "free";
     if (tier !== "basic" && tier !== "pro") tier = "free";

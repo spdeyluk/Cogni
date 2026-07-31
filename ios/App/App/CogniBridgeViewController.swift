@@ -11,6 +11,7 @@ final class CogniBridgeViewController: CAPBridgeViewController, WKScriptMessageH
 
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(ScreenTimePlugin())
+        bridge?.registerPluginInstance(PurchasesPlugin())
     }
 
     override func viewDidLoad() {
