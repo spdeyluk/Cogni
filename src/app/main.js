@@ -4291,10 +4291,16 @@ function renderScreenTime() {
   if (!page) return;
   page.classList.remove("page-locked");
   page.innerHTML = `<div class="screentime-unavailable"><p>Feature not available currently.</p></div>`;
-  applyPagePaywall(page, {
-    title: "Upgrade to unlock Screen Time",
-    body: "Turn focused training into real screen-time budget — included with Basic and Pro."
-  });
+  // Nothing to sell while the feature is switched off — an upgrade card over a
+  // notice saying it doesn't work would be selling something undeliverable.
+  // The native build still gates it, since Screen Time is a paid feature there
+  // once renderScreenTimeLegacy is switched back on.
+  if (cogniUiMode === "play") {
+    applyPagePaywall(page, {
+      title: "Upgrade to unlock Screen Time",
+      body: "Turn focused training into real screen-time budget — included with Basic and Pro."
+    });
+  }
 }
 
 function renderScreenTimeLegacy() {
