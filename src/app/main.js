@@ -2927,6 +2927,41 @@ function runMiniGame(id) {
       finishMiniExercise(id, result);
     }
   };
+  // Spot the Fallacy is the one game with a real difficulty split, so it asks
+  // before each run rather than remembering a choice made once.
+  if (id === "fallacy") {
+    renderFallacyDifficultyPicker(ctx, () => beginMiniCountdown(id, stage, game, ctx));
+    return;
+  }
+  beginMiniCountdown(id, stage, game, ctx);
+}
+
+function renderFallacyDifficultyPicker(ctx, onChosen) {
+  const current = fallacyDifficulty();
+  ctx.setStatus("Choose difficulty");
+  ctx.stage.innerHTML = `
+    <div class="mini-intro fallacy-difficulty">
+      <h2>Spot the Fallacy</h2>
+      <div class="fallacy-difficulty-options">
+        <button class="fallacy-difficulty-option${current === "easy" ? " is-selected" : ""}" type="button" data-fallacy-difficulty="easy">
+          <strong>Easy</strong>
+          <span>Everyday arguments — ad hominem, false dilemma, hasty generalisation.</span>
+        </button>
+        <button class="fallacy-difficulty-option${current === "hard" ? " is-selected" : ""}" type="button" data-fallacy-difficulty="hard">
+          <strong>Hard</strong>
+          <span>Formal and statistical traps — affirming the consequent, base rates, confounding, regression to the mean.</span>
+        </button>
+      </div>
+    </div>`;
+  ctx.stage.querySelectorAll("[data-fallacy-difficulty]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setFallacyDifficulty(button.dataset.fallacyDifficulty);
+      onChosen();
+    });
+  });
+}
+
+function beginMiniCountdown(id, stage, game, ctx) {
   // A clean 3-2-1 countdown before every game, then start (and reset the clock so
   // the countdown isn't counted as play time).
   runMiniCountdown(stage, id, () => {
@@ -3149,9 +3184,27 @@ function buildFallacyOptions(item) {
 }
 
 // A round of items at (or below) the user's tier, no repeats.
+// Easy draws the everyday informal fallacies, Hard the formal, statistical and
+// subtle ones. Items without a difficulty predate the split and count as easy.
+const FALLACY_DIFFICULTY_KEY = "cogni.fallacyDifficulty.v1";
+
+function fallacyDifficulty() {
+  try {
+    const v = localStorage.getItem(FALLACY_DIFFICULTY_KEY);
+    return v === "hard" ? "hard" : "easy";
+  } catch { return "easy"; }
+}
+function setFallacyDifficulty(value) {
+  try { localStorage.setItem(FALLACY_DIFFICULTY_KEY, value === "hard" ? "hard" : "easy"); } catch { /* private mode */ }
+}
+
 function buildFallacyRound(state) {
-  const eligible = fallacyBank.items.filter((it) => (it.tier || 1) <= state.tier);
-  const pool = eligible.length ? eligible : fallacyBank.items;
+  const want = fallacyDifficulty();
+  const atDifficulty = fallacyBank.items.filter((it) => (it.difficulty || "easy") === want);
+  const base = atDifficulty.length ? atDifficulty : fallacyBank.items;
+  // The adaptive tier still narrows within the chosen difficulty.
+  const eligible = base.filter((it) => (it.tier || 1) <= state.tier);
+  const pool = eligible.length ? eligible : base;
   return miniShuffle([...pool]).slice(0, Math.min(FALLACY_ROUND_SIZE, pool.length));
 }
 
