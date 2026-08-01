@@ -6970,7 +6970,7 @@ function saveCatSessions(sessions) {
 
 // The assessments tab is the Cogni IQ Test only; the other screens were removed.
 const assessmentIntroIds = ["cat-intro"];
-const assessmentSectionIds = ["cat-detail", "cat-run", "cat-result", "cat-history"];
+const assessmentSectionIds = ["cat-detail", "cat-run", "cat-computing", "cat-result", "cat-history"];
 
 // One active screen at a time: null shows the list of test cards.
 function showAssessmentSection(sectionId) {
@@ -6983,6 +6983,10 @@ function showAssessmentSection(sectionId) {
     if (node) node.hidden = id !== sectionId;
   }
   if (sectionId !== "cat-run") stopCatTimer();
+  if (sectionId !== "cat-computing") {
+    catComputingTimers.forEach((t) => window.clearTimeout(t));
+    catComputingTimers = [];
+  }
   if (sectionId !== "focus-run") stopFocusTimer();
   if (sectionId !== "memory-run") stopMemoryTimers();
   // While a question is showing, go full-screen immersive like the exercises.
@@ -7120,7 +7124,88 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   catActive = null;
   saveCatActive();
   renderCatResult(sessionRecord);
-  showCatSection("result");
+  runCatComputing(sessionRecord, () => showCatSection("result"));
+}
+
+// The reveal between the last answer and the score: each domain's bar fills and
+// its subscore counts up in turn, then the composite number takes the stage.
+// Values match exactly what renderCatResult will show, so nothing is revealed
+// here that the result screen would withhold.
+const CAT_COMPUTING_STEP_MS = 620;
+let catComputingTimers = [];
+
+function runCatComputing(sessionRecord, onDone) {
+  const list = document.querySelector("#cat-computing-list");
+  const status = document.querySelector("#cat-computing-status");
+  if (!list) { onDone(); return; }
+
+  const pro = isProUser();
+  const domains = Object.keys(CAT_DOMAIN_LABELS)
+    .map((key) => ({ key, label: CAT_DOMAIN_LABELS[key], entry: sessionRecord.domains?.[key] }))
+    .filter((d) => d.entry);
+  if (!domains.length) { onDone(); return; }
+
+  list.innerHTML = domains.map((d) => `
+    <li class="cat-computing-row" data-domain="${escapeHtml(d.key)}">
+      <span class="cat-computing-label">${escapeHtml(d.label)}</span>
+      <span class="cat-computing-track"><i></i></span>
+      <span class="cat-computing-score">${pro ? "" : "—"}</span>
+      <span class="cat-computing-tick" aria-hidden="true">✓</span>
+    </li>`).join("");
+  if (status) status.textContent = "Analysing responses…";
+  showCatSection("computing");
+
+  const rows = [...list.querySelectorAll(".cat-computing-row")];
+  const timers = [];
+  rows.forEach((row, index) => {
+    timers.push(window.setTimeout(() => {
+      row.classList.add("is-active");
+      const fill = row.querySelector("i");
+      // Bar length reads as confidence in that domain: more items, fuller bar.
+      const items = domains[index].entry.count ?? 0;
+      if (fill) fill.style.width = `${Math.max(35, Math.min(100, items * 12))}%`;
+      if (pro) countUpTo(row.querySelector(".cat-computing-score"), domains[index].entry.score, 460);
+      timers.push(window.setTimeout(() => row.classList.add("is-done"), 460));
+    }, index * CAT_COMPUTING_STEP_MS));
+  });
+
+  timers.push(window.setTimeout(() => {
+    if (status) status.textContent = "Building your profile…";
+  }, rows.length * CAT_COMPUTING_STEP_MS));
+
+  timers.push(window.setTimeout(() => {
+    // Guarantee every row is ticked before we leave: under timer throttling the
+    // last row's own callback can lose the race with this transition.
+    rows.forEach((row) => { row.classList.add("is-active", "is-done"); });
+    onDone();
+    // The composite number is the payoff, so it counts up once the score screen
+    // is actually on stage.
+    const shown = pro ? sessionRecord.score : fakeIqScore(sessionRecord);
+    countUpTo(elements.catScore, shown, 900);
+    elements.catResult?.classList.add("cat-score-landing");
+    window.setTimeout(() => elements.catResult?.classList.remove("cat-score-landing"), 1200);
+  }, rows.length * CAT_COMPUTING_STEP_MS + 520));
+
+  // Leaving the screen early must not fire the rest of the sequence.
+  catComputingTimers.forEach((t) => window.clearTimeout(t));
+  catComputingTimers = timers;
+}
+
+
+// Ease-out count so the last digits settle rather than snapping.
+function countUpTo(node, target, durationMs) {
+  if (!node) return;
+  const end = Number(target) || 0;
+  const start = performance.now();
+  node.textContent = "0";
+  function tick(now) {
+    const t = Math.min(1, (now - start) / durationMs);
+    const eased = 1 - Math.pow(1 - t, 3);
+    node.textContent = String(Math.round(end * eased));
+    if (t < 1) requestAnimationFrame(tick);
+    else node.textContent = String(end);
+  }
+  requestAnimationFrame(tick);
 }
 
 function abandonCatTest() {
