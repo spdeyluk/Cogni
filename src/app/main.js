@@ -5067,7 +5067,7 @@ function renderPlayHome() {
   const recommendations = homeRecommendations(progress);
   return `
     <header class="home-top">
-      <img class="home-brand" src="assets/brand/logo-white.png" alt="Cogni">
+      <img class="home-brand" src="assets/brand/logo-brain.png" alt="Cogni">
       <span class="home-streak" aria-label="${streak} day training streak">
         ${trainSvg(`<path d="M12 3.2s.6 2.6-1.1 4.4c-1.6 1.7-3.6 2.7-3.6 5.6a4.7 4.7 0 0 0 9.4 0c0-1.5-.6-2.6-1.3-3.4 0 1.2-.9 1.9-1.6 1.9-1 0-1.5-.8-1.2-2 .5-2.2 1-4.5-.6-6.5Z"/>`)}
         <b>${streak}</b>
@@ -12163,7 +12163,7 @@ function renderBoard() {
   elements.board.innerHTML = cells
     .map((position) => `
       <span class="grid-cell" data-position="${position}">
-        ${position === "4" ? '<img class="center-mark" src="assets/brand/logo-white.png" alt="">' : ""}
+        ${position === "4" ? '<img class="center-mark" src="assets/brand/logo-brain.png" alt="">' : ""}
       </span>
     `)
     .join("");
@@ -12193,7 +12193,7 @@ function clearBoard() {
   elements.board.querySelectorAll(".grid-cell").forEach((cell) => {
     cell.classList.remove("active", "position-only");
     cell.style.removeProperty("--shape-color");
-    cell.innerHTML = cell.dataset.position === "4" ? '<img class="center-mark" src="assets/brand/logo-white.png" alt="">' : "";
+    cell.innerHTML = cell.dataset.position === "4" ? '<img class="center-mark" src="assets/brand/logo-brain.png" alt="">' : "";
   });
 }
 
