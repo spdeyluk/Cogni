@@ -18428,3 +18428,120 @@ html.mode-pro [data-cat-upgrade],
 html.mode-pro .page-paywall {
   display: none !important;
 }
+
+/* ===================================================================
+   IQ test: computing the profile (2026-08-01)
+   Sits between the last answer and the score. Each domain settles in
+   turn, then the composite number takes over on the result screen.
+   =================================================================== */
+.assessment-computing {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  min-height: 60vh;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.cat-computing-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 5vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.cat-computing-sub {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cat-computing-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: min(420px, 100%);
+  margin-inline: auto;
+}
+
+.cat-computing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "label score tick" "track track tick";
+  align-items: center;
+  gap: 6px 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+  /* Rows wait their turn, then settle in. */
+  opacity: 0.25;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.cat-computing-row.is-active { opacity: 1; transform: none; }
+
+.cat-computing-label {
+  grid-area: label;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cat-computing-track {
+  grid-area: track;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.cat-computing-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.55s cubic-bezier(0.32, 0.72, 0.35, 1);
+}
+
+.cat-computing-score {
+  grid-area: score;
+  min-width: 2.5ch;
+  text-align: right;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-computing-tick {
+  grid-area: tick;
+  color: var(--success);
+  font-size: 0.95rem;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.cat-computing-row.is-done .cat-computing-tick { opacity: 1; transform: none; }
+
+.cat-computing-status {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+/* The score is the payoff: give it a beat as it lands. */
+.cat-result.cat-score-landing #cat-score,
+.cat-score-landing #cat-score {
+  animation: cat-score-land 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cat-score-land {
+  0%   { transform: scale(0.82); opacity: 0.4; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
