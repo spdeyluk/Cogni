@@ -1431,6 +1431,8 @@ document.querySelectorAll(".difficulty-group").forEach((group) => {
 
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
+  // Nothing to sell on the web build — every feature is already unlocked.
+  if (cogniUiMode === "pro") return;
   wirePricingModal();
   renderPaywallProof();
   renderPaywallTimeline();
@@ -7144,9 +7146,15 @@ function currentTier() {
   } catch { return "free"; }
 }
 // Pro-only features: routines, AI coach, IQ test.
-function isProUser() { return currentTier() === "pro"; }
+// The web build is free: every feature is open to everyone, so both gates
+// short-circuit there. Only the native app sells a subscription.
+function isProUser() { return cogniUiMode === "pro" || currentTier() === "pro"; }
 // Any paid plan: unlocks exercises' advanced settings + data (Profile, Screen Time).
-function hasPaidPlan() { const t = currentTier(); return t === "basic" || t === "pro"; }
+function hasPaidPlan() {
+  if (cogniUiMode === "pro") return true;
+  const t = currentTier();
+  return t === "basic" || t === "pro";
+}
 
 // Pull the account's real entitlement and mirror it into the local cache, then
 // re-render whatever paywalled surface is on screen. Called after sign-in and

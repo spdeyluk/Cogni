@@ -18415,3 +18415,16 @@ html.mode-play .paywall-restore {
   cursor: pointer;
 }
 html.mode-play .paywall-restore:hover { color: var(--text) !important; text-decoration: underline; }
+
+/* ===================================================================
+   Web is free (2026-08-01)
+   Every feature is open on the web build, so the upgrade affordances have
+   nothing to point at. Hidden rather than deleted, since the native app
+   still sells a subscription through the same markup.
+   =================================================================== */
+html.mode-pro #sidebar-see-pricing,
+html.mode-pro [data-open-pricing],
+html.mode-pro [data-cat-upgrade],
+html.mode-pro .page-paywall {
+  display: none !important;
+}
