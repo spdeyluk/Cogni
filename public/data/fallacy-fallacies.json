@@ -24,6 +24,62 @@
     "valid": {
       "name": "Valid argument",
       "description": "The conclusion genuinely follows from the reasons given. Nothing is wrong with the reasoning."
+    },
+    "affirming_the_consequent": {
+      "name": "Affirming the Consequent",
+      "description": "If P then Q, and Q is true, so P must be true. Invalid — Q could have other causes entirely."
+    },
+    "denying_the_antecedent": {
+      "name": "Denying the Antecedent",
+      "description": "If P then Q, and P is false, so Q must be false. Invalid — the conditional never said P was the only route to Q."
+    },
+    "base_rate_neglect": {
+      "name": "Base Rate Neglect",
+      "description": "Judging from how typical a case looks while ignoring how common it is to begin with. A very accurate test for a very rare thing still yields mostly false positives."
+    },
+    "survivorship_bias": {
+      "name": "Survivorship Bias",
+      "description": "Drawing conclusions from what made it through while the failures are invisible. The sample you can see is not the sample that existed."
+    },
+    "regression_to_mean": {
+      "name": "Regression to the Mean",
+      "description": "Crediting an intervention for an improvement that extreme values produce on their own. Outliers drift back toward average with or without treatment."
+    },
+    "equivocation": {
+      "name": "Equivocation",
+      "description": "One word carrying two meanings across the argument. Each step reads fine; the conclusion only follows if you let the sense shift."
+    },
+    "circular_reasoning": {
+      "name": "Circular Reasoning",
+      "description": "The conclusion smuggled into the premises. The argument is valid but proves nothing, because you must already accept the point to accept the support."
+    },
+    "composition_division": {
+      "name": "Composition / Division",
+      "description": "Assuming what's true of the parts is true of the whole, or the reverse. Properties don't always survive that trip."
+    },
+    "no_true_scotsman": {
+      "name": "No True Scotsman",
+      "description": "Redefining the category to shed a counterexample. The claim survives only by becoming unfalsifiable."
+    },
+    "texas_sharpshooter": {
+      "name": "Texas Sharpshooter",
+      "description": "Drawing the target around the hits after the fact. A pattern picked out of noise once you're free to choose which data counts."
+    },
+    "moving_the_goalposts": {
+      "name": "Moving the Goalposts",
+      "description": "Demanding new evidence once the original standard is met. The bar shifts precisely as far as it needs to."
+    },
+    "confounding": {
+      "name": "Confounding Variable",
+      "description": "Reading cause into a correlation that a third factor explains. Both effects share a hidden common source."
+    },
+    "gamblers_fallacy": {
+      "name": "Gambler's Fallacy",
+      "description": "Expecting independent trials to correct themselves. The coin has no memory of the last ten flips."
+    },
+    "middle_ground": {
+      "name": "Middle Ground",
+      "description": "Treating the midpoint between two claims as automatically correct. Sometimes one side is simply wrong."
     }
   }
 }

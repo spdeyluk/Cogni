@@ -18545,3 +18545,49 @@ html.mode-pro .page-paywall {
   60%  { transform: scale(1.04); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* The brand mark is landscape (894x688). Forcing it into a square box without
+   object-fit squashed it on the sign-in screen; size by height and let the
+   width follow so the proportions hold. */
+.auth-brand img,
+.signin-first-brand img {
+  width: auto !important;
+  height: 30px !important;
+  border-radius: 0 !important;
+  object-fit: contain;
+}
+
+/* The light-surface lockups carried mix-blend-mode: multiply to knock the white
+   plate off the old black mark. The new mark has real transparency, so multiply
+   only muddies it against white — and the landscape shape needs its aspect kept. */
+.onboarding-brand img,
+.landing-brand img {
+  width: auto !important;
+  height: 34px !important;
+  object-fit: contain;
+  mix-blend-mode: normal !important;
+}
+
+/* Spot the Fallacy: difficulty chosen before each run. */
+.fallacy-difficulty-options {
+  display: grid;
+  gap: 12px;
+  width: min(420px, 100%);
+  margin: 4px auto 0;
+}
+
+.fallacy-difficulty-option {
+  display: grid;
+  gap: 5px;
+  padding: 16px 18px !important;
+  border: 2px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  text-align: left;
+  cursor: pointer;
+}
+.fallacy-difficulty-option:hover { border-color: var(--muted) !important; }
+.fallacy-difficulty-option.is-selected { border-color: var(--accent) !important; }
+.fallacy-difficulty-option strong { font-size: 1.05rem; font-weight: 700; }
+.fallacy-difficulty-option span { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
