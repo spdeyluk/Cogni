@@ -1,7 +1,21 @@
 import { CognitiveDomain } from "../domains.js";
 
-const MEANINGFUL_WORDS = ["atlas", "nova", "river", "stone", "ember", "orbit", "signal", "field", "vector", "prism"];
-const EMOJI_WORDS = ["☀️", "🌙", "⭐", "⚡", "🌊", "🍃", "💎", "🔥", "☁️", "☄️"];
+// Deliberately large: a trial uses only a handful of terms, so a short list
+// makes every trial look like the last one even though the relations differ.
+const MEANINGFUL_WORDS = [
+  "atlas", "nova", "river", "stone", "ember", "orbit", "signal", "field",
+  "vector", "prism", "anchor", "beacon", "canyon", "delta", "echo", "falcon",
+  "glacier", "harbor", "ingot", "jungle", "kernel", "lantern", "meadow", "nebula",
+  "onyx", "pillar", "quartz", "raven", "summit", "tundra", "umbra", "valley",
+  "willow", "xenon", "yarrow", "zenith", "basalt", "cinder", "dune", "fjord",
+  "granite", "hollow", "island", "juniper", "kelp", "lagoon", "marsh", "needle"
+];
+const EMOJI_WORDS = [
+  "☀️", "🌙", "⭐", "⚡", "🌊", "🍃", "💎", "🔥", "☁️", "☄️",
+  "🌱", "🌵", "🍀", "🌸", "🌻", "🍁", "🐚", "🦋", "🐝", "🐬",
+  "🦅", "🐢", "🦊", "🐙", "🌈", "❄️", "🌋", "🏔️", "🗻", "🏝️",
+  "🧊", "🪐", "🌍", "🔱", "⚙️", "🧭", "🔔", "🎯", "🧲", "🪁"
+];
 const SPATIAL_DIRECTIONS = [
   { label: "north of", dx: 0, dy: 1 },
   { label: "south of", dx: 0, dy: -1 },

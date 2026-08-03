@@ -1335,6 +1335,594 @@
       "is_valid_argument": true,
       "topic": "logic",
       "id": "fal_h0062"
+    },
+    {
+      "id": "fal_e0001",
+      "text": "Why would I take budgeting advice from Marcus? He went bankrupt in his twenties.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "His past bankruptcy doesn't make his budgeting reasoning wrong — that's attacking the person.",
+      "is_valid_argument": false,
+      "topic": "finance",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0002",
+      "text": "Our coach's tactics can't be any good — he never played professionally himself.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "false_dilemma"
+      ],
+      "explanation": "Whether the tactics work is separate from the coach's playing career.",
+      "is_valid_argument": false,
+      "topic": "sport",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0003",
+      "text": "She's arguing for shorter meetings, but she's always the one running late. Ignore her.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_popularity"
+      ],
+      "explanation": "Calling out hypocrisy doesn't address whether shorter meetings are actually better.",
+      "is_valid_argument": false,
+      "topic": "work",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0004",
+      "text": "You're only defending the new grading policy because you're a teacher.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "false_dilemma"
+      ],
+      "explanation": "Their job may explain the motive but says nothing about whether the policy is sound.",
+      "is_valid_argument": false,
+      "topic": "education",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0005",
+      "text": "Don't listen to his climate argument — he flies abroad twice a year.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_popularity"
+      ],
+      "explanation": "His travel habits don't refute the argument he made.",
+      "is_valid_argument": false,
+      "topic": "environment",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0006",
+      "text": "That restaurant review is worthless; the critic is famously rude to waiters.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Rudeness is a fact about the critic, not evidence about the food.",
+      "is_valid_argument": false,
+      "topic": "food",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0007",
+      "text": "My opponent's tax plan is nonsense — he's been divorced twice.",
+      "answer": "ad_hominem",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "His personal life has no bearing on the merits of a tax plan.",
+      "is_valid_argument": false,
+      "topic": "politics",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0008",
+      "text": "Over a million people have downloaded this diet app, so it must actually work.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Download counts measure popularity, not whether the diet works.",
+      "is_valid_argument": false,
+      "topic": "health",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0009",
+      "text": "Everyone in my year is taking economics, so it must be the smart choice for me too.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "false_dilemma"
+      ],
+      "explanation": "What most students pick doesn't establish it's the right course for you.",
+      "is_valid_argument": false,
+      "topic": "education",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0010",
+      "text": "This song is number one in twelve countries — clearly it's the best track on the album.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Chart position tracks listening habits, not musical quality.",
+      "is_valid_argument": false,
+      "topic": "entertainment",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0011",
+      "text": "Nine out of ten people in the office use this password manager, so it must be the most secure one.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Widespread adoption isn't evidence of security; that needs an audit.",
+      "is_valid_argument": false,
+      "topic": "technology",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0012",
+      "text": "Bottled water outsells filtered tap water everywhere, so it must be healthier.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "false_dilemma"
+      ],
+      "explanation": "Sales reflect marketing and habit, not health outcomes.",
+      "is_valid_argument": false,
+      "topic": "health",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0013",
+      "text": "Half the country believes the economy is improving, so it must be improving.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_authority"
+      ],
+      "explanation": "Widely held belief and economic reality are different things.",
+      "is_valid_argument": false,
+      "topic": "economics",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0014",
+      "text": "This is the most-reviewed hotel on the site, so it's obviously the best place to stay.",
+      "answer": "appeal_to_popularity",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Review volume mostly tracks how many people stayed there, not quality.",
+      "is_valid_argument": false,
+      "topic": "travel",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0015",
+      "text": "Either we cancel the whole project or we accept it will run over budget forever.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_popularity"
+      ],
+      "explanation": "Rescoping, extra staffing and phased delivery are all live options being ignored.",
+      "is_valid_argument": false,
+      "topic": "work",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0016",
+      "text": "You either study medicine or you throw away your talent for science.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "Research, engineering and teaching are all science careers this ignores.",
+      "is_valid_argument": false,
+      "topic": "education",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0017",
+      "text": "We can protect jobs or we can protect the river. Pick one.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "hasty_generalization"
+      ],
+      "explanation": "It treats two goals as strictly exclusive when partial solutions exist.",
+      "is_valid_argument": false,
+      "topic": "environment",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0018",
+      "text": "Either you reply to work emails at midnight or you're not committed to this team.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "ad_hominem",
+        "hasty_generalization"
+      ],
+      "explanation": "Commitment can be shown in many ways; the two options aren't exhaustive.",
+      "is_valid_argument": false,
+      "topic": "work",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0019",
+      "text": "If we don't buy the top-of-the-range laptop, we may as well keep using the broken one.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "hasty_generalization"
+      ],
+      "explanation": "Every mid-range machine between the two extremes is being ignored.",
+      "is_valid_argument": false,
+      "topic": "shopping",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0020",
+      "text": "Either the recipe is followed exactly or the dish is ruined.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_authority"
+      ],
+      "explanation": "Cooking tolerates a wide band of variation between those two outcomes.",
+      "is_valid_argument": false,
+      "topic": "cooking",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0021",
+      "text": "You're either a morning person or you'll never be productive.",
+      "answer": "false_dilemma",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_popularity"
+      ],
+      "explanation": "Productivity isn't confined to one of two chronotypes.",
+      "is_valid_argument": false,
+      "topic": "everyday",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0022",
+      "text": "Both times I took the early train it was late, so that service is never on time.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "Two trips is far too small a sample to describe a whole service.",
+      "is_valid_argument": false,
+      "topic": "travel",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0023",
+      "text": "My grandfather smoked and lived to ninety, so smoking can't be that harmful.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "ad_hominem",
+        "appeal_to_authority"
+      ],
+      "explanation": "A single survivor says nothing against population-level evidence.",
+      "is_valid_argument": false,
+      "topic": "health",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0024",
+      "text": "The one intern we hired from that university was disorganised, so their graduates aren't worth interviewing.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "ad_hominem",
+        "false_dilemma"
+      ],
+      "explanation": "One person cannot characterise an entire university's graduates.",
+      "is_valid_argument": false,
+      "topic": "work",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0025",
+      "text": "I tried yoga once and didn't enjoy it, so yoga isn't for me and never will be.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "A single session is a very thin basis for a permanent conclusion.",
+      "is_valid_argument": false,
+      "topic": "fitness",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0026",
+      "text": "Three of my friends bought that car and all had gearbox trouble, so the model is defective.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "appeal_to_authority"
+      ],
+      "explanation": "Three cases out of many thousands sold cannot establish a model-wide defect.",
+      "is_valid_argument": false,
+      "topic": "everyday",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0027",
+      "text": "The first chapter was dull, so the whole book must be a waste of time.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "One chapter is not a fair sample of a whole book.",
+      "is_valid_argument": false,
+      "topic": "entertainment",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0028",
+      "text": "It snowed heavily here in April, so the planet clearly isn't warming.",
+      "answer": "hasty_generalization",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_authority"
+      ],
+      "explanation": "One local weather event isn't a sample of global climate trends.",
+      "is_valid_argument": false,
+      "topic": "environment",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0029",
+      "text": "A Nobel laureate in chemistry says this stock will double, so it's a safe investment.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "hasty_generalization"
+      ],
+      "explanation": "Expertise in chemistry confers no authority over equity markets.",
+      "is_valid_argument": false,
+      "topic": "finance",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0030",
+      "text": "My dentist recommends this brand of running shoe, so it must be best for my knees.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "hasty_generalization"
+      ],
+      "explanation": "Dentistry is the wrong field to ground a claim about running biomechanics.",
+      "is_valid_argument": false,
+      "topic": "fitness",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0031",
+      "text": "A famous actor endorsed this supplement, so it must be effective.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "ad_hominem"
+      ],
+      "explanation": "Fame is not expertise, and endorsement is not evidence.",
+      "is_valid_argument": false,
+      "topic": "health",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0032",
+      "text": "The senior architect approved the schema, so there's no point reviewing it for bugs.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "hasty_generalization"
+      ],
+      "explanation": "Seniority raises the prior but doesn't make the design immune to error.",
+      "is_valid_argument": false,
+      "topic": "engineering",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0033",
+      "text": "A physics professor wrote that this diet cures migraines, so I'll stop taking my medication.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "appeal_to_popularity"
+      ],
+      "explanation": "A physicist's credentials don't extend to clinical claims about migraines.",
+      "is_valid_argument": false,
+      "topic": "medicine",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0034",
+      "text": "It's in a published textbook, so it can't be out of date.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_popularity",
+        "hasty_generalization"
+      ],
+      "explanation": "Publication doesn't freeze a field; textbooks age like anything else.",
+      "is_valid_argument": false,
+      "topic": "science",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0035",
+      "text": "The CEO thinks the redesign will boost sales, so we don't need to test it.",
+      "answer": "appeal_to_authority",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "The CEO's opinion isn't a substitute for measurement.",
+      "is_valid_argument": false,
+      "topic": "business",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0036",
+      "text": "Every student on the trip needs a signed form. Priya is on the trip, so Priya needs a signed form.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "false_dilemma"
+      ],
+      "explanation": "A universal rule applied to a member of the group — this one is valid.",
+      "is_valid_argument": true,
+      "topic": "school",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0037",
+      "text": "The library closes at six on Sundays. Today is Sunday and it's half past six, so the library is closed.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "false_dilemma"
+      ],
+      "explanation": "The conclusion follows straightforwardly from the stated rule and facts.",
+      "is_valid_argument": true,
+      "topic": "everyday",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0038",
+      "text": "All the cheeses on this board contain dairy. Sam avoids dairy, so there's nothing on the board for Sam.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "hasty_generalization"
+      ],
+      "explanation": "The premises fully support the conclusion — valid reasoning.",
+      "is_valid_argument": true,
+      "topic": "food",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0039",
+      "text": "This bridge is rated for eight tonnes. The loaded lorry weighs eleven tonnes, so it cannot cross safely.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "appeal_to_authority",
+        "hasty_generalization"
+      ],
+      "explanation": "A stated limit plus a measured weight gives the conclusion directly.",
+      "is_valid_argument": true,
+      "topic": "engineering",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0040",
+      "text": "Every flight to the island was cancelled today, so the delegates who planned to fly today did not arrive by air.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "hasty_generalization",
+        "false_dilemma"
+      ],
+      "explanation": "If all flights were cancelled, nobody arrived on one — the inference holds.",
+      "is_valid_argument": true,
+      "topic": "travel",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0041",
+      "text": "The recipe needs three eggs and we have two, so we cannot make it as written.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "hasty_generalization"
+      ],
+      "explanation": "Requirement exceeds supply, so the conclusion follows.",
+      "is_valid_argument": true,
+      "topic": "cooking",
+      "difficulty": "easy"
+    },
+    {
+      "id": "fal_e0042",
+      "text": "Members pay a reduced fee, and Jordan is not a member, so Jordan pays the full fee.",
+      "answer": "valid",
+      "tier": 1,
+      "distractor_pool": [
+        "false_dilemma",
+        "appeal_to_popularity"
+      ],
+      "explanation": "Given only two fee categories are defined, the conclusion follows.",
+      "is_valid_argument": true,
+      "topic": "money",
+      "difficulty": "easy"
     }
   ]
 }

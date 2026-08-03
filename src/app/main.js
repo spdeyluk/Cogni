@@ -53,6 +53,7 @@ import {
   scoreSpatialSpanAssessment
 } from "../core/assessments/spatialSpan.js";
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
+import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRotation.js";
 import * as THREE from "../../node_modules/three/build/three.module.js";
 import { supabase, supabaseEnabled } from "./supabase.js";
 
@@ -3097,13 +3098,33 @@ function miniShuffle(arr) {
   return arr;
 }
 
+// Big enough that a strong run cannot drain it: once the unseen words run out
+// every remaining trial is necessarily SEEN, which is trivially gameable.
 const miniWordPool = [
   "river", "candle", "planet", "garden", "pencil", "silver", "market", "window", "forest", "castle",
   "bridge", "pocket", "lemon", "shadow", "anchor", "velvet", "meadow", "copper", "ribbon", "harbor",
   "cactus", "pillow", "signal", "walnut", "puzzle", "marble", "cabin", "orbit", "thread", "glacier",
   "ember", "quartz", "saddle", "tunnel", "beacon", "cricket", "lantern", "pebble", "compass", "maple",
   "canyon", "feather", "kettle", "meteor", "nectar", "prairie", "raven", "sable", "timber", "violet",
-  "willow", "zephyr", "acorn", "basket", "clover", "dagger", "engine", "fabric", "gravel", "hollow"
+  "willow", "zephyr", "acorn", "basket", "clover", "dagger", "engine", "fabric", "gravel", "hollow",
+  "iceberg", "jasmine", "kernel", "ladder", "magnet", "nutmeg", "oyster", "parcel", "quiver", "rocket",
+  "sandal", "tavern", "umbrella", "vessel", "wagon", "yarn", "zebra", "almond", "bamboo", "cavern",
+  "domino", "eagle", "falcon", "gallery", "hammer", "island", "jacket", "kayak", "lagoon", "mantle",
+  "needle", "oasis", "parlor", "quarry", "ripple", "satchel", "temple", "valley", "whistle", "yogurt",
+  "abbey", "blossom", "cinder", "drifter", "echo", "fossil", "granite", "hazel", "indigo", "jungle",
+  "kitten", "lattice", "mosaic", "nozzle", "otter", "petal", "quilt", "rooster", "silo", "trellis",
+  "urchin", "vulture", "wharf", "yeoman", "anvil", "bugle", "cobalt", "dune", "elm", "fennel",
+  "gable", "heron", "ivory", "jade", "knoll", "lilac", "moth", "nectarine", "opal", "pewter",
+  "quail", "reef", "sparrow", "thistle", "umber", "vine", "walrus", "yew", "acre", "bison",
+  "crater", "dahlia", "eddy", "fjord", "grotto", "hedge", "inlet", "juniper", "kelp", "lichen",
+  "mesa", "nomad", "orchard", "plume", "quiche", "rapids", "sage", "tundra", "urn", "vapor",
+  "wicker", "yucca", "amber", "bramble", "cedar", "delta", "ferry", "gorge", "heather", "iris",
+  "jetty", "knapsack", "lodge", "marsh", "nest", "oar", "quartzite", "ridge", "summit", "terrace",
+  "uplands", "vault", "willowherb", "yard", "alcove", "barley", "cistern", "dogwood", "elder", "fern",
+  "glade", "harbour", "inkwell", "jar", "kiln", "loft", "mill", "nook", "orchid", "pantry",
+  "quill", "rafter", "stable", "turret", "upland", "vestry", "warren", "yeast", "anthem", "brooch",
+  "chisel", "drum", "easel", "flute", "goblet", "harp", "icon", "jug", "kazoo", "lyre",
+  "mandolin", "oboe", "piano", "quintet", "rattle", "sitar", "tuba", "ukulele", "viola"
 ];
 
 // --- Spot the Fallacy: local item-bank exercise (content in public/data/*.json) ---
@@ -3198,6 +3219,32 @@ function setFallacyDifficulty(value) {
   try { localStorage.setItem(FALLACY_DIFFICULTY_KEY, value === "hard" ? "hard" : "easy"); } catch { /* private mode */ }
 }
 
+// Items served recently, per difficulty, so consecutive rounds don't resample the
+// same questions. Without this a round is an independent draw: on a 30-item bank a
+// 16-item round would repeat about half its questions every single time.
+const FALLACY_RECENT_KEY = "cogni.fallacyRecent.v1";
+
+function loadFallacyRecent() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FALLACY_RECENT_KEY));
+    if (!saved || typeof saved !== "object") return {};
+    return saved;
+  } catch { return {}; }
+}
+
+function rememberFallacyServed(difficulty, ids, poolSize) {
+  try {
+    const all = loadFallacyRecent();
+    all[difficulty] = rememberServed({
+      recent: Array.isArray(all[difficulty]) ? all[difficulty] : [],
+      servedIds: ids,
+      poolSize,
+      roundSize: FALLACY_ROUND_SIZE
+    });
+    localStorage.setItem(FALLACY_RECENT_KEY, JSON.stringify(all));
+  } catch { /* private mode: fall back to plain random rounds */ }
+}
+
 function buildFallacyRound(state) {
   const want = fallacyDifficulty();
   const atDifficulty = fallacyBank.items.filter((it) => (it.difficulty || "easy") === want);
@@ -3205,7 +3252,13 @@ function buildFallacyRound(state) {
   // The adaptive tier still narrows within the chosen difficulty.
   const eligible = base.filter((it) => (it.tier || 1) <= state.tier);
   const pool = eligible.length ? eligible : base;
-  return miniShuffle([...pool]).slice(0, Math.min(FALLACY_ROUND_SIZE, pool.length));
+  const round = pickFreshRound({
+    pool,
+    size: FALLACY_ROUND_SIZE,
+    recent: loadFallacyRecent()[want] || []
+  });
+  rememberFallacyServed(want, round.map((it) => it.id), pool.length);
+  return round;
 }
 
 const miniGames = {
@@ -3734,11 +3787,25 @@ const miniGames = {
         return arithmetic(level);
       }
 
-      function makeItem(level) {
+      function makeItemRaw(level) {
         const r = Math.random();
         if (r < 0.4) return Math.random() < 0.7 ? arithmetic(level) : verify(level);
         if (r < 0.7) return estimation(level);
         return oddOneOut(level);
+      }
+
+      // At the opening levels the operand space is small (single digits), so 20
+      // independent draws repeat a prompt more often than not. Re-roll a prompt
+      // that has already appeared this session; give up after a bounded number
+      // of tries so a narrow level can never hang the game.
+      const usedPrompts = new Set();
+      function makeItem(level) {
+        let item = makeItemRaw(level);
+        for (let tries = 0; tries < 24 && usedPrompts.has(item.prompt); tries += 1) {
+          item = makeItemRaw(level);
+        }
+        usedPrompts.add(item.prompt);
+        return item;
       }
 
       // --- flow + rendering ---
@@ -7058,19 +7125,59 @@ function catResponsesWithItems() {
 
 function startCatTest() {
   if (!requireAuth("Sign in to take the Cogni IQ Test.")) return;
-  catActive = { startedAt: Date.now(), responses: [], currentItemId: null };
+  // Snapshot once at the start so the avoid-set can't shift mid-test.
+  catActive = {
+    startedAt: Date.now(),
+    responses: [],
+    currentItemId: null,
+    avoidIds: [...catRecentlyServedIds()]
+  };
   pickNextCatItem();
   showCatSection("run");
   renderCatQuestion();
 }
 
+// Below this the bank is too thin to keep measuring well, so exposure control
+// yields to accuracy and previously-seen items come back into play.
+const CAT_MIN_FRESH_POOL = 60;
+
+// Items served by the most recent completed test. Selection is deterministic
+// given ability, so without this a retake walks almost exactly the same path.
+function catRecentlyServedIds() {
+  const [previous] = loadCatSessions();
+  if (!previous?.responses) return new Set();
+  return new Set(previous.responses.map((response) => response.itemId));
+}
+
 function pickNextCatItem() {
   const { theta } = catActive.responses.length ? eapEstimate(catResponsesWithItems()) : { theta: 0 };
   const administered = new Set(catActive.responses.map((response) => response.itemId));
-  const available = catItemBank.filter((item) => !administered.has(item.id));
-  const item = selectNextItem(theta, available);
+  const unadministered = catItemBank.filter((item) => !administered.has(item.id));
+  // Prefer items the last test didn't use, but only while that leaves enough
+  // bank to still measure against — precision wins over novelty at the margin.
+  const fresh = unadministered.filter((item) => !catActive.avoidIds?.includes(item.id));
+  const available = fresh.length >= CAT_MIN_FRESH_POOL ? fresh : unadministered;
+  // Randomesque exposure control: pick among the most informative items rather
+  // than always the single best, so two people of the same ability — or one
+  // person retaking — don't walk the same path through the bank.
+  const item = selectNextItem(theta, available, { topCandidates: 5 });
   catActive.currentItemId = item?.id ?? null;
+  // Option order is decided per presentation, never by the bank. The bank's
+  // stored positions follow a fixed cycle (rotateAnswer shifts by item index),
+  // which would otherwise be both learnable and identical on every retake.
+  catActive.currentOrder = item ? shuffleIndices(item.options.length) : null;
   saveCatActive();
+}
+
+// Display order → bank order. Falls back to identity so a session saved before
+// this existed, or any malformed order, still resolves correctly.
+function catOptionOrder(item) {
+  const order = catActive?.currentOrder;
+  const valid = Array.isArray(order)
+    && order.length === item.options.length
+    && new Set(order).size === item.options.length
+    && order.every((index) => Number.isInteger(index) && index >= 0 && index < item.options.length);
+  return valid ? order : item.options.map((_, index) => index);
 }
 
 function renderCatQuestion() {
@@ -7083,15 +7190,16 @@ function renderCatQuestion() {
   elements.catDomainLabel.textContent = CAT_DOMAIN_LABELS[item.domain];
   elements.catPrompt.textContent = item.prompt;
   elements.catStage.innerHTML = item.matrix ? catMatrixSvg(item.matrix) : "";
+  const order = catOptionOrder(item);
   if (item.matrix) {
     elements.catOptions.className = "cat-options cat-options-matrix";
-    elements.catOptions.innerHTML = item.matrix.optionCells.map((cell, index) => `
-      <button type="button" data-cat-answer="${index}" aria-label="Option ${index + 1}">${catCellSvg(cell)}</button>
+    elements.catOptions.innerHTML = order.map((source, index) => `
+      <button type="button" data-cat-answer="${index}" aria-label="Option ${index + 1}">${catCellSvg(item.matrix.optionCells[source])}</button>
     `).join("");
   } else {
     elements.catOptions.className = "cat-options";
-    elements.catOptions.innerHTML = item.options.map((option, index) => `
-      <button type="button" data-cat-answer="${index}">${escapeHtml(option)}</button>
+    elements.catOptions.innerHTML = order.map((source, index) => `
+      <button type="button" data-cat-answer="${index}">${escapeHtml(item.options[source])}</button>
     `).join("");
   }
   startCatTimer(item);
@@ -7121,10 +7229,15 @@ function answerCatQuestion(answerIndex) {
   stopCatTimer();
   const item = catItemsById.get(catActive?.currentItemId);
   if (!item) return;
+  // The click reports a display position; translate it back to the bank's own
+  // index so scoring and the stored response stay in bank space. null = timeout.
+  const chosen = answerIndex === null || answerIndex === undefined
+    ? null
+    : catOptionOrder(item)[answerIndex] ?? null;
   catActive.responses.push({
     itemId: item.id,
-    answerIndex,
-    correct: answerIndex === item.answerIndex,
+    answerIndex: chosen,
+    correct: chosen === item.answerIndex,
     ms: Date.now() - catItemStartedAt,
     at: new Date().toISOString()
   });
