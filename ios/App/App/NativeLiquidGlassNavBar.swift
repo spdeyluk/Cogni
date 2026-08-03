@@ -58,16 +58,19 @@ private struct NavBadgeDot: View {
     private static let tint = Color(red: 1.0, green: 0.23, blue: 0.19)
     private static let size: CGFloat = 8
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var haloExpanded = false
     @State private var breathing = false
 
     var body: some View {
         ZStack {
-            Circle()
-                .stroke(Self.tint, lineWidth: 1.5)
-                .frame(width: Self.size, height: Self.size)
-                .scaleEffect(haloExpanded ? 2.4 : 1)
-                .opacity(haloExpanded ? 0 : 0.8)
+            if !reduceMotion {
+                Circle()
+                    .stroke(Self.tint, lineWidth: 1.5)
+                    .frame(width: Self.size, height: Self.size)
+                    .scaleEffect(haloExpanded ? 2.4 : 1)
+                    .opacity(haloExpanded ? 0 : 0.8)
+            }
             Circle()
                 .fill(Self.tint)
                 .frame(width: Self.size, height: Self.size)
@@ -75,6 +78,8 @@ private struct NavBadgeDot: View {
                 .scaleEffect(breathing ? 1.16 : 1)
         }
         .onAppear {
+            // Reduce Motion keeps the plain dot: still an unmissable marker, no movement.
+            guard !reduceMotion else { return }
             // Non-autoreversing so the halo always travels outward, never sucks back in.
             withAnimation(.easeOut(duration: 1.7).repeatForever(autoreverses: false)) {
                 haloExpanded = true
