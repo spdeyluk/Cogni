@@ -51,6 +51,41 @@ final class NativeLiquidNavModel: ObservableObject {
     }
 }
 
+/// The attention dot on a tab. It breathes and throws off a halo so it reads as
+/// "do this" rather than as a static ornament — the same language as the pulsing
+/// IQ test card the tab leads to.
+private struct NavBadgeDot: View {
+    private static let tint = Color(red: 1.0, green: 0.23, blue: 0.19)
+    private static let size: CGFloat = 8
+
+    @State private var haloExpanded = false
+    @State private var breathing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Self.tint, lineWidth: 1.5)
+                .frame(width: Self.size, height: Self.size)
+                .scaleEffect(haloExpanded ? 2.4 : 1)
+                .opacity(haloExpanded ? 0 : 0.8)
+            Circle()
+                .fill(Self.tint)
+                .frame(width: Self.size, height: Self.size)
+                .overlay(Circle().stroke(Color.black.opacity(0.28), lineWidth: 1))
+                .scaleEffect(breathing ? 1.16 : 1)
+        }
+        .onAppear {
+            // Non-autoreversing so the halo always travels outward, never sucks back in.
+            withAnimation(.easeOut(duration: 1.7).repeatForever(autoreverses: false)) {
+                haloExpanded = true
+            }
+            withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
+                breathing = true
+            }
+        }
+    }
+}
+
 struct NativeLiquidGlassNavBar: View {
     @ObservedObject var model: NativeLiquidNavModel
     @Namespace private var selectionNamespace
@@ -85,12 +120,7 @@ struct NativeLiquidGlassNavBar: View {
                             // foregroundStyle so it stays bright on an unselected tab.
                             .overlay(alignment: .topTrailing) {
                                 if model.badgedTabs.contains(tab) {
-                                    Circle()
-                                        .fill(Color(red: 1.0, green: 0.23, blue: 0.19))
-                                        .frame(width: 8, height: 8)
-                                        .overlay(
-                                            Circle().stroke(Color.black.opacity(0.28), lineWidth: 1)
-                                        )
+                                    NavBadgeDot()
                                         .offset(x: 7, y: -2)
                                         .transition(.scale.combined(with: .opacity))
                                 }
