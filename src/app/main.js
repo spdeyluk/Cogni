@@ -7174,8 +7174,8 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   const sessions = loadCatSessions();
   sessions.unshift(sessionRecord);
   saveCatSessions(sessions.slice(0, 50));
-  // First completed test: drop the dot from the Tests tab right away.
-  syncNativeTabBadges();
+  // First completed test: drop the tab dot and stop the card pulsing right away.
+  syncUntakenIqTestNudge();
   catActive = null;
   saveCatActive();
   renderCatResult(sessionRecord);
@@ -7915,7 +7915,7 @@ function setActiveTab(tab) {
   syncNativeNavigationChrome();
   // Cheap self-heal: the native bar may not have been listening at boot, so
   // re-assert badge state on every navigation rather than only once.
-  syncNativeTabBadges();
+  syncUntakenIqTestNudge();
   syncRouteForTab(tab);
 }
 
@@ -7934,7 +7934,7 @@ function installNativeNavigationBridge() {
 
   window.addEventListener("cogni-native-nav-ready", () => {
     syncNativeNavigationChrome();
-    syncNativeTabBadges();
+    syncUntakenIqTestNudge();
   });
   if (elements.appShell) {
     new MutationObserver(syncNativeNavigationChrome).observe(elements.appShell, {
@@ -7943,19 +7943,18 @@ function installNativeNavigationBridge() {
     });
   }
   syncNativeNavigationChrome();
-  syncNativeTabBadges();
+  syncUntakenIqTestNudge();
 }
 
-// The Tests tab wears an attention dot until the IQ test has been taken once —
-// it is the one thing a new user should do first, and it is otherwise easy to
-// miss behind a tab they have no reason to open. Taking the test clears it for
-// good; this is a nudge, not a recurring notification.
-function syncNativeTabBadges() {
-  postNativeNavigationMessage({
-    type: "badge",
-    tab: "assessments",
-    show: loadCatSessions().length === 0
-  });
+// Until the IQ test has been taken once it is nudged in two places: an attention
+// dot on the Tests tab (so it is visible from anywhere), and a pulse on the test
+// card itself (so it is obvious what to tap once you get there). Both are derived
+// from the session history rather than a dismissed flag, so neither can get stuck.
+// Taking the test clears them for good — this is a nudge, not a recurring alert.
+function syncUntakenIqTestNudge() {
+  const untaken = loadCatSessions().length === 0;
+  postNativeNavigationMessage({ type: "badge", tab: "assessments", show: untaken });
+  document.querySelector("#cat-intro")?.classList.toggle("needs-attention", untaken);
 }
 
 function syncNativeNavigationChrome() {

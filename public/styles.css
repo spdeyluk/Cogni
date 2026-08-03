@@ -18591,3 +18591,54 @@ html.mode-pro .page-paywall {
 .fallacy-difficulty-option.is-selected { border-color: var(--accent) !important; }
 .fallacy-difficulty-option strong { font-size: 1.05rem; font-weight: 700; }
 .fallacy-difficulty-option span { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+
+/* ===================================================================
+   IQ test not yet taken: the card pulses so the one thing a new user
+   should do first is unmistakable once they reach the Tests tab. Pairs
+   with the native tab-bar dot — both driven by syncUntakenIqTestNudge(),
+   and both stop for good after the first completed test.
+
+   Native only: the web build keeps its plain, quiet card.
+   =================================================================== */
+html.mode-play #cat-intro.needs-attention {
+  animation: iq-card-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes iq-card-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 91, 255, 0); }
+  50%      { box-shadow: 0 0 26px 0 rgba(74, 91, 255, 0.18); }
+}
+
+/* The icon tile carries the actual pulse: a ring that expands out of it
+   and fades, plus a slightly brighter fill so it reads as "live". */
+html.mode-play #cat-intro.needs-attention .assessment-intro-icon {
+  position: relative;
+  background: rgba(74, 91, 255, 0.26);
+}
+
+html.mode-play #cat-intro.needs-attention .assessment-intro-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: iq-icon-ping 2.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+@keyframes iq-icon-ping {
+  0%   { opacity: 0.9; transform: scale(1); }
+  70%  { opacity: 0;   transform: scale(1.55); }
+  100% { opacity: 0;   transform: scale(1.55); }
+}
+
+/* Reduced motion: keep a static accent ring, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  html.mode-play #cat-intro.needs-attention,
+  html.mode-play #cat-intro.needs-attention .assessment-intro-icon::after {
+    animation: none !important;
+  }
+  html.mode-play #cat-intro.needs-attention .assessment-intro-icon::after {
+    opacity: 0.9;
+  }
+}
