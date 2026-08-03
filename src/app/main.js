@@ -7174,6 +7174,8 @@ function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   const sessions = loadCatSessions();
   sessions.unshift(sessionRecord);
   saveCatSessions(sessions.slice(0, 50));
+  // First completed test: drop the dot from the Tests tab right away.
+  syncNativeTabBadges();
   catActive = null;
   saveCatActive();
   renderCatResult(sessionRecord);
@@ -7911,6 +7913,9 @@ function setActiveTab(tab) {
   renderTopStatus();
   postNativeNavigationMessage({ type: "tab", tab });
   syncNativeNavigationChrome();
+  // Cheap self-heal: the native bar may not have been listening at boot, so
+  // re-assert badge state on every navigation rather than only once.
+  syncNativeTabBadges();
   syncRouteForTab(tab);
 }
 
@@ -7927,7 +7932,10 @@ function installNativeNavigationBridge() {
     }
   };
 
-  window.addEventListener("cogni-native-nav-ready", syncNativeNavigationChrome);
+  window.addEventListener("cogni-native-nav-ready", () => {
+    syncNativeNavigationChrome();
+    syncNativeTabBadges();
+  });
   if (elements.appShell) {
     new MutationObserver(syncNativeNavigationChrome).observe(elements.appShell, {
       attributes: true,
@@ -7935,6 +7943,19 @@ function installNativeNavigationBridge() {
     });
   }
   syncNativeNavigationChrome();
+  syncNativeTabBadges();
+}
+
+// The Tests tab wears an attention dot until the IQ test has been taken once —
+// it is the one thing a new user should do first, and it is otherwise easy to
+// miss behind a tab they have no reason to open. Taking the test clears it for
+// good; this is a nudge, not a recurring notification.
+function syncNativeTabBadges() {
+  postNativeNavigationMessage({
+    type: "badge",
+    tab: "assessments",
+    show: loadCatSessions().length === 0
+  });
 }
 
 function syncNativeNavigationChrome() {

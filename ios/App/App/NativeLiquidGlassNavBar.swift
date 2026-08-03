@@ -35,12 +35,19 @@ enum NativeLiquidNavTab: String, CaseIterable, Identifiable {
 
 final class NativeLiquidNavModel: ObservableObject {
     @Published var selected: NativeLiquidNavTab = .home
+    /// Tabs currently wearing an attention dot. The web app owns this state and
+    /// pushes it over the `cogniNav` bridge — see `syncNativeTabBadges()`.
+    @Published var badgedTabs: Set<NativeLiquidNavTab> = []
     var onSelect: ((NativeLiquidNavTab) -> Void)?
 
     func select(_ tab: NativeLiquidNavTab) {
         guard selected != tab else { return }
         selected = tab
         onSelect?(tab)
+    }
+
+    func setBadge(_ tab: NativeLiquidNavTab, shown: Bool) {
+        if shown { badgedTabs.insert(tab) } else { badgedTabs.remove(tab) }
     }
 }
 
@@ -73,6 +80,21 @@ struct NativeLiquidGlassNavBar: View {
                     VStack(spacing: 3) {
                         Image(systemName: tab.symbolName)
                             .font(.system(size: 20, weight: .semibold))
+                            // Sits on the glyph's top-right the way a native tab
+                            // badge does, and is drawn outside the dimmed
+                            // foregroundStyle so it stays bright on an unselected tab.
+                            .overlay(alignment: .topTrailing) {
+                                if model.badgedTabs.contains(tab) {
+                                    Circle()
+                                        .fill(Color(red: 1.0, green: 0.23, blue: 0.19))
+                                        .frame(width: 8, height: 8)
+                                        .overlay(
+                                            Circle().stroke(Color.black.opacity(0.28), lineWidth: 1)
+                                        )
+                                        .offset(x: 7, y: -2)
+                                        .transition(.scale.combined(with: .opacity))
+                                }
+                            }
                         Text(tab.title)
                             .font(.system(size: 11.5, weight: .medium, design: .default))
                             .lineLimit(1)
@@ -91,9 +113,11 @@ struct NativeLiquidGlassNavBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.title)
+                .accessibilityValue(model.badgedTabs.contains(tab) ? "Not started yet" : "")
                 .accessibilityAddTraits(model.selected == tab ? .isSelected : [])
             }
         }
         .fixedSize()
+        .animation(.spring(response: 0.34, dampingFraction: 0.72), value: model.badgedTabs)
     }
 }

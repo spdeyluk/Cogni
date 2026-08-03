@@ -112,5 +112,13 @@ final class CogniBridgeViewController: CAPBridgeViewController, WKScriptMessageH
            let hidden = payload["hidden"] as? Bool {
             nativeNavHost?.view.isHidden = hidden
         }
+
+        // Attention dot on a tab, e.g. Tests until the IQ test has been taken once.
+        if type == "badge",
+           let tabName = payload["tab"] as? String,
+           let tab = NativeLiquidNavTab(webSection: tabName),
+           let show = payload["show"] as? Bool {
+            nativeNavModel.setBadge(tab, shown: show)
+        }
     }
 }
