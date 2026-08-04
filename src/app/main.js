@@ -54,6 +54,11 @@ import {
 } from "../core/assessments/spatialSpan.js";
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
 import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRotation.js";
+import {
+  MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, indexForItem, thetaToIndexScore,
+  scoreWorkingMemoryIndex, scoreProcessingSpeedIndex, scoreComposite,
+  compositeStandardError, indexConfidenceInterval, scoreToPercentile, scoreDescriptor
+} from "../core/assessments/measurement.js";
 import * as THREE from "../../node_modules/three/build/three.module.js";
 import { supabase, supabaseEnabled } from "./supabase.js";
 
@@ -533,9 +538,6 @@ const elements = {
   catScoreCi: document.querySelector("#cat-score-ci"),
   catCurve: document.querySelector("#cat-curve"),
   catResultSummary: document.querySelector("#cat-result-summary"),
-  catDomainFluid: document.querySelector("#cat-domain-fluid"),
-  catDomainVerbal: document.querySelector("#cat-domain-verbal"),
-  catDomainQuant: document.querySelector("#cat-domain-quant"),
   catResultBack: document.querySelector("#cat-result-back"),
   catHistoryBack: document.querySelector("#cat-history-back"),
   catHistoryList: document.querySelector("#cat-history-list"),
@@ -1434,8 +1436,8 @@ document.querySelectorAll(".difficulty-group").forEach((group) => {
 
 // --- Pricing modal ---------------------------------------------------------
 function openPricingModal() {
-  // Nothing to sell on the web build — every feature is already unlocked.
-  if (cogniUiMode === "pro") return;
+  // Web sells one thing: the Cogni Measurement report. Exercises stay free, so
+  // this is only reachable from the locked report, never from the training side.
   wirePricingModal();
   renderPaywallProof();
   renderPaywallTimeline();
@@ -7152,15 +7154,210 @@ function answerCatQuestion(answerIndex) {
   const estimate = eapEstimate(catResponsesWithItems());
   const elapsedMs = Date.now() - catActive.startedAt;
   if (shouldStop({ itemsAnswered: catActive.responses.length, se: estimate.se, elapsedMs })) {
-    finishCatTest(estimate);
+    startCatSpanSubtest(estimate);
     return;
   }
   pickNextCatItem();
   if (!catActive.currentItemId) {
-    finishCatTest(estimate);
+    startCatSpanSubtest(estimate);
     return;
   }
   renderCatQuestion();
+}
+
+// ---------------------------------------------------------------------------
+// Working Memory and Processing Speed subtests.
+//
+// The adaptive items cover the three reasoning indices. These two indices can't
+// be measured with multiple-choice items at all — they need timed performance —
+// so they run as short subtests after the item phase, using the same run screen.
+// ---------------------------------------------------------------------------
+
+const CAT_SPAN_START = 3;
+const CAT_SPAN_MAX = 10;
+const CAT_SPAN_LIVES = 2;         // two failures at a length ends the subtest
+const CAT_SPEED_TRIALS = 32;
+const CAT_SPEED_SYMBOLS = ["▲", "■", "●", "◆", "★", "✦"];
+
+let catSubtestTimers = [];
+
+function clearCatSubtestTimers() {
+  catSubtestTimers.forEach((timer) => window.clearTimeout(timer));
+  catSubtestTimers = [];
+}
+
+function catSubtestAfter(callback, delayMs) {
+  const timer = window.setTimeout(() => {
+    catSubtestTimers = catSubtestTimers.filter((item) => item !== timer);
+    callback();
+  }, delayMs);
+  catSubtestTimers.push(timer);
+}
+
+function catSubtestChrome({ label, progress, prompt }) {
+  stopCatTimer();
+  elements.catTimerBar.style.width = "100%";
+  elements.catDomainLabel.textContent = label;
+  elements.catProgress.textContent = progress;
+  elements.catPrompt.textContent = prompt;
+  elements.catOptions.className = "cat-options";
+  elements.catOptions.innerHTML = "";
+}
+
+// --- Digit span (Working Memory) ------------------------------------------
+function startCatSpanSubtest(estimate) {
+  clearCatSubtestTimers();
+  catActive.itemEstimate = { theta: estimate.theta, se: estimate.se };
+  catActive.span = { length: CAT_SPAN_START, best: 0, misses: 0, backward: false };
+  saveCatActive();
+  catSpanIntro();
+}
+
+function catSpanIntro() {
+  catSubtestChrome({
+    label: "Working memory",
+    progress: "Subtest 2 of 3",
+    prompt: "Remember the digits"
+  });
+  elements.catStage.innerHTML = `
+    <div class="cat-subtest-intro">
+      <p>A row of digits appears for a few seconds. When it disappears, type it back in the same order.</p>
+      <p class="cat-subtest-note">It gets longer each time you get it right.</p>
+    </div>`;
+  elements.catOptions.innerHTML = `<button type="button" id="cat-span-begin">Begin</button>`;
+  elements.catOptions.querySelector("#cat-span-begin").addEventListener("click", () => catSpanShow());
+}
+
+function catSpanShow() {
+  const state = catActive.span;
+  const digits = Array.from({ length: state.length }, () => Math.floor(Math.random() * 10));
+  state.current = digits;
+  state.entry = "";
+  catSubtestChrome({
+    label: "Working memory",
+    progress: state.backward ? "Digits — backward" : "Digits — forward",
+    prompt: state.backward ? "Type them in reverse" : "Remember the digits"
+  });
+  elements.catStage.innerHTML = `<div class="cat-span-digits">${digits.join(" ")}</div>`;
+  catSubtestAfter(() => catSpanPrompt(), 800 + state.length * 420);
+}
+
+function catSpanPrompt() {
+  const state = catActive.span;
+  elements.catStage.innerHTML = `<div class="cat-span-entry" id="cat-span-entry">–</div>`;
+  elements.catOptions.className = "cat-options cat-options-keypad";
+  elements.catOptions.innerHTML = `
+    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-k="${n}">${n}</button>`).join("")}
+    <button type="button" data-k="del">⌫</button>
+    <button type="button" data-k="0">0</button>
+    <button type="button" data-k="ok" class="ok">✓</button>`;
+  const entryNode = elements.catStage.querySelector("#cat-span-entry");
+  elements.catOptions.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.k;
+      if (key === "del") state.entry = state.entry.slice(0, -1);
+      else if (key === "ok") { catSpanSubmit(); return; }
+      else if (state.entry.length < state.current.length) state.entry += key;
+      entryNode.textContent = state.entry || "–";
+    });
+  });
+}
+
+function catSpanSubmit() {
+  const state = catActive.span;
+  const expected = state.backward ? [...state.current].reverse() : state.current;
+  const correct = state.entry === expected.join("");
+  if (correct) {
+    state.best = Math.max(state.best, state.length);
+    state.length = Math.min(CAT_SPAN_MAX, state.length + 1);
+    state.misses = 0;
+  } else {
+    state.misses += 1;
+  }
+  saveCatActive();
+
+  const done = state.misses >= CAT_SPAN_LIVES || state.length > CAT_SPAN_MAX;
+  elements.catStage.innerHTML = `<div class="cat-span-verdict ${correct ? "ok" : "wrong"}">${correct ? "Correct" : expected.join(" ")}</div>`;
+  elements.catOptions.innerHTML = "";
+  if (!done) { catSubtestAfter(() => catSpanShow(), 750); return; }
+  // Forward run finished: repeat backward, which loads working memory harder.
+  if (!state.backward) {
+    state.backward = true;
+    state.forwardBest = state.best;
+    state.best = 0;
+    state.length = CAT_SPAN_START;
+    state.misses = 0;
+    saveCatActive();
+    catSubtestAfter(() => catSpanShow(), 900);
+    return;
+  }
+  state.backwardBest = state.best;
+  saveCatActive();
+  catSubtestAfter(() => startCatSpeedSubtest(), 750);
+}
+
+// --- Symbol match (Processing Speed) --------------------------------------
+function startCatSpeedSubtest() {
+  clearCatSubtestTimers();
+  catActive.speed = { index: 0, correct: 0, times: [], shownAt: 0, accepting: false };
+  saveCatActive();
+  catSubtestChrome({
+    label: "Processing speed",
+    progress: "Subtest 3 of 3",
+    prompt: "Same or different?"
+  });
+  elements.catStage.innerHTML = `
+    <div class="cat-subtest-intro">
+      <p>Two symbols appear. Say whether they are the same as fast as you can without making mistakes.</p>
+      <p class="cat-subtest-note">${CAT_SPEED_TRIALS} quick trials.</p>
+    </div>`;
+  elements.catOptions.innerHTML = `<button type="button" id="cat-speed-begin">Begin</button>`;
+  elements.catOptions.querySelector("#cat-speed-begin").addEventListener("click", () => catSpeedTrial());
+}
+
+function catSpeedTrial() {
+  const state = catActive.speed;
+  if (state.index >= CAT_SPEED_TRIALS) { finishCatTest(); return; }
+  const same = Math.random() < 0.5;
+  const left = CAT_SPEED_SYMBOLS[Math.floor(Math.random() * CAT_SPEED_SYMBOLS.length)];
+  const others = CAT_SPEED_SYMBOLS.filter((symbol) => symbol !== left);
+  const right = same ? left : others[Math.floor(Math.random() * others.length)];
+  state.expected = same;
+  catSubtestChrome({
+    label: "Processing speed",
+    progress: `${state.index + 1} of ${CAT_SPEED_TRIALS}`,
+    prompt: "Same or different?"
+  });
+  elements.catStage.innerHTML = `<div class="cat-speed-pair"><span>${left}</span><span>${right}</span></div>`;
+  elements.catOptions.innerHTML = `
+    <button type="button" data-same="1">Same</button>
+    <button type="button" data-same="0">Different</button>`;
+  elements.catOptions.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => catSpeedAnswer(button.dataset.same === "1"));
+  });
+  state.shownAt = performance.now();
+  state.accepting = true;
+}
+
+function catSpeedAnswer(saidSame) {
+  const state = catActive.speed;
+  if (!state.accepting) return;
+  state.accepting = false;
+  const elapsed = performance.now() - state.shownAt;
+  const correct = saidSame === state.expected;
+  if (correct) state.correct += 1;
+  // Only correct trials inform the speed estimate — a fast wrong answer is not speed.
+  if (correct) state.times.push(elapsed);
+  state.index += 1;
+  saveCatActive();
+  catSubtestAfter(() => catSpeedTrial(), 140);
+}
+
+function median(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
 function catDomainSubscores() {
@@ -7177,18 +7374,87 @@ function catDomainSubscores() {
   return scores;
 }
 
+// The five indices, each on the mean-100 / SD-15 scale. The three reasoning
+// indices come from the adaptive items; the other two from the timed subtests.
+function catIndexScores() {
+  const indices = {};
+  const thetas = {};
+  const errors = [];
+  const withItems = catResponsesWithItems();
+
+  for (const key of ["vci", "vsi", "qri"]) {
+    const responses = withItems.filter((response) => indexForItem(response.item) === key);
+    if (!responses.length) { indices[key] = null; continue; }
+    const estimate = eapEstimate(responses);
+    thetas[key] = estimate.theta;
+    errors.push(estimate.se);
+    indices[key] = {
+      score: thetaToIndexScore(estimate.theta),
+      ci: indexConfidenceInterval(estimate.theta, estimate.se),
+      percentile: scoreToPercentile(thetaToIndexScore(estimate.theta)),
+      count: responses.length,
+      provisional: true
+    };
+  }
+
+  const span = catActive?.span;
+  const wm = scoreWorkingMemoryIndex({
+    digit: Number.isFinite(span?.forwardBest) ? span.forwardBest : span?.best,
+    // Backward span is harder, so it is compared against a reference one lower.
+    spatial: Number.isFinite(span?.backwardBest) ? span.backwardBest + 1 : undefined
+  });
+  if (wm) {
+    thetas.wmi = wm.theta;
+    indices.wmi = {
+      score: wm.score,
+      percentile: scoreToPercentile(wm.score),
+      detail: { forward: span?.forwardBest ?? null, backward: span?.backwardBest ?? null },
+      provisional: true
+    };
+  } else indices.wmi = null;
+
+  const speed = catActive?.speed;
+  const medianMs = median(speed?.times ?? []);
+  const ps = scoreProcessingSpeedIndex({
+    medianMs,
+    accuracy: speed?.index ? speed.correct / speed.index : undefined
+  });
+  if (ps) {
+    thetas.psi = ps.theta;
+    indices.psi = {
+      score: ps.score,
+      percentile: scoreToPercentile(ps.score),
+      detail: { medianMs: Math.round(medianMs), accuracy: Math.round((speed.correct / speed.index) * 100) },
+      provisional: true
+    };
+  } else indices.psi = null;
+
+  return { indices, thetas, errors };
+}
+
 function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
   stopCatTimer();
-  const score = thetaToScore(estimate.theta);
-  const interval = scoreConfidenceInterval(estimate.theta, estimate.se);
+  clearCatSubtestTimers();
+  const { indices, thetas, errors } = catIndexScores();
+  // The composite is built from the indices, not from the item estimate alone,
+  // so working memory and processing speed actually count toward it.
+  const composite = scoreComposite(thetas);
+  const compositeSe = compositeStandardError(errors) ?? estimate.se;
+  const score = composite ? composite.score : thetaToScore(estimate.theta);
+  const compositeTheta = composite ? composite.theta : estimate.theta;
+  const interval = indexConfidenceInterval(compositeTheta, compositeSe);
   const sessionRecord = {
     id: `cat-${Date.now()}`,
     completedAt: new Date().toISOString(),
     durationMs: Date.now() - catActive.startedAt,
-    theta: Math.round(estimate.theta * 1000) / 1000,
-    se: Math.round(estimate.se * 1000) / 1000,
+    theta: Math.round(compositeTheta * 1000) / 1000,
+    se: Math.round(compositeSe * 1000) / 1000,
     score,
+    percentile: scoreToPercentile(score),
+    descriptor: scoreDescriptor(score),
     ci: interval,
+    indices,
+    provisional: true,
     domains: catDomainSubscores(),
     responses: catActive.responses
   };
@@ -7215,9 +7481,12 @@ function runCatComputing(sessionRecord, onDone) {
   const status = document.querySelector("#cat-computing-status");
   if (!list) { onDone(); return; }
 
-  const pro = isProUser();
-  const domains = Object.keys(CAT_DOMAIN_LABELS)
-    .map((key) => ({ key, label: CAT_DOMAIN_LABELS[key], entry: sessionRecord.domains?.[key] }))
+  // The reveal walks the five indices. Scores only count up if the report is
+  // unlocked — otherwise the bars fill but the numbers stay withheld, matching
+  // exactly what the result screen will show.
+  const unlocked = measurementReportUnlocked();
+  const domains = MEASUREMENT_INDEX_ORDER
+    .map((key) => ({ key, label: MEASUREMENT_INDICES[key].name, entry: sessionRecord.indices?.[key] }))
     .filter((d) => d.entry);
   if (!domains.length) { onDone(); return; }
 
@@ -7225,7 +7494,7 @@ function runCatComputing(sessionRecord, onDone) {
     <li class="cat-computing-row" data-domain="${escapeHtml(d.key)}">
       <span class="cat-computing-label">${escapeHtml(d.label)}</span>
       <span class="cat-computing-track"><i></i></span>
-      <span class="cat-computing-score">${pro ? "" : "—"}</span>
+      <span class="cat-computing-score">${unlocked ? "" : "—"}</span>
       <span class="cat-computing-tick" aria-hidden="true">✓</span>
     </li>`).join("");
   if (status) status.textContent = "Analysing responses…";
@@ -7238,9 +7507,9 @@ function runCatComputing(sessionRecord, onDone) {
       row.classList.add("is-active");
       const fill = row.querySelector("i");
       // Bar length reads as confidence in that domain: more items, fuller bar.
-      const items = domains[index].entry.count ?? 0;
+      const items = domains[index].entry.count ?? 6;
       if (fill) fill.style.width = `${Math.max(35, Math.min(100, items * 12))}%`;
-      if (pro) countUpTo(row.querySelector(".cat-computing-score"), domains[index].entry.score, 460);
+      if (unlocked) countUpTo(row.querySelector(".cat-computing-score"), domains[index].entry.score, 460);
       timers.push(window.setTimeout(() => row.classList.add("is-done"), 460));
     }, index * CAT_COMPUTING_STEP_MS));
   });
@@ -7256,8 +7525,7 @@ function runCatComputing(sessionRecord, onDone) {
     onDone();
     // The composite number is the payoff, so it counts up once the score screen
     // is actually on stage.
-    const shown = pro ? sessionRecord.score : fakeIqScore(sessionRecord);
-    countUpTo(elements.catScore, shown, 900);
+    countUpTo(elements.catScore, sessionRecord.score, 900);
     elements.catResult?.classList.add("cat-score-landing");
     window.setTimeout(() => elements.catResult?.classList.remove("cat-score-landing"), 1200);
   }, rows.length * CAT_COMPUTING_STEP_MS + 520));
@@ -7364,10 +7632,6 @@ function handleCheckoutReturn() {
 
 // A plausible teaser score shown (blurred) to free users — deliberately NOT the real
 // score, so a de-blurred screenshot can't leak it.
-function fakeIqScore(sessionRecord) {
-  return 108 + ((sessionRecord.responses?.length ?? 0) * 3) % 25;
-}
-
 function catBandLabel(score) {
   if (score >= 130) return "Very superior";
   if (score >= 120) return "Superior";
@@ -7404,28 +7668,68 @@ function buildCatReport(sessionRecord) {
 }
 
 function renderCatResult(sessionRecord) {
-  const pro = isProUser();
-  const shownScore = pro ? sessionRecord.score : fakeIqScore(sessionRecord);
-  elements.catScore.textContent = String(shownScore);
-  elements.catScoreCi.textContent = `95% CI ${sessionRecord.ci.low}–${sessionRecord.ci.high}`;
-  elements.catCurve.innerHTML = catBellCurveSvg(shownScore);
-  const percentile = scorePercentile(sessionRecord.score);
-  elements.catResultSummary.textContent = `Higher than about ${percentile}% of a typical population, from ${sessionRecord.responses.length} questions in ${Math.max(1, Math.round(sessionRecord.durationMs / 60000))} min (SE ${sessionRecord.se}).`;
-  const domainNodes = {
-    fluid: elements.catDomainFluid,
-    verbal: elements.catDomainVerbal,
-    quant: elements.catDomainQuant
-  };
-  for (const [domain, node] of Object.entries(domainNodes)) {
-    const entry = sessionRecord.domains?.[domain];
-    node.textContent = entry ? `${entry.score} · ${entry.count} items` : "Not sampled";
-  }
+  const unlocked = measurementReportUnlocked();
+  // The headline score is always the real one. Anyone who sat the test gets the
+  // number they earned — what a subscription buys is the breakdown behind it,
+  // not a different answer.
+  const score = sessionRecord.score;
+  const percentile = sessionRecord.percentile ?? scoreToPercentile(score);
+  elements.catScore.textContent = String(score);
+  elements.catScoreCi.textContent = sessionRecord.ci
+    ? `95% CI ${sessionRecord.ci.low}–${sessionRecord.ci.high}`
+    : "";
+  elements.catCurve.innerHTML = catBellCurveSvg(score);
+  const minutes = Math.max(1, Math.round(sessionRecord.durationMs / 60000));
+  elements.catResultSummary.textContent =
+    `${sessionRecord.descriptor ?? scoreDescriptor(score)} — higher than about ${percentile}% of a typical population, `
+    + `from ${sessionRecord.responses.length} questions and 2 timed subtests in ${minutes} min.`;
+
+  renderCatIndices(sessionRecord, unlocked);
   const report = document.querySelector("#cat-report");
-  if (report) report.innerHTML = buildCatReport(sessionRecord);
-  // Free tier: blur the measurement + show the upgrade paywall over it.
-  elements.catResult?.classList.toggle("cat-result-locked", !pro);
+  if (report) report.innerHTML = unlocked ? buildCatReport(sessionRecord) : "";
+
+  // Only the breakdown is gated now, so the blur sits on the report region
+  // rather than over the whole result.
+  document.querySelector("#cat-report-region")?.classList.toggle("cat-report-locked", !unlocked);
   const paywall = document.querySelector("#cat-paywall");
-  if (paywall) paywall.hidden = pro;
+  if (paywall) paywall.hidden = unlocked;
+}
+
+// The five index cards. When locked the scores are withheld rather than faked —
+// the shapes stay so the user can see what they'd get, but no invented numbers.
+function renderCatIndices(sessionRecord, unlocked) {
+  const host = document.querySelector("#cat-indices");
+  if (!host) return;
+  host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const entry = sessionRecord.indices?.[key];
+    if (!entry) {
+      return `<div class="cat-index cat-index-empty">
+        <span class="cat-index-short">${meta.short}</span>
+        <span class="cat-index-name">${escapeHtml(meta.name)}</span>
+        <span class="cat-index-score">Not measured</span>
+      </div>`;
+    }
+    const value = unlocked ? String(entry.score) : "•••";
+    const sub = unlocked
+      ? `${entry.percentile}th percentile${entry.ci ? ` · CI ${entry.ci.low}–${entry.ci.high}` : ""}`
+      : "Locked";
+    const offset = unlocked ? Math.max(2, Math.min(98, ((entry.score - 55) / 90) * 100)) : 50;
+    return `<div class="cat-index">
+      <span class="cat-index-short">${meta.short}</span>
+      <span class="cat-index-name">${escapeHtml(meta.name)}</span>
+      <span class="cat-index-score">${value}</span>
+      <span class="cat-index-bar" aria-hidden="true"><i style="left:${offset.toFixed(1)}%"></i></span>
+      <span class="cat-index-sub">${escapeHtml(sub)}</span>
+      <span class="cat-index-blurb">${escapeHtml(meta.blurb)}</span>
+    </div>`;
+  }).join("");
+}
+
+// On web the report is what the subscription buys. Native keeps its own Pro tier.
+function measurementReportUnlocked() {
+  if (cogniUiMode === "pro") return currentTier() === "pro" || currentTier() === "basic";
+  return isProUser();
 }
 
 function catBellCurveSvg(score) {
