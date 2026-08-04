@@ -1,4 +1,5 @@
-   import UIKit
+   import AVFoundation
+import UIKit
 import Capacitor
 import WebKit
 
@@ -8,10 +9,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UIScrollViewDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        configureAudioSession()
         DispatchQueue.main.async { [weak self] in
             self?.configureWebViewForNativeTouch()
         }
         return true
+    }
+
+    /// N-Back's audio modality speaks a letter every trial, and the exercise is
+    /// unplayable if you can't hear it. Without an explicit category the webview
+    /// gets the default ambient session, which the ring/silent switch mutes — so
+    /// the letters go silent on any phone set to silent, with no visible cause.
+    /// .playback keeps them audible; .mixWithOthers so we don't stop the user's
+    /// music, since the cues are short.
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            // Non-fatal: audio simply stays at the system default behaviour.
+            print("[Cogni] audio session setup failed: \(error)")
+        }
     }
 
     private func configureWebViewForNativeTouch() {
