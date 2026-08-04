@@ -7233,6 +7233,9 @@ function catSpanShow() {
   const digits = Array.from({ length: state.length }, () => Math.floor(Math.random() * 10));
   state.current = digits;
   state.entry = "";
+  // Persist before showing: without this a refresh mid-span leaves a span state
+  // with no digits in it, and the next submit compares against nothing.
+  saveCatActive();
   catSubtestChrome({
     label: "Working memory",
     progress: state.backward ? "Digits — backward" : "Digits — forward",
@@ -7269,14 +7272,18 @@ function catSpanSubmit() {
   const correct = state.entry === expected.join("");
   if (correct) {
     state.best = Math.max(state.best, state.length);
-    state.length = Math.min(CAT_SPAN_MAX, state.length + 1);
     state.misses = 0;
+    // Reaching the ceiling ends the run. Clamping the length instead would make
+    // the exit condition unreachable, leaving a strong performer looping at the
+    // longest span until they finally slipped twice.
+    if (state.length >= CAT_SPAN_MAX) state.ceiling = true;
+    else state.length += 1;
   } else {
     state.misses += 1;
   }
   saveCatActive();
 
-  const done = state.misses >= CAT_SPAN_LIVES || state.length > CAT_SPAN_MAX;
+  const done = state.misses >= CAT_SPAN_LIVES || state.ceiling;
   elements.catStage.innerHTML = `<div class="cat-span-verdict ${correct ? "ok" : "wrong"}">${correct ? "Correct" : expected.join(" ")}</div>`;
   elements.catOptions.innerHTML = "";
   if (!done) { catSubtestAfter(() => catSpanShow(), 750); return; }
@@ -7287,6 +7294,7 @@ function catSpanSubmit() {
     state.best = 0;
     state.length = CAT_SPAN_START;
     state.misses = 0;
+    state.ceiling = false;
     saveCatActive();
     catSubtestAfter(() => catSpanShow(), 900);
     return;
@@ -7632,39 +7640,52 @@ function handleCheckoutReturn() {
 
 // A plausible teaser score shown (blurred) to free users — deliberately NOT the real
 // score, so a de-blurred screenshot can't leak it.
-function catBandLabel(score) {
-  if (score >= 130) return "Very superior";
-  if (score >= 120) return "Superior";
-  if (score >= 110) return "High average";
-  if (score >= 90) return "Average";
-  if (score >= 80) return "Low average";
-  return "Below average";
-}
-
 function buildCatReport(sessionRecord) {
-  const percentile = scorePercentile(sessionRecord.score);
-  const band = catBandLabel(sessionRecord.score);
-  const names = { fluid: "Fluid reasoning", verbal: "Verbal comprehension", quant: "Quantitative reasoning" };
-  const entries = Object.entries(sessionRecord.domains ?? {})
-    .filter(([, v]) => v && Number.isFinite(v.score));
-  let domainLines = "";
+  const score = sessionRecord.score;
+  const percentile = sessionRecord.percentile ?? scoreToPercentile(score);
+  const band = sessionRecord.descriptor ?? scoreDescriptor(score);
+  const entries = MEASUREMENT_INDEX_ORDER
+    .map((key) => [key, sessionRecord.indices?.[key]])
+    .filter(([, entry]) => entry && Number.isFinite(entry.score));
+
+  let spread = "";
   if (entries.length >= 2) {
-    const sorted = entries.slice().sort((a, b) => b[1].score - a[1].score);
-    const strongest = sorted[0];
-    const weakest = sorted[sorted.length - 1];
-    domainLines = `
-      <li>Strongest area: <strong>${names[strongest[0]] ?? strongest[0]}</strong> (${strongest[1].score}).</li>
-      <li>Most room to grow: <strong>${names[weakest[0]] ?? weakest[0]}</strong> (${weakest[1].score}).</li>`;
+    const sorted = [...entries].sort((a, b) => b[1].score - a[1].score);
+    const [topKey, top] = sorted[0];
+    const [lowKey, low] = sorted[sorted.length - 1];
+    const gap = top.score - low.score;
+    spread = `
+      <li>Strongest index: <strong>${escapeHtml(MEASUREMENT_INDICES[topKey].name)}</strong> (${top.score}, ${top.percentile}th percentile).</li>
+      <li>Most room to grow: <strong>${escapeHtml(MEASUREMENT_INDICES[lowKey].name)}</strong> (${low.score}, ${low.percentile}th percentile).</li>
+      ${gap >= 23
+        ? `<li>Your indices differ by ${gap} points. A spread that wide means the single composite describes you less well than the individual indices do — read them separately.</li>`
+        : `<li>Your indices sit within ${gap} points of each other, so the composite is a fair summary of them.</li>`}`;
   }
+
+  const perIndex = entries.map(([key, entry]) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const detail = entry.detail?.forward !== undefined
+      ? ` Digit span ${entry.detail.forward} forward, ${entry.detail.backward} backward.`
+      : entry.detail?.medianMs !== undefined
+        ? ` Median ${entry.detail.medianMs} ms at ${entry.detail.accuracy}% accuracy.`
+        : entry.count ? ` From ${entry.count} adaptive items.` : "";
+    return `<li><strong>${escapeHtml(meta.short)} ${entry.score}</strong> — ${escapeHtml(meta.blurb)}${escapeHtml(detail)}</li>`;
+  }).join("");
+
   return `
-    <h3 class="cat-report-title">Comprehensive report</h3>
+    <h3 class="cat-report-title">Your full report</h3>
     <ul class="cat-report-list">
-      <li>Overall band: <strong>${band}</strong> — a score of ${sessionRecord.score}.</li>
-      <li>Higher than about <strong>${percentile}%</strong> of a typical population.</li>
-      <li>95% confidence interval ${sessionRecord.ci.low}–${sessionRecord.ci.high} (SE ${sessionRecord.se}).</li>
-      ${domainLines}
-      <li>From ${sessionRecord.responses.length} adaptive questions in ${Math.max(1, Math.round(sessionRecord.durationMs / 60000))} min.</li>
-    </ul>`;
+      <li>Composite: <strong>${score}</strong> — ${escapeHtml(band)}, higher than about <strong>${percentile}%</strong> of a typical population.</li>
+      <li>95% confidence interval ${sessionRecord.ci.low}–${sessionRecord.ci.high}. A retest would usually land somewhere in that band, not exactly on ${score}.</li>
+      ${spread}
+    </ul>
+    <h3 class="cat-report-title">Index by index</h3>
+    <ul class="cat-report-list">${perIndex}</ul>
+    <p class="cat-report-caveat">
+      These scores come from provisional item parameters and reference values, not from a
+      calibrated norming sample. They are consistent enough to track your own change over
+      time, but they are not a clinical or diagnostic assessment.
+    </p>`;
 }
 
 function renderCatResult(sessionRecord) {
