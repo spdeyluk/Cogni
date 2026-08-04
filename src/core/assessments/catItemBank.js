@@ -230,6 +230,149 @@ for (const [setA, setB] of [
   pushMatrix("xor", 8, cells.slice(0, 9), optionCells, 0);
 }
 
+// Visual-Spatial was the thinnest index in the battery (matrices were the only
+// source), so the rule set below widens it. Every rule is a different operation,
+// not a reskin of an existing one, so the added items test something new rather
+// than just adding volume.
+
+// Two option pictures that render identically would make one "wrong" answer
+// indistinguishable from the right one, so options are deduped by a canonical
+// key over their glyphs and topped up from spares.
+function cellKey(cell) {
+  if (!cell) return "none";
+  return cell
+    .map((glyph) => `${glyph.s}:${glyph.x.toFixed(2)},${glyph.y.toFixed(2)},${glyph.sz.toFixed(2)},${glyph.r},${glyph.f}`)
+    .sort()
+    .join("|");
+}
+
+function buildOptionCells(candidates, spares = []) {
+  const seen = new Set();
+  const picked = [];
+  for (const cell of [...candidates, ...spares]) {
+    const key = cellKey(cell);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picked.push(cell);
+    if (picked.length === 5) break;
+  }
+  return picked;
+}
+
+const spareCells = [
+  [g("circle", { sz: 0.34 })],
+  [g("square", { sz: 0.34 })],
+  [g("triangle", { sz: 0.34 })],
+  [g("diamond", { sz: 0.34 })],
+  [g("cross", { sz: 0.34 })],
+  [g("ring", { sz: 0.34 })]
+];
+
+// Rule 7: AND of corner dots — the third cell keeps only the dots present in
+// both of the first two. Deliberately paired with the XOR rule: the surface
+// looks identical, so the item is only solvable by identifying the operation.
+function andKeys(left, right) {
+  return left.filter((key) => right.includes(key));
+}
+for (const [setA, setB] of [
+  [["tl", "tr", "bl"], ["tr", "bl", "br"]],
+  [["tl", "br"], ["tl", "tr", "br"]],
+  [["tl", "tr", "br"], ["tl", "bl"]],
+  [["tr", "bl", "br"], ["tl", "tr", "bl"]]
+]) {
+  const rows = [
+    [setA, setB],
+    [setB, ["tl", "tr", "bl", "br"]],
+    [setA, ["tl", "tr", "br"]]
+  ];
+  const cells = [];
+  for (const [left, right] of rows) cells.push(dots(left), dots(right), dots(andKeys(left, right)));
+  const answer = andKeys(rows[2][0], rows[2][1]);
+  const optionCells = buildOptionCells(
+    [dots(answer), dots(xorKeys(rows[2][0], rows[2][1])),
+     dots([...new Set([...rows[2][0], ...rows[2][1]])]), dots(rows[2][0]), dots(rows[2][1])],
+    [dots(["tl"]), dots(["br"]), dots(["tl", "br"]), dots(["tr", "bl"])]
+  );
+  cells.pop();
+  cells.push(null);
+  pushMatrix("and", 8, cells.slice(0, 9), optionCells, 0);
+}
+
+// Rule 8: two attributes varying independently — the outer shape advances along
+// rows while the inner marker advances along columns, so both must be tracked.
+const innerMarkers = ["circle", "square", "triangle"];
+for (const shapes of [
+  ["square", "circle", "diamond"],
+  ["triangle", "ring", "square"],
+  ["circle", "cross", "triangle"],
+  ["diamond", "square", "ring"]
+]) {
+  const cells = [];
+  for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+    for (let colIndex = 0; colIndex < 3; colIndex += 1) {
+      cells.push([
+        g(shapes[rowIndex], { f: 0, sz: 0.6 }),
+        g(innerMarkers[colIndex], { sz: 0.2 })
+      ]);
+    }
+  }
+  const right = [g(shapes[2], { f: 0, sz: 0.6 }), g(innerMarkers[2], { sz: 0.2 })];
+  const optionCells = buildOptionCells([
+    right,
+    [g(shapes[2], { f: 0, sz: 0.6 }), g(innerMarkers[0], { sz: 0.2 })],
+    [g(shapes[0], { f: 0, sz: 0.6 }), g(innerMarkers[2], { sz: 0.2 })],
+    [g(shapes[1], { f: 0, sz: 0.6 }), g(innerMarkers[1], { sz: 0.2 })],
+    [g(shapes[2], { f: 1, sz: 0.6 })]
+  ], spareCells);
+  cells[8] = null;
+  pushMatrix("two-attribute", 5, cells, optionCells, 0);
+}
+
+// Rule 9: quantity subtraction — the count in the third cell is the first
+// count minus the second, which reads as a count rule but is not progression.
+for (const shape of ["circle", "square", "triangle", "diamond"]) {
+  const triples = [[3, 1], [4, 2], [5, 3]];
+  const cells = [];
+  for (const [left, right] of triples) {
+    cells.push(row(shape, left), row(shape, right), row(shape, left - right));
+  }
+  const answerCount = triples[2][0] - triples[2][1];
+  const optionCells = buildOptionCells([
+    row(shape, answerCount),
+    row(shape, answerCount + 1),
+    row(shape, answerCount + 2),
+    row(shape, triples[2][0]),
+    row(shape, triples[2][1])
+  ], spareCells);
+  cells[8] = null;
+  pushMatrix("subtraction", 6, cells, optionCells, 0);
+}
+
+// Rule 10: mirror symmetry — the third cell is the first reflected about the
+// vertical axis, so an off-centre glyph swaps sides.
+for (const shape of ["triangle", "bar", "ell", "tee"]) {
+  const offsets = [0.28, 0.5, 0.72];
+  const cells = [];
+  for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+    const x = offsets[rowIndex];
+    cells.push(
+      [g(shape, { x, sz: 0.34 })],
+      [g(shape, { x: 0.5, sz: 0.34, r: 90 })],
+      [g(shape, { x: 1 - x, sz: 0.34 })]
+    );
+  }
+  const answerX = 1 - offsets[2];
+  const optionCells = buildOptionCells([
+    [g(shape, { x: answerX, sz: 0.34 })],
+    [g(shape, { x: offsets[2], sz: 0.34 })],
+    [g(shape, { x: 0.5, sz: 0.34 })],
+    [g(shape, { x: answerX, sz: 0.34, r: 90 })],
+    [g(shape, { x: answerX, sz: 0.34, f: 0 })]
+  ], spareCells);
+  cells[8] = null;
+  pushMatrix("mirror", 4, cells, optionCells, 0);
+}
+
 // ---------------------------------------------------------------------------
 // Fluid: number series and abstract letter analogies
 // ---------------------------------------------------------------------------
