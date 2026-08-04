@@ -12,6 +12,7 @@
 //   STRIPE_PRICE_PRO_MONTHLY     price_...
 //   STRIPE_PRICE_PRO_ANNUAL      price_...
 //   STRIPE_PRICE_PRO_WEEKLY      price_...   (the native paywall's weekly plan)
+//   STRIPE_PRICE_MEASUREMENT_MONTHLY price_...  (web: Cogni Measurement, EUR 14.99/mo)
 //   SITE_URL                     https://getcogni.app   (where Stripe returns to)
 // SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY are injected
 // automatically by the platform.
@@ -39,6 +40,8 @@ const PRICES: Record<string, string | undefined> = {
   // The native paywall sells yearly or weekly. Until this price exists in
   // Stripe and the secret is set, a weekly checkout returns "unknown plan".
   "pro:weekly": Deno.env.get("STRIPE_PRICE_PRO_WEEKLY"),
+  // Web sells exactly one thing: the Cogni Measurement report, monthly.
+  "measurement:monthly": Deno.env.get("STRIPE_PRICE_MEASUREMENT_MONTHLY"),
 };
 
 const cors = {

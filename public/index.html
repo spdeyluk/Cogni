@@ -1048,19 +1048,19 @@
               </div>
               <div class="cat-curve" id="cat-curve" aria-hidden="true"></div>
               <p id="cat-result-summary"></p>
-              <dl class="assessment-result-grid">
-                <div><dt>Fluid reasoning</dt><dd id="cat-domain-fluid">–</dd></div>
-                <div><dt>Verbal comprehension</dt><dd id="cat-domain-verbal">–</dd></div>
-                <div><dt>Quantitative reasoning</dt><dd id="cat-domain-quant">–</dd></div>
-              </dl>
-              <div class="cat-report" id="cat-report"></div>
             </div>
-            <div class="cat-paywall" id="cat-paywall" hidden>
-              <div class="cat-paywall-card">
-                <span class="cat-paywall-lock" aria-hidden="true">🔒</span>
-                <h3>Your full result is ready</h3>
-                <p>Your score, domain breakdown and full measurement report are available on Pro.</p>
-                <button class="cat-paywall-cta" data-cat-upgrade type="button">Upgrade to Pro</button>
+            <!-- Everything below the headline score is the paid report. -->
+            <div class="cat-report-region" id="cat-report-region">
+              <div class="cat-indices" id="cat-indices"></div>
+              <div class="cat-report" id="cat-report"></div>
+              <div class="cat-paywall" id="cat-paywall" hidden>
+                <div class="cat-paywall-card">
+                  <span class="cat-paywall-lock" aria-hidden="true">🔒</span>
+                  <h3>See the full breakdown</h3>
+                  <p>Your five index scores, percentiles, confidence bands and the full written report — plus every retest and your score history.</p>
+                  <button class="cat-paywall-cta" data-cat-upgrade type="button">Unlock the full report</button>
+                  <span class="cat-paywall-price" id="cat-paywall-price">€14.99 / month · cancel anytime</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2203,7 +2203,21 @@
           <span class="pricing-save" id="pricing-save">Save 60%</span>
         </div>
 
-        <div class="pricing-plans">
+        <!-- Web sells one thing: the Measurement report. Shown only in pro mode;
+             the Basic/Pro chooser below is the native app's offer. -->
+        <div class="pricing-plans pricing-plans-web">
+          <button class="pricing-plan is-selected" data-pricing-plan="measurement" type="button">
+            <div class="pricing-plan-info">
+              <div class="pricing-plan-name">Cogni Measurement</div>
+              <div class="pricing-plan-price">
+                <span class="pricing-plan-amount">€14.99</span><span class="pricing-plan-per">/month</span>
+              </div>
+            </div>
+            <span class="pricing-plan-note">Cancel anytime</span>
+          </button>
+        </div>
+
+        <div class="pricing-plans pricing-plans-native">
           <button class="pricing-plan is-selected" data-pricing-plan="basic" type="button">
             <div class="pricing-plan-info">
               <div class="pricing-plan-name">Basic</div>

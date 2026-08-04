@@ -18642,3 +18642,165 @@ html.mode-play #cat-intro.needs-attention .assessment-intro-icon::after {
     opacity: 0.9;
   }
 }
+
+/* ===================================================================
+   Cogni Measurement — the five-index report, its subtests, and the
+   report-only paywall. Web is the focus; the native build inherits the
+   same structures.
+   =================================================================== */
+
+/* One offer on web, the Basic/Pro chooser on native. */
+.pricing-plans-web { display: none; }
+html.mode-pro .pricing-plans-web { display: grid !important; }
+html.mode-pro .pricing-plans-native,
+html.mode-pro .pricing-billing,
+html.mode-pro .pricing-save { display: none !important; }
+.pricing-plan-note { color: var(--muted); font-size: 0.85rem; }
+
+/* --- index cards --- */
+.cat-indices {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 6px;
+}
+
+.cat-index {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  grid-template-areas:
+    "short name  score"
+    "short bar   bar"
+    "short sub   sub"
+    "short blurb blurb";
+  align-items: center;
+  gap: 2px 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.cat-index-short {
+  grid-area: short;
+  align-self: start;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--accent-2);
+}
+.cat-index-name  { grid-area: name; font-weight: 600; }
+.cat-index-score { grid-area: score; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+.cat-index-sub   { grid-area: sub; color: var(--muted); font-size: 0.82rem; }
+.cat-index-blurb { grid-area: blurb; color: var(--text-2); font-size: 0.85rem; line-height: 1.45; margin-top: 4px; }
+
+/* Where the score sits on the population curve, at a glance. */
+.cat-index-bar {
+  grid-area: bar;
+  position: relative;
+  height: 4px;
+  margin: 8px 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(120,132,255,0.12), rgba(120,132,255,0.42), rgba(120,132,255,0.12));
+}
+.cat-index-bar i {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  transform: translate(-50%, -50%);
+}
+.cat-index-empty { opacity: 0.55; }
+.cat-index-empty .cat-index-score { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+
+/* --- report paywall: only the breakdown is gated, never the score --- */
+.cat-report-region { position: relative; }
+.cat-report-region.cat-report-locked .cat-indices,
+.cat-report-region.cat-report-locked .cat-report {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+.cat-report-region.cat-report-locked { min-height: 260px; }
+
+.cat-paywall {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+}
+.cat-paywall-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 380px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+  text-align: center;
+}
+.cat-paywall-card h3 { margin: 0; font-size: 1.1rem; }
+.cat-paywall-card p { margin: 0; color: var(--text-2); font-size: 0.9rem; line-height: 1.5; }
+.cat-paywall-lock { font-size: 1.4rem; }
+.cat-paywall-price { color: var(--muted); font-size: 0.82rem; }
+.cat-paywall-cta { margin-top: 6px; }
+
+/* --- the timed subtests --- */
+.cat-subtest-intro {
+  display: grid;
+  gap: 10px;
+  max-width: 460px;
+  margin: 0 auto;
+  text-align: center;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.cat-subtest-note { color: var(--muted); font-size: 0.88rem; }
+
+.cat-span-digits {
+  font-size: clamp(2.2rem, 9vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.cat-span-entry {
+  min-height: 1.4em;
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-align: center;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cat-span-verdict {
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+  letter-spacing: 0.12em;
+}
+.cat-span-verdict.ok { color: var(--success); }
+.cat-span-verdict.wrong { color: var(--error); }
+
+.cat-speed-pair {
+  display: flex;
+  justify-content: center;
+  gap: clamp(28px, 12vw, 72px);
+  font-size: clamp(3rem, 14vw, 5rem);
+  line-height: 1;
+}
+
+/* Numeric keypad reuses the options row. */
+.cat-options-keypad {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 320px;
+  margin: 0 auto;
+}
+.cat-options-keypad button { min-height: 52px; font-size: 1.15rem; font-weight: 600; }
+.cat-options-keypad button.ok { color: var(--success); }
