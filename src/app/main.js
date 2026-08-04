@@ -234,21 +234,23 @@ function detectCogniUiMode() {
 // links work. Native (play) is a webview with no meaningful URL, so every hook
 // here is a no-op there.
 // ---------------------------------------------------------------------------
+// Cogni Measurement is the front door on web — there is no separate home page.
 const routeTabToPath = {
-  coach: "/home",          // the "Home" tab renders the AI Chat / coach page
+  assessments: "/measurement",
   exercises: "/exercises",
-  assessments: "/assessments",
   screentime: "/screen-time",
   statistics: "/profile"
 };
-const routePathToTab = Object.fromEntries(
-  Object.entries(routeTabToPath).map(([tab, path]) => [path, tab])
-);
+// Paths that used to exist, kept so old links and bookmarks still land somewhere.
+const legacyRoutePaths = { "/home": "assessments", "/assessments": "assessments" };
+const routePathToTab = {
+  ...legacyRoutePaths,
+  ...Object.fromEntries(Object.entries(routeTabToPath).map(([tab, path]) => [path, tab]))
+};
 function routeTabHandler(tab) {
   const handlers = {
     exercises: showExerciseHub,
     assessments: showAssessments,
-    coach: showCoach,
     screentime: showScreenTime,
     statistics: showStatistics,
     home: showHome,
@@ -1568,11 +1570,11 @@ function returnFromPaywall() {
   const target = paywallReturnTab;
   paywallReturnTab = null;
   if (!target) return;
-  const back = { home: showHome, coach: showCoach, exercises: showExerciseHub,
+  const back = { home: showHome, coach: showAssessments, exercises: showExerciseHub,
                  assessments: showAssessments, screentime: showScreenTime };
   // "statistics" is the locked page that raised this, so returning there would
   // just reopen the paywall — fall back to Home.
-  (back[target] ?? showCoach)();
+  (back[target] ?? showAssessments)();
 }
 
 let pricingModalWired = false;
@@ -1781,7 +1783,7 @@ const paywallTrialDays = 0;
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = [
   "All stats and history",
-  "Full IQ test",
+  "Full Cogni Measurement report",
   "Advanced training settings",
   "Screen-time control"
 ];
@@ -1974,7 +1976,7 @@ document.querySelector("#cat-share")?.addEventListener("click", async (event) =>
   const button = event.currentTarget;
   const shareUrl = window.location.origin;
   try {
-    if (navigator.share) await navigator.share({ title: "Cogni IQ Test", url: shareUrl });
+    if (navigator.share) await navigator.share({ title: "Cogni Measurement", url: shareUrl });
     else {
       await navigator.clipboard.writeText(shareUrl);
       button.textContent = "Link copied!";
@@ -2167,9 +2169,7 @@ elements.sideNavButtons.forEach((button) => {
 });
 document.querySelector('[data-section="home"]')?.addEventListener("click", showHome);
 document.querySelector('[data-section="assessments"]')?.addEventListener("click", showAssessments);
-document.querySelector('[data-section="coach"]')?.addEventListener("click", showCoach);
 document.querySelector('[data-section="screentime"]')?.addEventListener("click", showScreenTime);
-document.querySelector(".coach-page")?.addEventListener("click", handleCoachPageClick);
 document.querySelector(".screentime-page")?.addEventListener("click", handleScreenTimePageClick);
 elements.backToExercises.addEventListener("click", showExerciseHub);
 elements.backToExercisesMot.addEventListener("click", showExerciseHub);
@@ -4304,17 +4304,6 @@ function showStatistics() {
 
 const sectionResetClasses = ["home-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active"];
 
-function showCoach() {
-  if (!requireAuth("Sign in to see your training plan.")) return;
-  if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove(...sectionResetClasses);
-  elements.appShell.classList.add("coach-open");
-  setActiveTab("coach");
-  elements.pageTitle.textContent = "Home";
-  elements.pageLede.textContent = "Your AI training coach — a plan that adapts to how you train.";
-  renderCoach();
-}
-
 function showScreenTime() {
   if (!requireAuth("Sign in to see your screen time.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
@@ -4324,87 +4313,6 @@ function showScreenTime() {
   elements.pageTitle.textContent = "Screen Time";
   elements.pageLede.textContent = "Trade a few scrolling minutes for focused ones.";
   renderScreenTime();
-}
-
-// --- Home: AI composer only -----------------------------------------------
-// The weekly plan is no longer shown up front — a plan is only produced once the
-// user describes what they want to work on (AI coaching, coming soon).
-
-function renderCoach() {
-  const page = document.querySelector(".coach-page");
-  if (!page) return;
-  // The Home page is just the AI composer now. A training plan is only built once the
-  // user describes what they want to work on — it is no longer shown up front.
-  if (cogniUiMode !== "pro") { page.innerHTML = ""; return; }
-  page.innerHTML = `
-    <button type="button" class="home-iq-banner" data-open-iq aria-label="Take the Cogni IQ Test">
-      <span class="home-iq-banner-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>
-      </span>
-      <span class="home-iq-banner-text">
-        <strong>Take the Cogni IQ Test</strong>
-        <span>A 10–25 min adaptive assessment across memory, reasoning and speed. See where you really stand.</span>
-      </span>
-      <span class="home-iq-banner-cta" aria-hidden="true">Start<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-    </button>
-    <div class="home-ai home-ai-solo">
-      <h2 class="home-ai-title">What do you want to work on?</h2>
-      <p class="home-ai-sub">Describe an issue — focus, memory, procrastination — and your coach will build a plan around it.</p>
-      <form class="home-ai-composer" id="home-ai-form" autocomplete="off">
-        <span class="home-ai-plus" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-        </span>
-        <input type="text" class="home-ai-input" id="home-ai-input" placeholder="Describe what you'd like to improve…" aria-label="Describe what you'd like to improve">
-        <button type="submit" class="home-ai-send" id="home-ai-send" aria-label="Send">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-        </button>
-      </form>
-      <div class="home-ai-suggestions">
-        <button type="button" class="home-ai-chip" data-ai-suggest="I want to sharpen my focus and stop getting distracted.">Sharpen my focus</button>
-        <button type="button" class="home-ai-chip" data-ai-suggest="I want to improve my working memory.">Improve my memory</button>
-        <button type="button" class="home-ai-chip" data-ai-suggest="I want to think and react faster.">Think faster</button>
-        <button type="button" class="home-ai-chip" data-ai-suggest="I keep procrastinating and want to build focus.">Beat procrastination</button>
-      </div>
-      <p class="home-ai-note" id="home-ai-note" role="status" hidden></p>
-    </div>
-  `;
-  wireHomeAiComposer(page);
-}
-
-// The Home AI composer is a real, typeable input, but AI coaching isn't wired
-// yet — sending surfaces a "coming soon" notice instead of dispatching anything.
-function wireHomeAiComposer(page) {
-  const form = page.querySelector("#home-ai-form");
-  const input = page.querySelector("#home-ai-input");
-  const note = page.querySelector("#home-ai-note");
-  if (!form || !input || !note) return;
-  const showNote = () => {
-    note.textContent = "AI coaching isn't available yet — it's coming soon. Your message wasn't sent.";
-    note.hidden = false;
-  };
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!input.value.trim()) { input.focus(); return; }
-    showNote();
-  });
-  input.addEventListener("input", () => { note.hidden = true; });
-  page.querySelectorAll("[data-ai-suggest]").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      input.value = chip.dataset.aiSuggest;
-      note.hidden = true;
-      input.focus();
-    });
-  });
-}
-
-function handleCoachPageClick(event) {
-  if (event.target.closest("[data-coach-upgrade]")) {
-    showLanding();
-    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
-  const day = event.target.closest("[data-coach-open]");
-  if (day) openExerciseById(day.dataset.coachOpen);
 }
 
 // --- Screen Time: minutes reclaimed into focused training ----------------
@@ -5628,7 +5536,7 @@ function wireLanding() {
   document.querySelector("#landing-testiq")?.addEventListener("click", () => {
     // Remembered across the gate so signing in lands on the test, not the hub.
     pendingLandingDestination = "assessments";
-    if (!requireAuth("Sign in to take the Cogni IQ Test.")) return;
+    if (!requireAuth("Sign in to take Cogni Measurement.")) return;
     pendingLandingDestination = null;
     enterApp();
     showAssessments();
@@ -6008,14 +5916,14 @@ function onAuthenticated() {
   // applyingRoute suppresses the automatic pushState so we can replaceState the
   // final URL (no phantom history entry).
   applyingRoute = true;
-  let landedPath = routeTabToPath.coach;
+  let landedPath = routeTabToPath.assessments;
   if (justSignedIn && cogniUiMode === "pro") {
     // A brand-new sign-in / sign-up always lands on Home, which surfaces the
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
-    showCoach();
-    // Never let the intro blank the app: Home is already rendered underneath.
+    showAssessments();
+    // Never let the intro blank the app: Measurement is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -6026,7 +5934,7 @@ function onAuthenticated() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
-    showCoach(); // web default: the new Home (AI Chat) tab
+    showAssessments(); // web default: Cogni Measurement is the front door
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
@@ -7026,8 +6934,8 @@ function showAssessments() {
   elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
-  elements.pageTitle.textContent = "IQ test";
-  elements.pageLede.textContent = "Your adaptive Cogni IQ Test.";
+  elements.pageTitle.textContent = "Cogni Measurement";
+  elements.pageLede.textContent = "A CHC-based measure of five cognitive indices.";
   showAssessmentList();
 }
 
@@ -7124,7 +7032,7 @@ function catResponsesWithItems() {
 }
 
 function startCatTest() {
-  if (!requireAuth("Sign in to take the Cogni IQ Test.")) return;
+  if (!requireAuth("Sign in to take Cogni Measurement.")) return;
   // Snapshot once at the start so the avoid-set can't shift mid-test.
   catActive = {
     startedAt: Date.now(),
@@ -7433,7 +7341,6 @@ async function refreshEntitlement() {
     const shell = elements.appShell;
     if (shell?.classList.contains("profile-open")) renderProfile();
     if (shell?.classList.contains("screentime-open")) renderScreenTime();
-    if (shell?.classList.contains("coach-open")) renderCoach();
     if (elements.catResult && !elements.catResult.hidden) {
       const last = loadCatSessions().at(-1);
       if (last) renderCatResult(last);
