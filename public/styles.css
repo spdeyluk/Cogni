@@ -18804,3 +18804,7 @@ html.mode-pro .pricing-save { display: none !important; }
 }
 .cat-options-keypad button { min-height: 52px; font-size: 1.15rem; font-weight: 600; }
 .cat-options-keypad button.ok { color: var(--success); }
+
+.cat-report-title { margin: 18px 0 8px; font-size: 1.02rem; }
+.cat-report-list { display: grid; gap: 8px; margin: 0; padding-left: 18px; color: var(--text-2); line-height: 1.55; font-size: 0.92rem; }
+.cat-report-caveat { margin: 16px 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
