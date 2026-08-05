@@ -18945,3 +18945,250 @@ html.mode-pro .pricing-save { display: none !important; }
   border-radius: 14px;
   background: var(--surface);
 }
+
+/* ===================================================================
+   Cogni Measurement picker — web (pro) refinement.
+   Scoped to mode-pro; the native build keeps its own treatment until
+   it gets its own pass.
+
+   The first version nested cards inside cards and gave every category a
+   saturated bar, a coloured heading and a coloured border, which is what
+   made it read cheap. Here the structure carries the layout — hairlines
+   and spacing — and colour appears once per category, as a small dot.
+   =================================================================== */
+html.mode-pro .measure-picker {
+  --measure-line: color-mix(in srgb, var(--text) 10%, transparent);
+  max-width: 1060px;
+  margin: 0 auto;
+  gap: 0;
+}
+
+html.mode-pro .measure-picker-head {
+  align-items: center;
+  gap: 32px;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--measure-line);
+}
+html.mode-pro .measure-picker-sub {
+  max-width: 54ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+html.mode-pro .measure-progress { min-width: 200px; gap: 10px; }
+html.mode-pro .measure-progress-value {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+html.mode-pro .measure-progress-value strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+html.mode-pro .measure-progress-track {
+  height: 2px;
+  background: var(--measure-line);
+  border-radius: 0;
+}
+html.mode-pro .measure-progress-track i { background: var(--text); }
+
+html.mode-pro .measure-picker-body {
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 48px;
+  align-items: start;
+}
+
+/* Categories: no card, no bar. A dot, a name, and the rows beneath. */
+html.mode-pro .measure-sections { gap: 30px; }
+html.mode-pro .measure-section {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  gap: 0;
+}
+html.mode-pro .measure-section-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 6px;
+}
+html.mode-pro .measure-section-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--index-accent);
+  flex: none;
+}
+html.mode-pro .measure-section-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+html.mode-pro .measure-section-chc {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* Rows: separated by hairlines, not by borders on every side. */
+html.mode-pro .measure-section-rows { display: grid; }
+html.mode-pro .measure-subtest {
+  min-height: 54px;
+  padding: 0 4px 0 16px !important;
+  border: 0 !important;
+  border-top: 1px solid var(--measure-line) !important;
+  border-radius: 0 !important;
+  background: none !important;
+  font-size: 1rem;
+  font-weight: 450;
+  position: relative;
+  transition: background 120ms ease, padding-left 120ms ease;
+}
+html.mode-pro .measure-section-rows .measure-subtest:last-child {
+  border-bottom: 1px solid var(--measure-line) !important;
+}
+/* The accent marker only appears on hover/selection — one signal, not five. */
+html.mode-pro .measure-subtest::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--index-accent);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+html.mode-pro .measure-subtest:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent) !important;
+}
+html.mode-pro .measure-subtest.is-selected {
+  background: color-mix(in srgb, var(--text) 6%, transparent) !important;
+}
+html.mode-pro .measure-subtest.is-selected::before { opacity: 1; }
+html.mode-pro .measure-subtest-time,
+html.mode-pro .measure-subtest-done {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  padding-right: 12px;
+}
+html.mode-pro .measure-subtest-done { color: var(--text-2); font-weight: 400; }
+html.mode-pro .measure-subtest.is-done .measure-subtest-name { color: var(--muted); }
+
+/* Detail: a quiet document, not a coloured frame. */
+html.mode-pro .measure-detail-card {
+  gap: 0;
+  padding: 26px 26px 28px;
+  border: 1px solid var(--measure-line);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+html.mode-pro .measure-detail-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+html.mode-pro .measure-detail-eyebrow i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--index-accent);
+}
+html.mode-pro .measure-detail-title {
+  margin: 10px 0 20px;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+
+/* The facts a taker actually needs, as data rather than prose. */
+html.mode-pro .measure-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--measure-line);
+  border-bottom: 1px solid var(--measure-line);
+}
+html.mode-pro .measure-facts div { display: grid; gap: 4px; }
+html.mode-pro .measure-facts dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+html.mode-pro .measure-facts dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 550;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+html.mode-pro .measure-detail-body {
+  margin: 0 0 12px !important;
+  font-size: 0.92rem !important;
+  line-height: 1.62 !important;
+  color: var(--text-2) !important;
+}
+
+html.mode-pro .measure-terms {
+  margin: 6px 0 0 !important;
+  padding: 12px 14px;
+  border-left: 2px solid var(--index-accent);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  font-size: 0.88rem !important;
+  line-height: 1.55 !important;
+  color: var(--text-2) !important;
+}
+html.mode-pro .measure-terms strong { color: var(--text); }
+
+html.mode-pro .measure-aids {
+  margin: 14px 0 0 !important;
+  font-size: 0.8rem !important;
+  font-style: normal !important;
+  color: var(--muted) !important;
+}
+
+html.mode-pro .measure-start {
+  justify-self: stretch;
+  margin-top: 22px;
+  min-height: 46px;
+  border-radius: 4px !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+html.mode-pro .measure-start:hover { opacity: 0.88; }
+
+html.mode-pro .measure-detail-done {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--measure-line);
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-weight: 450;
+}
+html.mode-pro .measure-detail-done-tick { color: var(--index-accent); }
+
+@media (max-width: 900px) {
+  html.mode-pro .measure-picker-body { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+}

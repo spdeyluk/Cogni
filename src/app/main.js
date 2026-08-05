@@ -7076,8 +7076,7 @@ function renderMeasurePicker(selectedId) {
   const total = MEASUREMENT_SUBTESTS.length;
   if (progress) {
     progress.innerHTML = `
-      <span class="measure-progress-count">${done}<span>/${total}</span></span>
-      <span class="measure-progress-label">subtests complete</span>
+      <span class="measure-progress-value"><strong>${done}</strong> of ${total} complete</span>
       <span class="measure-progress-track" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></span>`;
   }
 
@@ -7096,8 +7095,12 @@ function renderMeasurePicker(selectedId) {
     }).join("");
     return `
       <section class="measure-section" style="--index-accent:${meta.accent}">
-        <h3 class="measure-section-title">${escapeHtml(meta.name)}<span class="measure-section-chc">${escapeHtml(meta.chc)}</span></h3>
-        ${rows}
+        <div class="measure-section-head">
+          <span class="measure-section-dot" aria-hidden="true"></span>
+          <h3 class="measure-section-title">${escapeHtml(meta.name)}</h3>
+          <span class="measure-section-chc">${escapeHtml(meta.chc)}</span>
+        </div>
+        <div class="measure-section-rows">${rows}</div>
       </section>`;
   }).join("");
 
@@ -7124,26 +7127,26 @@ function renderSubtestDetail(subtestId) {
   const length = subtest.engine === "span"
     ? "Adaptive length — it grows until you miss twice."
     : `This subtest contains ${subtest.questions} questions.`;
-  const timing = subtest.engine
-    ? (subtest.engine === "speed" ? "Answer as fast as you can; the subtest times itself." : "There is no clock — accuracy is all that counts.")
-    : `You will be timed ${subtest.secondsPerQuestion} seconds per question.`;
-
   panel.innerHTML = `
     <div class="measure-detail-card" style="--index-accent:${meta.accent}">
+      <span class="measure-detail-eyebrow"><i aria-hidden="true"></i>${escapeHtml(meta.name)}</span>
       <h3 class="measure-detail-title">${escapeHtml(subtest.name)}</h3>
-      <p class="measure-detail-meta">${escapeHtml(meta.name)} · ~${subtestMinutes(subtest)} minutes</p>
-      <hr class="measure-detail-rule">
-      <p>${escapeHtml(length)} ${escapeHtml(subtest.summary)}</p>
-      <p>${escapeHtml(subtest.instructions)}</p>
-      <p>${escapeHtml(timing)}</p>
-      <p class="measure-detail-warn"><strong>One sitting.</strong> You can stop early and whatever you've answered will be scored — but you can't pause it, come back to it, or take it again in this attempt.</p>
-      <p class="measure-detail-aids">No external aids — no calculator, notes, search or AI.</p>
+      <dl class="measure-facts">
+        <div><dt>Questions</dt><dd>${subtest.engine === "span" ? "Adaptive" : subtest.questions}</dd></div>
+        <div><dt>Timing</dt><dd>${subtest.engine ? (subtest.engine === "speed" ? "Speeded" : "Untimed") : `${subtest.secondsPerQuestion}s each`}</dd></div>
+        <div><dt>Length</dt><dd>~${subtestMinutes(subtest)} min</dd></div>
+      </dl>
+      <p class="measure-detail-body">${escapeHtml(subtest.summary)}</p>
+      <p class="measure-detail-body">${escapeHtml(subtest.instructions)}</p>
+      ${subtest.engine === "span" ? `<p class="measure-detail-body">${escapeHtml(length)}</p>` : ""}
+      <p class="measure-terms"><strong>One sitting.</strong> You can stop early and whatever you've answered will be scored — but you can't pause it, come back to it, or take it again in this attempt.</p>
+      <p class="measure-aids">No external aids — no calculator, notes, search or AI.</p>
       ${result
         ? `<div class="measure-detail-done">
-             <span class="measure-detail-done-tick" aria-hidden="true">✓</span>
+             <span class="measure-detail-done-tick" aria-hidden="true">${result.partial || result.abandoned ? "◑" : "✓"}</span>
              <span>${result.partial || result.abandoned
                ? `Stopped early — scored on ${result.answered ?? 0} answer${(result.answered ?? 0) === 1 ? "" : "s"}`
-               : "Completed"}${unlocked && Number.isFinite(result.score) ? ` — ${meta.short} ${result.score}` : ""}</span>
+               : "Completed"}${unlocked && Number.isFinite(result.score) ? ` · ${meta.short} ${result.score}` : ""}</span>
            </div>`
         : `<button class="measure-start" data-start-subtest="${escapeHtml(subtest.id)}" type="button">Start <span aria-hidden="true">→</span></button>`}
     </div>`;
