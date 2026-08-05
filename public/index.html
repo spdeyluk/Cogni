@@ -977,44 +977,27 @@
             </section>
 
       <section class="assessment-page" aria-label="Cogni Measurement">
-        <div class="assessment-intro assessment-intro-feature" id="cat-intro" role="button" tabindex="0" aria-label="Open Cogni Measurement">
-          <span class="assessment-intro-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M9 3a4 4 0 0 0-3.5 6A4 4 0 0 0 7 16.5V19a2 2 0 0 0 2 2M15 3a4 4 0 0 1 3.5 6A4 4 0 0 1 17 16.5V19a2 2 0 0 1-2 2M12 3v18M9 3a3 3 0 0 1 3 1 3 3 0 0 1 3-1"/></svg>
-          </span>
-          <div class="assessment-intro-body">
-            <p class="exercise-type">Adaptive test</p>
-            <h2>Cogni Measurement</h2>
-            <p class="assessment-intro-desc">A computer-adaptive assessment across memory, reasoning, and processing speed — each answer picks the next question.</p>
-            <p class="assessment-card-meta">20–50 questions · 10–25 min</p>
+        <div class="measure-picker" id="cat-intro">
+          <div class="measure-picker-head">
+            <div>
+              <h2>Cogni Measurement</h2>
+              <p class="measure-picker-sub">Eight subtests across six CHC abilities. Take them in any order, at your own pace — but each one must be finished in a single sitting.</p>
+            </div>
+            <div class="measure-progress" id="measure-progress"></div>
           </div>
-          <span class="assessment-intro-arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
-          </span>
-        </div>
-
-        <section class="assessment-detail" id="cat-detail" hidden aria-live="polite">
-          <div class="assessment-run-header">
-            <button class="back-button" id="cat-back-to-list" type="button">Tests</button>
+          <div class="measure-picker-body">
+            <div class="measure-sections" id="measure-sections"></div>
+            <aside class="measure-detail" id="measure-detail" aria-live="polite"></aside>
           </div>
-          <p class="exercise-type">Adaptive test</p>
-          <h2>Cogni Measurement</h2>
-          <p class="assessment-history-copy">The test adapts to you: each answer picks the next question. Most sessions take 10–25 minutes and finish in 20–35 questions.</p>
-          <ul class="cat-rules">
-            <li>Find a quiet spot and don't use a calculator or notes.</li>
-            <li>Each question has its own timer — an unanswered question counts as incorrect.</li>
-            <li>You can't go back to earlier questions.</li>
-            <li>Don't refresh or close the app; if it happens, the test resumes where you left off.</li>
-          </ul>
           <p class="assessment-disclaimer">Scores are estimates from provisional item data, for personal tracking only — this is not a clinically validated intelligence test.</p>
           <div class="assessment-list-actions">
-            <button id="cat-start" type="button">Start</button>
             <button class="secondary-button" id="cat-open-history" type="button">Previous scores</button>
           </div>
-        </section>
+        </div>
 
         <section class="assessment-run" id="cat-run" hidden aria-live="polite">
           <div class="assessment-run-header">
-            <button class="back-button" id="cat-quit" type="button">End test</button>
+            <span class="cat-run-locked" aria-label="This subtest must be finished in one go">One sitting — no pausing</span>
             <span id="cat-progress">Question 1</span>
           </div>
           <div class="assessment-progress-track" aria-hidden="true"><div id="cat-timer-bar"></div></div>

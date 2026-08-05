@@ -17,64 +17,182 @@
 
 export const MEASUREMENT_SCALE = { mean: 100, sd: 15 };
 
+// The six CHC broad abilities the battery reports, each with its stratum-II
+// code so the mapping to the theory is explicit rather than implied.
 export const MEASUREMENT_INDICES = {
   vci: {
     key: "vci",
+    chc: "Gc",
     short: "VCI",
     name: "Verbal Comprehension",
     blurb: "Word knowledge, verbal reasoning and how precisely you handle meaning.",
-    source: "items"
+    accent: "#F2597A"
+  },
+  fri: {
+    key: "fri",
+    chc: "Gf",
+    short: "FRI",
+    name: "Fluid Reasoning",
+    blurb: "Finding the rule in something you have never seen before.",
+    accent: "#FB8A6B"
   },
   vsi: {
     key: "vsi",
+    chc: "Gv",
     short: "VSI",
-    name: "Visual-Spatial",
-    blurb: "Finding the rule in a visual pattern and holding shape relationships in mind.",
-    source: "items"
+    name: "Visual Spatial",
+    blurb: "Turning shapes over in your head and keeping track of how they sit.",
+    accent: "#F5B942"
   },
   qri: {
     key: "qri",
+    chc: "Gq",
     short: "QRI",
     name: "Quantitative Reasoning",
     blurb: "Reasoning with number, proportion and quantitative relationships.",
-    source: "items"
+    accent: "#18B87B"
   },
   wmi: {
     key: "wmi",
+    chc: "Gsm",
     short: "WMI",
     name: "Working Memory",
     blurb: "How much you can hold in mind at once while doing something else with it.",
-    source: "span"
+    accent: "#3F82E8"
   },
   psi: {
     key: "psi",
+    chc: "Gs",
     short: "PSI",
     name: "Processing Speed",
     blurb: "How quickly you make simple decisions accurately and without drifting.",
-    source: "speed"
+    accent: "#B564E8"
   }
 };
 
-export const MEASUREMENT_INDEX_ORDER = ["vci", "vsi", "qri", "wmi", "psi"];
+// Report order follows the CHC wheel, reasoning first, speed last.
+export const MEASUREMENT_INDEX_ORDER = ["vci", "fri", "vsi", "qri", "wmi", "psi"];
 
-// Which index each adaptive item kind feeds.
-//
-// letter-analogy sits in VCI rather than in a fluid bucket: it is analogical
-// mapping over a symbol series, which shares more with verbal analogies than
-// with the visual matrices, and the battery has no separate Gf index to put it
-// in. Flagged here because it is a judgement call, not an obvious truth.
+// Which index each adaptive item kind feeds. Matrix reasoning is Gf, not Gv:
+// it is rule induction that happens to be presented visually. Visual Spatial is
+// carried by mental rotation, where the work really is spatial.
 export const ITEM_KIND_INDEX = {
   vocabulary: "vci",
   "verbal-analogy": "vci",
   "odd-one-out": "vci",
   "sentence-logic": "vci",
-  "letter-analogy": "vci",
-  matrix: "vsi",
-  series: "qri",
+  matrix: "fri",
+  series: "fri",
+  "letter-analogy": "fri",
+  "mental-rotation": "vsi",
   "word-problem": "qri",
   "number-property": "qri",
   "proportion-rate": "qri"
 };
+
+// ---------------------------------------------------------------------------
+// Subtests. A subtest is the unit the user actually commits to: it is started
+// deliberately, runs to the end in one sitting, and cannot be paused, retried
+// or resumed. That is what makes the score mean anything — a section you can
+// restart is a section you can farm.
+// ---------------------------------------------------------------------------
+export const MEASUREMENT_SUBTESTS = [
+  {
+    id: "verbal-reasoning",
+    index: "vci",
+    name: "Verbal Reasoning",
+    kinds: ["verbal-analogy", "odd-one-out", "sentence-logic"],
+    questions: 12,
+    secondsPerQuestion: 45,
+    summary: "Assesses crystallized verbal knowledge and reasoning about meaning.",
+    instructions: "For each question, choose the option that best preserves the relationship, completes the argument, or does not belong."
+  },
+  {
+    id: "vocabulary",
+    index: "vci",
+    name: "Vocabulary",
+    kinds: ["vocabulary"],
+    questions: 12,
+    secondsPerQuestion: 40,
+    summary: "Assesses breadth and precision of word knowledge.",
+    instructions: "Choose the option closest in meaning to the word given."
+  },
+  {
+    id: "matrix-reasoning",
+    index: "fri",
+    name: "Matrix Reasoning",
+    kinds: ["matrix"],
+    questions: 14,
+    secondsPerQuestion: 75,
+    summary: "Assesses inductive reasoning — finding the rule that governs a visual pattern.",
+    instructions: "Each 3×3 grid follows one or more rules. Choose the option that completes it."
+  },
+  {
+    id: "series",
+    index: "fri",
+    name: "Series",
+    kinds: ["series", "letter-analogy"],
+    questions: 12,
+    secondsPerQuestion: 60,
+    summary: "Assesses sequential reasoning over numbers and letters.",
+    instructions: "Work out the rule generating the sequence and choose what comes next."
+  },
+  {
+    id: "mental-rotation",
+    index: "vsi",
+    name: "Mental Rotation",
+    kinds: ["mental-rotation"],
+    questions: 10,
+    secondsPerQuestion: 50,
+    summary: "Assesses spatial visualisation — rotating a figure in your head.",
+    instructions: "One option is the target figure rotated. The others are mirror images, which can never be produced by rotation alone."
+  },
+  {
+    id: "quantitative-knowledge",
+    index: "qri",
+    name: "Quantitative Knowledge",
+    kinds: ["word-problem", "number-property", "proportion-rate"],
+    questions: 14,
+    secondsPerQuestion: 60,
+    summary: "Assesses reasoning with number, proportion and quantitative relationships.",
+    instructions: "Choose the correct answer. Working it out on paper is fine; a calculator is not."
+  },
+  {
+    id: "digit-span",
+    index: "wmi",
+    name: "Digit Span",
+    engine: "span",
+    questions: null,
+    summary: "Assesses how much you can hold in mind and manipulate at once.",
+    instructions: "Digits appear briefly, then you type them back — forward first, then in reverse. The sequence grows until you miss twice."
+  },
+  {
+    id: "symbol-match",
+    index: "psi",
+    name: "Symbol Match",
+    engine: "speed",
+    questions: 32,
+    summary: "Assesses decision speed on a task with no reasoning load.",
+    instructions: "Two symbols appear. Say whether they match, as fast as you can without making mistakes."
+  }
+];
+
+export function subtestById(id) {
+  return MEASUREMENT_SUBTESTS.find((subtest) => subtest.id === id) ?? null;
+}
+
+export function subtestsForIndex(indexKey) {
+  return MEASUREMENT_SUBTESTS.filter((subtest) => subtest.index === indexKey);
+}
+
+/** Rough minutes for a subtest, used for the "~N minutes" line on its card. */
+export function subtestMinutes(subtest) {
+  if (subtest.engine === "span") return 5;
+  if (subtest.engine === "speed") return 2;
+  const seconds = (subtest.questions ?? 0) * (subtest.secondsPerQuestion ?? 45);
+  // People answer well inside the per-question limit, so halve it for the estimate.
+  return Math.max(2, Math.round(seconds / 2 / 60));
+}
 
 export function indexForItem(item) {
   return ITEM_KIND_INDEX[item?.kind] ?? null;
