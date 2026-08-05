@@ -18808,3 +18808,140 @@ html.mode-pro .pricing-save { display: none !important; }
 .cat-report-title { margin: 18px 0 8px; font-size: 1.02rem; }
 .cat-report-list { display: grid; gap: 8px; margin: 0; padding-left: 18px; color: var(--text-2); line-height: 1.55; font-size: 0.92rem; }
 .cat-report-caveat { margin: 16px 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
+
+/* ===================================================================
+   Cogni Measurement — section picker. Categories down the left, the
+   selected subtest's brief on the right. Each subtest is a commitment,
+   so the brief states the terms before the Start button.
+   =================================================================== */
+.measure-picker { display: grid; gap: 18px; }
+
+.measure-picker-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.measure-picker-head h2 { margin: 0 0 4px; }
+.measure-picker-sub { margin: 0; color: var(--text-2); max-width: 62ch; line-height: 1.55; font-size: 0.94rem; }
+
+.measure-progress { display: grid; gap: 4px; min-width: 190px; }
+.measure-progress-count { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+.measure-progress-count span { color: var(--muted); font-size: 1rem; font-weight: 600; }
+.measure-progress-label { color: var(--muted); font-size: 0.82rem; }
+.measure-progress-track { height: 4px; border-radius: 999px; background: var(--fill-subtle); overflow: hidden; }
+.measure-progress-track i { display: block; height: 100%; background: var(--accent-2); transition: width 240ms ease; }
+
+.measure-picker-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.measure-sections { display: grid; gap: 12px; }
+
+/* The category's colour is the only ornament — a left rule, as in the brief. */
+.measure-section {
+  padding: 12px 14px 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--index-accent, var(--accent));
+  border-radius: 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 8px;
+}
+.measure-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 2px;
+  font-size: 1rem;
+  color: var(--index-accent, var(--accent));
+}
+.measure-section-chc {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.measure-subtest {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+.measure-subtest:hover { background: var(--fill-subtle) !important; }
+.measure-subtest.is-selected {
+  border-color: var(--index-accent, var(--accent)) !important;
+  background: var(--fill-subtle) !important;
+}
+.measure-subtest.is-done .measure-subtest-name { color: var(--muted); }
+.measure-subtest-time { color: var(--muted); font-size: 0.82rem; }
+.measure-subtest-done { color: var(--success); font-weight: 700; }
+
+.measure-detail { position: sticky; top: 12px; }
+.measure-detail-card {
+  display: grid;
+  gap: 10px;
+  padding: 20px 22px;
+  border: 1px solid var(--index-accent, var(--accent));
+  border-radius: 14px;
+  background: var(--surface);
+}
+.measure-detail-card p { margin: 0; color: var(--text-2); line-height: 1.55; font-size: 0.92rem; }
+.measure-detail-title { margin: 0; color: var(--index-accent, var(--accent)); font-size: 1.2rem; }
+.measure-detail-meta { color: var(--muted) !important; font-size: 0.85rem !important; }
+.measure-detail-rule { width: 100%; height: 1px; border: 0; background: var(--line); margin: 2px 0; }
+.measure-detail-warn { color: var(--text) !important; }
+.measure-detail-aids { color: var(--muted) !important; font-style: italic; font-size: 0.86rem !important; }
+
+.measure-start {
+  justify-self: start;
+  margin-top: 6px;
+  background: var(--index-accent, var(--accent)) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 650;
+}
+
+.measure-detail-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--success);
+  font-weight: 600;
+}
+.measure-detail-done-tick { font-size: 1.1rem; }
+
+/* The run screen states the terms where the quit button used to be. */
+.cat-run-locked { color: var(--muted); font-size: 0.82rem; }
+
+@media (max-width: 860px) {
+  .measure-picker-body { grid-template-columns: minmax(0, 1fr); }
+  .measure-detail { position: static; }
+}
+
+/* Mental rotation: the target figure, shown larger than the candidates. */
+.cat-figure-target {
+  display: grid;
+  place-items: center;
+  width: min(210px, 52vw);
+  margin: 0 auto 6px;
+  padding: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+}

@@ -15,13 +15,15 @@
 export const CAT_DOMAIN_TIME_LIMITS_MS = {
   verbal: 45000,
   quant: 60000,
-  fluid: 75000
+  fluid: 75000,
+  spatial: 50000
 };
 
 export const CAT_DOMAIN_LABELS = {
   fluid: "Fluid reasoning",
   verbal: "Verbal comprehension",
-  quant: "Quantitative reasoning"
+  quant: "Quantitative reasoning",
+  spatial: "Visual spatial"
 };
 
 function g(s, { x = 0.5, y = 0.5, sz = 0.55, r = 0, f = 1 } = {}) {
@@ -374,6 +376,112 @@ for (const shape of ["triangle", "bar", "ell", "tee"]) {
 }
 
 // ---------------------------------------------------------------------------
+// Visual-Spatial: mental rotation.
+//
+// Matrix reasoning is rule induction that happens to look visual, so it belongs
+// to Gf. Gv needs a task where the work really is spatial, and rotation is the
+// canonical one. Every figure below is chiral — its mirror image cannot be
+// produced by any rotation — so the distractors are genuinely wrong rather than
+// merely different, and the item cannot be solved by counting cells.
+// ---------------------------------------------------------------------------
+
+const rotationFigures = [
+  { name: "L4", cells: [[0, 0], [0, 1], [0, 2], [1, 2]] },
+  { name: "S4", cells: [[1, 0], [2, 0], [0, 1], [1, 1]] },
+  { name: "F", cells: [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]] },
+  { name: "P", cells: [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2]] },
+  { name: "Y", cells: [[1, 0], [0, 1], [1, 1], [1, 2], [1, 3]] },
+  { name: "N", cells: [[1, 0], [1, 1], [0, 1], [0, 2], [0, 3]] },
+  { name: "L5", cells: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3]] },
+  { name: "Z5", cells: [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]] },
+  { name: "J5", cells: [[1, 0], [1, 1], [1, 2], [1, 3], [0, 3]] },
+  { name: "T4", cells: [[0, 0], [1, 0], [2, 0], [1, 1], [1, 2]] },
+  { name: "W", cells: [[0, 0], [0, 1], [1, 1], [1, 2], [2, 2]] },
+  { name: "hook", cells: [[0, 0], [1, 0], [2, 0], [0, 1], [0, 2]] },
+  { name: "step", cells: [[0, 0], [0, 1], [1, 1], [2, 1], [2, 2]] },
+  { name: "tail", cells: [[0, 0], [1, 0], [1, 1], [1, 2], [2, 0]] }
+];
+
+function rotateCells(cells, quarterTurns) {
+  let out = cells.map(([x, y]) => [x, y]);
+  for (let turn = 0; turn < ((quarterTurns % 4) + 4) % 4; turn += 1) {
+    out = out.map(([x, y]) => [-y, x]);
+  }
+  return normalizeCells(out);
+}
+
+function mirrorCells(cells) {
+  return normalizeCells(cells.map(([x, y]) => [-x, y]));
+}
+
+function normalizeCells(cells) {
+  const minX = Math.min(...cells.map(([x]) => x));
+  const minY = Math.min(...cells.map(([, y]) => y));
+  return cells
+    .map(([x, y]) => [x - minX, y - minY])
+    .sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]));
+}
+
+function cellsSignature(cells) {
+  return normalizeCells(cells).map(([x, y]) => `${x},${y}`).join(" ");
+}
+
+// Any rotation of the figure counts as the same figure.
+function rotationClass(cells) {
+  return [0, 1, 2, 3].map((turn) => cellsSignature(rotateCells(cells, turn))).sort().join("|");
+}
+
+// Render a lattice figure as glyphs inside the unit cell used by the SVG renderer.
+function figureGlyphs(cells) {
+  const width = Math.max(...cells.map(([x]) => x)) + 1;
+  const height = Math.max(...cells.map(([, y]) => y)) + 1;
+  const extent = Math.max(width, height);
+  const step = 0.82 / extent;
+  const offsetX = 0.5 - (width * step) / 2;
+  const offsetY = 0.5 - (height * step) / 2;
+  return cells.map(([x, y]) => g("square", {
+    x: offsetX + step * (x + 0.5),
+    y: offsetY + step * (y + 0.5),
+    sz: step * 0.92,
+    f: 1
+  }));
+}
+
+const mentalRotationItems = [];
+rotationFigures.forEach((figure, figureIndex) => {
+  // Three items per figure at different turns, so the same shape can't be
+  // recognised by its answer position from a previous sitting.
+  for (const turn of [1, 2, 3]) {
+    const target = normalizeCells(figure.cells);
+    const answer = rotateCells(target, turn);
+    const mirrored = mirrorCells(target);
+    const targetClass = rotationClass(target);
+    // Distractors are rotations of the MIRROR image: same cell count, same
+    // silhouette family, but unreachable by rotating the target.
+    const distractors = [];
+    for (const mirrorTurn of [0, 1, 2, 3]) {
+      const candidate = rotateCells(mirrored, mirrorTurn);
+      if (rotationClass(candidate) === targetClass) continue; // achiral, skip
+      if (distractors.some((d) => cellsSignature(d) === cellsSignature(candidate))) continue;
+      distractors.push(candidate);
+    }
+    if (distractors.length < 3) continue; // not chiral enough for a fair item
+    const optionSets = [answer, ...distractors.slice(0, 3)];
+    mentalRotationItems.push({
+      kind: "mental-rotation",
+      dRank: 2 + (figureIndex % 5),
+      prompt: "Which option is the figure above, rotated?",
+      figure: {
+        target: figureGlyphs(target),
+        optionCells: optionSets.map((cells) => figureGlyphs(cells))
+      },
+      options: optionSets.map((_, index) => `Option ${index + 1}`),
+      answerIndex: 0
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Fluid: number series and abstract letter analogies
 // ---------------------------------------------------------------------------
 
@@ -567,6 +675,10 @@ function rotateAnswer(item, seed) {
     const optionCells = item.matrix.optionCells.map((_, index) => item.matrix.optionCells[(index + shift) % item.matrix.optionCells.length]);
     next.matrix = { ...item.matrix, optionCells };
   }
+  if (item.figure) {
+    const optionCells = item.figure.optionCells.map((_, index) => item.figure.optionCells[(index + shift) % item.figure.optionCells.length]);
+    next.figure = { ...item.figure, optionCells };
+  }
   return next;
 }
 
@@ -605,8 +717,11 @@ const quantRaw = [
   ...fromTable("proportion-rate", "quant", proportionRate)
 ];
 
+const spatialRaw = [...mentalRotationItems];
+
 export const catItemBank = [
   ...buildDomain("fluid", fluidRaw),
   ...buildDomain("verbal", verbalRaw),
-  ...buildDomain("quant", quantRaw)
+  ...buildDomain("quant", quantRaw),
+  ...buildDomain("spatial", spatialRaw)
 ];

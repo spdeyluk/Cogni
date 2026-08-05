@@ -55,7 +55,8 @@ import {
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
 import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRotation.js";
 import {
-  MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, indexForItem, thetaToIndexScore,
+  MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, MEASUREMENT_SUBTESTS,
+  subtestById, subtestsForIndex, subtestMinutes, indexForItem, thetaToIndexScore,
   scoreWorkingMemoryIndex, scoreProcessingSpeedIndex, scoreComposite,
   compositeStandardError, indexConfidenceInterval, scoreToPercentile, scoreDescriptor
 } from "../core/assessments/measurement.js";
@@ -524,8 +525,6 @@ const elements = {
   catRun: document.querySelector("#cat-run"),
   catResult: document.querySelector("#cat-result"),
   catHistory: document.querySelector("#cat-history"),
-  catBackToList: document.querySelector("#cat-back-to-list"),
-  catStart: document.querySelector("#cat-start"),
   catOpenHistory: document.querySelector("#cat-open-history"),
   catQuit: document.querySelector("#cat-quit"),
   catProgress: document.querySelector("#cat-progress"),
@@ -1372,14 +1371,6 @@ document.querySelector("#settings-drawer")?.addEventListener("click", (event) =>
 elements.startAdhdAssessment?.addEventListener("click", startAdhdAssessment);
 elements.restartAdhdAssessment?.addEventListener("click", startAdhdAssessment);
 elements.backAdhdQuestion?.addEventListener("click", goBackAdhdQuestion);
-elements.catIntro?.addEventListener("click", () => showCatSection("detail"));
-elements.catIntro?.addEventListener("keydown", (event) => {
-  if (!["Enter", " "].includes(event.key)) return;
-  event.preventDefault();
-  showCatSection("detail");
-});
-elements.catBackToList?.addEventListener("click", showAssessmentList);
-elements.catStart?.addEventListener("click", startCatTest);
 elements.catOpenHistory?.addEventListener("click", () => {
   renderCatHistory();
   showCatSection("history");
@@ -1988,7 +1979,6 @@ document.querySelector("#cat-share")?.addEventListener("click", async (event) =>
     // Share sheet dismissed; nothing to do.
   }
 });
-elements.catQuit?.addEventListener("click", abandonCatTest);
 elements.catOptions?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-cat-answer]");
   if (button) answerCatQuestion(Number(button.dataset.catAnswer));
@@ -6937,17 +6927,20 @@ function showAssessments() {
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "Cogni Measurement";
-  elements.pageLede.textContent = "A CHC-based measure of five cognitive indices.";
+  elements.pageLede.textContent = "Six CHC abilities, eight subtests, one score.";
   showAssessmentList();
 }
 
 function showAssessmentList() {
-  // An in-flight adaptive test always resumes rather than being lost.
-  if (catActive?.currentItemId) {
-    showCatSection("run");
-    renderCatQuestion();
-    return;
+  // A subtest must be done in one go, so there is nothing to resume. Anything
+  // left in flight (a refresh, a closed tab) is discarded rather than continued
+  // — a section you can walk away from and come back to is not a measurement.
+  if (catActive) {
+    catActive = null;
+    saveCatActive();
   }
+  clearCatSubtestTimers();
+  renderMeasurePicker();
   showCatSection("intro");
 }
 
@@ -7033,18 +7026,210 @@ function catResponsesWithItems() {
     .filter((response) => response.item);
 }
 
-function startCatTest() {
+// ---------------------------------------------------------------------------
+// The measurement attempt: eight subtests, each completed in one sitting.
+//
+// Results accumulate per subtest until every one is done, at which point the
+// composite is computed and the attempt becomes a session record. A subtest
+// that has been completed cannot be retaken within the attempt — otherwise the
+// score is just the best of however many tries you felt like having.
+// ---------------------------------------------------------------------------
+const MEASURE_ATTEMPT_KEY = "cogni.measurementAttempt.v1";
+
+function loadMeasureAttempt() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MEASURE_ATTEMPT_KEY));
+    if (saved && typeof saved === "object" && saved.subtests) return saved;
+  } catch { /* fall through */ }
+  return { startedAt: Date.now(), subtests: {} };
+}
+
+function saveMeasureAttempt(attempt) {
+  try { localStorage.setItem(MEASURE_ATTEMPT_KEY, JSON.stringify(attempt)); }
+  catch { /* private mode */ }
+}
+
+function clearMeasureAttempt() {
+  try { localStorage.removeItem(MEASURE_ATTEMPT_KEY); } catch { /* private mode */ }
+}
+
+function measureCompletedCount(attempt = loadMeasureAttempt()) {
+  return MEASUREMENT_SUBTESTS.filter((subtest) => attempt.subtests[subtest.id]).length;
+}
+
+function renderMeasurePicker(selectedId) {
+  const attempt = loadMeasureAttempt();
+  const host = document.querySelector("#measure-sections");
+  const progress = document.querySelector("#measure-progress");
+  if (!host) return;
+
+  const done = measureCompletedCount(attempt);
+  const total = MEASUREMENT_SUBTESTS.length;
+  if (progress) {
+    progress.innerHTML = `
+      <span class="measure-progress-count">${done}<span>/${total}</span></span>
+      <span class="measure-progress-label">subtests complete</span>
+      <span class="measure-progress-track" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></span>`;
+  }
+
+  host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const rows = subtestsForIndex(key).map((subtest) => {
+      const result = attempt.subtests[subtest.id];
+      return `
+        <button class="measure-subtest${result ? " is-done" : ""}${subtest.id === selectedId ? " is-selected" : ""}"
+                data-subtest="${escapeHtml(subtest.id)}" type="button">
+          <span class="measure-subtest-name">${escapeHtml(subtest.name)}</span>
+          ${result
+            ? `<span class="measure-subtest-done" aria-label="Completed">✓</span>`
+            : `<span class="measure-subtest-time">~${subtestMinutes(subtest)} min</span>`}
+        </button>`;
+    }).join("");
+    return `
+      <section class="measure-section" style="--index-accent:${meta.accent}">
+        <h3 class="measure-section-title">${escapeHtml(meta.name)}<span class="measure-section-chc">${escapeHtml(meta.chc)}</span></h3>
+        ${rows}
+      </section>`;
+  }).join("");
+
+  host.querySelectorAll("[data-subtest]").forEach((button) => {
+    button.addEventListener("click", () => renderSubtestDetail(button.dataset.subtest));
+  });
+
+  renderSubtestDetail(selectedId ?? MEASUREMENT_SUBTESTS.find((s) => !attempt.subtests[s.id])?.id ?? MEASUREMENT_SUBTESTS[0].id);
+}
+
+function renderSubtestDetail(subtestId) {
+  const panel = document.querySelector("#measure-detail");
+  const subtest = subtestById(subtestId);
+  if (!panel || !subtest) return;
+  const attempt = loadMeasureAttempt();
+  const result = attempt.subtests[subtest.id];
+  const meta = MEASUREMENT_INDICES[subtest.index];
+  const unlocked = measurementReportUnlocked();
+
+  document.querySelectorAll("[data-subtest]").forEach((button) => {
+    button.classList.toggle("is-selected", button.dataset.subtest === subtest.id);
+  });
+
+  const length = subtest.engine === "span"
+    ? "Adaptive length — it grows until you miss twice."
+    : `This subtest contains ${subtest.questions} questions.`;
+  const timing = subtest.engine
+    ? (subtest.engine === "speed" ? "Answer as fast as you can; the subtest times itself." : "There is no clock — accuracy is all that counts.")
+    : `You will be timed ${subtest.secondsPerQuestion} seconds per question.`;
+
+  panel.innerHTML = `
+    <div class="measure-detail-card" style="--index-accent:${meta.accent}">
+      <h3 class="measure-detail-title">${escapeHtml(subtest.name)}</h3>
+      <p class="measure-detail-meta">${escapeHtml(meta.name)} · ~${subtestMinutes(subtest)} minutes</p>
+      <hr class="measure-detail-rule">
+      <p>${escapeHtml(length)} ${escapeHtml(subtest.summary)}</p>
+      <p>${escapeHtml(subtest.instructions)}</p>
+      <p>${escapeHtml(timing)}</p>
+      <p class="measure-detail-warn"><strong>Once started, this subtest must be finished.</strong> You cannot pause it, leave it, or take it again in this attempt.</p>
+      <p class="measure-detail-aids">No external aids — no calculator, notes, search or AI.</p>
+      ${result
+        ? `<div class="measure-detail-done">
+             <span class="measure-detail-done-tick" aria-hidden="true">✓</span>
+             <span>Completed${unlocked && Number.isFinite(result.score) ? ` — ${meta.short} ${result.score}` : ""}</span>
+           </div>`
+        : `<button class="measure-start" data-start-subtest="${escapeHtml(subtest.id)}" type="button">Start <span aria-hidden="true">→</span></button>`}
+    </div>`;
+
+  panel.querySelector("[data-start-subtest]")?.addEventListener("click", () => startSubtest(subtest.id));
+}
+
+// Building the fixed-length item run for a subtest: drawn from that subtest's
+// kinds only, avoiding what the previous attempt served.
+function subtestItemPool(subtest) {
+  return catItemBank.filter((item) => subtest.kinds?.includes(item.kind));
+}
+
+function startSubtest(subtestId) {
   if (!requireAuth("Sign in to take Cogni Measurement.")) return;
-  // Snapshot once at the start so the avoid-set can't shift mid-test.
+  const subtest = subtestById(subtestId);
+  if (!subtest) return;
+  const attempt = loadMeasureAttempt();
+  // One go, once. A completed subtest is closed for this attempt.
+  if (attempt.subtests[subtest.id]) return;
+
+  clearCatSubtestTimers();
   catActive = {
+    subtestId: subtest.id,
     startedAt: Date.now(),
     responses: [],
     currentItemId: null,
     avoidIds: [...catRecentlyServedIds()]
   };
+
+  if (subtest.engine === "span") { saveCatActive(); showCatSection("run"); catSpanIntro(); return; }
+  if (subtest.engine === "speed") { saveCatActive(); showCatSection("run"); startCatSpeedSubtest(); return; }
+
   pickNextCatItem();
   showCatSection("run");
   renderCatQuestion();
+}
+
+function activeSubtest() {
+  return subtestById(catActive?.subtestId);
+}
+
+// A finished subtest writes its own index contribution, then hands back to the
+// picker — or, when it was the last one, to the composite.
+function finishSubtest() {
+  const subtest = activeSubtest();
+  if (!subtest || !catActive) return;
+  stopCatTimer();
+  clearCatSubtestTimers();
+
+  const attempt = loadMeasureAttempt();
+  const result = { subtestId: subtest.id, index: subtest.index, completedAt: new Date().toISOString(), provisional: true };
+
+  if (subtest.engine === "span") {
+    const span = catActive.span ?? {};
+    const wm = scoreWorkingMemoryIndex({
+      digit: span.forwardBest,
+      spatial: Number.isFinite(span.backwardBest) ? span.backwardBest + 1 : undefined
+    });
+    Object.assign(result, {
+      theta: wm?.theta ?? 0,
+      score: wm?.score ?? null,
+      detail: { forward: span.forwardBest ?? null, backward: span.backwardBest ?? null }
+    });
+  } else if (subtest.engine === "speed") {
+    const speed = catActive.speed ?? {};
+    const medianMs = median(speed.times ?? []);
+    const accuracy = speed.index ? speed.correct / speed.index : undefined;
+    const ps = scoreProcessingSpeedIndex({ medianMs, accuracy });
+    Object.assign(result, {
+      theta: ps?.theta ?? 0,
+      score: ps?.score ?? null,
+      detail: { medianMs: medianMs ? Math.round(medianMs) : null, accuracy: accuracy ? Math.round(accuracy * 100) : null }
+    });
+  } else {
+    const estimate = eapEstimate(catResponsesWithItems());
+    Object.assign(result, {
+      theta: estimate.theta,
+      se: estimate.se,
+      score: thetaToIndexScore(estimate.theta),
+      ci: indexConfidenceInterval(estimate.theta, estimate.se),
+      count: catActive.responses.length,
+      itemIds: catActive.responses.map((response) => response.itemId)
+    });
+  }
+
+  attempt.subtests[subtest.id] = result;
+  saveMeasureAttempt(attempt);
+  catActive = null;
+  saveCatActive();
+
+  if (measureCompletedCount(attempt) >= MEASUREMENT_SUBTESTS.length) {
+    finishMeasurement(attempt);
+    return;
+  }
+  renderMeasurePicker(subtest.id);
+  showCatSection("intro");
 }
 
 // Below this the bank is too thin to keep measuring well, so exposure control
@@ -7062,7 +7247,10 @@ function catRecentlyServedIds() {
 function pickNextCatItem() {
   const { theta } = catActive.responses.length ? eapEstimate(catResponsesWithItems()) : { theta: 0 };
   const administered = new Set(catActive.responses.map((response) => response.itemId));
-  const unadministered = catItemBank.filter((item) => !administered.has(item.id));
+  // Only this subtest's own item kinds are eligible — a subtest measures one thing.
+  const subtest = activeSubtest();
+  const scope = subtest?.kinds ? subtestItemPool(subtest) : catItemBank;
+  const unadministered = scope.filter((item) => !administered.has(item.id));
   // Prefer items the last test didn't use, but only while that leaves enough
   // bank to still measure against — precision wins over novelty at the margin.
   const fresh = unadministered.filter((item) => !catActive.avoidIds?.includes(item.id));
@@ -7093,15 +7281,29 @@ function catOptionOrder(item) {
 function renderCatQuestion() {
   const item = catItemsById.get(catActive?.currentItemId);
   if (!item) {
-    finishCatTest();
+    finishSubtest();
     return;
   }
-  elements.catProgress.textContent = `Question ${catActive.responses.length + 1}`;
-  elements.catDomainLabel.textContent = CAT_DOMAIN_LABELS[item.domain];
+  const subtest = activeSubtest();
+  const total = subtest?.questions;
+  elements.catProgress.textContent = total
+    ? `Question ${catActive.responses.length + 1} of ${total}`
+    : `Question ${catActive.responses.length + 1}`;
+  elements.catDomainLabel.textContent = subtest?.name ?? CAT_DOMAIN_LABELS[item.domain];
   elements.catPrompt.textContent = item.prompt;
-  elements.catStage.innerHTML = item.matrix ? catMatrixSvg(item.matrix) : "";
+  elements.catStage.innerHTML = item.matrix
+    ? catMatrixSvg(item.matrix)
+    : item.figure
+      ? `<div class="cat-figure-target">${catCellSvg(item.figure.target)}</div>`
+      : "";
   const order = catOptionOrder(item);
-  if (item.matrix) {
+  if (item.figure) {
+    // Mental rotation: the target sits on the stage, the candidates below it.
+    elements.catOptions.className = "cat-options cat-options-matrix";
+    elements.catOptions.innerHTML = order.map((source, index) => `
+      <button type="button" data-cat-answer="${index}" aria-label="Option ${index + 1}">${catCellSvg(item.figure.optionCells[source])}</button>
+    `).join("");
+  } else if (item.matrix) {
     elements.catOptions.className = "cat-options cat-options-matrix";
     elements.catOptions.innerHTML = order.map((source, index) => `
       <button type="button" data-cat-answer="${index}" aria-label="Option ${index + 1}">${catCellSvg(item.matrix.optionCells[source])}</button>
@@ -7151,17 +7353,12 @@ function answerCatQuestion(answerIndex) {
     ms: Date.now() - catItemStartedAt,
     at: new Date().toISOString()
   });
-  const estimate = eapEstimate(catResponsesWithItems());
-  const elapsedMs = Date.now() - catActive.startedAt;
-  if (shouldStop({ itemsAnswered: catActive.responses.length, se: estimate.se, elapsedMs })) {
-    startCatSpanSubtest(estimate);
-    return;
-  }
+  // Fixed length: every taker answers the same number of questions in a subtest,
+  // so results are comparable and the section has a knowable end.
+  const target = activeSubtest()?.questions ?? CAT_MIN_ITEMS;
+  if (catActive.responses.length >= target) { finishSubtest(); return; }
   pickNextCatItem();
-  if (!catActive.currentItemId) {
-    startCatSpanSubtest(estimate);
-    return;
-  }
+  if (!catActive.currentItemId) { finishSubtest(); return; }
   renderCatQuestion();
 }
 
@@ -7205,15 +7402,9 @@ function catSubtestChrome({ label, progress, prompt }) {
 }
 
 // --- Digit span (Working Memory) ------------------------------------------
-function startCatSpanSubtest(estimate) {
-  clearCatSubtestTimers();
-  catActive.itemEstimate = { theta: estimate.theta, se: estimate.se };
+function catSpanIntro() {
   catActive.span = { length: CAT_SPAN_START, best: 0, misses: 0, backward: false };
   saveCatActive();
-  catSpanIntro();
-}
-
-function catSpanIntro() {
   catSubtestChrome({
     label: "Working memory",
     progress: "Subtest 2 of 3",
@@ -7301,7 +7492,7 @@ function catSpanSubmit() {
   }
   state.backwardBest = state.best;
   saveCatActive();
-  catSubtestAfter(() => startCatSpeedSubtest(), 750);
+  catSubtestAfter(() => finishSubtest(), 750);
 }
 
 // --- Symbol match (Processing Speed) --------------------------------------
@@ -7325,7 +7516,7 @@ function startCatSpeedSubtest() {
 
 function catSpeedTrial() {
   const state = catActive.speed;
-  if (state.index >= CAT_SPEED_TRIALS) { finishCatTest(); return; }
+  if (state.index >= CAT_SPEED_TRIALS) { finishSubtest(); return; }
   const same = Math.random() < 0.5;
   const left = CAT_SPEED_SYMBOLS[Math.floor(Math.random() * CAT_SPEED_SYMBOLS.length)];
   const others = CAT_SPEED_SYMBOLS.filter((symbol) => symbol !== left);
@@ -7368,108 +7559,64 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function catDomainSubscores() {
-  const scores = {};
-  for (const domain of ["fluid", "verbal", "quant"]) {
-    const responses = catResponsesWithItems().filter((response) => response.item.domain === domain);
-    if (!responses.length) {
-      scores[domain] = null;
-      continue;
-    }
-    const estimate = eapEstimate(responses);
-    scores[domain] = { score: thetaToScore(estimate.theta), count: responses.length };
-  }
-  return scores;
-}
 
-// The five indices, each on the mean-100 / SD-15 scale. The three reasoning
-// indices come from the adaptive items; the other two from the timed subtests.
-function catIndexScores() {
+
+// Every subtest is in: fold them into six indices and a composite.
+function finishMeasurement(attempt) {
   const indices = {};
   const thetas = {};
   const errors = [];
-  const withItems = catResponsesWithItems();
 
-  for (const key of ["vci", "vsi", "qri"]) {
-    const responses = withItems.filter((response) => indexForItem(response.item) === key);
-    if (!responses.length) { indices[key] = null; continue; }
-    const estimate = eapEstimate(responses);
-    thetas[key] = estimate.theta;
-    errors.push(estimate.se);
+  for (const key of MEASUREMENT_INDEX_ORDER) {
+    // An index can be fed by more than one subtest (Verbal has two, Fluid has
+    // two), so average their thetas rather than letting the last one win.
+    const parts = subtestsForIndex(key)
+      .map((subtest) => attempt.subtests[subtest.id])
+      .filter((result) => result && Number.isFinite(result.theta));
+    if (!parts.length) { indices[key] = null; continue; }
+    const theta = parts.reduce((sum, part) => sum + part.theta, 0) / parts.length;
+    const se = compositeStandardError(parts.map((part) => part.se).filter(Number.isFinite));
+    thetas[key] = theta;
+    if (Number.isFinite(se)) errors.push(se);
+    const score = thetaToIndexScore(theta);
     indices[key] = {
-      score: thetaToIndexScore(estimate.theta),
-      ci: indexConfidenceInterval(estimate.theta, estimate.se),
-      percentile: scoreToPercentile(thetaToIndexScore(estimate.theta)),
-      count: responses.length,
+      score,
+      percentile: scoreToPercentile(score),
+      ci: Number.isFinite(se) ? indexConfidenceInterval(theta, se) : null,
+      count: parts.reduce((sum, part) => sum + (part.count ?? 0), 0) || undefined,
+      detail: parts.find((part) => part.detail)?.detail,
+      subtests: parts.map((part) => part.subtestId),
       provisional: true
     };
   }
 
-  const span = catActive?.span;
-  const wm = scoreWorkingMemoryIndex({
-    digit: Number.isFinite(span?.forwardBest) ? span.forwardBest : span?.best,
-    // Backward span is harder, so it is compared against a reference one lower.
-    spatial: Number.isFinite(span?.backwardBest) ? span.backwardBest + 1 : undefined
-  });
-  if (wm) {
-    thetas.wmi = wm.theta;
-    indices.wmi = {
-      score: wm.score,
-      percentile: scoreToPercentile(wm.score),
-      detail: { forward: span?.forwardBest ?? null, backward: span?.backwardBest ?? null },
-      provisional: true
-    };
-  } else indices.wmi = null;
-
-  const speed = catActive?.speed;
-  const medianMs = median(speed?.times ?? []);
-  const ps = scoreProcessingSpeedIndex({
-    medianMs,
-    accuracy: speed?.index ? speed.correct / speed.index : undefined
-  });
-  if (ps) {
-    thetas.psi = ps.theta;
-    indices.psi = {
-      score: ps.score,
-      percentile: scoreToPercentile(ps.score),
-      detail: { medianMs: Math.round(medianMs), accuracy: Math.round((speed.correct / speed.index) * 100) },
-      provisional: true
-    };
-  } else indices.psi = null;
-
-  return { indices, thetas, errors };
-}
-
-function finishCatTest(estimate = eapEstimate(catResponsesWithItems())) {
-  stopCatTimer();
-  clearCatSubtestTimers();
-  const { indices, thetas, errors } = catIndexScores();
-  // The composite is built from the indices, not from the item estimate alone,
-  // so working memory and processing speed actually count toward it.
   const composite = scoreComposite(thetas);
-  const compositeSe = compositeStandardError(errors) ?? estimate.se;
-  const score = composite ? composite.score : thetaToScore(estimate.theta);
-  const compositeTheta = composite ? composite.theta : estimate.theta;
-  const interval = indexConfidenceInterval(compositeTheta, compositeSe);
+  const compositeSe = compositeStandardError(errors) ?? 0.3;
+  const score = composite ? composite.score : 100;
+  const compositeTheta = composite ? composite.theta : 0;
+  const responses = Object.values(attempt.subtests)
+    .flatMap((result) => (result.itemIds ?? []).map((itemId) => ({ itemId })));
+
   const sessionRecord = {
     id: `cat-${Date.now()}`,
     completedAt: new Date().toISOString(),
-    durationMs: Date.now() - catActive.startedAt,
+    durationMs: Date.now() - (attempt.startedAt ?? Date.now()),
     theta: Math.round(compositeTheta * 1000) / 1000,
     se: Math.round(compositeSe * 1000) / 1000,
     score,
     percentile: scoreToPercentile(score),
     descriptor: scoreDescriptor(score),
-    ci: interval,
+    ci: indexConfidenceInterval(compositeTheta, compositeSe),
     indices,
+    subtests: attempt.subtests,
     provisional: true,
-    domains: catDomainSubscores(),
-    responses: catActive.responses
+    responses
   };
+
   const sessions = loadCatSessions();
   sessions.unshift(sessionRecord);
   saveCatSessions(sessions.slice(0, 50));
-  // First completed test: drop the tab dot and stop the card pulsing right away.
+  clearMeasureAttempt();
   syncUntakenIqTestNudge();
   catActive = null;
   saveCatActive();
@@ -7560,12 +7707,6 @@ function countUpTo(node, target, durationMs) {
   requestAnimationFrame(tick);
 }
 
-function abandonCatTest() {
-  stopCatTimer();
-  catActive = null;
-  saveCatActive();
-  showCatSection("intro");
-}
 
 // Entitlement tiers. Two paid tiers:
 //   basic → all exercises + data (unlocks Profile, Screen Time, Advanced settings)

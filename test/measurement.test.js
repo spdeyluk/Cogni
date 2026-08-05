@@ -14,6 +14,8 @@ import {
   indexConfidenceInterval,
   scoreToPercentile,
   scoreDescriptor,
+  MEASUREMENT_SUBTESTS,
+  subtestMinutes,
   WM_REFERENCE,
   PS_REFERENCE
 } from "../src/core/assessments/measurement.js";
@@ -128,4 +130,43 @@ test("every scored result carries the provisional flag", () => {
   assert.equal(scoreWorkingMemoryIndex({ digit: 7 }).provisional, true);
   assert.equal(scoreProcessingSpeedIndex({ medianMs: 650, accuracy: 1 }).provisional, true);
   assert.equal(scoreComposite({ vci: 0 }).provisional, true);
+});
+
+test("every subtest belongs to a real index and the six indices are all covered", () => {
+  const covered = new Set();
+  for (const subtest of MEASUREMENT_SUBTESTS) {
+    assert.ok(MEASUREMENT_INDICES[subtest.index], `${subtest.id} has unknown index ${subtest.index}`);
+    covered.add(subtest.index);
+    assert.ok(subtest.name && subtest.summary && subtest.instructions, `${subtest.id} is missing copy`);
+    assert.ok(subtest.kinds || subtest.engine, `${subtest.id} has no source`);
+  }
+  assert.deepEqual([...covered].sort(), [...MEASUREMENT_INDEX_ORDER].sort());
+});
+
+test("each item-based subtest has a pool comfortably larger than its length", () => {
+  for (const subtest of MEASUREMENT_SUBTESTS) {
+    if (!subtest.kinds) continue;
+    const pool = catItemBank.filter((item) => subtest.kinds.includes(item.kind));
+    assert.ok(pool.length >= subtest.questions * 1.5,
+      `${subtest.id}: pool ${pool.length} for ${subtest.questions} questions`);
+  }
+});
+
+test("mental rotation distractors are mirrors, never rotations of the target", () => {
+  const items = catItemBank.filter((item) => item.kind === "mental-rotation");
+  assert.ok(items.length >= 15, `only ${items.length} rotation items`);
+  for (const item of items) {
+    const shapes = item.figure.optionCells.map((cells) =>
+      JSON.stringify(cells.map((g) => [Number(g.x.toFixed(3)), Number(g.y.toFixed(3))]).sort()));
+    assert.equal(new Set(shapes).size, shapes.length, `${item.id} has two identical options`);
+    assert.equal(item.figure.optionCells.length, item.options.length);
+    assert.ok(item.figure.target.length >= 4, `${item.id} target too small`);
+  }
+});
+
+test("subtest minute estimates are sane", () => {
+  for (const subtest of MEASUREMENT_SUBTESTS) {
+    const minutes = subtestMinutes(subtest);
+    assert.ok(minutes >= 2 && minutes <= 15, `${subtest.id} estimated at ${minutes} min`);
+  }
 });
