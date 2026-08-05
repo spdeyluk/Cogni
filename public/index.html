@@ -997,7 +997,7 @@
 
         <section class="assessment-run" id="cat-run" hidden aria-live="polite">
           <div class="assessment-run-header">
-            <span class="cat-run-locked" aria-label="This subtest must be finished in one go">One sitting — no pausing</span>
+            <button class="back-button" id="cat-quit" type="button">End subtest</button>
             <span id="cat-progress">Question 1</span>
           </div>
           <div class="assessment-progress-track" aria-hidden="true"><div id="cat-timer-bar"></div></div>
@@ -2087,6 +2087,17 @@
       </section>
       </div>
     </main>
+
+    <dialog class="quit-dialog" id="measure-quit-dialog">
+      <form method="dialog">
+        <h2>End this subtest?</h2>
+        <p>Your answers so far will be scored and this subtest will be marked complete. You won't be able to continue it or take it again in this attempt.</p>
+        <div class="dialog-actions">
+          <button id="measure-cancel-quit" value="cancel" type="button">Keep going</button>
+          <button id="measure-confirm-quit" value="confirm" type="button">End &amp; score</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog class="quit-dialog" id="quit-dialog">
       <form method="dialog">
