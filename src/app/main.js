@@ -6932,10 +6932,13 @@ function showAssessments() {
 }
 
 function showAssessmentList() {
-  // A subtest must be done in one go, so there is nothing to resume. Anything
-  // left in flight (a refresh, a closed tab) is discarded rather than continued
-  // — a section you can walk away from and come back to is not a measurement.
-  if (catActive) {
+  // A subtest can be stopped but never continued, so anything left in flight —
+  // a refresh, a closed tab, navigating away — is committed with whatever was
+  // answered. Discarding it instead would make a refresh strictly better than
+  // the quit button: lose nothing, and get the subtest back to retry.
+  if (catActive?.subtestId) {
+    finishSubtest({ abandoned: true });
+  } else if (catActive) {
     catActive = null;
     saveCatActive();
   }
@@ -7057,6 +7060,12 @@ function measureCompletedCount(attempt = loadMeasureAttempt()) {
   return MEASUREMENT_SUBTESTS.filter((subtest) => attempt.subtests[subtest.id]).length;
 }
 
+document.querySelector("#cat-quit")?.addEventListener("click", requestQuitSubtest);
+document.querySelector("#measure-confirm-quit")?.addEventListener("click", confirmQuitSubtest);
+document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => {
+  document.querySelector("#measure-quit-dialog")?.close();
+});
+
 function renderMeasurePicker(selectedId) {
   const attempt = loadMeasureAttempt();
   const host = document.querySelector("#measure-sections");
@@ -7081,7 +7090,7 @@ function renderMeasurePicker(selectedId) {
                 data-subtest="${escapeHtml(subtest.id)}" type="button">
           <span class="measure-subtest-name">${escapeHtml(subtest.name)}</span>
           ${result
-            ? `<span class="measure-subtest-done" aria-label="Completed">✓</span>`
+            ? `<span class="measure-subtest-done" aria-label="${result.partial || result.abandoned ? "Stopped early" : "Completed"}">${result.partial || result.abandoned ? "◑" : "✓"}</span>`
             : `<span class="measure-subtest-time">~${subtestMinutes(subtest)} min</span>`}
         </button>`;
     }).join("");
@@ -7127,12 +7136,14 @@ function renderSubtestDetail(subtestId) {
       <p>${escapeHtml(length)} ${escapeHtml(subtest.summary)}</p>
       <p>${escapeHtml(subtest.instructions)}</p>
       <p>${escapeHtml(timing)}</p>
-      <p class="measure-detail-warn"><strong>Once started, this subtest must be finished.</strong> You cannot pause it, leave it, or take it again in this attempt.</p>
+      <p class="measure-detail-warn"><strong>One sitting.</strong> You can stop early and whatever you've answered will be scored — but you can't pause it, come back to it, or take it again in this attempt.</p>
       <p class="measure-detail-aids">No external aids — no calculator, notes, search or AI.</p>
       ${result
         ? `<div class="measure-detail-done">
              <span class="measure-detail-done-tick" aria-hidden="true">✓</span>
-             <span>Completed${unlocked && Number.isFinite(result.score) ? ` — ${meta.short} ${result.score}` : ""}</span>
+             <span>${result.partial || result.abandoned
+               ? `Stopped early — scored on ${result.answered ?? 0} answer${(result.answered ?? 0) === 1 ? "" : "s"}`
+               : "Completed"}${unlocked && Number.isFinite(result.score) ? ` — ${meta.short} ${result.score}` : ""}</span>
            </div>`
         : `<button class="measure-start" data-start-subtest="${escapeHtml(subtest.id)}" type="button">Start <span aria-hidden="true">→</span></button>`}
     </div>`;
@@ -7171,20 +7182,48 @@ function startSubtest(subtestId) {
   renderCatQuestion();
 }
 
+// Stopping early is allowed and final. The confirm exists because it cannot be
+// undone, not to talk anyone out of it.
+function requestQuitSubtest() {
+  if (!catActive?.subtestId) return;
+  const dialog = document.querySelector("#measure-quit-dialog");
+  if (dialog && typeof dialog.showModal === "function" && !dialog.open) { dialog.showModal(); return; }
+  finishSubtest({ abandoned: true });
+}
+
+function confirmQuitSubtest() {
+  document.querySelector("#measure-quit-dialog")?.close();
+  finishSubtest({ abandoned: true });
+}
+
 function activeSubtest() {
   return subtestById(catActive?.subtestId);
 }
 
 // A finished subtest writes its own index contribution, then hands back to the
 // picker — or, when it was the last one, to the composite.
-function finishSubtest() {
+// Ends the running subtest and banks whatever was answered. Called both when a
+// subtest runs to its natural end and when the taker stops early — stopping is
+// allowed, continuing afterwards is not, so either way this is the last word.
+//
+// Scoring an empty run would be worse than scoring nothing: eapEstimate with no
+// responses returns the N(0,1) prior, i.e. exactly 100, so quitting instantly
+// would look like a perfectly average performance. A subtest with no data
+// therefore records no theta and drops out of its index.
+function finishSubtest({ abandoned = false } = {}) {
   const subtest = activeSubtest();
   if (!subtest || !catActive) return;
   stopCatTimer();
   clearCatSubtestTimers();
 
   const attempt = loadMeasureAttempt();
-  const result = { subtestId: subtest.id, index: subtest.index, completedAt: new Date().toISOString(), provisional: true };
+  const result = {
+    subtestId: subtest.id,
+    index: subtest.index,
+    completedAt: new Date().toISOString(),
+    abandoned,
+    provisional: true
+  };
 
   if (subtest.engine === "span") {
     const span = catActive.span ?? {};
@@ -7193,8 +7232,9 @@ function finishSubtest() {
       spatial: Number.isFinite(span.backwardBest) ? span.backwardBest + 1 : undefined
     });
     Object.assign(result, {
-      theta: wm?.theta ?? 0,
-      score: wm?.score ?? null,
+      theta: wm ? wm.theta : undefined,
+      score: wm ? wm.score : null,
+      answered: Number.isFinite(span.forwardBest) ? 1 : 0,
       detail: { forward: span.forwardBest ?? null, backward: span.backwardBest ?? null }
     });
   } else if (subtest.engine === "speed") {
@@ -7203,21 +7243,28 @@ function finishSubtest() {
     const accuracy = speed.index ? speed.correct / speed.index : undefined;
     const ps = scoreProcessingSpeedIndex({ medianMs, accuracy });
     Object.assign(result, {
-      theta: ps?.theta ?? 0,
-      score: ps?.score ?? null,
+      theta: ps ? ps.theta : undefined,
+      score: ps ? ps.score : null,
+      answered: speed.index ?? 0,
       detail: { medianMs: medianMs ? Math.round(medianMs) : null, accuracy: accuracy ? Math.round(accuracy * 100) : null }
     });
-  } else {
+  } else if (catActive.responses.length) {
     const estimate = eapEstimate(catResponsesWithItems());
     Object.assign(result, {
       theta: estimate.theta,
       se: estimate.se,
       score: thetaToIndexScore(estimate.theta),
       ci: indexConfidenceInterval(estimate.theta, estimate.se),
+      answered: catActive.responses.length,
       count: catActive.responses.length,
       itemIds: catActive.responses.map((response) => response.itemId)
     });
+  } else {
+    Object.assign(result, { theta: undefined, score: null, answered: 0, count: 0, itemIds: [] });
   }
+  // Fewer answers than the subtest asks for is not an error, but the report
+  // should be able to say so rather than presenting it as a full sitting.
+  result.partial = Boolean(subtest.questions) && (result.answered ?? 0) < subtest.questions;
 
   attempt.subtests[subtest.id] = result;
   saveMeasureAttempt(attempt);
@@ -7586,6 +7633,9 @@ function finishMeasurement(attempt) {
       count: parts.reduce((sum, part) => sum + (part.count ?? 0), 0) || undefined,
       detail: parts.find((part) => part.detail)?.detail,
       subtests: parts.map((part) => part.subtestId),
+      // A score built from a stopped-early sitting is still a score, but the
+      // report should not present it as a full one.
+      partial: parts.some((part) => part.partial || part.abandoned),
       provisional: true
     };
   }
@@ -7810,7 +7860,8 @@ function buildCatReport(sessionRecord) {
       : entry.detail?.medianMs !== undefined
         ? ` Median ${entry.detail.medianMs} ms at ${entry.detail.accuracy}% accuracy.`
         : entry.count ? ` From ${entry.count} adaptive items.` : "";
-    return `<li><strong>${escapeHtml(meta.short)} ${entry.score}</strong> — ${escapeHtml(meta.blurb)}${escapeHtml(detail)}</li>`;
+    const partial = entry.partial ? " Scored on a subtest you stopped early, so this estimate rests on fewer answers than a full sitting." : "";
+    return `<li><strong>${escapeHtml(meta.short)} ${entry.score}</strong> — ${escapeHtml(meta.blurb)}${escapeHtml(detail)}${escapeHtml(partial)}</li>`;
   }).join("");
 
   return `
