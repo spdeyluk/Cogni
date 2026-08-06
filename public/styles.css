@@ -19651,3 +19651,178 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
 @media (max-width: 640px) {
   .landing-cta-wiggle { min-height: 60px; padding: 0 28px !important; width: 100%; justify-content: center; }
 }
+
+/* ===================================================================
+   IQ Test screen — tests and pricing cards.
+   =================================================================== */
+.measure-offers { text-align: center; margin-bottom: 40px; }
+.measure-offers-eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.measure-offers-title {
+  margin: 0 0 14px;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  letter-spacing: -0.025em;
+}
+.measure-offers-lede {
+  max-width: 640px;
+  margin: 0 auto 34px;
+  color: var(--text-2);
+  font-size: 0.98rem;
+  line-height: 1.62;
+}
+
+.measure-offer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 22px;
+  align-items: start;
+  text-align: left;
+}
+
+.measure-offer {
+  position: relative;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.measure-offer-inner { padding: 28px 26px; }
+
+/* The featured card carries the spectrum edge from the reference — the six
+   index colours, so the glow means something rather than being decoration. */
+.measure-offer.is-featured {
+  border: 0;
+  background: linear-gradient(135deg, #F2597A, #FB8A6B, #F5B942, #18B87B, #3F82E8, #B564E8);
+  padding: 3px;
+  box-shadow: 0 18px 50px rgba(74, 91, 255, 0.18);
+}
+.measure-offer.is-featured .measure-offer-inner {
+  border-radius: 15px;
+  background: var(--surface);
+}
+.measure-offer-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #FFF4D6;
+  color: #8A5A00;
+  font-size: 0.82rem;
+  font-weight: 650;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+[data-theme="dark"] .measure-offer-badge { background: #4A3A12; color: #FFD98A; }
+
+.measure-offer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.measure-offer-head h3 { margin: 0 0 4px; font-size: 1.35rem; letter-spacing: -0.02em; }
+.measure-offer-sub { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.measure-offer-dots { display: flex; flex: none; padding-top: 4px; }
+.measure-offer-dots span {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  margin-left: -6px;
+  border: 2px solid var(--surface);
+}
+
+.measure-offer-price { margin: 0 0 18px; display: flex; align-items: baseline; gap: 8px; }
+.measure-offer-price strong { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em; }
+.measure-offer-price span { color: var(--muted); font-size: 1rem; }
+
+.measure-offer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.measure-offer .measure-offer-actions:has(> :only-child) { grid-template-columns: 1fr; }
+.measure-offer-cta,
+.measure-offer-alt {
+  min-height: 46px;
+  border-radius: 10px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.measure-offer-cta { background: var(--accent) !important; color: #fff !important; border: 0 !important; }
+.measure-offer-cta:hover { background: var(--accent-2) !important; }
+.measure-offer-alt {
+  background: none !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line-strong) !important;
+}
+.measure-offer-alt:hover { background: var(--fill-subtle) !important; }
+
+.measure-offer-copy { margin: 0 0 22px; color: var(--text-2); font-size: 0.92rem; line-height: 1.6; }
+
+.measure-offer-section {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.measure-offer-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.measure-offer-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+.measure-offer-features li {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  font-size: 0.94rem;
+  color: var(--text-2);
+}
+.measure-offer-tick {
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid var(--success);
+  color: var(--success);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.measure-offer-hint {
+  display: grid;
+  place-items: center;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: italic;
+  cursor: help;
+}
+
+.measure-offer-groups { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+.measure-offer-groups li {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  align-items: start;
+  gap: 12px;
+  font-size: 0.93rem;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.measure-offer-dot { width: 11px; height: 11px; border-radius: 50%; margin-top: 5px; }
+
+@media (max-width: 900px) {
+  .measure-offer-row { grid-template-columns: minmax(0, 1fr); }
+}

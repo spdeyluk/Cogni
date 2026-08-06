@@ -7254,8 +7254,121 @@ function renderMeasurementDashboard() {
     </div>` : ""}`;
 }
 
+// Tests-and-pricing cards. Two offers, both of which describe something the
+// product actually does: the full battery, and taking subtests on their own —
+// which the section picker below already supports.
+//
+// No struck-through "was" price. An anchor price that was never charged is a
+// fabricated discount, and this page is selling a claim about honesty.
+function renderMeasurementOffers() {
+  const host = document.querySelector("#measure-offers");
+  if (!host) return;
+  const total = MEASUREMENT_SUBTESTS.length;
+  const minutes = MEASUREMENT_SUBTESTS.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+  const dots = MEASUREMENT_INDEX_ORDER
+    .map((key) => `<span style="background:${MEASUREMENT_INDICES[key].accent}"></span>`).join("");
+
+  const groups = MEASUREMENT_INDEX_ORDER.map((key) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const names = subtestsForIndex(key).map((subtest) => subtest.name).join(", ");
+    return `<li>
+      <span class="measure-offer-dot" style="background:${meta.accent}"></span>
+      <span>${escapeHtml(names)}</span>
+    </li>`;
+  }).join("");
+
+  const feature = (label, note) =>
+    `<li><span class="measure-offer-tick" aria-hidden="true">✓</span><span>${escapeHtml(label)}</span>${
+      note ? `<span class="measure-offer-hint" title="${escapeHtml(note)}">i</span>` : ""}</li>`;
+
+  host.innerHTML = `
+    <p class="measure-offers-eyebrow">Tests and pricing</p>
+    <h2 class="measure-offers-title">Explore Cogni Measurement</h2>
+    <p class="measure-offers-lede">
+      Every score is reported with the band it actually sits in. Scores are provisional —
+      the item parameters are author estimates, not values fitted to a standardisation sample.
+    </p>
+
+    <div class="measure-offer-row">
+      <article class="measure-offer is-featured">
+        <span class="measure-offer-badge">★ Most complete</span>
+        <div class="measure-offer-inner">
+          <div class="measure-offer-head">
+            <div>
+              <h3>Full Measurement</h3>
+              <p class="measure-offer-sub">${total} subtests · all six CHC abilities</p>
+            </div>
+            <span class="measure-offer-dots" aria-hidden="true">${dots}</span>
+          </div>
+
+          <p class="measure-offer-price"><strong>€14.99</strong><span>/month</span></p>
+
+          <div class="measure-offer-actions">
+            <button class="measure-offer-cta" data-offer-start type="button">Start free</button>
+            <button class="measure-offer-alt" data-offer-buy type="button">Unlock the report</button>
+          </div>
+
+          <p class="measure-offer-copy">
+            The whole battery, in any order and at your own pace. Each subtest is one sitting —
+            stop early and keep what you answered, but you can't resume or retake it in an attempt.
+          </p>
+
+          <p class="measure-offer-section">Includes</p>
+          <ul class="measure-offer-features">
+            ${feature(`~${minutes} minutes total`)}
+            ${feature("Composite score", "A single number built from the six index scores you completed.")}
+            ${feature("Six-index breakdown", "Verbal, Fluid, Visual Spatial, Quantitative, Working Memory, Processing Speed.")}
+            ${feature("Margin of error on every score", "A composite of 107 ±7 means a retest would usually land between 100 and 114.")}
+            ${feature("Retest history and change over time")}
+          </ul>
+
+          <div class="measure-offer-section-row">
+            <p class="measure-offer-section">${total}/${total} subtests</p>
+          </div>
+          <ul class="measure-offer-groups">${groups}</ul>
+        </div>
+      </article>
+
+      <article class="measure-offer">
+        <div class="measure-offer-inner">
+          <div class="measure-offer-head">
+            <div>
+              <h3>Single subtests</h3>
+              <p class="measure-offer-sub">Any one on its own</p>
+            </div>
+          </div>
+          <p class="measure-offer-price"><strong>Free</strong><span>to take</span></p>
+          <div class="measure-offer-actions">
+            <button class="measure-offer-alt" data-offer-single type="button">Choose a subtest</button>
+          </div>
+          <p class="measure-offer-copy">
+            Take one subtest and get that index on its own. Useful for a quick read on a single
+            ability, but it can't produce a composite — that needs the full battery.
+          </p>
+          <p class="measure-offer-section">Includes</p>
+          <ul class="measure-offer-features">
+            ${feature("One index score")}
+            ${feature("Its margin of error")}
+            ${feature("No composite", "A composite averages the six indices, so it needs them all.")}
+          </ul>
+        </div>
+      </article>
+    </div>`;
+
+  host.querySelector("[data-offer-start]")?.addEventListener("click", () => {
+    const next = MEASUREMENT_SUBTESTS.find((subtest) => !loadMeasureAttempt().subtests[subtest.id]);
+    if (next) renderSubtestDetail(next.id);
+    document.querySelector("#measure-sections")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  host.querySelector("[data-offer-buy]")?.addEventListener("click", openPricingModal);
+  host.querySelector("[data-offer-single]")?.addEventListener("click", () => {
+    document.querySelector("#measure-sections")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function renderMeasurePicker(selectedId) {
   renderMeasurementDashboard();
+  renderMeasurementOffers();
   const attempt = loadMeasureAttempt();
   const host = document.querySelector("#measure-sections");
   const progress = document.querySelector("#measure-progress");
