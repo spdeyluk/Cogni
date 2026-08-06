@@ -67,24 +67,26 @@ test("working memory averages the subtests it actually has", () => {
   assert.equal(scoreWorkingMemoryIndex({}), null);
 });
 
-test("processing speed rewards being faster and is gated by accuracy", () => {
-  const average = scoreProcessingSpeedIndex({ medianMs: PS_REFERENCE.medianMs, accuracy: 1 });
+test("processing speed measures corrected throughput, not reaction time", () => {
+  const average = scoreProcessingSpeedIndex({ correct: 50, incorrect: 5 });
   assert.equal(average.score, 100);
-  const fast = scoreProcessingSpeedIndex({ medianMs: PS_REFERENCE.medianMs - 120, accuracy: 1 });
-  assert.equal(fast.score, 115);
-  const slow = scoreProcessingSpeedIndex({ medianMs: PS_REFERENCE.medianMs + 120, accuracy: 1 });
-  assert.equal(slow.score, 85);
-  // Speed bought by guessing must not read as ability: at chance accuracy the
-  // response times say nothing about ability, however fast they are.
-  const guessing = scoreProcessingSpeedIndex({ medianMs: 300, accuracy: 0.5 });
-  assert.ok(guessing.score < fast.score, "guessing should not outscore accurate speed");
-  assert.ok(guessing.score < 100, "a pure guesser should land below the mean");
-  assert.equal(guessing.signal, 0);
-  // Even an impossibly fast guesser cannot climb: speed is gated, not additive.
-  assert.ok(scoreProcessingSpeedIndex({ medianMs: 120, accuracy: 0.5 }).score <= guessing.score);
-  // Partial accuracy scales the speed estimate rather than zeroing it.
-  const partial = scoreProcessingSpeedIndex({ medianMs: 530, accuracy: 0.75 });
-  assert.ok(partial.score < fast.score && partial.score > guessing.score);
+  const fast = scoreProcessingSpeedIndex({ correct: 62, incorrect: 5 });
+  assert.ok(fast.score > average.score);
+  const slow = scoreProcessingSpeedIndex({ correct: 25, incorrect: 4 });
+  assert.ok(slow.score < average.score);
+
+  // Two-choice guessing is cancelled by the correction, so a masher who racks
+  // up a big raw count still lands far below the mean.
+  const masher = scoreProcessingSpeedIndex({ correct: 60, incorrect: 60 });
+  assert.equal(masher.corrected, 0);
+  assert.ok(masher.score < 60, `masher scored ${masher.score}`);
+  assert.ok(masher.score < slow.score);
+
+  // A short window is pro-rated so a stopped-early sitting is comparable.
+  const half = scoreProcessingSpeedIndex({ correct: 25, incorrect: 2, windowMs: 60000 });
+  const full = scoreProcessingSpeedIndex({ correct: 50, incorrect: 4, windowMs: 120000 });
+  assert.equal(half.score, full.score);
+
   assert.equal(scoreProcessingSpeedIndex({}), null);
 });
 
@@ -128,7 +130,7 @@ test("descriptors are monotonic across the scale", () => {
 
 test("every scored result carries the provisional flag", () => {
   assert.equal(scoreWorkingMemoryIndex({ digit: 7 }).provisional, true);
-  assert.equal(scoreProcessingSpeedIndex({ medianMs: 650, accuracy: 1 }).provisional, true);
+  assert.equal(scoreProcessingSpeedIndex({ correct: 40, incorrect: 2 }).provisional, true);
   assert.equal(scoreComposite({ vci: 0 }).provisional, true);
 });
 
@@ -168,5 +170,40 @@ test("subtest minute estimates are sane", () => {
   for (const subtest of MEASUREMENT_SUBTESTS) {
     const minutes = subtestMinutes(subtest);
     assert.ok(minutes >= 2 && minutes <= 15, `${subtest.id} estimated at ${minutes} min`);
+  }
+});
+
+test("figure weights items each have exactly one balancing option", () => {
+  // Solved the way a taker would: read the exchange rates off the two premise
+  // scales, then weigh every option. The generator gets no say here.
+  const items = catItemBank.filter((item) => item.kind === "figure-weights");
+  assert.ok(items.length >= 24, `only ${items.length} figure-weight items`);
+  const count = (pan, shape) => (pan ?? []).filter((glyph) => glyph.s === shape).length;
+
+  for (const item of items) {
+    const [first, second, question] = item.weights.scales;
+    const midValue = count(first.right, "circle") / Math.max(1, count(first.left, "square"));
+    const bigValue = (count(second.right, "square") / Math.max(1, count(second.left, "triangle"))) * midValue;
+    assert.ok(midValue > 0 && bigValue > 0, `${item.id} has an unreadable premise`);
+    const weigh = (pan) =>
+      count(pan, "circle") + count(pan, "square") * midValue + count(pan, "triangle") * bigValue;
+
+    const target = weigh(question.left);
+    assert.equal(question.right, null, `${item.id} question scale should be open`);
+    const balancing = item.weights.optionCells
+      .map((cells, index) => ({ index, weight: weigh(cells) }))
+      .filter((option) => option.weight === target);
+    assert.equal(balancing.length, 1, `${item.id} has ${balancing.length} balancing options`);
+    assert.equal(balancing[0].index, item.answerIndex, `${item.id} answer key disagrees with the scales`);
+  }
+});
+
+test("figure weight pans stay readable", () => {
+  for (const item of catItemBank.filter((i) => i.kind === "figure-weights")) {
+    const pans = [
+      ...item.weights.scales.flatMap((scale) => [scale.left, scale.right]),
+      ...item.weights.optionCells
+    ].filter(Boolean);
+    for (const pan of pans) assert.ok(pan.length <= 5, `${item.id} has a pan of ${pan.length} shapes`);
   }
 });
