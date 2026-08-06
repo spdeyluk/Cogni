@@ -16,14 +16,16 @@ export const CAT_DOMAIN_TIME_LIMITS_MS = {
   verbal: 45000,
   quant: 60000,
   fluid: 75000,
-  spatial: 50000
+  spatial: 50000,
+  weights: 45000
 };
 
 export const CAT_DOMAIN_LABELS = {
   fluid: "Fluid reasoning",
   verbal: "Verbal comprehension",
   quant: "Quantitative reasoning",
-  spatial: "Visual spatial"
+  spatial: "Visual spatial",
+  weights: "Figure weights"
 };
 
 function g(s, { x = 0.5, y = 0.5, sz = 0.55, r = 0, f = 1 } = {}) {
@@ -376,6 +378,125 @@ for (const shape of ["triangle", "bar", "ell", "tee"]) {
 }
 
 // ---------------------------------------------------------------------------
+// Fluid reasoning: figure weights.
+//
+// Balance-scale equivalence problems. Two premise scales establish exchange
+// rates between shapes; the third asks what balances it. This is one of the
+// most g-loaded formats in the Wechsler tradition because the surface is
+// trivial (no vocabulary, no arithmetic notation) while the work — holding two
+// substitutions and composing them — is pure fluid reasoning.
+//
+// Items are generated from hidden integer weights and then VERIFIED: an item is
+// only kept if exactly one option balances. A figure-weights item with two
+// balancing options is not a hard item, it is a broken one.
+// ---------------------------------------------------------------------------
+
+const weightShapes = { unit: "circle", mid: "square", big: "triangle" };
+
+// Lay a pan's glyphs out in a row with a real gap between them. The shapes must
+// stay countable: at five per pan the first version spaced them closer than
+// their own width, so squares fused into a single bar and the item became
+// unanswerable rather than merely ugly.
+function pan(counts) {
+  const glyphs = [];
+  const total = (counts.unit ?? 0) + (counts.mid ?? 0) + (counts.big ?? 0);
+  const spacing = 0.9 / Math.max(total, 1);
+  const size = Math.min(0.3, spacing * 0.62);
+  let placed = 0;
+  const place = (shape, n) => {
+    for (let i = 0; i < n; i += 1) {
+      const x = total === 1 ? 0.5 : 0.5 + (placed - (total - 1) / 2) * spacing;
+      glyphs.push(g(shape, { x, sz: size }));
+      placed += 1;
+    }
+  };
+  place(weightShapes.big, counts.big ?? 0);
+  place(weightShapes.mid, counts.mid ?? 0);
+  place(weightShapes.unit, counts.unit ?? 0);
+  return glyphs;
+}
+
+function panWeight(counts, midValue, bigValue) {
+  return (counts.unit ?? 0) + (counts.mid ?? 0) * midValue + (counts.big ?? 0) * bigValue;
+}
+
+const figureWeightItems = [];
+
+function pushFigureWeights({ midValue, bigMultiple, question, dRank }) {
+  const bigValue = midValue * bigMultiple;
+  const target = panWeight(question, midValue, bigValue);
+  const mids = Math.min(4, Math.floor(target / midValue));
+  const units = target - mids * midValue;
+  if (units > 4 || mids + units < 1 || mids + units > 5) return;
+
+  const answer = { mid: mids, unit: units };
+  const candidates = [
+    answer,
+    { mid: mids, unit: units + 1 },
+    { mid: mids, unit: Math.max(0, units - 1) },
+    { mid: mids + 1, unit: units },
+    { mid: Math.max(0, mids - 1), unit: units + 1 },
+    { mid: mids + 1, unit: Math.max(0, units - 1) }
+  ];
+  const seen = new Set();
+  const kept = [];
+  for (const candidate of candidates) {
+    const key = `${candidate.mid}:${candidate.unit}`;
+    if (seen.has(key)) continue;
+    const size = candidate.mid + candidate.unit;
+    if (size < 1 || size > 5) continue;
+    // Exactly one option may balance: any later candidate that also hits the
+    // target is a second correct answer, which makes the item unscorable.
+    if (kept.length && panWeight(candidate, midValue, bigValue) === target) continue;
+    seen.add(key);
+    kept.push(candidate);
+  }
+  if (kept.length < 4) return;
+  const options = kept.slice(0, 4);
+  if (panWeight(options[0], midValue, bigValue) !== target) return;
+
+  figureWeightItems.push({
+    kind: "figure-weights",
+    dRank,
+    prompt: "Which option balances the last scale?",
+    weights: {
+      scales: [
+        { left: pan({ mid: 1 }), right: pan({ unit: midValue }) },
+        { left: pan({ big: 1 }), right: pan({ mid: bigMultiple }) },
+        { left: pan(question), right: null }
+      ],
+      optionCells: options.map((counts) => pan(counts))
+    },
+    options: options.map((_, index) => `Option ${index + 1}`),
+    answerIndex: 0
+  });
+}
+
+for (const midValue of [2, 3, 4]) {
+  for (const bigMultiple of [2, 3]) {
+    // Family A: the unknown balances one big shape plus loose units.
+    for (const extraUnits of [0, 1, 2, 3]) {
+      pushFigureWeights({
+        midValue, bigMultiple,
+        question: { big: 1, unit: extraUnits },
+        dRank: 1 + (midValue - 2) + (bigMultiple - 2) * 2 + Math.floor(extraUnits / 2)
+      });
+    }
+    // Family B: the unknown balances a mix, which blocks the shortcut of
+    // reading the answer straight off the second premise.
+    for (const midCount of [1, 2]) {
+      for (const extraUnits of [1, 2]) {
+        pushFigureWeights({
+          midValue, bigMultiple,
+          question: { big: 1, mid: midCount, unit: extraUnits },
+          dRank: 4 + (midValue - 2) + midCount + Math.floor(extraUnits / 2)
+        });
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Visual-Spatial: mental rotation.
 //
 // Matrix reasoning is rule induction that happens to look visual, so it belongs
@@ -679,6 +800,10 @@ function rotateAnswer(item, seed) {
     const optionCells = item.figure.optionCells.map((_, index) => item.figure.optionCells[(index + shift) % item.figure.optionCells.length]);
     next.figure = { ...item.figure, optionCells };
   }
+  if (item.weights) {
+    const optionCells = item.weights.optionCells.map((_, index) => item.weights.optionCells[(index + shift) % item.weights.optionCells.length]);
+    next.weights = { ...item.weights, optionCells };
+  }
   return next;
 }
 
@@ -718,10 +843,12 @@ const quantRaw = [
 ];
 
 const spatialRaw = [...mentalRotationItems];
+const weightsRaw = [...figureWeightItems];
 
 export const catItemBank = [
   ...buildDomain("fluid", fluidRaw),
   ...buildDomain("verbal", verbalRaw),
   ...buildDomain("quant", quantRaw),
-  ...buildDomain("spatial", spatialRaw)
+  ...buildDomain("spatial", spatialRaw),
+  ...buildDomain("weights", weightsRaw)
 ];

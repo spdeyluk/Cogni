@@ -82,6 +82,7 @@ export const ITEM_KIND_INDEX = {
   "odd-one-out": "vci",
   "sentence-logic": "vci",
   matrix: "fri",
+  "figure-weights": "fri",
   series: "fri",
   "letter-analogy": "fri",
   "mental-rotation": "vsi",
@@ -128,6 +129,16 @@ export const MEASUREMENT_SUBTESTS = [
     instructions: "Each 3×3 grid follows one or more rules. Choose the option that completes it."
   },
   {
+    id: "figure-weights",
+    index: "fri",
+    name: "Figure Weights",
+    kinds: ["figure-weights"],
+    questions: 12,
+    secondsPerQuestion: 45,
+    summary: "Assesses quantitative fluid reasoning without using numbers or words.",
+    instructions: "The first two scales show what balances what. Choose the option that balances the last scale. Nothing is weighed by size — only by the exchanges the scales establish."
+  },
+  {
     id: "series",
     index: "fri",
     name: "Series",
@@ -164,16 +175,16 @@ export const MEASUREMENT_SUBTESTS = [
     engine: "span",
     questions: null,
     summary: "Assesses how much you can hold in mind and manipulate at once.",
-    instructions: "Digits appear briefly, then you type them back — forward first, then in reverse. The sequence grows until you miss twice."
+    instructions: "Digits appear briefly, then you type them back — first forward, then in reverse, then sorted from smallest to largest. Each round grows until you miss twice."
   },
   {
     id: "symbol-match",
     index: "psi",
     name: "Symbol Match",
     engine: "speed",
-    questions: 32,
+    questions: null,
     summary: "Assesses decision speed on a task with no reasoning load.",
-    instructions: "Two symbols appear. Say whether they match, as fast as you can without making mistakes."
+    instructions: "Two symbols appear. Say whether they match. You have two minutes to get through as many as you can — wrong answers cancel out right ones, so guessing gains nothing."
   }
 ];
 
@@ -236,27 +247,35 @@ export function scoreWorkingMemoryIndex(spans = {}) {
 }
 
 // --- Processing speed -----------------------------------------------------
-// Speeded two-choice decisions: a median around 650 ms with a spread near 120 ms
-// is typical for young adults on a simple matching task. Faster is better, so
-// the sign is inverted.
+// Throughput over a fixed window, not per-trial reaction time. This is how the
+// Wechsler-style speed subtests work, and it is the better measure for three
+// reasons: it samples many decisions instead of a noisy central tendency, it
+// cannot be gamed by pausing between trials, and it does not depend on
+// millisecond timing accuracy — which in a browser is at the mercy of tab
+// throttling and frame scheduling.
 //
-// Accuracy is not a penalty term but a *gain* on the speed estimate, because at
-// chance accuracy response time carries no information about ability at all —
-// it only measures how fast someone can tap. Subtracting a fixed penalty was
-// not enough: mashing at 300 ms with 50% correct still scored above average.
-// Scaling by the proportion of accuracy above chance makes speed count only to
-// the degree the answers were real, and floors a pure guesser well below the mean.
-export const PS_REFERENCE = { medianMs: 650, sdMs: 120, chanceAccuracy: 0.5, guessingTheta: -2 };
+// Two-choice responding means a masher gets half of them right by luck, so the
+// raw count is corrected for guessing: correct minus incorrect. Random
+// responding lands at zero by construction rather than by a separate penalty.
+export const PS_REFERENCE = { windowMs: 120000, correctedMean: 45, correctedSd: 12 };
 
-export function scoreProcessingSpeedIndex({ medianMs, accuracy } = {}) {
-  if (!Number.isFinite(medianMs) || medianMs <= 0) return null;
-  const speedTheta = clamp((PS_REFERENCE.medianMs - medianMs) / PS_REFERENCE.sdMs, -4, 4);
-  const chance = PS_REFERENCE.chanceAccuracy;
-  const signal = Number.isFinite(accuracy)
-    ? clamp((accuracy - chance) / (1 - chance), 0, 1)
-    : 1;
-  const theta = clamp(speedTheta * signal + PS_REFERENCE.guessingTheta * (1 - signal), -4, 4);
-  return { theta, score: thetaToIndexScore(theta), signal, provisional: true };
+export function scoreProcessingSpeedIndex({ correct = 0, incorrect = 0, windowMs } = {}) {
+  const attempted = correct + incorrect;
+  if (!attempted) return null;
+  const corrected = correct - incorrect;
+  // Pro-rate a short window (a stopped-early subtest) up to the full one, so a
+  // partial sitting is comparable rather than simply looking slow.
+  const elapsed = Number.isFinite(windowMs) && windowMs > 0 ? windowMs : PS_REFERENCE.windowMs;
+  const rate = corrected * (PS_REFERENCE.windowMs / elapsed);
+  const theta = clamp((rate - PS_REFERENCE.correctedMean) / PS_REFERENCE.correctedSd, -4, 4);
+  return {
+    theta,
+    score: thetaToIndexScore(theta),
+    corrected,
+    attempted,
+    accuracy: attempted ? correct / attempted : 0,
+    provisional: true
+  };
 }
 
 // --- Composite ------------------------------------------------------------

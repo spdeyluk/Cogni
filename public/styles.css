@@ -19192,3 +19192,24 @@ html.mode-pro .measure-detail-done-tick { color: var(--index-accent); }
 @media (max-width: 900px) {
   html.mode-pro .measure-picker-body { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
+
+/* Figure weights: premise scales stacked above the unknown one. */
+.cat-weights { display: grid; gap: 10px; justify-items: center; }
+.cat-scale {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px;
+  width: min(420px, 92vw);
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.cat-scale.is-question {
+  background: none;
+  border: 1px dashed color-mix(in srgb, var(--text) 22%, transparent);
+}
+.cat-scale-pan { display: grid; place-items: center; min-height: 54px; }
+.cat-scale-pan svg { width: 100%; height: 54px; }
+.cat-scale-fulcrum svg { width: 34px; height: 30px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.cat-scale-unknown { font-size: 1.6rem; font-weight: 700; color: var(--muted); }

@@ -7230,26 +7230,40 @@ function finishSubtest({ abandoned = false } = {}) {
 
   if (subtest.engine === "span") {
     const span = catActive.span ?? {};
+    const bests = span.bests ?? {};
+    // Backward and sequencing are harder than forward at the same length, so
+    // they are compared against a lower reference by adding one before scoring.
     const wm = scoreWorkingMemoryIndex({
-      digit: span.forwardBest,
-      spatial: Number.isFinite(span.backwardBest) ? span.backwardBest + 1 : undefined
+      digit: bests.forward,
+      spatial: [bests.backward, bests.sequencing]
+        .filter(Number.isFinite)
+        .reduce((sum, value, _i, arr) => sum + (value + 1) / arr.length, 0) || undefined
     });
     Object.assign(result, {
       theta: wm ? wm.theta : undefined,
       score: wm ? wm.score : null,
-      answered: Number.isFinite(span.forwardBest) ? 1 : 0,
-      detail: { forward: span.forwardBest ?? null, backward: span.backwardBest ?? null }
+      answered: Object.values(bests).filter(Number.isFinite).length,
+      detail: {
+        forward: bests.forward ?? null,
+        backward: bests.backward ?? null,
+        sequencing: bests.sequencing ?? null
+      }
     });
   } else if (subtest.engine === "speed") {
     const speed = catActive.speed ?? {};
-    const medianMs = median(speed.times ?? []);
-    const accuracy = speed.index ? speed.correct / speed.index : undefined;
-    const ps = scoreProcessingSpeedIndex({ medianMs, accuracy });
+    const windowMs = speed.startedAt ? Date.now() - speed.startedAt : undefined;
+    const ps = scoreProcessingSpeedIndex({
+      correct: speed.correct ?? 0,
+      incorrect: speed.incorrect ?? 0,
+      windowMs
+    });
     Object.assign(result, {
       theta: ps ? ps.theta : undefined,
       score: ps ? ps.score : null,
       answered: speed.index ?? 0,
-      detail: { medianMs: medianMs ? Math.round(medianMs) : null, accuracy: accuracy ? Math.round(accuracy * 100) : null }
+      detail: ps
+        ? { correct: speed.correct, incorrect: speed.incorrect, net: ps.corrected, accuracy: Math.round(ps.accuracy * 100) }
+        : null
     });
   } else if (catActive.responses.length) {
     const estimate = eapEstimate(catResponsesWithItems());
@@ -7345,9 +7359,16 @@ function renderCatQuestion() {
     ? catMatrixSvg(item.matrix)
     : item.figure
       ? `<div class="cat-figure-target">${catCellSvg(item.figure.target)}</div>`
-      : "";
+      : item.weights
+        ? catWeightsSvg(item.weights)
+        : "";
   const order = catOptionOrder(item);
-  if (item.figure) {
+  if (item.weights) {
+    elements.catOptions.className = "cat-options cat-options-matrix";
+    elements.catOptions.innerHTML = order.map((source, index) => `
+      <button type="button" data-cat-answer="${index}" aria-label="Option ${index + 1}">${catCellSvg(item.weights.optionCells[source])}</button>
+    `).join("");
+  } else if (item.figure) {
     // Mental rotation: the target sits on the stage, the candidates below it.
     elements.catOptions.className = "cat-options cat-options-matrix";
     elements.catOptions.innerHTML = order.map((source, index) => `
@@ -7423,7 +7444,7 @@ function answerCatQuestion(answerIndex) {
 const CAT_SPAN_START = 3;
 const CAT_SPAN_MAX = 10;
 const CAT_SPAN_LIVES = 2;         // two failures at a length ends the subtest
-const CAT_SPEED_TRIALS = 32;
+const CAT_SPEED_WINDOW_MS = 120000;
 const CAT_SPEED_SYMBOLS = ["▲", "■", "●", "◆", "★", "✦"];
 
 let catSubtestTimers = [];
@@ -7453,7 +7474,7 @@ function catSubtestChrome({ label, progress, prompt }) {
 
 // --- Digit span (Working Memory) ------------------------------------------
 function catSpanIntro() {
-  catActive.span = { length: CAT_SPAN_START, best: 0, misses: 0, backward: false };
+  catActive.span = { length: CAT_SPAN_START, best: 0, misses: 0, condition: "forward", bests: {} };
   saveCatActive();
   catSubtestChrome({
     label: "Working memory",
@@ -7469,9 +7490,38 @@ function catSpanIntro() {
   elements.catOptions.querySelector("#cat-span-begin").addEventListener("click", () => catSpanShow());
 }
 
+// Digit span runs three conditions, as the Wechsler-style subtest does:
+// forward, backward, then sequencing (recall in ascending order). Sequencing
+// loads manipulation rather than storage, which is why it earns its place —
+// forward span alone is closer to attention than to working memory.
+const CAT_SPAN_CONDITIONS = ["forward", "backward", "sequencing"];
+
+function catSpanExpected(state) {
+  const digits = state.current ?? [];
+  if (state.condition === "backward") return [...digits].reverse();
+  if (state.condition === "sequencing") return [...digits].sort((a, b) => a - b);
+  return digits;
+}
+
+function catSpanLabel(condition) {
+  if (condition === "backward") return "Digits — backward";
+  if (condition === "sequencing") return "Digits — in order";
+  return "Digits — forward";
+}
+
+function catSpanPromptText(condition) {
+  if (condition === "backward") return "Type them in reverse";
+  if (condition === "sequencing") return "Type them from smallest to largest";
+  return "Remember the digits";
+}
+
 function catSpanShow() {
   const state = catActive.span;
-  const digits = Array.from({ length: state.length }, () => Math.floor(Math.random() * 10));
+  // Sequencing needs distinct digits, or "ascending order" is ambiguous to score.
+  const pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const digits = state.condition === "sequencing"
+    ? miniShuffle([...pool]).slice(0, Math.min(state.length, 10))
+    : Array.from({ length: state.length }, () => Math.floor(Math.random() * 10));
   state.current = digits;
   state.entry = "";
   // Persist before showing: without this a refresh mid-span leaves a span state
@@ -7479,8 +7529,8 @@ function catSpanShow() {
   saveCatActive();
   catSubtestChrome({
     label: "Working memory",
-    progress: state.backward ? "Digits — backward" : "Digits — forward",
-    prompt: state.backward ? "Type them in reverse" : "Remember the digits"
+    progress: catSpanLabel(state.condition),
+    prompt: catSpanPromptText(state.condition)
   });
   elements.catStage.innerHTML = `<div class="cat-span-digits">${digits.join(" ")}</div>`;
   catSubtestAfter(() => catSpanPrompt(), 800 + state.length * 420);
@@ -7509,7 +7559,7 @@ function catSpanPrompt() {
 
 function catSpanSubmit() {
   const state = catActive.span;
-  const expected = state.backward ? [...state.current].reverse() : state.current;
+  const expected = catSpanExpected(state);
   const correct = state.entry === expected.join("");
   if (correct) {
     state.best = Math.max(state.best, state.length);
@@ -7528,10 +7578,12 @@ function catSpanSubmit() {
   elements.catStage.innerHTML = `<div class="cat-span-verdict ${correct ? "ok" : "wrong"}">${correct ? "Correct" : expected.join(" ")}</div>`;
   elements.catOptions.innerHTML = "";
   if (!done) { catSubtestAfter(() => catSpanShow(), 750); return; }
-  // Forward run finished: repeat backward, which loads working memory harder.
-  if (!state.backward) {
-    state.backward = true;
-    state.forwardBest = state.best;
+  // Bank this condition's best and move to the next, if there is one.
+  state.bests = state.bests ?? {};
+  state.bests[state.condition] = state.best;
+  const nextCondition = CAT_SPAN_CONDITIONS[CAT_SPAN_CONDITIONS.indexOf(state.condition) + 1];
+  if (nextCondition) {
+    state.condition = nextCondition;
     state.best = 0;
     state.length = CAT_SPAN_START;
     state.misses = 0;
@@ -7540,7 +7592,6 @@ function catSpanSubmit() {
     catSubtestAfter(() => catSpanShow(), 900);
     return;
   }
-  state.backwardBest = state.best;
   saveCatActive();
   catSubtestAfter(() => finishSubtest(), 750);
 }
@@ -7548,7 +7599,7 @@ function catSpanSubmit() {
 // --- Symbol match (Processing Speed) --------------------------------------
 function startCatSpeedSubtest() {
   clearCatSubtestTimers();
-  catActive.speed = { index: 0, correct: 0, times: [], shownAt: 0, accepting: false };
+  catActive.speed = { index: 0, correct: 0, incorrect: 0, startedAt: 0, accepting: false };
   saveCatActive();
   catSubtestChrome({
     label: "Processing speed",
@@ -7558,7 +7609,7 @@ function startCatSpeedSubtest() {
   elements.catStage.innerHTML = `
     <div class="cat-subtest-intro">
       <p>Two symbols appear. Say whether they are the same as fast as you can without making mistakes.</p>
-      <p class="cat-subtest-note">${CAT_SPEED_TRIALS} quick trials.</p>
+      <p class="cat-subtest-note">Two minutes. Get through as many as you can.</p>
     </div>`;
   elements.catOptions.innerHTML = `<button type="button" id="cat-speed-begin">Begin</button>`;
   elements.catOptions.querySelector("#cat-speed-begin").addEventListener("click", () => catSpeedTrial());
@@ -7566,17 +7617,21 @@ function startCatSpeedSubtest() {
 
 function catSpeedTrial() {
   const state = catActive.speed;
-  if (state.index >= CAT_SPEED_TRIALS) { finishSubtest(); return; }
+  if (!state.startedAt) state.startedAt = Date.now();
+  const elapsed = Date.now() - state.startedAt;
+  if (elapsed >= CAT_SPEED_WINDOW_MS) { finishSubtest(); return; }
   const same = Math.random() < 0.5;
   const left = CAT_SPEED_SYMBOLS[Math.floor(Math.random() * CAT_SPEED_SYMBOLS.length)];
   const others = CAT_SPEED_SYMBOLS.filter((symbol) => symbol !== left);
   const right = same ? left : others[Math.floor(Math.random() * others.length)];
   state.expected = same;
+  const remaining = Math.max(0, CAT_SPEED_WINDOW_MS - elapsed);
   catSubtestChrome({
     label: "Processing speed",
-    progress: `${state.index + 1} of ${CAT_SPEED_TRIALS}`,
+    progress: `${Math.ceil(remaining / 1000)}s left · ${state.correct} correct`,
     prompt: "Same or different?"
   });
+  elements.catTimerBar.style.width = `${(remaining / CAT_SPEED_WINDOW_MS) * 100}%`;
   elements.catStage.innerHTML = `<div class="cat-speed-pair"><span>${left}</span><span>${right}</span></div>`;
   elements.catOptions.innerHTML = `
     <button type="button" data-same="1">Same</button>
@@ -7584,7 +7639,6 @@ function catSpeedTrial() {
   elements.catOptions.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => catSpeedAnswer(button.dataset.same === "1"));
   });
-  state.shownAt = performance.now();
   state.accepting = true;
 }
 
@@ -7592,22 +7646,13 @@ function catSpeedAnswer(saidSame) {
   const state = catActive.speed;
   if (!state.accepting) return;
   state.accepting = false;
-  const elapsed = performance.now() - state.shownAt;
   const correct = saidSame === state.expected;
-  if (correct) state.correct += 1;
-  // Only correct trials inform the speed estimate — a fast wrong answer is not speed.
-  if (correct) state.times.push(elapsed);
+  if (correct) state.correct += 1; else state.incorrect += 1;
   state.index += 1;
   saveCatActive();
   catSubtestAfter(() => catSpeedTrial(), 140);
 }
 
-function median(values) {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
 
 
 
@@ -7946,6 +7991,22 @@ function renderCatIndices(sessionRecord, unlocked) {
 function measurementReportUnlocked() {
   if (cogniUiMode === "pro") return currentTier() === "pro" || currentTier() === "basic";
   return isProUser();
+}
+
+// Figure weights: each scale is two pans over a fulcrum. The last pan is the
+// unknown, drawn as an empty tray so it reads as "what goes here?".
+function catWeightsSvg(weights) {
+  return `<div class="cat-weights">${weights.scales.map((scale, index) => `
+    <div class="cat-scale${scale.right === null ? " is-question" : ""}">
+      <div class="cat-scale-pan">${catCellSvg(scale.left)}</div>
+      <div class="cat-scale-fulcrum" aria-hidden="true">
+        <svg viewBox="0 0 40 34">
+          <line x1="4" y1="9" x2="36" y2="9"></line>
+          <path d="M20 9 L20 22 M9 30 L20 22 L31 30"></path>
+        </svg>
+      </div>
+      <div class="cat-scale-pan">${scale.right === null ? '<span class="cat-scale-unknown">?</span>' : catCellSvg(scale.right)}</div>
+    </div>`).join("")}</div>`;
 }
 
 function catBellCurveSvg(score) {
