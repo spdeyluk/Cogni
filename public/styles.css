@@ -19489,6 +19489,165 @@ html.mode-pro .screentime-page { display: none !important; }
 /* One navigation for the whole site: the landing keeps its hero but not its own
    nav bar, so Home / IQ Test / Exercises / Community / About is the only menu. */
 html.mode-pro .landing-nav { display: none !important; }
-html.mode-pro.landing-active .site-header { display: block; }
-html.mode-pro.landing-active .app-shell { display: block !important; }
-html.mode-pro.landing-active .app-content > *:not(.landing) { display: none !important; }
+
+/* ===================================================================
+   Landing hero — deep-blue gradient, centred nav, oversized headline,
+   and a CTA that wiggles to pull the eye.
+   Light/dark agnostic: the hero carries its own colours.
+   =================================================================== */
+.landing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 11px 44px 11px 20px;
+  position: relative;
+  background: #2F45E8;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+.landing-banner-close {
+  position: absolute;
+  right: 12px;
+  padding: 4px 8px !important;
+  background: none !important;
+  border: 0 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.landing-banner-close:hover { color: #fff !important; }
+
+/* Nav sits on the gradient, so it goes light-on-blue regardless of theme. */
+html.mode-pro.landing-active .site-header {
+  background: #1B2FBF;
+  border-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.mode-pro.landing-active .site-brand,
+html.mode-pro.landing-active .site-tab { color: rgba(255, 255, 255, 0.86) !important; }
+html.mode-pro.landing-active .site-tab:hover { background: rgba(255, 255, 255, 0.12) !important; color: #fff !important; }
+html.mode-pro.landing-active .site-tab.active { color: #fff !important; border-color: rgba(255, 255, 255, 0.4) !important; }
+html.mode-pro.landing-active .theme-toggle { border-color: rgba(255, 255, 255, 0.28) !important; color: rgba(255, 255, 255, 0.86) !important; }
+html.mode-pro.landing-active .site-login { background: #fff !important; color: #1B2FBF !important; }
+
+.landing-hero-centered {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 9vw, 104px) 20px clamp(72px, 11vw, 132px);
+  /* Deep blue at the top fading to near-white, so the page hands off to the
+     light sections below without a seam. */
+  background: linear-gradient(180deg, #1B2FBF 0%, #2C48E8 34%, #6C8CF5 68%, #C9D6FB 88%, var(--bg) 100%);
+  text-align: center;
+}
+
+/* Faint drifting specks — depth without a background image to load. */
+.landing-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1.5px 1.5px at 33% 61%, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1.5px 1.5px at 62% 44%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 88% 68%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1.5px 1.5px at 22% 82%, rgba(255,255,255,0.25), transparent);
+  animation: landing-drift 18s ease-in-out infinite alternate;
+}
+@keyframes landing-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, -14px, 0); }
+}
+
+.landing-hero-main { position: relative; max-width: 1000px; margin: 0 auto; }
+
+.landing-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 26px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.landing-display {
+  margin: 0 0 22px;
+  color: #fff !important;
+  font-size: clamp(2.5rem, 6.6vw, 5rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+/* The emphasised phrase: italic and underscored, as in the reference. */
+.landing-display em {
+  font-style: italic;
+  position: relative;
+  padding-bottom: 2px;
+  box-shadow: inset 0 -0.09em rgba(255, 255, 255, 0.45);
+}
+
+.landing-hero-centered .landing-hero-lede {
+  max-width: 620px;
+  margin: 0 auto 40px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: clamp(1rem, 1.55vw, 1.2rem);
+  line-height: 1.6;
+}
+
+.landing-hero-centered .landing-cta-row { display: flex; justify-content: center; }
+
+/* The wiggling CTA. A slow settle with a shoulder-shake, not a jitter — enough
+   to catch the eye on an otherwise still page without being obnoxious. */
+.landing-cta-wiggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 0 42px !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  color: #1B2FBF !important;
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 18px 46px rgba(10, 22, 92, 0.34);
+  transform-origin: center bottom;
+  animation: landing-wiggle 2.6s ease-in-out infinite;
+  will-change: transform;
+}
+.landing-cta-wiggle:hover { animation-play-state: paused; transform: translateY(-2px) scale(1.02); }
+.landing-cta-arrow { transition: transform 160ms ease; }
+.landing-cta-wiggle:hover .landing-cta-arrow { transform: translateX(4px); }
+
+@keyframes landing-wiggle {
+  0%, 62%, 100% { transform: rotate(0deg) scale(1); }
+  66%  { transform: rotate(-2.4deg) scale(1.035); }
+  70%  { transform: rotate(2deg)    scale(1.035); }
+  74%  { transform: rotate(-1.5deg) scale(1.02); }
+  78%  { transform: rotate(1deg)    scale(1.02); }
+  82%  { transform: rotate(-0.5deg) scale(1.01); }
+  86%  { transform: rotate(0deg)    scale(1); }
+}
+/* Motion is decoration here, so it goes away entirely when asked. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-cta-wiggle { animation: none; }
+  .landing-stars { animation: none; }
+}
+
+.landing-hero-fine {
+  margin: 34px auto 0;
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .landing-cta-wiggle { min-height: 60px; padding: 0 28px !important; width: 100%; justify-content: center; }
+}

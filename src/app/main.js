@@ -7169,6 +7169,9 @@ document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => 
 // tightens the estimate.
 // Top-nav wiring. The sidebar stays in the DOM for the native drawer; on web it
 // is hidden and this bar is the navigation.
+document.querySelector("#landing-banner-close")?.addEventListener("click", () => {
+  document.querySelector("#landing-banner")?.remove();
+});
 applyTheme(currentTheme());
 document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
 document.querySelector("#site-brand")?.addEventListener("click", () => { showLanding(); setActiveTab("home"); });
