@@ -4656,12 +4656,13 @@ function renderProfileHexagon(sessions) {
     `;
   }).join("");
   return `
-    <section class="profile-hexagon-card profile-abilities-card" aria-label="Cognitive profile">
+    <section class="profile-hexagon-card profile-abilities-card" aria-label="Training balance">
       <div class="profile-section-heading">
-        <div><p class="exercise-type">Cognitive profile</p><h2>Abilities</h2></div>
+        <div><p class="exercise-type">Training</p><h2>Where your practice goes</h2></div>
       </div>
       <div class="ability-bars">${bars}</div>
-      ${hasData ? "" : `<p class="ability-empty">Train a few sessions to build your profile.</p>`}
+      <p class="ability-note">Built from how much you train and how accurately — not a measure of ability. Your measured profile lives in Cogni Measurement.</p>
+      ${hasData ? "" : `<p class="ability-empty">Train a few sessions to fill this in.</p>`}
     </section>
   `;
 }
@@ -7066,7 +7067,79 @@ document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => 
   document.querySelector("#measure-quit-dialog")?.close();
 });
 
+// The Measurement dashboard: everything about measured ability lives here, not
+// on Profile. Profile is training data — minutes, streaks, accuracy — and the
+// two must not be confused, because one is practice and the other is a score.
+//
+// The headline carries its margin of error, the way a test that respects its
+// own precision does. A score of 104 that could be 97 or 111 should not be read
+// as "104", and the margin also makes it visible that finishing more subtests
+// tightens the estimate.
+function renderMeasurementDashboard() {
+  const host = document.querySelector("#measure-dashboard");
+  if (!host) return;
+  const sessions = loadCatSessions();
+  if (!sessions.length) { host.hidden = true; host.innerHTML = ""; return; }
+
+  const latest = sessions[0];
+  const unlocked = measurementReportUnlocked();
+  const margin = latest.ci ? Math.round((latest.ci.high - latest.ci.low) / 2) : null;
+
+  const indexBars = MEASUREMENT_INDEX_ORDER.map((key) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const entry = latest.indices?.[key];
+    if (!entry || !Number.isFinite(entry.score)) {
+      return `<div class="measure-dash-index is-empty" style="--index-accent:${meta.accent}">
+        <span class="measure-dash-index-name">${escapeHtml(meta.short)}</span>
+        <span class="measure-dash-index-bar" aria-hidden="true"></span>
+        <span class="measure-dash-index-score">—</span>
+      </div>`;
+    }
+    const offset = Math.max(2, Math.min(98, ((entry.score - 55) / 90) * 100));
+    return `<div class="measure-dash-index" style="--index-accent:${meta.accent}">
+      <span class="measure-dash-index-name" title="${escapeHtml(meta.name)}">${escapeHtml(meta.short)}</span>
+      <span class="measure-dash-index-bar" aria-hidden="true"><i style="left:${offset.toFixed(1)}%"></i></span>
+      <span class="measure-dash-index-score">${unlocked ? entry.score : "•••"}</span>
+    </div>`;
+  }).join("");
+
+  // Retest history, newest first, with the change from the sitting before it.
+  const history = sessions.slice(0, 6).map((record, index) => {
+    const previous = sessions[index + 1];
+    const delta = previous ? record.score - previous.score : null;
+    return `<li>
+      <span class="measure-dash-date">${new Date(record.completedAt).toLocaleDateString()}</span>
+      <span class="measure-dash-hscore">${unlocked ? record.score : "•••"}</span>
+      <span class="measure-dash-delta${delta > 0 ? " is-up" : delta < 0 ? " is-down" : ""}">${
+        !unlocked || delta === null ? "" : delta === 0 ? "±0" : `${delta > 0 ? "+" : ""}${delta}`
+      }</span>
+    </li>`;
+  }).join("");
+
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="measure-dash-main">
+      <p class="measure-dash-eyebrow">Your latest measurement</p>
+      <div class="measure-dash-score">
+        <strong>${latest.score}</strong>
+        ${margin !== null ? `<span class="measure-dash-margin">±${margin}</span>` : ""}
+      </div>
+      <p class="measure-dash-sub">
+        ${escapeHtml(latest.descriptor ?? scoreDescriptor(latest.score))} ·
+        ${latest.percentile ?? scoreToPercentile(latest.score)}th percentile ·
+        ${new Date(latest.completedAt).toLocaleDateString()}
+      </p>
+      ${margin !== null ? `<p class="measure-dash-note">A retest would usually land between ${latest.ci.low} and ${latest.ci.high}. Completing more subtests narrows this.</p>` : ""}
+    </div>
+    <div class="measure-dash-indices">${indexBars}</div>
+    ${sessions.length > 1 ? `<div class="measure-dash-history">
+      <p class="measure-dash-eyebrow">Retests</p>
+      <ul>${history}</ul>
+    </div>` : ""}`;
+}
+
 function renderMeasurePicker(selectedId) {
+  renderMeasurementDashboard();
   const attempt = loadMeasureAttempt();
   const host = document.querySelector("#measure-sections");
   const progress = document.querySelector("#measure-progress");
