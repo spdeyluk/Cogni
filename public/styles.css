@@ -7937,7 +7937,7 @@ dialog h2 {
 .assessment-history-copy,
 .profile-exercise-card small,
 .profile-weight-breakdown p {
-  color: rgba(245, 245, 247, 0.62) !important;
+  color: var(--muted) !important;
 }
 
 .home-streak-card,
@@ -8031,7 +8031,7 @@ dialog h2 {
   padding: 8px 14px !important;
   background: transparent !important;
   border: 0 !important;
-  color: rgba(245, 245, 247, 0.56) !important;
+  color: var(--muted) !important;
   font-size: 0.84rem;
   font-weight: 600;
   line-height: 1;
@@ -8173,7 +8173,7 @@ dialog h2 {
 .eyebrow,
 .profile-board-header .exercise-type,
 .profile-section-heading .exercise-type {
-  color: rgba(244, 244, 245, 0.42) !important;
+  color: var(--muted) !important;
   font-size: 0.66rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.11em !important;
@@ -8188,7 +8188,7 @@ dialog h2 {
 .profile-detail-summary span,
 .profile-weight-breakdown p,
 .profile-rank-progress-card p {
-  color: rgba(244, 244, 245, 0.56) !important;
+  color: var(--muted) !important;
 }
 
 .home-streak-card,
@@ -8375,7 +8375,7 @@ textarea:focus {
 .compact-segmented button {
   border: 0 !important;
   background: transparent !important;
-  color: rgba(244, 244, 245, 0.5) !important;
+  color: var(--muted) !important;
   box-shadow: none !important;
 }
 
@@ -8480,7 +8480,7 @@ textarea:focus {
   }
 
   .side-nav-button {
-    color: rgba(244, 244, 245, 0.46) !important;
+    color: var(--muted) !important;
     font-weight: 560 !important;
   }
 
@@ -8827,7 +8827,7 @@ textarea,
   border: 0 !important;
   border-radius: var(--radius) !important;
   background: transparent !important;
-  color: rgba(245, 245, 247, 0.55) !important;
+  color: var(--muted) !important;
   box-shadow: none !important;
   transition:
     background-color 180ms ease,
@@ -8844,7 +8844,7 @@ textarea,
 .routine-actions button:not(:first-child) {
   border-color: transparent !important;
   background: transparent !important;
-  color: rgba(245, 245, 247, 0.72) !important;
+  color: var(--muted) !important;
   box-shadow: none !important;
 }
 
@@ -9269,7 +9269,7 @@ select,
 
 .home-mascot-copy p {
   margin: 0;
-  color: rgba(245, 245, 247, 0.62);
+  color: var(--muted);
 }
 
 .home-mascot-copy button {
@@ -19310,3 +19310,185 @@ html.mode-pro .measure-dashboard {
   font-size: 0.8rem;
   line-height: 1.5;
 }
+
+/* ===================================================================
+   Light theme + top navigation (web).
+
+   The palette was defined once as tokens, so light is a re-declaration
+   of those tokens rather than a second stylesheet. Native keeps the dark
+   palette regardless — applyTheme() pins data-theme="dark" in play mode.
+   =================================================================== */
+html.mode-pro:not([data-theme="dark"]) {
+  color-scheme: light;
+  --bg: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F4F4F5;
+  --text: #18181B;
+  --text-2: #3F3F46;
+  --muted: #71717A;
+  --line: #E4E4E7;
+  --line-strong: #D4D4D8;
+  --fill-subtle: rgba(24, 24, 27, 0.05);
+  --accent: #4A5BFF;
+  --accent-2: #3B49D6;      /* darkened: the light accent had no contrast on white */
+  --on-accent: #FFFFFF;
+  --success: #15803D;
+  --error: #DC2626;
+  --warning: #B45309;
+  --shadow: 0 1px 2px rgba(24, 24, 27, 0.08);
+  --glass: rgba(255, 255, 255, 0.9);
+  --sidebar: var(--surface);
+  --surface-soft: var(--surface-2);
+  --surface-raised: var(--surface-2);
+  --line-soft: var(--line);
+  --dim: var(--muted);
+  --active: var(--surface-2);
+  background: var(--bg);
+  color: var(--text);
+}
+html.mode-pro:not([data-theme="dark"]) body { background: var(--bg); }
+html.mode-pro[data-theme="dark"] { color-scheme: dark; }
+
+/* --- top navigation replaces the sidebar on web --- */
+html.mode-pro .app-sidebar,
+html.mode-pro .sidebar-backdrop,
+html.mode-pro .nav-hamburger { display: none !important; }
+
+html.mode-pro .app-shell {
+  display: block !important;
+  grid-template-columns: none !important;
+}
+html.mode-pro .app-content {
+  padding: 28px 32px 64px !important;
+  max-width: none !important;
+}
+
+.site-header { display: none; }
+html.mode-pro .site-header {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0 32px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0 10px;
+}
+.site-brand {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  color: var(--text) !important;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.site-brand img { width: auto; height: 26px; object-fit: contain; }
+
+.site-header-actions { display: flex; align-items: center; gap: 8px; }
+.theme-toggle {
+  display: grid !important;
+  place-items: center;
+  width: 38px; height: 38px;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--line) !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  cursor: pointer;
+}
+.theme-toggle:hover { background: var(--fill-subtle) !important; }
+.theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.theme-icon-moon { display: none; }
+[data-theme="dark"] .theme-icon-sun { display: none; }
+[data-theme="dark"] .theme-icon-moon { display: block; }
+
+.site-login {
+  min-height: 38px;
+  padding: 0 18px !important;
+  border-radius: 10px !important;
+  border: 0 !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.site-login:hover { opacity: 0.88; }
+
+.site-tabs { display: flex; align-items: center; gap: 4px; padding-bottom: 8px; flex-wrap: wrap; }
+.site-tab {
+  padding: 9px 16px !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  font-size: 0.97rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.site-tab:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
+.site-tab.active {
+  color: var(--accent) !important;
+  border-color: var(--line-strong) !important;
+  font-weight: 600;
+}
+
+/* --- Community / About --- */
+html.mode-pro .community-open .community-page,
+html.mode-pro .about-open .about-page { display: block; }
+.community-page, .about-page { display: none; }
+
+.page-narrow { max-width: 760px; margin: 0 auto; display: grid; gap: 18px; }
+.page-narrow .panel {
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.page-narrow .panel h2 { margin: 0 0 10px; font-size: 1.15rem; }
+.page-narrow .panel p { margin: 0 0 10px; color: var(--text-2); line-height: 1.65; font-size: 0.95rem; }
+.page-narrow .panel p:last-child { margin-bottom: 0; }
+.page-narrow .panel-note { color: var(--muted) !important; font-size: 0.86rem !important; }
+/* The limitations panel is marked, not buried. */
+.panel-flag { border-left: 3px solid var(--warning); }
+.panel-cta {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  html.mode-pro .site-header { padding: 0 16px; }
+  html.mode-pro .app-content { padding: 20px 16px 48px !important; }
+  .site-tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .site-tab { white-space: nowrap; }
+}
+
+/* Screen Time is a native-only feature; the web build no longer offers it. */
+html.mode-pro #tab-screentime,
+html.mode-pro .screentime-page { display: none !important; }
+
+/* One navigation for the whole site: the landing keeps its hero but not its own
+   nav bar, so Home / IQ Test / Exercises / Community / About is the only menu. */
+html.mode-pro .landing-nav { display: none !important; }
+html.mode-pro.landing-active .site-header { display: block; }
+html.mode-pro.landing-active .app-shell { display: block !important; }
+html.mode-pro.landing-active .app-content > *:not(.landing) { display: none !important; }

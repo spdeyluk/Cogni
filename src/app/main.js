@@ -242,13 +242,15 @@ function detectCogniUiMode() {
 // ---------------------------------------------------------------------------
 // Cogni Measurement is the front door on web — there is no separate home page.
 const routeTabToPath = {
+  home: "/",
   assessments: "/measurement",
   exercises: "/exercises",
-  screentime: "/screen-time",
+  community: "/community",
+  about: "/about",
   statistics: "/profile"
 };
 // Paths that used to exist, kept so old links and bookmarks still land somewhere.
-const legacyRoutePaths = { "/home": "assessments", "/assessments": "assessments" };
+const legacyRoutePaths = { "/assessments": "assessments", "/screen-time": "exercises" };
 const routePathToTab = {
   ...legacyRoutePaths,
   ...Object.fromEntries(Object.entries(routeTabToPath).map(([tab, path]) => [path, tab]))
@@ -257,8 +259,9 @@ function routeTabHandler(tab) {
   const handlers = {
     exercises: showExerciseHub,
     assessments: showAssessments,
-    screentime: showScreenTime,
     statistics: showStatistics,
+    community: showCommunity,
+    about: showAbout,
     home: showHome,
     friends: showFriendsPage
   };
@@ -2161,7 +2164,6 @@ elements.sideNavButtons.forEach((button) => {
 });
 document.querySelector('[data-section="home"]')?.addEventListener("click", showHome);
 document.querySelector('[data-section="assessments"]')?.addEventListener("click", showAssessments);
-document.querySelector('[data-section="screentime"]')?.addEventListener("click", showScreenTime);
 document.querySelector(".screentime-page")?.addEventListener("click", handleScreenTimePageClick);
 elements.backToExercises.addEventListener("click", showExerciseHub);
 elements.backToExercisesMot.addEventListener("click", showExerciseHub);
@@ -4294,7 +4296,7 @@ function showStatistics() {
   renderProfile();
 }
 
-const sectionResetClasses = ["home-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active"];
+const sectionResetClasses = ["community-open", "about-open", "home-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active"];
 
 function showScreenTime() {
   if (!requireAuth("Sign in to see your screen time.")) return;
@@ -6922,13 +6924,103 @@ function trainingMinutesForDate(progress, exerciseIds, dateKey) {
   return Math.floor(durationMs / 60000);
 }
 
+// ---------------------------------------------------------------------------
+// Web site chrome: a top navigation bar instead of a sidebar, and a theme the
+// visitor controls. Light is the default — the app was dark-only, which reads
+// as a tool rather than as something you'd hand a stranger to take a test on.
+// ---------------------------------------------------------------------------
+const THEME_KEY = "cogni.theme.v1";
+
+function currentTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch { /* private mode */ }
+  return "light";
+}
+
+function applyTheme(theme) {
+  const next = theme === "dark" ? "dark" : "light";
+  // Native stays dark: it is a different product surface with its own palette.
+  document.documentElement.dataset.theme = cogniUiMode === "play" ? "dark" : next;
+  try { localStorage.setItem(THEME_KEY, next); } catch { /* private mode */ }
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme() === "dark" ? "light" : "dark");
+}
+
+function showCommunity() {
+  elements.appShell.classList.remove(...sectionResetClasses);
+  elements.appShell.classList.add("community-open");
+  setActiveTab("community");
+  elements.pageTitle.textContent = "Community";
+  elements.pageLede.textContent = "Compare notes with people training the same things.";
+  renderCommunity();
+}
+
+function showAbout() {
+  elements.appShell.classList.remove(...sectionResetClasses);
+  elements.appShell.classList.add("about-open");
+  setActiveTab("about");
+  elements.pageTitle.textContent = "About";
+  elements.pageLede.textContent = "What Cogni measures, and what it doesn't.";
+  renderAbout();
+}
+
+function renderCommunity() {
+  const page = document.querySelector(".community-page");
+  if (!page) return;
+  page.innerHTML = `
+    <div class="page-narrow">
+      <section class="panel">
+        <h2>Discord</h2>
+        <p>The fastest place to ask about a score, argue about an item, or find people training the same index.</p>
+        <a class="panel-cta" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">Open the Discord</a>
+      </section>
+      <section class="panel">
+        <h2>Leaderboards</h2>
+        <p>Training leaderboards are built from exercise sessions, not measurement scores — a score you can climb by retesting isn't a score worth ranking.</p>
+        <p class="panel-note">Coming soon.</p>
+      </section>
+      <section class="panel">
+        <h2>Item feedback</h2>
+        <p>Every item is provisional until it has been answered enough times to calibrate. If one looks wrong, ambiguous or unfair, say so in the Discord — that feedback is what turns author estimates into real parameters.</p>
+      </section>
+    </div>`;
+}
+
+function renderAbout() {
+  const page = document.querySelector(".about-page");
+  if (!page) return;
+  page.innerHTML = `
+    <div class="page-narrow">
+      <section class="panel">
+        <h2>What Cogni Measurement is</h2>
+        <p>A ${MEASUREMENT_SUBTESTS.length}-subtest battery organised on the Cattell-Horn-Carroll model, reporting six broad abilities and a composite: Verbal Comprehension, Fluid Reasoning, Visual Spatial, Quantitative Reasoning, Working Memory and Processing Speed.</p>
+        <p>Every subtest is a single sitting. You can stop early and keep what you answered, but you cannot pause a subtest, resume it, or take it twice in one attempt — a section you can restart is a section you can farm.</p>
+      </section>
+      <section class="panel panel-flag">
+        <h2>What it is not</h2>
+        <p><strong>These scores are not norm-referenced.</strong> The item difficulty and discrimination values are author estimates, not values fitted to a standardisation sample, and the working-memory and processing-speed references are published-typical figures standing in for real norms.</p>
+        <p>That makes the scores internally consistent and useful for tracking your own change over time. It does not make them a clinical or diagnostic assessment, and it does not make them comparable to a supervised test administered by a psychologist. Every result is flagged provisional for exactly this reason.</p>
+        <p>The honest fix is data: once enough sessions accumulate, the parameters get re-fitted from real responses instead of estimates.</p>
+      </section>
+      <section class="panel">
+        <h2>How the score is built</h2>
+        <p>The reasoning subtests are scored with a 2-parameter IRT model; working memory from span length and processing speed from corrected throughput. Each index is placed on the familiar mean-100, SD-15 scale, and the composite averages the indices you have completed.</p>
+        <p>Scores are shown with a margin of error because they have one. A composite of 107 ±7 means a retest would usually land between 100 and 114. Finishing more subtests narrows that band.</p>
+      </section>
+    </div>`;
+}
+
 function showAssessments() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "Cogni Measurement";
-  elements.pageLede.textContent = "Six CHC abilities, eight subtests, one score.";
+  elements.pageLede.textContent = `Six CHC abilities, ${MEASUREMENT_SUBTESTS.length} subtests, one score.`;
   showAssessmentList();
 }
 
@@ -7075,6 +7167,27 @@ document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => 
 // own precision does. A score of 104 that could be 97 or 111 should not be read
 // as "104", and the margin also makes it visible that finishing more subtests
 // tightens the estimate.
+// Top-nav wiring. The sidebar stays in the DOM for the native drawer; on web it
+// is hidden and this bar is the navigation.
+applyTheme(currentTheme());
+document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
+document.querySelector("#site-brand")?.addEventListener("click", () => { showLanding(); setActiveTab("home"); });
+document.querySelector("#site-login")?.addEventListener("click", () => {
+  if (authUser) { showStatistics(); return; }
+  wireAuthGate();
+  showAuthGate("login");
+});
+document.querySelectorAll("[data-site-tab]").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    // Home is the marketing page itself; everything else is inside the app, so
+    // the landing has to be dismissed or the route changes under a page that
+    // is still covering the screen.
+    if (tab.dataset.siteTab === "home") { showLanding(); setActiveTab("home"); return; }
+    enterApp();
+    routeTabHandler(tab.dataset.siteTab)?.();
+  });
+});
+
 function renderMeasurementDashboard() {
   const host = document.querySelector("#measure-dashboard");
   if (!host) return;
@@ -8580,6 +8693,11 @@ function setActiveTab(tab) {
   elements.sideNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.section === tab);
   });
+  document.querySelectorAll("[data-site-tab]").forEach((siteTab) => {
+    siteTab.classList.toggle("active", siteTab.dataset.siteTab === tab);
+  });
+  const loginButton = document.querySelector("#site-login");
+  if (loginButton) loginButton.textContent = authUser ? "Profile" : "Log in";
   const mobileTabOrder = ["home", "exercises", "assessments", "statistics"];
   const activeIndex = Math.max(0, mobileTabOrder.indexOf(tab));
   elements.sideNav?.style.setProperty("--active-nav-shift", `${activeIndex * 100}%`);
