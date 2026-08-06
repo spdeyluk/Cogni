@@ -7191,6 +7191,12 @@ document.querySelectorAll("[data-site-tab]").forEach((tab) => {
   });
 });
 
+// Web is monochrome: the six index hues stay in the model (native still uses
+// them) but every web surface draws in the single brand accent.
+function indexAccent(key) {
+  return cogniUiMode === "pro" ? "var(--accent)" : MEASUREMENT_INDICES[key].accent;
+}
+
 function renderMeasurementDashboard() {
   const host = document.querySelector("#measure-dashboard");
   if (!host) return;
@@ -7205,14 +7211,14 @@ function renderMeasurementDashboard() {
     const meta = MEASUREMENT_INDICES[key];
     const entry = latest.indices?.[key];
     if (!entry || !Number.isFinite(entry.score)) {
-      return `<div class="measure-dash-index is-empty" style="--index-accent:${meta.accent}">
+      return `<div class="measure-dash-index is-empty" style="--index-accent:${indexAccent(key)}">
         <span class="measure-dash-index-name">${escapeHtml(meta.short)}</span>
         <span class="measure-dash-index-bar" aria-hidden="true"></span>
         <span class="measure-dash-index-score">—</span>
       </div>`;
     }
     const offset = Math.max(2, Math.min(98, ((entry.score - 55) / 90) * 100));
-    return `<div class="measure-dash-index" style="--index-accent:${meta.accent}">
+    return `<div class="measure-dash-index" style="--index-accent:${indexAccent(key)}">
       <span class="measure-dash-index-name" title="${escapeHtml(meta.name)}">${escapeHtml(meta.short)}</span>
       <span class="measure-dash-index-bar" aria-hidden="true"><i style="left:${offset.toFixed(1)}%"></i></span>
       <span class="measure-dash-index-score">${unlocked ? entry.score : "•••"}</span>
@@ -7254,122 +7260,87 @@ function renderMeasurementDashboard() {
     </div>` : ""}`;
 }
 
-// Tests-and-pricing cards. Two offers, both of which describe something the
-// product actually does: the full battery, and taking subtests on their own —
-// which the section picker below already supports.
+// The IQ Test page has two faces. A visitor who has never measured sees a sales
+// page and exactly one button; someone with results or an attempt in progress
+// sees their dashboard and the subtest picker.
 //
-// No struck-through "was" price. An anchor price that was never charged is a
-// fabricated discount, and this page is selling a claim about honesty.
-function renderMeasurementOffers() {
+// The price is not shown here — it is revealed after the test, which is what was
+// asked for. What IS stated is that the detailed report is a paid upgrade. That
+// line is the difference between a surprise and an ambush: nobody should spend
+// three quarters of an hour and only then discover money is involved, and in the
+// EU withholding that entirely is the kind of drip pricing regulators act on.
+function renderMeasurementSales() {
   const host = document.querySelector("#measure-offers");
   if (!host) return;
   const total = MEASUREMENT_SUBTESTS.length;
   const minutes = MEASUREMENT_SUBTESTS.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
-  const dots = MEASUREMENT_INDEX_ORDER
-    .map((key) => `<span style="background:${MEASUREMENT_INDICES[key].accent}"></span>`).join("");
 
-  const groups = MEASUREMENT_INDEX_ORDER.map((key) => {
-    const meta = MEASUREMENT_INDICES[key];
-    const names = subtestsForIndex(key).map((subtest) => subtest.name).join(", ");
-    return `<li>
-      <span class="measure-offer-dot" style="background:${meta.accent}"></span>
-      <span>${escapeHtml(names)}</span>
-    </li>`;
-  }).join("");
-
-  const feature = (label, note) =>
-    `<li><span class="measure-offer-tick" aria-hidden="true">✓</span><span>${escapeHtml(label)}</span>${
-      note ? `<span class="measure-offer-hint" title="${escapeHtml(note)}">i</span>` : ""}</li>`;
+  const insight = (title, body) =>
+    `<article class="sales-card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></article>`;
 
   host.innerHTML = `
-    <p class="measure-offers-eyebrow">Tests and pricing</p>
-    <h2 class="measure-offers-title">Explore Cogni Measurement</h2>
-    <p class="measure-offers-lede">
-      Every score is reported with the band it actually sits in. Scores are provisional —
-      the item parameters are author estimates, not values fitted to a standardisation sample.
-    </p>
+    <div class="sales-hero">
+      <p class="sales-eyebrow">Cogni Measurement</p>
+      <h2 class="sales-title">Find out how your mind actually works</h2>
+      <p class="sales-lede">
+        ${total} subtests across the six abilities in the Cattell-Horn-Carroll model. You'll get a
+        composite score, every index behind it, and a plain reading of where you're strong and
+        where you're not.
+      </p>
 
-    <div class="measure-offer-row">
-      <article class="measure-offer is-featured">
-        <span class="measure-offer-badge">★ Most complete</span>
-        <div class="measure-offer-inner">
-          <div class="measure-offer-head">
-            <div>
-              <h3>Full Measurement</h3>
-              <p class="measure-offer-sub">${total} subtests · all six CHC abilities</p>
-            </div>
-            <span class="measure-offer-dots" aria-hidden="true">${dots}</span>
-          </div>
+      <button class="sales-cta" id="sales-start" type="button">Start test</button>
 
-          <p class="measure-offer-price"><strong>€14.99</strong><span>/month</span></p>
+      <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
+      <p class="sales-note">Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready.</p>
+    </div>
 
-          <div class="measure-offer-actions">
-            <button class="measure-offer-cta" data-offer-start type="button">Start free</button>
-            <button class="measure-offer-alt" data-offer-buy type="button">Unlock the report</button>
-          </div>
+    <section class="sales-section">
+      <h3 class="sales-section-title">What your dashboard shows</h3>
+      <div class="sales-grid">
+        ${insight("Your strongest ability, named",
+          "Not a single number but a ranking: which of the six abilities you lead with, how far ahead it is, and which subtests carried it.")}
+        ${insight("Your weakest, and by how much",
+          "The same in reverse. A wide gap between your highest and lowest index matters more than the composite, and the report says so when it finds one.")}
+        ${insight("The margin on every score",
+          "Each index comes with the band it really sits in. A 107 that could be 100 or 114 is reported that way rather than as a bare number.")}
+        ${insight("Change across retests",
+          "Every sitting is kept, so you can see movement over time instead of guessing whether a new score means anything.")}
+      </div>
+    </section>
 
-          <p class="measure-offer-copy">
-            The whole battery, in any order and at your own pace. Each subtest is one sitting —
-            stop early and keep what you answered, but you can't resume or retake it in an attempt.
-          </p>
+    <section class="sales-section">
+      <h3 class="sales-section-title">Why knowing the shape of it helps</h3>
+      <div class="sales-grid">
+        ${insight("Work",
+          "Knowing whether you reason fastest verbally or spatially tells you how to prepare — where to lean on written notes, where to sketch it out, and which tasks will cost you more effort than they look like they should.")}
+        ${insight("Learning",
+          "A low working-memory span isn't a verdict, it's a reason to change method: shorter chunks, more external notes, fewer things held in the head at once.")}
+        ${insight("Sport and reaction",
+          "Processing speed and visual-spatial ability are the abilities that show up under time pressure, and they're the ones people most often train without ever measuring.")}
+      </div>
+      <p class="sales-caveat">
+        A profile tells you how you currently perform on these tasks. It doesn't predict what you're
+        capable of, and it isn't a clinical or diagnostic assessment — scores are provisional while
+        the item parameters are still being calibrated.
+      </p>
+    </section>`;
 
-          <p class="measure-offer-section">Includes</p>
-          <ul class="measure-offer-features">
-            ${feature(`~${minutes} minutes total`)}
-            ${feature("Composite score", "A single number built from the six index scores you completed.")}
-            ${feature("Six-index breakdown", "Verbal, Fluid, Visual Spatial, Quantitative, Working Memory, Processing Speed.")}
-            ${feature("Margin of error on every score", "A composite of 107 ±7 means a retest would usually land between 100 and 114.")}
-            ${feature("Retest history and change over time")}
-          </ul>
-
-          <div class="measure-offer-section-row">
-            <p class="measure-offer-section">${total}/${total} subtests</p>
-          </div>
-          <ul class="measure-offer-groups">${groups}</ul>
-        </div>
-      </article>
-
-      <article class="measure-offer">
-        <div class="measure-offer-inner">
-          <div class="measure-offer-head">
-            <div>
-              <h3>Single subtests</h3>
-              <p class="measure-offer-sub">Any one on its own</p>
-            </div>
-          </div>
-          <p class="measure-offer-price"><strong>Free</strong><span>to take</span></p>
-          <div class="measure-offer-actions">
-            <button class="measure-offer-alt" data-offer-single type="button">Choose a subtest</button>
-          </div>
-          <p class="measure-offer-copy">
-            Take one subtest and get that index on its own. Useful for a quick read on a single
-            ability, but it can't produce a composite — that needs the full battery.
-          </p>
-          <p class="measure-offer-section">Includes</p>
-          <ul class="measure-offer-features">
-            ${feature("One index score")}
-            ${feature("Its margin of error")}
-            ${feature("No composite", "A composite averages the six indices, so it needs them all.")}
-          </ul>
-        </div>
-      </article>
-    </div>`;
-
-  host.querySelector("[data-offer-start]")?.addEventListener("click", () => {
-    const next = MEASUREMENT_SUBTESTS.find((subtest) => !loadMeasureAttempt().subtests[subtest.id]);
-    if (next) renderSubtestDetail(next.id);
-    document.querySelector("#measure-sections")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-  host.querySelector("[data-offer-buy]")?.addEventListener("click", openPricingModal);
-  host.querySelector("[data-offer-single]")?.addEventListener("click", () => {
-    document.querySelector("#measure-sections")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  host.querySelector("#sales-start")?.addEventListener("click", () => {
+    const next = MEASUREMENT_SUBTESTS.find((subtest) => !loadMeasureAttempt().subtests[subtest.id])
+      ?? MEASUREMENT_SUBTESTS[0];
+    startSubtest(next.id);
   });
 }
 
 function renderMeasurePicker(selectedId) {
-  renderMeasurementDashboard();
-  renderMeasurementOffers();
   const attempt = loadMeasureAttempt();
+  // A visitor with nothing measured and nothing started gets the sales page.
+  const isNewVisitor = !loadCatSessions().length && measureCompletedCount(attempt) === 0;
+  document.querySelector("#cat-intro")?.classList.toggle("is-selling", isNewVisitor);
+  if (isNewVisitor) { renderMeasurementSales(); return; }
+  const offers = document.querySelector("#measure-offers");
+  if (offers) offers.innerHTML = "";
+  renderMeasurementDashboard();
   const host = document.querySelector("#measure-sections");
   const progress = document.querySelector("#measure-progress");
   if (!host) return;
@@ -7396,7 +7367,7 @@ function renderMeasurePicker(selectedId) {
         </button>`;
     }).join("");
     return `
-      <section class="measure-section" style="--index-accent:${meta.accent}">
+      <section class="measure-section" style="--index-accent:${indexAccent(key)}">
         <div class="measure-section-head">
           <span class="measure-section-dot" aria-hidden="true"></span>
           <h3 class="measure-section-title">${escapeHtml(meta.name)}</h3>
@@ -7430,7 +7401,7 @@ function renderSubtestDetail(subtestId) {
     ? "Adaptive length — it grows until you miss twice."
     : `This subtest contains ${subtest.questions} questions.`;
   panel.innerHTML = `
-    <div class="measure-detail-card" style="--index-accent:${meta.accent}">
+    <div class="measure-detail-card" style="--index-accent:${indexAccent(key)}">
       <span class="measure-detail-eyebrow"><i aria-hidden="true"></i>${escapeHtml(meta.name)}</span>
       <h3 class="measure-detail-title">${escapeHtml(subtest.name)}</h3>
       <dl class="measure-facts">
