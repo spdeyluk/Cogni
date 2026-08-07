@@ -57,6 +57,8 @@ import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRota
 import {
   MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, MEASUREMENT_SUBTESTS,
   subtestById, subtestsForIndex, subtestMinutes, indexForItem, thetaToIndexScore,
+  rarityFromPercentile, INTERPRETATION_BANDS, interpretationBand, rankedIndices,
+  profileShape, scoreTrackOffset,
   scoreWorkingMemoryIndex, scoreProcessingSpeedIndex, scoreComposite,
   compositeStandardError, indexConfidenceInterval, scoreToPercentile, scoreDescriptor
 } from "../core/assessments/measurement.js";
@@ -7148,46 +7150,58 @@ document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => 
   document.querySelector("#measure-quit-dialog")?.close();
 });
 
-// The Measurement dashboard: everything about measured ability lives here, not
-// on Profile. Profile is training data — minutes, streaks, accuracy — and the
-// two must not be confused, because one is practice and the other is a score.
+// Web is monochrome: the six index hues stay in the model (native still uses
+// them) but every web surface draws in the single brand accent.
+function indexAccent(key) {
+  return cogniUiMode === "pro" ? "var(--accent)" : MEASUREMENT_INDICES[key].accent;
+}
+
+// The Measurement dashboard.
 //
-// The headline carries its margin of error, the way a test that respects its
-// own precision does. A score of 104 that could be 97 or 111 should not be read
-// as "104", and the margin also makes it visible that finishing more subtests
-// tightens the estimate.
-// Top-nav wiring. The sidebar stays in the DOM for the native drawer; on web it
-// is hidden and this bar is the navigation.
-document.querySelector("#landing-banner-close")?.addEventListener("click", () => {
-  document.querySelector("#landing-banner")?.remove();
-});
-applyTheme(currentTheme());
-document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
-document.querySelector("#site-brand")?.addEventListener("click", () => {
-  // On the landing the brand is a no-op (you are already there); inside the app
-  // it goes to the front door, not back out to the marketing page.
-  if (document.documentElement.classList.contains("landing-active")) return;
-  showAssessments();
-});
-document.querySelector("#site-login")?.addEventListener("click", () => {
-  if (authUser) { showStatistics(); return; }
-  wireAuthGate();
-  showAuthGate("login");
-});
+// Layout follows FaceIQ: a history rail on the left, tabs across the top, and
+// the headline broken into pillar cards. The content follows RIOT: a score with
+// its margin, where it sits on the curve, an ability-by-ability breakdown, and
+// a plain reading of the profile's shape.
+//
+// Everything shown is derived from the scores. Nothing here is illustrative.
+let measurementTab = "overview";
+let measurementSessionIndex = 0;
+
+function setMeasurementTab(tab) {
+  measurementTab = tab;
+  renderMeasurementDashboard();
+}
+
+function selectMeasurementSession(index) {
+  measurementSessionIndex = index;
+  renderMeasurementDashboard();
+}
+
+// Navigation wiring. Every tab leaves the marketing landing behind first —
+// changing the route while the landing is still painted over the app was a real
+// bug, not a hypothetical one.
 document.querySelectorAll("[data-site-tab]").forEach((tab) => {
   tab.addEventListener("click", () => {
-    // Home is the marketing page itself; everything else is inside the app, so
-    // the landing has to be dismissed or the route changes under a page that
-    // is still covering the screen.
     enterApp();
     routeTabHandler(tab.dataset.siteTab)?.();
   });
 });
 
-// Web is monochrome: the six index hues stay in the model (native still uses
-// them) but every web surface draws in the single brand accent.
-function indexAccent(key) {
-  return cogniUiMode === "pro" ? "var(--accent)" : MEASUREMENT_INDICES[key].accent;
+// The rail's account block: who you are and what you're on. The upgrade button
+// disappears once there is nothing left to sell you.
+function syncRailAccount() {
+  const name = document.querySelector("#site-rail-name");
+  const plan = document.querySelector("#site-rail-plan");
+  const avatar = document.querySelector("#site-rail-avatar");
+  const upgrade = document.querySelector("#site-rail-upgrade");
+  const login = document.querySelector("#site-login-rail");
+  const unlocked = measurementReportUnlocked();
+  const label = authUser ? (authUser.email?.split("@")[0] ?? "You") : "Guest";
+  if (name) name.textContent = label;
+  if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
+  if (plan) plan.textContent = unlocked ? "FULL" : "FREE";
+  if (upgrade) upgrade.hidden = unlocked;
+  if (login) login.textContent = authUser ? "Account" : "Log in";
 }
 
 function renderMeasurementDashboard() {
@@ -7196,61 +7210,270 @@ function renderMeasurementDashboard() {
   const sessions = loadCatSessions();
   if (!sessions.length) { host.hidden = true; host.innerHTML = ""; return; }
 
-  const latest = sessions[0];
+  const record = sessions[Math.min(measurementSessionIndex, sessions.length - 1)] ?? sessions[0];
   const unlocked = measurementReportUnlocked();
-  const margin = latest.ci ? Math.round((latest.ci.high - latest.ci.low) / 2) : null;
+  const ranked = rankedIndices(record.indices);
+  const shape = profileShape(record.indices);
+  const margin = record.ci ? Math.round((record.ci.high - record.ci.low) / 2) : null;
+  const percentile = record.percentile ?? scoreToPercentile(record.score);
+  const rarity = rarityFromPercentile(percentile);
 
-  const indexBars = MEASUREMENT_INDEX_ORDER.map((key) => {
-    const meta = MEASUREMENT_INDICES[key];
-    const entry = latest.indices?.[key];
-    if (!entry || !Number.isFinite(entry.score)) {
-      return `<div class="measure-dash-index is-empty" style="--index-accent:${indexAccent(key)}">
-        <span class="measure-dash-index-name">${escapeHtml(meta.short)}</span>
-        <span class="measure-dash-index-bar" aria-hidden="true"></span>
-        <span class="measure-dash-index-score">—</span>
-      </div>`;
-    }
-    const offset = Math.max(2, Math.min(98, ((entry.score - 55) / 90) * 100));
-    return `<div class="measure-dash-index" style="--index-accent:${indexAccent(key)}">
-      <span class="measure-dash-index-name" title="${escapeHtml(meta.name)}">${escapeHtml(meta.short)}</span>
-      <span class="measure-dash-index-bar" aria-hidden="true"><i style="left:${offset.toFixed(1)}%"></i></span>
-      <span class="measure-dash-index-score">${unlocked ? entry.score : "•••"}</span>
-    </div>`;
-  }).join("");
-
-  // Retest history, newest first, with the change from the sitting before it.
-  const history = sessions.slice(0, 6).map((record, index) => {
-    const previous = sessions[index + 1];
-    const delta = previous ? record.score - previous.score : null;
-    return `<li>
-      <span class="measure-dash-date">${new Date(record.completedAt).toLocaleDateString()}</span>
-      <span class="measure-dash-hscore">${unlocked ? record.score : "•••"}</span>
-      <span class="measure-dash-delta${delta > 0 ? " is-up" : delta < 0 ? " is-down" : ""}">${
-        !unlocked || delta === null ? "" : delta === 0 ? "±0" : `${delta > 0 ? "+" : ""}${delta}`
-      }</span>
-    </li>`;
-  }).join("");
+  const tabs = [
+    ["overview", "Overview"],
+    ["score", "Score"],
+    ["abilities", "Abilities"],
+    ["insights", "Insights"]
+  ];
 
   host.hidden = false;
   host.innerHTML = `
-    <div class="measure-dash-main">
-      <p class="measure-dash-eyebrow">Your latest measurement</p>
-      <div class="measure-dash-score">
-        <strong>${latest.score}</strong>
-        ${margin !== null ? `<span class="measure-dash-margin">±${margin}</span>` : ""}
+    <div class="mdash">
+      <aside class="mdash-rail">
+        <p class="mdash-rail-title">History</p>
+        <div class="mdash-rail-list">
+          ${sessions.slice(0, 8).map((entry, index) => `
+            <button class="mdash-rail-item${index === measurementSessionIndex ? " is-active" : ""}"
+                    data-measure-session="${index}" type="button">
+              <span class="mdash-rail-score">${unlocked ? entry.score : "•••"}</span>
+              <span class="mdash-rail-meta">
+                ${new Date(entry.completedAt).toLocaleDateString()}
+                ${entry.provisional ? '<em>provisional</em>' : ""}
+              </span>
+            </button>`).join("")}
+        </div>
+      </aside>
+
+      <div class="mdash-main">
+        <nav class="mdash-tabs" aria-label="Report sections">
+          ${tabs.map(([key, label]) => `
+            <button class="mdash-tab${measurementTab === key ? " is-active" : ""}"
+                    data-measure-tab="${key}" type="button">${label}</button>`).join("")}
+        </nav>
+        ${measurementTab === "overview" ? measureOverview(record, ranked, shape, margin, percentile, rarity, unlocked)
+          : measurementTab === "score" ? measureScoreTab(record, margin, percentile, unlocked)
+          : measurementTab === "abilities" ? measureAbilitiesTab(record, ranked, unlocked)
+          : measureInsightsTab(record, ranked, shape, unlocked)}
       </div>
-      <p class="measure-dash-sub">
-        ${escapeHtml(latest.descriptor ?? scoreDescriptor(latest.score))} ·
-        ${latest.percentile ?? scoreToPercentile(latest.score)}th percentile ·
-        ${new Date(latest.completedAt).toLocaleDateString()}
+    </div>`;
+
+  host.querySelectorAll("[data-measure-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => setMeasurementTab(tab.dataset.measureTab));
+  });
+  host.querySelectorAll("[data-measure-session]").forEach((item) => {
+    item.addEventListener("click", () => selectMeasurementSession(Number(item.dataset.measureSession)));
+  });
+}
+
+// A locked value shows its shape but not its number.
+function lockedValue(value, unlocked) {
+  return unlocked ? value : "•••";
+}
+
+function measureSummaryStrip(record, percentile, unlocked) {
+  const minutes = Math.max(1, Math.round(record.durationMs / 60000));
+  const completed = Object.keys(record.subtests ?? {}).length || MEASUREMENT_SUBTESTS.length;
+  return `
+    <div class="mdash-strip">
+      <div><dt>Subtests</dt><dd>${completed} of ${MEASUREMENT_SUBTESTS.length}</dd></div>
+      <div><dt>Composite</dt><dd>${record.score}</dd></div>
+      <div><dt>Percentile</dt><dd>${lockedValue(`${percentile}th`, unlocked)}</dd></div>
+      <div><dt>Time taken</dt><dd>${minutes} min</dd></div>
+    </div>`;
+}
+
+function measurePillars(ranked, unlocked) {
+  return `<div class="mdash-pillars">
+    ${MEASUREMENT_INDEX_ORDER.map((key) => {
+      const meta = MEASUREMENT_INDICES[key];
+      const entry = ranked.find((item) => item.key === key);
+      if (!entry) {
+        return `<article class="mdash-pillar is-empty">
+          <p class="mdash-pillar-name">${escapeHtml(meta.short)}</p>
+          <p class="mdash-pillar-score">—</p>
+          <p class="mdash-pillar-sub">Not measured</p>
+        </article>`;
+      }
+      const rarity = rarityFromPercentile(entry.percentile);
+      return `<article class="mdash-pillar">
+        <p class="mdash-pillar-name">${escapeHtml(meta.short)}${entry.rank <= 2 ? `<span class="mdash-rankbadge">#${entry.rank}</span>` : ""}</p>
+        <p class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</p>
+        <p class="mdash-pillar-sub">${escapeHtml(meta.name)}</p>
+        <p class="mdash-pillar-rarity">${unlocked
+          ? `${rarity.direction === "top" ? "Top" : "Bottom"} ${rarity.share}% · 1 in ${rarity.one_in}`
+          : "Locked"}</p>
+      </article>`;
+    }).join("")}
+  </div>`;
+}
+
+function measureOverview(record, ranked, shape, margin, percentile, rarity, unlocked) {
+  const best = ranked[0];
+  const worst = ranked.at(-1);
+  return `
+    ${measureSummaryStrip(record, percentile, unlocked)}
+    ${measurePillars(ranked, unlocked)}
+
+    <section class="mdash-card mdash-hero">
+      <div>
+        <p class="mdash-eyebrow">Composite</p>
+        <p class="mdash-hero-score">${record.score}${margin !== null ? `<span>±${margin}</span>` : ""}</p>
+        <p class="mdash-hero-band">${escapeHtml(interpretationBand(record.score).label)}</p>
+        <p class="mdash-hero-note">
+          ${unlocked
+            ? `Higher than about ${percentile}% of a typical population — roughly 1 in ${rarity.one_in} people.
+               A retest would usually land between ${record.ci?.low} and ${record.ci?.high}.`
+            : "Unlock the report to see your percentile, index scores and the full breakdown."}
+        </p>
+      </div>
+      <div class="mdash-curve">${catBellCurveSvg(record.score)}</div>
+    </section>
+
+    ${best && unlocked ? `
+      <div class="mdash-duo">
+        <section class="mdash-card">
+          <p class="mdash-eyebrow">Strongest ability</p>
+          <h3>${escapeHtml(best.name)}</h3>
+          <p class="mdash-body">${escapeHtml(best.blurb)}</p>
+          <p class="mdash-stat">${best.score} · ${best.percentile}th percentile</p>
+        </section>
+        <section class="mdash-card">
+          <p class="mdash-eyebrow">Most room to grow</p>
+          <h3>${escapeHtml(worst.name)}</h3>
+          <p class="mdash-body">${escapeHtml(worst.blurb)}</p>
+          <p class="mdash-stat">${worst.score} · ${worst.percentile}th percentile</p>
+        </section>
+      </div>` : ""}
+  `;
+}
+
+function measureScoreTab(record, margin, percentile, unlocked) {
+  const band = interpretationBand(record.score);
+  return `
+    <section class="mdash-card">
+      <p class="mdash-eyebrow">Your composite</p>
+      <p class="mdash-hero-score">${record.score}${margin !== null ? `<span>±${margin}</span>` : ""}</p>
+      <p class="mdash-body">
+        ${unlocked
+          ? `In a room of 100 people, you would score higher than about ${Math.round(percentile)} of them.
+             The margin is not decoration: a retest would usually land anywhere between
+             ${record.ci?.low} and ${record.ci?.high}, and a single point of difference between two
+             sittings means nothing on its own.`
+          : "Unlock the report to see where this sits."}
       </p>
-      ${margin !== null ? `<p class="measure-dash-note">A retest would usually land between ${latest.ci.low} and ${latest.ci.high}. Completing more subtests narrows this.</p>` : ""}
+    </section>
+
+    <section class="mdash-card">
+      <h3>How this score is read</h3>
+      <div class="mdash-bands">
+        ${INTERPRETATION_BANDS.map((entry, index) => {
+          const low = index === 0 ? "<75" : `${(INTERPRETATION_BANDS[index - 1].max) + 1}${entry.max === Infinity ? "+" : `–${entry.max}`}`;
+          const isYou = entry === band;
+          return `<div class="mdash-band${isYou ? " is-you" : ""}">
+            ${isYou ? '<span class="mdash-band-you">You</span>' : ""}
+            <span class="mdash-band-range">${low}</span>
+            <span class="mdash-band-share">${entry.share}</span>
+            <span class="mdash-band-label">${escapeHtml(entry.label)}</span>
+          </div>`;
+        }).join("")}
+      </div>
+      <p class="mdash-caveat">
+        The percentages are those of the normal curve the scale is defined against, not counts from a
+        Cogni sample. These scores are provisional until the item parameters are calibrated on real data.
+      </p>
+    </section>`;
+}
+
+function measureAbilitiesTab(record, ranked, unlocked) {
+  if (!unlocked) {
+    return `<section class="mdash-card"><h3>Locked</h3>
+      <p class="mdash-body">The ability breakdown is part of the full report.</p></section>`;
+  }
+  const subtests = record.subtests ?? {};
+  return `
+    <section class="mdash-card">
+      <h3>Every ability, with its margin</h3>
+      <div class="mdash-rows">
+        ${ranked.map((entry) => `
+          <div class="mdash-row">
+            <span class="mdash-row-name">${escapeHtml(entry.name)}</span>
+            <span class="mdash-row-track" aria-hidden="true">
+              <i style="left:${scoreTrackOffset(entry.score).toFixed(1)}%"></i>
+            </span>
+            <span class="mdash-row-score">${entry.score}</span>
+            <span class="mdash-row-pct">${entry.percentile}th</span>
+            <span class="mdash-row-desc">${escapeHtml(interpretationBand(entry.score).label)}</span>
+          </div>`).join("")}
+      </div>
+    </section>
+
+    <section class="mdash-card">
+      <h3>Subtests behind them</h3>
+      <div class="mdash-rows">
+        ${MEASUREMENT_INDEX_ORDER.flatMap((key) => {
+          const meta = MEASUREMENT_INDICES[key];
+          return subtestsForIndex(key).map((subtest) => {
+            const result = subtests[subtest.id];
+            return `<div class="mdash-row mdash-row-sub">
+              <span class="mdash-row-name">${escapeHtml(subtest.name)}<em>${escapeHtml(meta.short)}</em></span>
+              <span class="mdash-row-track" aria-hidden="true">
+                ${result && Number.isFinite(result.score)
+                  ? `<i style="left:${scoreTrackOffset(result.score).toFixed(1)}%"></i>` : ""}
+              </span>
+              <span class="mdash-row-score">${result && Number.isFinite(result.score) ? result.score : "—"}</span>
+              <span class="mdash-row-pct">${result?.answered != null ? `${result.answered} answered` : ""}</span>
+              <span class="mdash-row-desc">${result
+                ? (result.partial || result.abandoned ? "Stopped early" : "Complete")
+                : "Not taken"}</span>
+            </div>`;
+          });
+        }).join("")}
+      </div>
+    </section>`;
+}
+
+function measureInsightsTab(record, ranked, shape, unlocked) {
+  if (!unlocked || !shape) {
+    return `<section class="mdash-card"><h3>Locked</h3>
+      <p class="mdash-body">Profile insights are part of the full report.</p></section>`;
+  }
+  const shapeCopy = {
+    even: "Your six abilities sit close together. An even profile means the composite is a fair summary of you, and no single ability is carrying or dragging the rest.",
+    uneven: "Your abilities differ enough that the composite hides something. The spread below is worth more attention than the single number above it.",
+    spiky: "Your abilities differ sharply. When the gap is this wide the composite is a poor description of you — read the indices separately, because averaging them describes nobody."
+  }[shape.shape];
+
+  return `
+    <section class="mdash-card">
+      <p class="mdash-eyebrow">Profile shape</p>
+      <h3>${shape.shape === "even" ? "Even" : shape.shape === "uneven" ? "Uneven" : "Spiky"} — ${shape.spread} points between highest and lowest</h3>
+      <p class="mdash-body">${escapeHtml(shapeCopy)}</p>
+    </section>
+
+    <div class="mdash-duo">
+      <section class="mdash-card">
+        <p class="mdash-eyebrow">Biggest strength</p>
+        <h3>${escapeHtml(shape.strongest.name)}</h3>
+        <p class="mdash-body">${escapeHtml(shape.strongest.blurb)}</p>
+      </section>
+      <section class="mdash-card">
+        <p class="mdash-eyebrow">Biggest weakness</p>
+        <h3>${escapeHtml(shape.weakest.name)}</h3>
+        <p class="mdash-body">${escapeHtml(shape.weakest.blurb)}</p>
+      </section>
     </div>
-    <div class="measure-dash-indices">${indexBars}</div>
-    ${sessions.length > 1 ? `<div class="measure-dash-history">
-      <p class="measure-dash-eyebrow">Retests</p>
-      <ul>${history}</ul>
-    </div>` : ""}`;
+
+    <section class="mdash-card">
+      <h3>What this does and doesn't tell you</h3>
+      <p class="mdash-body">
+        A profile describes how you performed on these tasks today. It is not a ceiling, not a diagnosis,
+        and not a prediction of what you can learn. Where it is genuinely useful is in choosing method:
+        a low working-memory span is a reason to write more down, not a reason to expect less of yourself.
+      </p>
+      <p class="mdash-caveat">
+        Scores are provisional — the item parameters are author estimates rather than values fitted to a
+        standardisation sample.
+      </p>
+    </section>`;
 }
 
 // The IQ Test page has two faces. A visitor who has never measured sees a sales
@@ -7394,7 +7617,7 @@ function renderSubtestDetail(subtestId) {
     ? "Adaptive length — it grows until you miss twice."
     : `This subtest contains ${subtest.questions} questions.`;
   panel.innerHTML = `
-    <div class="measure-detail-card" style="--index-accent:${indexAccent(key)}">
+    <div class="measure-detail-card" style="--index-accent:${indexAccent(subtest.index)}">
       <span class="measure-detail-eyebrow"><i aria-hidden="true"></i>${escapeHtml(meta.name)}</span>
       <h3 class="measure-detail-title">${escapeHtml(subtest.name)}</h3>
       <dl class="measure-facts">
@@ -8778,6 +9001,7 @@ function setActiveTab(tab) {
   });
   const loginButton = document.querySelector("#site-login");
   if (loginButton) loginButton.textContent = authUser ? "Profile" : "Log in";
+  syncRailAccount();
   const mobileTabOrder = ["home", "exercises", "assessments", "statistics"];
   const activeIndex = Math.max(0, mobileTabOrder.indexOf(tab));
   elements.sideNav?.style.setProperty("--active-nav-shift", `${activeIndex * 100}%`);

@@ -19944,3 +19944,304 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
    is unscoped so it holds from the first paint, before mode-pro is applied. */
 html.landing-active .site-tabs { display: none !important; }
 html.landing-active .site-header-inner { padding: 16px 0; }
+
+/* ===================================================================
+   Measurement dashboard — history rail, tabs, pillar cards.
+   =================================================================== */
+.mdash { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; align-items: start; }
+
+.mdash-rail { position: sticky; top: 96px; }
+.mdash-rail-title {
+  margin: 0 0 10px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.mdash-rail-list { display: grid; gap: 2px; }
+.mdash-rail-item {
+  display: grid !important;
+  gap: 2px;
+  padding: 10px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: none !important;
+  text-align: left;
+  cursor: pointer;
+}
+.mdash-rail-item:hover { background: var(--fill-subtle) !important; }
+.mdash-rail-item.is-active { background: var(--fill-subtle) !important; border-color: var(--line-strong) !important; }
+.mdash-rail-score { font-size: 1.05rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.mdash-rail-meta { font-size: 0.76rem; color: var(--muted); }
+.mdash-rail-meta em { font-style: normal; opacity: 0.75; }
+
+.mdash-main { display: grid; gap: 16px; }
+.mdash-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 0; }
+.mdash-tab {
+  padding: 10px 16px !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: none !important;
+  color: var(--muted) !important;
+  font-size: 0.95rem; font-weight: 550;
+  cursor: pointer;
+}
+.mdash-tab:hover { color: var(--text) !important; }
+.mdash-tab.is-active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+
+.mdash-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.mdash-strip > div { padding: 14px 18px; border-right: 1px solid var(--line); }
+.mdash-strip > div:last-child { border-right: 0; }
+.mdash-strip dt { font-size: 0.74rem; color: var(--muted); margin-bottom: 4px; }
+.mdash-strip dd { margin: 0; font-size: 1.05rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+.mdash-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.mdash-pillar {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.mdash-pillar-name {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.mdash-rankbadge {
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--fill-subtle); color: var(--text-2);
+  font-size: 0.66rem; letter-spacing: 0;
+}
+.mdash-pillar-score { margin: 0; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.mdash-pillar-sub { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-2); }
+.mdash-pillar-rarity { margin: 6px 0 0; font-size: 0.74rem; color: var(--muted); }
+.mdash-pillar.is-empty { opacity: 0.55; }
+
+.mdash-card {
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.mdash-card h3 { margin: 0 0 10px; font-size: 1.1rem; letter-spacing: -0.01em; }
+.mdash-eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+}
+.mdash-body { margin: 0; color: var(--text-2); font-size: 0.93rem; line-height: 1.62; }
+.mdash-stat { margin: 10px 0 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.mdash-caveat { margin: 14px 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.55; }
+
+.mdash-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 24px; align-items: center; }
+.mdash-hero-score { margin: 0; font-size: clamp(2.6rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.mdash-hero-score span { margin-left: 10px; font-size: 1.1rem; font-weight: 500; color: var(--muted); }
+.mdash-hero-band { margin: 8px 0 0; font-weight: 600; color: var(--accent); }
+.mdash-hero-note { margin: 10px 0 0; color: var(--text-2); font-size: 0.9rem; line-height: 1.6; }
+.mdash-curve svg { width: 100%; height: auto; }
+
+.mdash-duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+.mdash-rows { display: grid; }
+.mdash-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) minmax(80px, 2fr) 52px 76px minmax(90px, 1.1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.mdash-rows .mdash-row:first-child { border-top: 0; }
+.mdash-row-name { font-weight: 550; }
+.mdash-row-name em { display: block; font-style: normal; font-size: 0.72rem; color: var(--muted); }
+.mdash-row-track { position: relative; height: 3px; border-radius: 999px; background: var(--fill-subtle); }
+.mdash-row-track i {
+  position: absolute; top: 50%;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); transform: translate(-50%, -50%);
+}
+.mdash-row-score { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.mdash-row-pct, .mdash-row-desc { color: var(--muted); font-size: 0.82rem; }
+.mdash-row-sub .mdash-row-name { font-weight: 400; padding-left: 12px; }
+
+.mdash-bands { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 2px; }
+.mdash-band {
+  position: relative;
+  display: grid; gap: 4px;
+  padding: 14px 12px 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+.mdash-band.is-you { background: var(--fill-subtle); box-shadow: inset 0 0 0 1px var(--accent); }
+.mdash-band-you {
+  position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+  padding: 1px 8px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 0.66rem; font-weight: 700;
+}
+.mdash-band-range { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mdash-band-share { color: var(--muted); }
+.mdash-band-label { color: var(--text-2); font-size: 0.75rem; line-height: 1.3; }
+
+@media (max-width: 900px) {
+  .mdash { grid-template-columns: minmax(0, 1fr); }
+  .mdash-rail { position: static; }
+  .mdash-rail-list { display: flex; gap: 8px; overflow-x: auto; }
+  .mdash-rail-item { flex: none; min-width: 110px; }
+  .mdash-hero { grid-template-columns: minmax(0, 1fr); }
+  .mdash-row { grid-template-columns: minmax(0, 1fr) 52px 70px; }
+  .mdash-row-track, .mdash-row-desc { display: none; }
+}
+
+/* The dashboard container was a two-column grid built for the previous layout,
+   so the new dashboard landed inside a single ~340px column. It is a plain
+   block now, and the report gets the full content width to work with. */
+html.mode-pro .measure-dashboard {
+  display: block !important;
+  grid-template-columns: none !important;
+}
+html.mode-pro .measure-picker { max-width: 1180px; width: 100%; }
+html.mode-pro .assessment-page { width: 100%; max-width: none; }
+
+/* ===================================================================
+   Site rail — persistent left navigation for the app (FaceIQ-style).
+   The top header is now only the landing's chrome; inside the app the
+   rail navigates and the dashboard keeps its own tabs.
+   =================================================================== */
+.site-rail { display: none; }
+html.mode-pro .site-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 248px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  z-index: 45;
+  overflow-y: auto;
+}
+/* The landing is pre-app: no rail, and the slim header instead. */
+html.mode-pro.landing-active .site-rail { display: none; }
+html.mode-pro:not(.landing-active) .site-header { display: none; }
+html.mode-pro:not(.landing-active) .app-content { padding-left: 280px !important; }
+
+.site-rail-brand {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px !important;
+  border: 0 !important;
+  background: none !important;
+  color: var(--text) !important;
+  font-size: 1.12rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.site-rail-brand img { width: auto; height: 24px; object-fit: contain; }
+
+.site-rail-account {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+}
+.site-rail-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.site-rail-avatar {
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--text); color: var(--bg);
+  font-weight: 700;
+}
+.site-rail-name { margin: 0; font-weight: 650; font-size: 0.95rem; }
+.site-rail-plan {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--fill-subtle);
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.site-rail-upgrade {
+  width: 100%;
+  min-height: 42px;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-weight: 650;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.site-rail-upgrade:hover { opacity: 0.88; }
+
+.site-rail-nav { display: grid; gap: 2px; }
+html.mode-pro .site-rail-nav .site-tab {
+  display: flex !important;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 12px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+}
+html.mode-pro .site-rail-nav .site-tab svg {
+  width: 18px; height: 18px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+html.mode-pro .site-rail-nav .site-tab:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
+html.mode-pro .site-rail-nav .site-tab.active {
+  background: var(--fill-subtle) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.site-rail-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; }
+.site-rail-login {
+  flex: 1;
+  min-height: 38px;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 10px !important;
+  background: none !important;
+  color: var(--text) !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.site-rail-login:hover { background: var(--fill-subtle) !important; }
+
+@media (max-width: 900px) {
+  html.mode-pro .site-rail {
+    position: static;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  html.mode-pro .site-rail-account, html.mode-pro .site-rail-foot { display: none; }
+  html.mode-pro .site-rail-nav { display: flex; gap: 4px; }
+  html.mode-pro .site-rail-nav .site-tab span { white-space: nowrap; }
+  html.mode-pro:not(.landing-active) .app-content { padding-left: 16px !important; }
+}
