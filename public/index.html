@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260807-web153">
+    <link rel="stylesheet" href="styles.css?v=20260807-web159">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -809,6 +809,10 @@
     </div>
 
     <main class="app-shell home-open" id="app-shell">
+      <!-- The report's tab bar. It lives out here rather than inside the page
+           because .assessment-page carries a transform, and a transform makes
+           an ancestor the containing block for position: fixed. -->
+      <nav class="mdash-topbar" id="mdash-topbar" aria-label="Report sections"></nav>
       <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Open menu" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
@@ -1061,18 +1065,41 @@
         <div class="measure-picker" id="cat-intro">
           <div class="measure-dashboard" id="measure-dashboard" hidden></div>
           <section class="measure-offers" id="measure-offers" aria-label="Tests and pricing"></section>
-          <div class="measure-picker-head">
-            <p class="measure-picker-sub">Take the subtests in any order, at your own pace. Each one is a single sitting — you can stop early, but you can't return to it.</p>
-            <div class="measure-progress" id="measure-progress"></div>
-          </div>
+          <!-- The test hub: where the current attempt stands, how to get on
+               with it, and every report already earned. -->
+          <section class="measure-hub" id="measure-hub" aria-label="Your test">
+            <div class="measure-hub-state">
+              <p class="measure-hub-eyebrow">Current attempt</p>
+              <h2 class="measure-hub-title" id="measure-hub-title">Cogni Measurement</h2>
+              <p class="measure-hub-sub">Nine subtests, taken in any order at your own pace. Each one is a
+                single sitting — you can stop early, but you can't return to it.</p>
+              <div class="measure-progress" id="measure-progress"></div>
+              <div class="measure-hub-actions">
+                <button class="measure-hub-cta" id="measure-continue" type="button">Start the test</button>
+                <button class="measure-hub-reset" id="measure-restart" type="button" hidden>Start a new test</button>
+              </div>
+            </div>
+            <aside class="measure-hub-reports" id="measure-hub-reports" hidden>
+              <p class="measure-hub-eyebrow">Previous reports</p>
+              <div class="measure-hub-list" id="measure-history"></div>
+            </aside>
+          </section>
+
           <div class="measure-picker-body">
             <div class="measure-sections" id="measure-sections"></div>
             <aside class="measure-detail" id="measure-detail" aria-live="polite"></aside>
           </div>
           <p class="assessment-disclaimer">Scores are estimates from provisional item data, for personal tracking only — this is not a clinically validated intelligence test.</p>
-          <div class="assessment-list-actions">
-            <button class="secondary-button" id="cat-open-history" type="button">Previous scores</button>
-          </div>
+
+          <dialog class="measure-quit-dialog" id="measure-restart-dialog">
+            <h3>Start a new test?</h3>
+            <p id="measure-restart-copy">This clears the subtests you have already finished in this attempt and
+              starts a fresh one. Reports you have already earned are kept.</p>
+            <div class="measure-quit-actions">
+              <button class="secondary-button" id="measure-restart-cancel" type="button">Keep going</button>
+              <button class="danger-button" id="measure-restart-confirm" type="button">Start a new test</button>
+            </div>
+          </dialog>
         </div>
 
         <section class="assessment-run" id="cat-run" hidden aria-live="polite">
@@ -2629,6 +2656,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260807-web153"></script>
+    <script type="module" src="src/app/main.js?v=20260807-web159"></script>
   </body>
 </html>

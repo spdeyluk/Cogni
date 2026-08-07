@@ -7099,6 +7099,8 @@ function showAssessmentSection(sectionId) {
   }
   if (sectionId !== "focus-run") stopFocusTimer();
   if (sectionId !== "memory-run") stopMemoryTimers();
+  // The report's tab bar belongs to the report, not to a subtest in progress.
+  document.documentElement.classList.toggle("report-chrome", sectionId === null);
   // While a question is showing, go full-screen immersive like the exercises.
   elements.appShell?.classList.toggle("cat-immersive", sectionId === "cat-run");
 }
@@ -7295,16 +7297,21 @@ function renderMeasurementDashboard() {
     measurementFocus = "overall";
   }
 
+  // The tab bar is rendered into the shell, not into the page, so it can pin
+  // to the top of the window — see the note on #mdash-topbar in index.html.
+  const topbar = document.querySelector("#mdash-topbar");
+  if (topbar) {
+    topbar.innerHTML = `
+      <div class="mdash-topbar-inner">
+        ${tabs.map(([key, label]) => `
+          <button class="mdash-tab${measurementTab === key ? " is-active" : ""}"
+                  data-measure-tab="${key}" type="button">${label}</button>`).join("")}
+      </div>`;
+  }
+
   host.hidden = false;
   host.innerHTML = `
     <div class="mdash mdash-single">
-      <nav class="mdash-topbar" aria-label="Report sections">
-        <div class="mdash-topbar-inner">
-          ${tabs.map(([key, label]) => `
-            <button class="mdash-tab${measurementTab === key ? " is-active" : ""}"
-                    data-measure-tab="${key}" type="button">${label}</button>`).join("")}
-        </div>
-      </nav>
       <div class="mdash-main">
         ${measurementTab === "overview" ? measureOverview(record, ranked, shape, margin, percentile, rarity, unlocked)
           : measurementTab === "score" ? measureScoreTab(record, margin, percentile, unlocked)
@@ -7313,9 +7320,11 @@ function renderMeasurementDashboard() {
       </div>
     </div>`;
 
-  host.querySelectorAll("[data-measure-tab]").forEach((tab) => {
-    tab.addEventListener("click", () => setMeasurementTab(tab.dataset.measureTab));
-  });
+  for (const scope of [topbar, host]) {
+    scope?.querySelectorAll("[data-measure-tab]").forEach((tab) => {
+      tab.addEventListener("click", () => setMeasurementTab(tab.dataset.measureTab));
+    });
+  }
   host.querySelectorAll("[data-measure-focus]").forEach((card) => {
     card.addEventListener("click", () => setMeasurementFocus(card.dataset.measureFocus));
   });
@@ -7730,7 +7739,16 @@ function renderMeasurePicker(selectedId) {
   // A visitor with nothing measured and nothing started gets the sales page.
   const isNewVisitor = !loadCatSessions().length && measureCompletedCount(attempt) === 0;
   document.querySelector("#cat-intro")?.classList.toggle("is-selling", isNewVisitor);
-  if (isNewVisitor) { renderMeasurementSales(); return; }
+  if (isNewVisitor) {
+    // Nothing measured yet: no report, so no report chrome either. This has to
+    // be undone here as well as in the dashboard, because the sales page
+    // returns before the dashboard ever runs.
+    document.documentElement.classList.remove("mdash-on");
+    const topbar = document.querySelector("#mdash-topbar");
+    if (topbar) topbar.innerHTML = "";
+    renderMeasurementSales();
+    return;
+  }
   const offers = document.querySelector("#measure-offers");
   if (offers) offers.innerHTML = "";
   renderMeasurementDashboard();
@@ -7745,6 +7763,7 @@ function renderMeasurePicker(selectedId) {
       <span class="measure-progress-value"><strong>${done}</strong> of ${total} complete</span>
       <span class="measure-progress-track" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></span>`;
   }
+  renderMeasureHub(attempt, done, total);
 
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
     const meta = MEASUREMENT_INDICES[key];
@@ -7776,6 +7795,93 @@ function renderMeasurePicker(selectedId) {
 
   renderSubtestDetail(selectedId ?? MEASUREMENT_SUBTESTS.find((s) => !attempt.subtests[s.id])?.id ?? MEASUREMENT_SUBTESTS[0].id);
 }
+
+// The test hub. The page under the report is not a list of links — it is where
+// you find out where the attempt stands, get on with the next subtest, start
+// over, or go back to a report you have already earned.
+function renderMeasureHub(attempt, done, total) {
+  const hub = document.querySelector("#measure-hub");
+  if (!hub) return;
+  const remaining = MEASUREMENT_SUBTESTS.filter((subtest) => !attempt.subtests[subtest.id]);
+  const next = remaining[0] ?? null;
+  const minutesLeft = remaining.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+  const sessions = loadCatSessions();
+
+  const title = document.querySelector("#measure-hub-title");
+  if (title) {
+    title.textContent = done === 0
+      ? "Take the measurement"
+      : next ? `${done} of ${total} subtests done` : "Every subtest done";
+  }
+  const sub = hub.querySelector(".measure-hub-sub");
+  if (sub) {
+    sub.textContent = next
+      ? `${done === 0 ? "Nine subtests, taken" : "The rest can be taken"} in any order at your own pace — about `
+        + `${minutesLeft} minutes left. Each one is a single sitting: you can stop early, but you can't return to it.`
+      : "Your composite is scored from all nine. Start a new test whenever you want to measure again.";
+  }
+
+  const cta = document.querySelector("#measure-continue");
+  if (cta) {
+    cta.hidden = !next;
+    if (next) cta.textContent = `${done === 0 ? "Start the test" : "Continue"} — ${next.name}`;
+    cta.dataset.subtest = next?.id ?? "";
+  }
+
+  // Nothing to discard until something has been answered.
+  const restart = document.querySelector("#measure-restart");
+  if (restart) {
+    restart.hidden = done === 0;
+    restart.textContent = next ? "Start a new test" : "Start a new test";
+  }
+
+  const reports = document.querySelector("#measure-hub-reports");
+  const list = document.querySelector("#measure-history");
+  if (reports) reports.hidden = sessions.length === 0;
+  if (list) {
+    list.innerHTML = sessions.map((session, index) => {
+      const when = new Date(session.completedAt);
+      const taken = Object.keys(session.subtests ?? {}).length || total;
+      return `
+        <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
+                data-measure-session="${index}" type="button">
+          <span class="measure-report-score">${measurementReportUnlocked() ? session.score : "•••"}</span>
+          <span class="measure-report-meta">
+            <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
+            ${taken} of ${total} subtests
+          </span>
+        </button>`;
+    }).join("");
+    list.querySelectorAll("[data-measure-session]").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectMeasurementSession(Number(button.dataset.measureSession));
+        renderMeasurePicker();
+        document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+}
+
+document.querySelector("#measure-continue")?.addEventListener("click", (event) => {
+  const id = event.currentTarget.dataset.subtest;
+  if (!id) return;
+  renderSubtestDetail(id);
+  document.querySelector("#measure-detail")?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+// Starting over throws away answered subtests, so it asks first.
+document.querySelector("#measure-restart")?.addEventListener("click", () => {
+  document.querySelector("#measure-restart-dialog")?.showModal();
+});
+document.querySelector("#measure-restart-cancel")?.addEventListener("click", () => {
+  document.querySelector("#measure-restart-dialog")?.close();
+});
+document.querySelector("#measure-restart-confirm")?.addEventListener("click", () => {
+  document.querySelector("#measure-restart-dialog")?.close();
+  clearMeasureAttempt();
+  renderMeasurePicker();
+  document.querySelector("#measure-hub")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 function renderSubtestDetail(subtestId) {
   const panel = document.querySelector("#measure-detail");

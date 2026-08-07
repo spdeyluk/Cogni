@@ -19831,6 +19831,7 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
    no colour chart. Everything else on this screen is hidden while it shows.
    =================================================================== */
 .measure-picker.is-selling .measure-picker-head,
+.measure-picker.is-selling .measure-hub,
 .measure-picker.is-selling .measure-picker-body,
 .measure-picker.is-selling .assessment-disclaimer,
 .measure-picker.is-selling .assessment-list-actions,
@@ -20466,9 +20467,11 @@ html.mode-pro .measure-offers { text-align: left; }
   html.mode-pro .mdash-pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Clear the announcement banner, whose own close button lives top-right. */
-html.mode-pro:not(.landing-active) .app-topright { top: 76px; }
-html.mode-pro:not(.landing-active) .site-rail { padding-top: 24px; }
+/* The calibration banner is landing chrome, like the slim header above it.
+   Inside the app it is just a blue bar in the way, so it goes — and the
+   offsets that were only there to clear it go with it. */
+.landing-banner { display: none; }
+html.landing-active .landing-banner { display: flex; }
 
 /* ===================================================================
    Measurement report — Overview.
@@ -20481,30 +20484,38 @@ html.mode-pro:not(.landing-active) .site-rail { padding-top: 24px; }
 
 /* Six cards plus a chart need the column, so the report page gives up the
    centred measure the reading pages want. */
-html.mode-pro.mdash-on .app-shell.assessments-open .app-content {
+html.mode-pro .app-shell.assessments-open .app-content {
   width: 100%;
   max-width: none;
   margin: 0;
 }
-html.mode-pro.mdash-on .app-shell.assessments-open .measure-picker {
+html.mode-pro .app-shell.assessments-open .measure-picker {
   max-width: none;
   margin: 0;
 }
-/* The report's own top bar is the page header now. */
-html.mode-pro.mdash-on .app-shell.assessments-open .hero { display: none; }
+/* No page header here at all: the report's tab bar and the hub's own heading
+   say everything the brand lockup used to. */
+html.mode-pro .app-shell.assessments-open .hero { display: none; }
 
-/* --- The top bar: first thing on the page, and it stays there --------- */
-html.mode-pro .mdash-topbar {
-  position: sticky;
+/* --- The top bar: first thing on the page, and it stays there ---------
+   It lives in the shell, outside the transformed page wrapper, so `fixed`
+   really is fixed and its position owes nothing to the page's own spacing.
+   The left padding clears the rail, which is opaque and paints over it. */
+.mdash-topbar { display: none; }
+html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar {
+  display: block;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 30;
-  /* Pulled out to the edges of the content box: left under the rail (which
-     is opaque and sits above it), right to the window edge. */
-  margin: -28px -32px 26px -280px;
   padding: 0 32px 0 280px;
   background: var(--surface);
   border-bottom: 1px solid var(--line-strong);
 }
+/* Out of flow, so the report reserves the height it takes. */
+html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .app-content { padding-top: 62px !important; }
+html.rail-collapsed.mode-pro .mdash-topbar { padding-left: 108px; }
 html.mode-pro .mdash-topbar-inner {
   display: flex;
   align-items: stretch;
@@ -20821,10 +20832,116 @@ html.mode-pro .mdash-subtab.is-active {
   html.mode-pro .mdash-overall-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 @media (max-width: 900px) {
-  html.mode-pro .mdash-topbar { margin-left: -16px; padding-left: 16px; }
+  /* The rail turns into a horizontal strip here, so the bar has nothing to
+     clear on the left. */
+  html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 @media (max-width: 760px) {
   html.mode-pro .mdash-pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   html.mode-pro .mdash-overall { padding: 20px 18px 16px; }
   .mdash-overall-meta { display: none; }
+}
+
+/* ===================================================================
+   The test hub.
+
+   The page under the report is not a list of links. It says where the
+   attempt stands, gets you into the next subtest, lets you start over,
+   and holds every report already earned.
+   =================================================================== */
+html.mode-pro .measure-hub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 330px);
+  gap: 44px;
+  align-items: start;
+  margin-bottom: 36px;
+  padding: 26px 28px 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.measure-hub-eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+html.mode-pro .measure-hub-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  letter-spacing: -0.025em;
+}
+html.mode-pro .measure-hub-sub {
+  margin: 10px 0 0;
+  max-width: 62ch;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+html.mode-pro .measure-hub .measure-progress { margin-top: 20px; max-width: 420px; }
+
+.measure-hub-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+html.mode-pro .measure-hub-cta {
+  padding: 13px 22px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-size: 0.97rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+html.mode-pro .measure-hub-cta:hover { opacity: 0.88; }
+html.mode-pro .measure-hub-reset {
+  padding: 13px 18px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 12px !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  font-size: 0.94rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+html.mode-pro .measure-hub-reset:hover {
+  background: var(--fill-subtle) !important;
+  color: var(--text) !important;
+}
+
+.measure-hub-list { display: grid; gap: 8px; }
+html.mode-pro .measure-report {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 12px !important;
+  background: none !important;
+  text-align: left;
+  cursor: pointer;
+}
+html.mode-pro .measure-report:hover { background: var(--fill-subtle) !important; }
+html.mode-pro .measure-report.is-active {
+  border-color: var(--text) !important;
+  background: var(--fill-subtle) !important;
+}
+.measure-report-score {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.4em;
+}
+.measure-report-meta { font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
+.measure-report-meta em { display: block; font-style: normal; font-weight: 600; color: var(--text-2); }
+
+@media (max-width: 1000px) {
+  html.mode-pro .measure-hub { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
