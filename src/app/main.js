@@ -2609,7 +2609,7 @@ function syncRrtDifficultyButtons() {
 }
 
 function openNBackSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("nback-open");
   elements.pageTitle.textContent = "N-back";
@@ -2617,7 +2617,7 @@ function openNBackSettings() {
 }
 
 function openMotSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("mot-open");
   elements.pageTitle.textContent = "3D MOT";
@@ -2626,7 +2626,7 @@ function openMotSettings() {
 }
 
 function openRrtSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("rrt-open");
   elements.pageTitle.textContent = "Relational Reasoning";
@@ -2634,7 +2634,7 @@ function openRrtSettings() {
 }
 
 function openCctSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("cct-open");
   elements.pageTitle.textContent = "Cognitive Control Training";
@@ -2642,7 +2642,7 @@ function openCctSettings() {
 }
 
 function openUfovSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("ufov-open");
   elements.pageTitle.textContent = "UFOV";
@@ -2651,7 +2651,7 @@ function openUfovSettings() {
 }
 
 function openIctSettings() {
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open");
+  elements.appShell.classList.remove(...sectionOpenClasses);
   setActiveTab("exercises");
   elements.appShell.classList.add("ict-open");
   elements.pageTitle.textContent = "Inhibitory Control Training";
@@ -4085,7 +4085,7 @@ function restoreExerciseSheetControls() {
 
 function showHome() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("home-open");
   setActiveTab("home");
   elements.pageTitle.textContent = "Home";
@@ -4095,7 +4095,7 @@ function showHome() {
 
 function showFriendsPage() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("friends-open");
   setActiveTab("friends");
   elements.pageTitle.textContent = "Friends";
@@ -4267,7 +4267,7 @@ function initTrainHub() {
 function showExerciseHub() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   showPendingSessionCoinFloat();
-  elements.appShell.classList.remove("home-open", "friends-open", "dashboard-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("exercises-open");
   // Keep whichever hub this build uses populated.
   if (cogniUiMode === "play") renderTrainSections(); else initExerciseTagFilter();
@@ -4292,7 +4292,7 @@ function showExerciseHub() {
 function showStatistics() {
   if (!requireAuth("Sign in to see your stats and progress.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("profile-open");
   setActiveTab("statistics");
   elements.pageTitle.textContent = "Profile";
@@ -4302,7 +4302,23 @@ function showStatistics() {
   renderProfile();
 }
 
-const sectionResetClasses = ["community-open", "about-open", "home-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active"];
+// Every section class the shell can carry, in one place. This list used to be
+// copy-pasted into a dozen show* functions, and adding Community and About to
+// only some of the copies meant navigating away from Community left its panels
+// on screen over the next page. Derive, never duplicate.
+const sectionOpenClasses = [
+  "community-open", "about-open", "home-open", "friends-open", "dashboard-open",
+  "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open",
+  "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open",
+  "leaderboard-open", "coach-open", "screentime-open"
+];
+// Cleared when moving between pages, but not when opening an exercise's own
+// settings screen — that is a step within the exercise, not a page change.
+const gameActiveClasses = [
+  "game-active", "nback-game-active", "mot-game-active", "rrt-game-active",
+  "cct-game-active", "ufov-game-active", "ict-game-active"
+];
+const sectionResetClasses = [...sectionOpenClasses, ...gameActiveClasses];
 
 function showScreenTime() {
   if (!requireAuth("Sign in to see your screen time.")) return;
@@ -7022,7 +7038,7 @@ function renderAbout() {
 
 function showAssessments() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
-  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "stats-open", "profile-open", "placeholder-open", "leaderboard-open", "coach-open", "screentime-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "Cogni Measurement";
@@ -9062,7 +9078,7 @@ function showPlaceholderSection(section) {
     assessments: ["Assessments", "Formal cognitive tests and cooldown rules will live here."]
   };
   const [title, description] = copy[section] ?? ["Section", "This area is reserved for the next production system."];
-  elements.appShell.classList.remove("home-open", "friends-open", "friends-open", "dashboard-open", "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open", "ict-open", "assessments-open", "stats-open", "profile-open", "leaderboard-open", "game-active", "nback-game-active", "mot-game-active", "rrt-game-active", "cct-game-active", "ufov-game-active", "ict-game-active");
+  elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("placeholder-open");
   setActiveTab(section);
   elements.pageTitle.textContent = title;
