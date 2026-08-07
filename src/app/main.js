@@ -242,7 +242,6 @@ function detectCogniUiMode() {
 // ---------------------------------------------------------------------------
 // Cogni Measurement is the front door on web — there is no separate home page.
 const routeTabToPath = {
-  home: "/",
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
@@ -7174,7 +7173,12 @@ document.querySelector("#landing-banner-close")?.addEventListener("click", () =>
 });
 applyTheme(currentTheme());
 document.querySelector("#theme-toggle")?.addEventListener("click", toggleTheme);
-document.querySelector("#site-brand")?.addEventListener("click", () => { showLanding(); setActiveTab("home"); });
+document.querySelector("#site-brand")?.addEventListener("click", () => {
+  // On the landing the brand is a no-op (you are already there); inside the app
+  // it goes to the front door, not back out to the marketing page.
+  if (document.documentElement.classList.contains("landing-active")) return;
+  showAssessments();
+});
 document.querySelector("#site-login")?.addEventListener("click", () => {
   if (authUser) { showStatistics(); return; }
   wireAuthGate();
@@ -7185,7 +7189,6 @@ document.querySelectorAll("[data-site-tab]").forEach((tab) => {
     // Home is the marketing page itself; everything else is inside the app, so
     // the landing has to be dismissed or the route changes under a page that
     // is still covering the screen.
-    if (tab.dataset.siteTab === "home") { showLanding(); setActiveTab("home"); return; }
     enterApp();
     routeTabHandler(tab.dataset.siteTab)?.();
   });
