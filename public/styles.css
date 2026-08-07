@@ -19446,9 +19446,8 @@ html.mode-pro .site-header {
 }
 
 /* --- Community / About --- */
-html.mode-pro .community-open .community-page,
-html.mode-pro .about-open .about-page { display: block; }
-.community-page, .about-page { display: none; }
+html.mode-pro .community-open .community-page { display: block; }
+.community-page { display: none; }
 
 .page-narrow { max-width: 760px; margin: 0 auto; display: grid; gap: 18px; }
 .page-narrow .panel {
