@@ -333,3 +333,69 @@ export function scoreDescriptor(score) {
   if (score >= 70) return "Low";
   return "Very low";
 }
+
+// ---------------------------------------------------------------------------
+// Report analysis. Everything below turns the six index scores into the things
+// a reader actually wants: how rare a result is, what band it falls in, which
+// abilities lead and lag, and whether the profile is even or spiky.
+//
+// None of it invents data. Every figure is derived from the scores themselves
+// or from the normal curve they are defined against.
+// ---------------------------------------------------------------------------
+
+/** "1 in N people" for a percentile — the rarer tail is the one worth naming. */
+export function rarityFromPercentile(percentile) {
+  const p = Math.min(99.9, Math.max(0.1, percentile));
+  const share = p >= 50 ? (100 - p) / 100 : p / 100;
+  const one_in = Math.max(2, Math.round(1 / share));
+  return { one_in, direction: p >= 50 ? "top" : "bottom", share: Math.round(share * 1000) / 10 };
+}
+
+// The bands a score is read in. Percentages are the normal curve's, not invented.
+export const INTERPRETATION_BANDS = [
+  { max: 74, label: "Uncertain", share: "Bottom 4%" },
+  { max: 80, label: "Foundational", share: "5%" },
+  { max: 90, label: "Approaching average", share: "16%" },
+  { max: 109, label: "Average", share: "50%" },
+  { max: 120, label: "Above average", share: "16%" },
+  { max: 135, label: "Significantly above average", share: "8%" },
+  { max: Infinity, label: "Far above average", share: "Top 1%" }
+];
+
+export function interpretationBand(score) {
+  return INTERPRETATION_BANDS.find((band) => score <= band.max) ?? INTERPRETATION_BANDS.at(-1);
+}
+
+/** Indices ordered strongest first, each carrying its rank. */
+export function rankedIndices(indices = {}) {
+  return MEASUREMENT_INDEX_ORDER
+    .map((key) => ({ key, ...MEASUREMENT_INDICES[key], ...(indices[key] ?? {}) }))
+    .filter((entry) => Number.isFinite(entry.score))
+    .sort((a, b) => b.score - a.score)
+    .map((entry, position) => ({ ...entry, rank: position + 1 }));
+}
+
+/**
+ * Even or uneven? A wide gap between the highest and lowest index means the
+ * composite is a poor summary of the person, and that is worth saying plainly
+ * rather than burying. Thresholds are in score points (SD = 15).
+ */
+export function profileShape(indices = {}) {
+  const ranked = rankedIndices(indices);
+  if (ranked.length < 2) return null;
+  const spread = ranked[0].score - ranked.at(-1).score;
+  const shape = spread >= 30 ? "spiky" : spread >= 15 ? "uneven" : "even";
+  return {
+    shape,
+    spread,
+    strongest: ranked[0],
+    weakest: ranked.at(-1),
+    // A composite only summarises well when the parts agree.
+    compositeIsRepresentative: spread < 23
+  };
+}
+
+/** Where a score sits on a 0-100 track spanning roughly 55-145. */
+export function scoreTrackOffset(score) {
+  return Math.max(2, Math.min(98, ((score - 55) / 90) * 100));
+}
