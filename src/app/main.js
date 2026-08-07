@@ -7166,10 +7166,18 @@ function indexAccent(key) {
 // Everything shown is derived from the scores. Nothing here is illustrative.
 let measurementTab = "overview";
 let measurementSessionIndex = 0;
+// Which index the Overview's big panel is reading: "overall", or one of the six.
+let measurementFocus = "overall";
 
 function setMeasurementTab(tab) {
   measurementTab = tab;
   renderMeasurementDashboard();
+}
+
+function setMeasurementFocus(key) {
+  measurementFocus = key;
+  renderMeasurementDashboard();
+  document.querySelector(".mdash-overall")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function selectMeasurementSession(index) {
@@ -7261,6 +7269,9 @@ function renderMeasurementDashboard() {
   const host = document.querySelector("#measure-dashboard");
   if (!host) return;
   const sessions = loadCatSessions();
+  // The report carries its own top bar and title, so the page header steps
+  // aside for it — but only when there is a report to show.
+  document.documentElement.classList.toggle("mdash-on", sessions.length > 0);
   if (!sessions.length) { host.hidden = true; host.innerHTML = ""; return; }
 
   const record = sessions[Math.min(measurementSessionIndex, sessions.length - 1)] ?? sessions[0];
@@ -7278,15 +7289,23 @@ function renderMeasurementDashboard() {
     ["insights", "Insights"]
   ];
 
+  // The focused index has to exist in this sitting, or the panel would read a
+  // score that was never measured.
+  if (measurementFocus !== "overall" && !ranked.some((entry) => entry.key === measurementFocus)) {
+    measurementFocus = "overall";
+  }
+
   host.hidden = false;
   host.innerHTML = `
     <div class="mdash mdash-single">
-      <div class="mdash-main">
-        <nav class="mdash-tabs" aria-label="Report sections">
+      <nav class="mdash-topbar" aria-label="Report sections">
+        <div class="mdash-topbar-inner">
           ${tabs.map(([key, label]) => `
             <button class="mdash-tab${measurementTab === key ? " is-active" : ""}"
                     data-measure-tab="${key}" type="button">${label}</button>`).join("")}
-        </nav>
+        </div>
+      </nav>
+      <div class="mdash-main">
         ${measurementTab === "overview" ? measureOverview(record, ranked, shape, margin, percentile, rarity, unlocked)
           : measurementTab === "score" ? measureScoreTab(record, margin, percentile, unlocked)
           : measurementTab === "abilities" ? measureAbilitiesTab(record, ranked, unlocked)
@@ -7296,6 +7315,9 @@ function renderMeasurementDashboard() {
 
   host.querySelectorAll("[data-measure-tab]").forEach((tab) => {
     tab.addEventListener("click", () => setMeasurementTab(tab.dataset.measureTab));
+  });
+  host.querySelectorAll("[data-measure-focus]").forEach((card) => {
+    card.addEventListener("click", () => setMeasurementFocus(card.dataset.measureFocus));
   });
   host.querySelectorAll("[data-measure-session]").forEach((item) => {
     item.addEventListener("click", () => selectMeasurementSession(Number(item.dataset.measureSession)));
@@ -7307,81 +7329,198 @@ function lockedValue(value, unlocked) {
   return unlocked ? value : "•••";
 }
 
-function measureSummaryStrip(record, percentile, unlocked) {
-  const minutes = Math.max(1, Math.round(record.durationMs / 60000));
-  const completed = Object.keys(record.subtests ?? {}).length || MEASUREMENT_SUBTESTS.length;
-  return `
-    <div class="mdash-strip">
-      <div><dt>Subtests</dt><dd>${completed} of ${MEASUREMENT_SUBTESTS.length}</dd></div>
-      <div><dt>Composite</dt><dd>${record.score}</dd></div>
-      <div><dt>Percentile</dt><dd>${lockedValue(`${percentile}th`, unlocked)}</dd></div>
-      <div><dt>Time taken</dt><dd>${minutes} min</dd></div>
-    </div>`;
+// "Top 8.1%" / "Bottom 47.3%" — how a percentile reads out loud.
+function standingLabel(percentile) {
+  const rarity = rarityFromPercentile(percentile);
+  return `${rarity.direction === "top" ? "Top" : "Bottom"} ${rarity.share}%`;
 }
 
+// Six ticks, one lit: which of the six indices this card is. Purely a marker,
+// it encodes position rather than value so it can never misreport a score.
+function indexGlyph(position) {
+  return `<svg class="mdash-glyph" viewBox="0 0 34 14" aria-hidden="true">
+    ${MEASUREMENT_INDEX_ORDER.map((_, slot) => `<rect x="${slot * 6}" y="${slot === position ? 0 : 3}"
+      width="3" height="${slot === position ? 14 : 8}" rx="1.5"
+      class="${slot === position ? "is-on" : ""}"></rect>`).join("")}
+  </svg>`;
+}
+
+// The six cards across the top. Each is a control: it points the panel below at
+// that index, which is what the arrow promises.
 function measurePillars(ranked, unlocked) {
   return `<div class="mdash-pillars">
-    ${MEASUREMENT_INDEX_ORDER.map((key) => {
+    ${MEASUREMENT_INDEX_ORDER.map((key, position) => {
       const meta = MEASUREMENT_INDICES[key];
       const entry = ranked.find((item) => item.key === key);
       if (!entry) {
         return `<article class="mdash-pillar is-empty">
-          <p class="mdash-pillar-name">${escapeHtml(meta.short)}</p>
-          <p class="mdash-pillar-score">—</p>
-          <p class="mdash-pillar-sub">Not measured</p>
+          <span class="mdash-pillar-head">${indexGlyph(position)}
+            <span class="mdash-pillar-name">${escapeHtml(meta.short)}</span></span>
+          <span class="mdash-pillar-score">—</span>
+          <span class="mdash-pillar-title">${escapeHtml(meta.name)}</span>
+          <span class="mdash-pillar-desc">Not measured yet</span>
+          <span class="mdash-pillar-foot"><span class="mdash-chip is-quiet">No data</span></span>
         </article>`;
       }
       const rarity = rarityFromPercentile(entry.percentile);
-      return `<article class="mdash-pillar">
-        <p class="mdash-pillar-name">${escapeHtml(meta.short)}${entry.rank <= 2 ? `<span class="mdash-rankbadge">#${entry.rank}</span>` : ""}</p>
-        <p class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</p>
-        <p class="mdash-pillar-sub">${escapeHtml(meta.name)}</p>
-        <p class="mdash-pillar-rarity">${unlocked
-          ? `${rarity.direction === "top" ? "Top" : "Bottom"} ${rarity.share}% · 1 in ${rarity.one_in}`
-          : "Locked"}</p>
-      </article>`;
+      const focused = measurementFocus === key;
+      return `<button class="mdash-pillar${focused ? " is-focused" : ""}" type="button"
+                      data-measure-focus="${key}" aria-pressed="${focused}"
+                      title="${escapeHtml(meta.name)} (${escapeHtml(meta.chc)})">
+        <span class="mdash-pillar-head">${indexGlyph(position)}
+          <span class="mdash-pillar-name">${escapeHtml(meta.short)}</span>
+          <svg class="mdash-pillar-go" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </span>
+        <span class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</span>
+        <span class="mdash-pillar-title">${escapeHtml(meta.name)}</span>
+        <span class="mdash-pillar-desc">${unlocked
+          ? escapeHtml(interpretationBand(entry.score).label)
+          : "Locked"}</span>
+        <span class="mdash-pillar-foot">
+          <span class="mdash-chip">${unlocked ? standingLabel(entry.percentile) : "•••"}</span>
+          <span class="mdash-rarity">${unlocked ? `1 in ${rarity.one_in}` : ""}</span>
+        </span>
+      </button>`;
     }).join("")}
   </div>`;
 }
 
 function measureOverview(record, ranked, shape, margin, percentile, rarity, unlocked) {
+  return `
+    ${measurePillars(ranked, unlocked)}
+    <div class="mdash-connect" aria-hidden="true">
+      ${MEASUREMENT_INDEX_ORDER.map(() => "<i></i>").join("")}
+    </div>
+    ${measureOverallPanel(record, ranked, margin, percentile, rarity, unlocked)}
+  `;
+}
+
+// The panel every card funnels into. It reads either the composite or a single
+// index, and the curve beside it always charts whatever the panel is reading.
+function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocked) {
+  const focus = measurementFocus === "overall"
+    ? null
+    : ranked.find((entry) => entry.key === measurementFocus) ?? null;
   const best = ranked[0];
   const worst = ranked.at(-1);
+  const minutes = Math.max(1, Math.round(record.durationMs / 60000));
+  const taken = Object.keys(record.subtests ?? {}).length || MEASUREMENT_SUBTESTS.length;
+
+  const score = focus ? focus.score : record.score;
+  const pct = focus ? focus.percentile : percentile;
+  const spread = focus?.ci ? Math.round((focus.ci.high - focus.ci.low) / 2) : margin;
+
+  // Headroom: the distance between what this panel is reading and the best
+  // result underneath it. For the composite that is your strongest index; for a
+  // single index it is the strongest subtest feeding it. Both are measured
+  // numbers — nothing here is a projection of what training would do.
+  const ceilingSource = focus
+    ? subtestsForIndex(focus.key)
+        .map((subtest) => ({ name: subtest.name, ...(record.subtests?.[subtest.id] ?? {}) }))
+        .filter((part) => Number.isFinite(part.score))
+        .sort((a, b) => b.score - a.score)[0]
+    : best;
+  const ceiling = ceilingSource && ceilingSource.score > score ? ceilingSource : null;
+
+  // Canonical order, not rank order — these have to line up with the cards above.
+  const subtabs = [
+    ["overall", "Overall"],
+    ...MEASUREMENT_INDEX_ORDER
+      .filter((key) => ranked.some((entry) => entry.key === key))
+      .map((key) => [key, MEASUREMENT_INDICES[key].short])
+  ];
+
   return `
-    ${measureSummaryStrip(record, percentile, unlocked)}
-    ${measurePillars(ranked, unlocked)}
+    <section class="mdash-overall">
+      <header class="mdash-overall-head">
+        ${indexGlyph(focus ? MEASUREMENT_INDEX_ORDER.indexOf(focus.key) : -1)}
+        <h3>${focus ? escapeHtml(focus.name) : "Overall score"}</h3>
+        <span class="mdash-overall-meta">${ranked.length} of ${MEASUREMENT_INDEX_ORDER.length} indices
+          · ${taken} of ${MEASUREMENT_SUBTESTS.length} subtests · ${minutes} min</span>
+      </header>
 
-    <section class="mdash-card mdash-hero">
-      <div>
-        <p class="mdash-eyebrow">Composite</p>
-        <p class="mdash-hero-score">${record.score}${margin !== null ? `<span>±${margin}</span>` : ""}</p>
-        <p class="mdash-hero-band">${escapeHtml(interpretationBand(record.score).label)}</p>
-        <p class="mdash-hero-note">
-          ${unlocked
-            ? `Higher than about ${percentile}% of a typical population — roughly 1 in ${rarity.one_in} people.
-               A retest would usually land between ${record.ci?.low} and ${record.ci?.high}.`
-            : "Unlock the report to see your percentile, index scores and the full breakdown."}
-        </p>
+      <div class="mdash-overall-lead">
+        <p class="mdash-overall-score">${lockedValue(score, unlocked)}${
+          spread != null ? `<span>±${spread}</span>` : ""}</p>
+        ${unlocked ? `<p class="mdash-overall-band">${escapeHtml(interpretationBand(score).label)}</p>` : ""}
+        <p class="mdash-overall-sub">${unlocked
+          ? `${focus ? escapeHtml(focus.blurb) + " " : "Your composite across all six abilities. "}
+             Higher than about ${pct}% of a typical population — roughly 1 in
+             ${rarityFromPercentile(pct).one_in} people.`
+          : "Unlock the report to see your percentile, index scores and the breakdown behind them."}</p>
       </div>
-      <div class="mdash-curve">${catBellCurveSvg(record.score)}</div>
-    </section>
 
-    ${best && unlocked ? `
-      <div class="mdash-duo">
-        <section class="mdash-card">
-          <p class="mdash-eyebrow">Strongest ability</p>
-          <h3>${escapeHtml(best.name)}</h3>
-          <p class="mdash-body">${escapeHtml(best.blurb)}</p>
-          <p class="mdash-stat">${best.score} · ${best.percentile}th percentile</p>
-        </section>
-        <section class="mdash-card">
-          <p class="mdash-eyebrow">Most room to grow</p>
-          <h3>${escapeHtml(worst.name)}</h3>
-          <p class="mdash-body">${escapeHtml(worst.blurb)}</p>
-          <p class="mdash-stat">${worst.score} · ${worst.percentile}th percentile</p>
-        </section>
-      </div>` : ""}
-  `;
+      <div class="mdash-subtabs" role="tablist" aria-label="Which score to read">
+        ${subtabs.map(([key, label]) => `
+          <button class="mdash-subtab${measurementFocus === key ? " is-active" : ""}"
+                  data-measure-focus="${key}" type="button">${escapeHtml(label)}</button>`).join("")}
+      </div>
+
+      <div class="mdash-overall-body">
+        <div class="mdash-overall-detail">
+          <div class="mdash-focusrow">
+            <div>
+              <p class="mdash-focusrow-name">${escapeHtml(focus ? focus.short : "Composite")}</p>
+              <p class="mdash-focusrow-sub">${unlocked ? standingLabel(pct) : "Locked"}</p>
+            </div>
+            <p class="mdash-focusrow-score">${lockedValue(score, unlocked)}</p>
+          </div>
+          ${unlocked ? measureFacts(record, focus, best, worst) : `
+            <p class="mdash-body">Unlock the report to see the breakdown behind this score.</p>`}
+        </div>
+        <figure class="mdash-chart">
+          ${measureCurveSvg({
+            score, percentile: pct,
+            ceilingScore: ceiling?.score ?? null,
+            ceilingPercentile: ceiling ? scoreToPercentile(ceiling.score) : null,
+            axisTitle: focus ? `${focus.short} score` : "Composite score",
+            unlocked
+          })}
+          <figcaption>${unlocked && ceiling
+            ? `Your ${focus ? "strongest subtest" : "strongest index"},
+               ${escapeHtml(ceiling.name ?? ceiling.short ?? "")}, sits ${ceiling.score - score} points higher.
+               That gap is the headroom the rest is leaving on the table.`
+            : `Where you sit on the curve the scale is defined against. The percentages come from
+               that curve, not from a Cogni sample.`}</figcaption>
+        </figure>
+      </div>
+
+      <p class="mdash-caveat">
+        Scores are provisional: the item parameters are author-estimated and not yet calibrated on a
+        norming sample.${margin !== null && record.ci ? ` A retest would usually land between
+        ${record.ci.low} and ${record.ci.high}.` : ""}
+      </p>
+    </section>`;
+}
+
+// The small cards under the highlighted row: for the composite, the two ends of
+// the profile; for an index, the subtests that actually produced it.
+function measureFacts(record, focus, best, worst) {
+  const cards = focus
+    ? subtestsForIndex(focus.key).map((subtest) => {
+        const result = record.subtests?.[subtest.id];
+        return {
+          name: subtest.name,
+          score: result && Number.isFinite(result.score) ? result.score : null,
+          note: result
+            ? (result.partial || result.abandoned ? "Stopped early" : `${result.answered ?? result.count ?? 0} answered`)
+            : "Not taken"
+        };
+      })
+    : [
+        { name: best.name, score: best.score, note: `Strongest · ${standingLabel(best.percentile)}` },
+        { name: worst.name, score: worst.score, note: `Most room · ${standingLabel(worst.percentile)}` }
+      ];
+
+  return `<div class="mdash-facts">
+    ${cards.map((card) => `
+      <article class="mdash-fact">
+        <p class="mdash-fact-name">${escapeHtml(card.name)}</p>
+        <p class="mdash-fact-note">${escapeHtml(card.note)}</p>
+        <p class="mdash-fact-score">${card.score ?? "—"}</p>
+      </article>`).join("")}
+  </div>`;
 }
 
 function measureScoreTab(record, margin, percentile, unlocked) {
@@ -8540,6 +8679,89 @@ function catWeightsSvg(weights) {
       </div>
       <div class="cat-scale-pan">${scale.right === null ? '<span class="cat-scale-unknown">?</span>' : catCellSvg(scale.right)}</div>
     </div>`).join("")}</div>`;
+}
+
+// The report's bell curve: the normal distribution the scale is defined
+// against, with your standing marked on it and — when there is one — the
+// headroom band running out to your best result underneath.
+//
+// The y axis is deliberately unlabelled. A density axis in arbitrary units
+// would be numbers that mean nothing; the shape is the whole point.
+function measureCurveSvg({ score, percentile, ceilingScore, ceilingPercentile, axisTitle, unlocked }) {
+  const width = 660;
+  const height = 320;
+  const padLeft = 40;
+  const padRight = 22;
+  const padTop = 74;
+  const padBottom = 52;
+  const minScore = 55;
+  const maxScore = 145;
+
+  const plotWidth = width - padLeft - padRight;
+  const baseY = height - padBottom;
+  const x = (value) => padLeft + ((clampNumber(value, minScore, maxScore) - minScore) / (maxScore - minScore)) * plotWidth;
+  const density = (value) => Math.exp(-0.5 * ((value - 100) / 15) ** 2);
+  const y = (value) => baseY - density(value) * (baseY - padTop);
+
+  const steps = 120;
+  const curve = Array.from({ length: steps + 1 }, (_, step) => {
+    const value = minScore + ((maxScore - minScore) * step) / steps;
+    return `${x(value).toFixed(1)},${y(value).toFixed(1)}`;
+  });
+  const area = `M ${padLeft},${baseY} L ${curve.join(" L ")} L ${width - padRight},${baseY} Z`;
+
+  const ticks = [55, 70, 85, 100, 115, 130, 145];
+  const grid = [0.25, 0.5, 0.75, 1].map((fraction) => {
+    const lineY = baseY - fraction * (baseY - padTop);
+    return `<line class="mcurve-grid" x1="${padLeft}" y1="${lineY.toFixed(1)}"
+                  x2="${width - padRight}" y2="${lineY.toFixed(1)}"></line>`;
+  }).join("");
+
+  // Pill labels are sized from the text length; SVG has no shrink-to-fit.
+  const pill = (text, centerX, topY, variant) => {
+    const boxWidth = text.length * 6.9 + 20;
+    const left = clampNumber(centerX - boxWidth / 2, padLeft, width - padRight - boxWidth);
+    return `<g class="mcurve-pill ${variant}">
+      <rect x="${left.toFixed(1)}" y="${topY}" width="${boxWidth.toFixed(1)}" height="26" rx="13"></rect>
+      <text x="${(left + boxWidth / 2).toFixed(1)}" y="${topY + 17.5}" text-anchor="middle">${escapeHtml(text)}</text>
+    </g>`;
+  };
+
+  const markerX = x(score);
+  const hasHeadroom = unlocked && Number.isFinite(ceilingScore) && ceilingScore > score;
+  const ceilingX = hasHeadroom ? x(ceilingScore) : null;
+  const bandWidth = hasHeadroom ? Math.max(ceilingX - markerX, 2) : 0;
+
+  return `
+    <svg class="mcurve" viewBox="0 0 ${width} ${height}" role="img"
+         aria-label="${escapeHtml(axisTitle)} of ${unlocked ? score : "hidden"} on the population curve">
+      ${grid}
+      <path class="mcurve-area" d="${area}"></path>
+      <polyline class="mcurve-line" points="${curve.join(" ")}"></polyline>
+
+      ${hasHeadroom ? `
+        <rect class="mcurve-band" x="${markerX.toFixed(1)}" y="${padTop - 12}"
+              width="${bandWidth.toFixed(1)}" height="${(baseY - padTop + 12).toFixed(1)}"></rect>
+        <text class="mcurve-bandlabel" x="${(markerX + bandWidth / 2).toFixed(1)}" y="${(padTop + 8).toFixed(1)}"
+              transform="rotate(90 ${(markerX + bandWidth / 2).toFixed(1)} ${(padTop + 8).toFixed(1)})">HEADROOM</text>
+        <line class="mcurve-ceiling" x1="${ceilingX.toFixed(1)}" y1="${padTop - 12}"
+              x2="${ceilingX.toFixed(1)}" y2="${baseY}"></line>
+        ${pill(`${ceilingScore} · ${standingLabel(ceilingPercentile)}`, ceilingX, 8, "is-ceiling")}
+      ` : ""}
+
+      <line class="mcurve-marker" x1="${markerX.toFixed(1)}" y1="${padTop - 12}"
+            x2="${markerX.toFixed(1)}" y2="${baseY}"></line>
+      <circle class="mcurve-dot" cx="${markerX.toFixed(1)}" cy="${y(score).toFixed(1)}" r="5"></circle>
+      ${unlocked ? pill(`${score} · ${standingLabel(percentile)}`, markerX, hasHeadroom ? 40 : 20, "is-you") : ""}
+
+      <line class="mcurve-axis" x1="${padLeft}" y1="${baseY}" x2="${width - padRight}" y2="${baseY}"></line>
+      ${ticks.map((tick) => `<text class="mcurve-tick" x="${x(tick).toFixed(1)}" y="${baseY + 20}"
+        text-anchor="middle">${tick}</text>`).join("")}
+      <text class="mcurve-axistitle" x="${(padLeft + plotWidth / 2).toFixed(1)}" y="${height - 8}"
+            text-anchor="middle">${escapeHtml(axisTitle.toUpperCase())}</text>
+      <text class="mcurve-axistitle" x="14" y="${((padTop + baseY) / 2).toFixed(1)}" text-anchor="middle"
+            transform="rotate(-90 14 ${((padTop + baseY) / 2).toFixed(1)})">POPULATION DENSITY</text>
+    </svg>`;
 }
 
 function catBellCurveSvg(score) {

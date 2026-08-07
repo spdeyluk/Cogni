@@ -20469,3 +20469,362 @@ html.mode-pro .measure-offers { text-align: left; }
 /* Clear the announcement banner, whose own close button lives top-right. */
 html.mode-pro:not(.landing-active) .app-topright { top: 76px; }
 html.mode-pro:not(.landing-active) .site-rail { padding-top: 24px; }
+
+/* ===================================================================
+   Measurement report — Overview.
+
+   Six index cards across the top, visible connectors dropping out of
+   them, and one panel underneath that carries the composite and the
+   curve. Layout follows the FaceIQ overview; every number in it is
+   read off the sitting.
+   =================================================================== */
+
+/* Six cards plus a chart need the column, so the report page gives up the
+   centred measure the reading pages want. */
+html.mode-pro.mdash-on .app-shell.assessments-open .app-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+html.mode-pro.mdash-on .app-shell.assessments-open .measure-picker {
+  max-width: none;
+  margin: 0;
+}
+/* The report's own top bar is the page header now. */
+html.mode-pro.mdash-on .app-shell.assessments-open .hero { display: none; }
+
+/* --- The top bar: first thing on the page, and it stays there --------- */
+html.mode-pro .mdash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* Pulled out to the edges of the content box: left under the rail (which
+     is opaque and sits above it), right to the window edge. */
+  margin: -28px -32px 26px -280px;
+  padding: 0 32px 0 280px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-strong);
+}
+html.mode-pro .mdash-topbar-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  min-height: 58px;
+}
+html.mode-pro .mdash-tab {
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 1.02rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+html.mode-pro .mdash-tab:hover { color: var(--text) !important; }
+html.mode-pro .mdash-tab.is-active {
+  color: var(--text) !important;
+  border-bottom-color: var(--text) !important;
+}
+
+/* --- The six index cards --------------------------------------------- */
+html.mode-pro .mdash-pillars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+html.mode-pro .mdash-pillar {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 14px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important;
+  box-shadow: var(--shadow);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+html.mode-pro .mdash-pillar:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent) !important;
+}
+html.mode-pro .mdash-pillar.is-focused {
+  border-color: var(--text) !important;
+  box-shadow: 0 0 0 1px var(--text);
+}
+html.mode-pro .mdash-pillar.is-empty { opacity: 0.5; }
+html.mode-pro .mdash-pillar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line-strong);
+}
+.mdash-glyph { width: 26px; height: 11px; flex: none; }
+.mdash-glyph rect { fill: color-mix(in srgb, var(--text) 20%, transparent); }
+.mdash-glyph rect.is-on { fill: var(--text); }
+html.mode-pro .mdash-pillar-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mdash-pillar-go {
+  width: 15px; height: 15px; flex: none;
+  fill: none; stroke: var(--muted); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+html.mode-pro .mdash-pillar:hover .mdash-pillar-go { stroke: var(--text); }
+html.mode-pro .mdash-pillar-score {
+  font-size: 2.15rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  font-variant-numeric: tabular-nums;
+}
+html.mode-pro .mdash-pillar-title {
+  margin-top: 7px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+html.mode-pro .mdash-pillar-desc {
+  margin-top: 3px;
+  font-size: 0.79rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+html.mode-pro .mdash-pillar-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+.mdash-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--fill-subtle);
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.mdash-chip.is-quiet { color: var(--muted); }
+.mdash-rarity { font-size: 0.73rem; color: var(--muted); white-space: nowrap; }
+
+/* --- Connectors: the cards visibly feed the panel --------------------- */
+html.mode-pro .mdash-connect {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  height: 32px;
+  margin-top: -18px;
+}
+html.mode-pro .mdash-connect i {
+  display: block;
+  width: 1px;
+  height: 100%;
+  margin: 0 auto;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--text) 42%, transparent),
+    color-mix(in srgb, var(--text) 16%, transparent));
+}
+html.mode-pro .mdash-connect + .mdash-overall { margin-top: -18px; }
+
+/* --- The panel everything funnels into -------------------------------- */
+html.mode-pro .mdash-overall {
+  padding: 24px 28px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+html.mode-pro .mdash-overall-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+html.mode-pro .mdash-overall-head h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+.mdash-overall-meta {
+  margin-left: auto;
+  font-size: 0.79rem;
+  color: var(--muted);
+  text-align: right;
+}
+.mdash-overall-lead { padding-top: 18px; }
+.mdash-overall-score {
+  margin: 0;
+  font-size: clamp(2.8rem, 5vw, 3.9rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.mdash-overall-score span {
+  margin-left: 12px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.mdash-overall-band {
+  margin: 12px 0 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+.mdash-overall-sub {
+  margin: 7px 0 0;
+  max-width: 78ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.mdash-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 20px; }
+html.mode-pro .mdash-subtab {
+  padding: 8px 15px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  font-size: 0.9rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+html.mode-pro .mdash-subtab:hover {
+  background: var(--fill-subtle) !important;
+  color: var(--text) !important;
+}
+html.mode-pro .mdash-subtab.is-active {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+}
+
+.mdash-overall-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 34px;
+  align-items: start;
+}
+.mdash-focusrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--fill-subtle);
+}
+.mdash-focusrow-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.mdash-focusrow-sub { margin: 3px 0 0; font-size: 0.81rem; color: var(--muted); }
+.mdash-focusrow-score {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mdash-facts {
+  display: grid;
+  /* Fixed two-up: an index with a single subtest should not stretch one card
+     across the whole column. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.mdash-fact {
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.mdash-fact-name { margin: 0; font-size: 0.85rem; font-weight: 600; line-height: 1.3; }
+.mdash-fact-note { margin: 4px 0 12px; font-size: 0.75rem; color: var(--muted); }
+.mdash-fact-score {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mdash-chart { margin: 0; }
+.mdash-chart figcaption {
+  margin-top: 8px;
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* --- The curve -------------------------------------------------------- */
+.mcurve { display: block; width: 100%; height: auto; }
+.mcurve-grid, .mcurve-axis { stroke: var(--line-strong); stroke-width: 1; }
+.mcurve-area { fill: color-mix(in srgb, var(--text) 6%, transparent); }
+.mcurve-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text) 42%, transparent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.mcurve-band { fill: color-mix(in srgb, var(--accent) 13%, transparent); }
+.mcurve-bandlabel {
+  fill: color-mix(in srgb, var(--accent) 80%, var(--text));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.mcurve-ceiling { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 0.7; }
+.mcurve-marker { stroke: var(--accent); stroke-width: 2; }
+.mcurve-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 3; }
+.mcurve-pill rect { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
+.mcurve-pill text { fill: var(--text); font-size: 12.5px; font-weight: 600; }
+.mcurve-pill.is-ceiling rect { stroke: color-mix(in srgb, var(--accent) 40%, transparent); }
+.mcurve-pill.is-ceiling text { fill: var(--text-2); font-weight: 550; }
+.mcurve-tick { fill: var(--muted); font-size: 12px; }
+.mcurve-axistitle { fill: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0.15em; }
+
+@media (max-width: 1280px) {
+  html.mode-pro .mdash-pillars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  html.mode-pro .mdash-connect { display: none; }
+  html.mode-pro .mdash-overall-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+@media (max-width: 900px) {
+  html.mode-pro .mdash-topbar { margin-left: -16px; padding-left: 16px; }
+}
+@media (max-width: 760px) {
+  html.mode-pro .mdash-pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.mode-pro .mdash-overall { padding: 20px 18px 16px; }
+  .mdash-overall-meta { display: none; }
+}

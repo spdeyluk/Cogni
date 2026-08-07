@@ -11,3 +11,4 @@ ios/DerivedData/
 .build/
 *.xcodeproj
 .swiftpm/
+public/dev-web.html
