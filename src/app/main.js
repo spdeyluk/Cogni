@@ -7177,6 +7177,42 @@ function selectMeasurementSession(index) {
   renderMeasurementDashboard();
 }
 
+// Site chrome: theme, brand, account, banner and the landing header's scroll
+// state. Grouped in one place so it cannot be half-wired again.
+applyTheme(currentTheme());
+
+document.querySelectorAll("#theme-toggle, #theme-toggle-rail").forEach((button) => {
+  button.addEventListener("click", toggleTheme);
+});
+
+document.querySelector("#site-brand")?.addEventListener("click", () => {
+  if (document.documentElement.classList.contains("landing-active")) return;
+  showAssessments();
+});
+document.querySelector("#site-rail-brand")?.addEventListener("click", () => showAssessments());
+document.querySelector("#site-rail-upgrade")?.addEventListener("click", openPricingModal);
+
+document.querySelectorAll("#site-login, #site-login-rail").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (authUser) { showStatistics(); return; }
+    wireAuthGate();
+    showAuthGate("login");
+  });
+});
+
+document.querySelector("#landing-banner-close")?.addEventListener("click", () => {
+  document.querySelector("#landing-banner")?.remove();
+});
+
+// The landing header sits on the blue gradient at the top and turns solid once
+// you scroll past the hero, so it stays readable over the light sections below.
+{
+  const header = document.querySelector("#site-header");
+  const onScroll = () => header?.classList.toggle("is-scrolled", window.scrollY > 40);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+}
+
 // Navigation wiring. Every tab leaves the marketing landing behind first —
 // changing the route while the landing is still painted over the app was a real
 // bug, not a hypothetical one.
