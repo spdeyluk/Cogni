@@ -7181,7 +7181,7 @@ function selectMeasurementSession(index) {
 // state. Grouped in one place so it cannot be half-wired again.
 applyTheme(currentTheme());
 
-document.querySelectorAll("#theme-toggle, #theme-toggle-rail").forEach((button) => {
+document.querySelectorAll("#theme-toggle, #theme-toggle-rail, #theme-toggle-app").forEach((button) => {
   button.addEventListener("click", toggleTheme);
 });
 
@@ -7198,6 +7198,23 @@ document.querySelectorAll("#site-login, #site-login-rail").forEach((button) => {
     wireAuthGate();
     showAuthGate("login");
   });
+});
+
+// Sidebar collapse. Persisted, because a rail you have to re-collapse on every
+// visit is worse than one that never collapsed.
+const RAIL_KEY = "cogni.railCollapsed.v1";
+function applyRailCollapsed(collapsed) {
+  document.documentElement.classList.toggle("rail-collapsed", collapsed);
+  const button = document.querySelector("#site-rail-collapse");
+  if (button) {
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+  }
+  try { localStorage.setItem(RAIL_KEY, collapsed ? "1" : "0"); } catch { /* private mode */ }
+}
+try { applyRailCollapsed(localStorage.getItem(RAIL_KEY) === "1"); } catch { applyRailCollapsed(false); }
+document.querySelector("#site-rail-collapse")?.addEventListener("click", () => {
+  applyRailCollapsed(!document.documentElement.classList.contains("rail-collapsed"));
 });
 
 document.querySelector("#landing-banner-close")?.addEventListener("click", () => {
@@ -7263,22 +7280,7 @@ function renderMeasurementDashboard() {
 
   host.hidden = false;
   host.innerHTML = `
-    <div class="mdash">
-      <aside class="mdash-rail">
-        <p class="mdash-rail-title">History</p>
-        <div class="mdash-rail-list">
-          ${sessions.slice(0, 8).map((entry, index) => `
-            <button class="mdash-rail-item${index === measurementSessionIndex ? " is-active" : ""}"
-                    data-measure-session="${index}" type="button">
-              <span class="mdash-rail-score">${unlocked ? entry.score : "•••"}</span>
-              <span class="mdash-rail-meta">
-                ${new Date(entry.completedAt).toLocaleDateString()}
-                ${entry.provisional ? '<em>provisional</em>' : ""}
-              </span>
-            </button>`).join("")}
-        </div>
-      </aside>
-
+    <div class="mdash mdash-single">
       <div class="mdash-main">
         <nav class="mdash-tabs" aria-label="Report sections">
           ${tabs.map(([key, label]) => `
@@ -8512,8 +8514,14 @@ function renderCatIndices(sessionRecord, unlocked) {
   }).join("");
 }
 
+// TEMPORARY — everything unlocked so the report can be tested end to end.
+// Flip this one constant back to false to restore the paywall; nothing else
+// needs editing, and no other code path was changed to make this work.
+const MEASUREMENT_FREE_FOR_ALL = true;
+
 // On web the report is what the subscription buys. Native keeps its own Pro tier.
 function measurementReportUnlocked() {
+  if (MEASUREMENT_FREE_FOR_ALL) return true;
   if (cogniUiMode === "pro") return currentTier() === "pro" || currentTier() === "basic";
   return isProUser();
 }

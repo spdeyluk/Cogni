@@ -20384,3 +20384,88 @@ html.mode-pro.landing-active .site-header.is-scrolled .site-login {
   background: var(--text) !important;
   color: var(--bg) !important;
 }
+
+/* ===================================================================
+   Rail refinements: bigger targets, collapse control, top-right theme
+   switch, and a dashboard without the history rail.
+   =================================================================== */
+.site-rail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.site-rail-collapse {
+  display: grid !important;
+  place-items: center;
+  width: 32px; height: 32px;
+  padding: 0 !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: none !important;
+  color: var(--muted) !important;
+  cursor: pointer;
+  flex: none;
+}
+.site-rail-collapse:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
+.site-rail-collapse svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+
+/* Bigger nav rows — these are the main targets in the app. */
+html.mode-pro .site-rail-nav .site-tab {
+  gap: 14px;
+  min-height: 50px;
+  padding: 13px 14px !important;
+  border-radius: 12px !important;
+  font-size: 1.05rem;
+  font-weight: 550;
+}
+html.mode-pro .site-rail-nav .site-tab svg { width: 21px; height: 21px; }
+
+/* Collapsed rail: icons only. */
+html.rail-collapsed.mode-pro .site-rail { width: 76px; padding-left: 12px; padding-right: 12px; }
+html.rail-collapsed.mode-pro .site-rail-brand span,
+html.rail-collapsed.mode-pro .site-rail-nav .site-tab span,
+html.rail-collapsed.mode-pro .site-rail-account { display: none; }
+html.rail-collapsed.mode-pro .site-rail-head { justify-content: center; }
+html.rail-collapsed.mode-pro .site-rail-brand { padding: 0 !important; }
+html.rail-collapsed.mode-pro .site-rail-collapse { display: none !important; }
+html.rail-collapsed.mode-pro .site-rail-nav .site-tab { justify-content: center; padding: 13px 0 !important; }
+html.rail-collapsed.mode-pro:not(.landing-active) .app-content { padding-left: 108px !important; }
+/* Expanding again: the brand doubles as the control when collapsed. */
+html.rail-collapsed.mode-pro .site-rail-brand { cursor: e-resize; }
+
+/* Theme switch, top right of the app. */
+.app-topright { display: none; }
+html.mode-pro:not(.landing-active) .app-topright {
+  display: block;
+  position: fixed;
+  top: 18px; right: 22px;
+  z-index: 50;
+}
+html.mode-pro .app-topright .theme-toggle {
+  width: 40px; height: 40px;
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow);
+}
+
+/* Dashboard is a single column now the history rail is gone. */
+.mdash.mdash-single { grid-template-columns: minmax(0, 1fr); }
+
+/* Density: with the history rail gone the report should fill the column rather
+   than sit in a narrow strip with the rest of the page empty. */
+html.mode-pro .measure-picker { max-width: 1320px; }
+html.mode-pro .mdash-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+html.mode-pro .mdash-pillars { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+html.mode-pro .mdash-pillar { padding: 16px 14px; }
+html.mode-pro .mdash-pillar-score { font-size: 1.9rem; }
+html.mode-pro .mdash-pillar-sub { font-size: 0.78rem; line-height: 1.3; }
+html.mode-pro .mdash-main { gap: 18px; }
+html.mode-pro .measure-offers { text-align: left; }
+
+@media (max-width: 1100px) {
+  html.mode-pro .mdash-pillars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  html.mode-pro .mdash-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.mode-pro .mdash-pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Clear the announcement banner, whose own close button lives top-right. */
+html.mode-pro:not(.landing-active) .app-topright { top: 76px; }
+html.mode-pro:not(.landing-active) .site-rail { padding-top: 24px; }
