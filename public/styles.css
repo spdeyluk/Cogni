@@ -19938,3 +19938,9 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
   width: 100%;
   margin: 0;
 }
+
+/* The landing is not part of the app's navigation — it is what you see before
+   you are in. So it carries the brand and a way in, and nothing else. The rule
+   is unscoped so it holds from the first paint, before mode-pro is applied. */
+html.landing-active .site-tabs { display: none !important; }
+html.landing-active .site-header-inner { padding: 16px 0; }
