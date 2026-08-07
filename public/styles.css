@@ -19929,3 +19929,13 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
   .sales-hero { padding-bottom: 32px; }
   .sales-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The centred hero inherits .landing-hero's 1240px cap, so its gradient stopped
+   short and the page showed white bars either side on anything wider. The
+   background must be full-bleed; the CONTENT is what should be constrained,
+   and .landing-hero-main already is. */
+.landing-hero.landing-hero-centered {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}

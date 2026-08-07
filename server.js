@@ -10,6 +10,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
+import { gzipSync } from "node:zlib";
 
 const root = process.cwd();
 const publicDir = join(root, "public");
@@ -84,9 +85,23 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    const body = await readFile(filePath);
+    const raw = await readFile(filePath);
+    const contentType = mimeTypes.get(extname(filePath)) || "application/octet-stream";
+    // Nothing was compressed before, so the web build shipped its JS and CSS at
+    // full size — main.js, styles.css and the Supabase client alone were about
+    // 1.7 MB of text. gzip takes roughly three quarters off that.
+    //
+    // TTF is included because it is an uncompressed container and gzips well;
+    // woff2 would be better still (it is brotli internally) but that needs a
+    // conversion step. PNG, JPEG, WebP and woff2 are already compressed, so
+    // running them through gzip would only burn CPU.
+    const compressible = /^(text\/|font\/ttf|application\/(javascript|json|manifest))/.test(contentType);
+    const wantsGzip = /\bgzip\b/.test(request.headers["accept-encoding"] || "");
+    const body = compressible && wantsGzip && raw.length > 1024 ? gzipSync(raw) : raw;
     response.writeHead(200, {
-      "Content-Type": mimeTypes.get(extname(filePath)) || "application/octet-stream",
+      "Content-Type": contentType,
+      ...(body === raw ? {} : { "Content-Encoding": "gzip" }),
+      "Vary": "Accept-Encoding",
       ...securityHeaders,
       ...noCacheHeaders
     });

@@ -9,9 +9,12 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
     <!-- Preload the fonts used above the fold so font-display:optional uses Inter
          on first load (and never reflows the headings after paint). -->
-    <link rel="preload" href="assets/fonts/Inter-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="assets/fonts/Inter-Regular.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="assets/fonts/Inter-Medium.ttf" as="font" type="font/ttf" crossorigin>
+    <!-- The three Inter TTFs are ~1 MB and were preloaded at high priority, which
+         competed with the HTML and CSS for bandwidth on first paint. Their
+         @font-face rules already use font-display: optional, so text renders
+         immediately in the fallback and the webfont applies when it arrives —
+         preloading them was working against that. They now load normally.
+         Converting these to woff2 would cut roughly two thirds again. -->
     <link rel="stylesheet" href="styles.css?v=20260807-web">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
