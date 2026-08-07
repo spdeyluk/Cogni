@@ -253,7 +253,6 @@ const routeTabToPath = {
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
-  about: "/about",
   statistics: "/profile"
 };
 // Paths that used to exist, kept so old links and bookmarks still land somewhere.
@@ -268,7 +267,6 @@ function routeTabHandler(tab) {
     assessments: showAssessments,
     statistics: showStatistics,
     community: showCommunity,
-    about: showAbout,
     home: showHome,
     friends: showFriendsPage
   };
@@ -4307,7 +4305,7 @@ function showStatistics() {
 // only some of the copies meant navigating away from Community left its panels
 // on screen over the next page. Derive, never duplicate.
 const sectionOpenClasses = [
-  "community-open", "about-open", "home-open", "friends-open", "dashboard-open",
+  "community-open", "home-open", "friends-open", "dashboard-open",
   "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open",
   "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open",
   "leaderboard-open", "coach-open", "screentime-open"
@@ -6981,14 +6979,6 @@ function showCommunity() {
   renderCommunity();
 }
 
-function showAbout() {
-  elements.appShell.classList.remove(...sectionResetClasses);
-  elements.appShell.classList.add("about-open");
-  setActiveTab("about");
-  elements.pageTitle.textContent = "About";
-  elements.pageLede.textContent = "What Cogni measures, and what it doesn't.";
-  renderAbout();
-}
 
 function renderCommunity() {
   const page = document.querySelector(".community-page");
@@ -7012,29 +7002,6 @@ function renderCommunity() {
     </div>`;
 }
 
-function renderAbout() {
-  const page = document.querySelector(".about-page");
-  if (!page) return;
-  page.innerHTML = `
-    <div class="page-narrow">
-      <section class="panel">
-        <h2>What Cogni Measurement is</h2>
-        <p>A ${MEASUREMENT_SUBTESTS.length}-subtest battery organised on the Cattell-Horn-Carroll model, reporting six broad abilities and a composite: Verbal Comprehension, Fluid Reasoning, Visual Spatial, Quantitative Reasoning, Working Memory and Processing Speed.</p>
-        <p>Every subtest is a single sitting. You can stop early and keep what you answered, but you cannot pause a subtest, resume it, or take it twice in one attempt — a section you can restart is a section you can farm.</p>
-      </section>
-      <section class="panel panel-flag">
-        <h2>What it is not</h2>
-        <p><strong>These scores are not norm-referenced.</strong> The item difficulty and discrimination values are author estimates, not values fitted to a standardisation sample, and the working-memory and processing-speed references are published-typical figures standing in for real norms.</p>
-        <p>That makes the scores internally consistent and useful for tracking your own change over time. It does not make them a clinical or diagnostic assessment, and it does not make them comparable to a supervised test administered by a psychologist. Every result is flagged provisional for exactly this reason.</p>
-        <p>The honest fix is data: once enough sessions accumulate, the parameters get re-fitted from real responses instead of estimates.</p>
-      </section>
-      <section class="panel">
-        <h2>How the score is built</h2>
-        <p>The reasoning subtests are scored with a 2-parameter IRT model; working memory from span length and processing speed from corrected throughput. Each index is placed on the familiar mean-100, SD-15 scale, and the composite averages the indices you have completed.</p>
-        <p>Scores are shown with a margin of error because they have one. A composite of 107 ±7 means a retest would usually land between 100 and 114. Finishing more subtests narrows that band.</p>
-      </section>
-    </div>`;
-}
 
 function showAssessments() {
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
