@@ -7146,6 +7146,19 @@ function measureCompletedCount(attempt = loadMeasureAttempt()) {
   return MEASUREMENT_SUBTESTS.filter((subtest) => attempt.subtests[subtest.id]).length;
 }
 
+// An attempt is underway only if one was explicitly started or answered — the
+// key is written when a subtest banks a result and removed when the attempt is
+// scored, so its presence survives a reload without any extra state.
+function measureAttemptStarted() {
+  try { return localStorage.getItem(MEASURE_ATTEMPT_KEY) !== null; } catch { return false; }
+}
+
+function startNewMeasureAttempt() {
+  saveMeasureAttempt({ startedAt: Date.now(), subtests: {} });
+  renderMeasurePicker();
+  document.querySelector("#measure-hub")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 document.querySelector("#cat-quit")?.addEventListener("click", requestQuitSubtest);
 document.querySelector("#measure-confirm-quit")?.addEventListener("click", confirmQuitSubtest);
 document.querySelector("#measure-cancel-quit")?.addEventListener("click", () => {
@@ -7199,7 +7212,15 @@ document.querySelector("#site-brand")?.addEventListener("click", () => {
   if (document.documentElement.classList.contains("landing-active")) return;
   showAssessments();
 });
-document.querySelector("#site-rail-brand")?.addEventListener("click", () => showAssessments());
+// Collapsed, the logo is the only thing left in the rail header — so it is the
+// way back out. Expanded, it goes home like the header brand does.
+document.querySelector("#site-rail-brand")?.addEventListener("click", () => {
+  if (document.documentElement.classList.contains("rail-collapsed")) {
+    applyRailCollapsed(false);
+    return;
+  }
+  showAssessments();
+});
 document.querySelector("#site-rail-upgrade")?.addEventListener("click", openPricingModal);
 
 document.querySelectorAll("#site-login, #site-login-rail").forEach((button) => {
@@ -7227,9 +7248,30 @@ document.querySelector("#site-rail-collapse")?.addEventListener("click", () => {
   applyRailCollapsed(!document.documentElement.classList.contains("rail-collapsed"));
 });
 
-document.querySelector("#landing-banner-close")?.addEventListener("click", () => {
-  document.querySelector("#landing-banner")?.remove();
-});
+// The landing starfield. Painted as individual stars rather than three tiling
+// gradient layers, because a layer can only fade as one — every star in it
+// blinks on the same beat, which reads as the page flickering. Each star here
+// gets its own size, position, rhythm and starting phase, so the sky shimmers
+// instead.
+function paintStarfield() {
+  const field = document.querySelector(".landing-stars");
+  if (!field || field.childElementCount) return;
+  const stars = [];
+  for (let index = 0; index < 150; index += 1) {
+    const size = (0.9 + Math.random() * 1.8).toFixed(2);
+    stars.push(
+      `<i style="left:${(Math.random() * 100).toFixed(2)}%;top:${(Math.random() * 100).toFixed(2)}%;`
+      + `width:${size}px;height:${size}px;`
+      + `--peak:${(0.35 + Math.random() * 0.6).toFixed(2)};`
+      + `animation-duration:${(3.4 + Math.random() * 7).toFixed(2)}s;`
+      // A negative delay starts each star mid-cycle, so they are already out of
+      // phase on the first frame rather than fading in together.
+      + `animation-delay:-${(Math.random() * 10).toFixed(2)}s"></i>`
+    );
+  }
+  field.innerHTML = stars.join("");
+}
+paintStarfield();
 
 // The landing header sits on the blue gradient at the top and turns solid once
 // you scroll past the hero, so it stays readable over the light sections below.
@@ -7763,7 +7805,12 @@ function renderMeasurePicker(selectedId) {
       <span class="measure-progress-value"><strong>${done}</strong> of ${total} complete</span>
       <span class="measure-progress-track" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></span>`;
   }
-  renderMeasureHub(attempt, done, total);
+
+  // Once there is a report and no attempt underway, this page is the report —
+  // the subtest picker belongs to taking the test, not to reading the result.
+  const takingTest = !loadCatSessions().length || measureAttemptStarted();
+  document.querySelector("#cat-intro")?.classList.toggle("is-report-only", !takingTest);
+  renderMeasureHub(attempt, done, total, takingTest);
 
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
     const meta = MEASUREMENT_INDICES[key];
@@ -7799,13 +7846,29 @@ function renderMeasurePicker(selectedId) {
 // The test hub. The page under the report is not a list of links — it is where
 // you find out where the attempt stands, get on with the next subtest, start
 // over, or go back to a report you have already earned.
-function renderMeasureHub(attempt, done, total) {
+function renderMeasureHub(attempt, done, total, takingTest = true) {
   const hub = document.querySelector("#measure-hub");
   if (!hub) return;
+  hub.dataset.mode = takingTest ? "testing" : "report";
+
+  // Reading a finished report: the only thing still on offer here is another
+  // sitting, plus the reports already earned.
+  if (!takingTest) {
+    const cta = document.querySelector("#measure-continue");
+    if (cta) {
+      cta.hidden = false;
+      cta.textContent = "Start a new test";
+      cta.dataset.subtest = "";
+      cta.dataset.action = "new-test";
+    }
+    const restart = document.querySelector("#measure-restart");
+    if (restart) restart.hidden = true;
+    renderMeasureReports(total);
+    return;
+  }
   const remaining = MEASUREMENT_SUBTESTS.filter((subtest) => !attempt.subtests[subtest.id]);
   const next = remaining[0] ?? null;
   const minutesLeft = remaining.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
-  const sessions = loadCatSessions();
 
   const title = document.querySelector("#measure-hub-title");
   if (title) {
@@ -7826,43 +7889,47 @@ function renderMeasureHub(attempt, done, total) {
     cta.hidden = !next;
     if (next) cta.textContent = `${done === 0 ? "Start the test" : "Continue"} — ${next.name}`;
     cta.dataset.subtest = next?.id ?? "";
+    cta.dataset.action = "";
   }
 
   // Nothing to discard until something has been answered.
   const restart = document.querySelector("#measure-restart");
-  if (restart) {
-    restart.hidden = done === 0;
-    restart.textContent = next ? "Start a new test" : "Start a new test";
-  }
+  if (restart) restart.hidden = done === 0;
 
+  renderMeasureReports(total);
+}
+
+// Reports already earned. Picking one points the dashboard above at it.
+function renderMeasureReports(total) {
+  const sessions = loadCatSessions();
   const reports = document.querySelector("#measure-hub-reports");
   const list = document.querySelector("#measure-history");
   if (reports) reports.hidden = sessions.length === 0;
-  if (list) {
-    list.innerHTML = sessions.map((session, index) => {
-      const when = new Date(session.completedAt);
-      const taken = Object.keys(session.subtests ?? {}).length || total;
-      return `
-        <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
-                data-measure-session="${index}" type="button">
-          <span class="measure-report-score">${measurementReportUnlocked() ? session.score : "•••"}</span>
-          <span class="measure-report-meta">
-            <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
-            ${taken} of ${total} subtests
-          </span>
-        </button>`;
-    }).join("");
-    list.querySelectorAll("[data-measure-session]").forEach((button) => {
-      button.addEventListener("click", () => {
-        selectMeasurementSession(Number(button.dataset.measureSession));
-        renderMeasurePicker();
-        document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+  if (!list) return;
+  list.innerHTML = sessions.map((session, index) => {
+    const when = new Date(session.completedAt);
+    const taken = Object.keys(session.subtests ?? {}).length || total;
+    return `
+      <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
+              data-measure-session="${index}" type="button">
+        <span class="measure-report-score">${measurementReportUnlocked() ? session.score : "•••"}</span>
+        <span class="measure-report-meta">
+          <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
+          ${taken} of ${total} subtests
+        </span>
+      </button>`;
+  }).join("");
+  list.querySelectorAll("[data-measure-session]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectMeasurementSession(Number(button.dataset.measureSession));
+      renderMeasurePicker();
+      document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }
+  });
 }
 
 document.querySelector("#measure-continue")?.addEventListener("click", (event) => {
+  if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
   const id = event.currentTarget.dataset.subtest;
   if (!id) return;
   renderSubtestDetail(id);

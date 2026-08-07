@@ -20945,3 +20945,72 @@ html.mode-pro .measure-report.is-active {
 @media (max-width: 1000px) {
   html.mode-pro .measure-hub { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
+
+/* ===================================================================
+   Landing starfield, take two.
+
+   The gradient layers below are retired: a layer fades as one unit, so
+   every star in it blinked on the same beat. Stars are real elements
+   now, each with its own rhythm and phase.
+   =================================================================== */
+.landing-stars {
+  background-image: none !important;
+  animation: none !important;
+}
+.landing-stars::before,
+.landing-stars::after { display: none !important; }
+
+.landing-stars i {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  animation-name: star-breathe;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: opacity;
+}
+@keyframes star-breathe {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: var(--peak, 0.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-stars i { animation: none; opacity: var(--peak, 0.6); }
+}
+
+/* ===================================================================
+   Reading a report is not taking one: once a sitting is scored and no
+   attempt is underway, the subtest picker leaves the page. What stays
+   is the way to start another, and the reports already earned.
+   =================================================================== */
+.measure-picker.is-report-only .measure-picker-body,
+.measure-picker.is-report-only .assessment-disclaimer { display: none; }
+
+html.mode-pro .measure-hub[data-mode="report"] {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 32px;
+  padding: 18px 22px;
+}
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-eyebrow,
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-title,
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-sub,
+html.mode-pro .measure-hub[data-mode="report"] .measure-progress { display: none; }
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-actions { margin-top: 0; }
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-reports .measure-hub-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+}
+html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, max-content);
+  justify-content: end;
+  overflow-x: auto;
+}
+@media (max-width: 1000px) {
+  html.mode-pro .measure-hub[data-mode="report"] {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list { justify-content: start; }
+}
