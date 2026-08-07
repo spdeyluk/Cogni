@@ -60,7 +60,15 @@ import {
   scoreWorkingMemoryIndex, scoreProcessingSpeedIndex, scoreComposite,
   compositeStandardError, indexConfidenceInterval, scoreToPercentile, scoreDescriptor
 } from "../core/assessments/measurement.js";
-import * as THREE from "../../node_modules/three/build/three.module.js";
+// three.js (634 kB) is only used by the 3D MOT exercise. A static import here
+// put it in front of first paint on every page, landing included, which is the
+// single biggest thing making the site feel slow to arrive. It is now fetched
+// the first time MOT actually opens.
+let THREE = null;
+async function loadThree() {
+  if (!THREE) THREE = await import("../../node_modules/three/build/three.module.js");
+  return THREE;
+}
 import { supabase, supabaseEnabled } from "./supabase.js";
 
 console.info("[Cogni] main.js loaded");
@@ -2614,8 +2622,7 @@ function openMotSettings() {
   elements.appShell.classList.add("mot-open");
   elements.pageTitle.textContent = "3D MOT";
   elements.pageLede.textContent = "Track highlighted targets in a 3D field. The targets are shown while everything is still, then all balls move and become identical.";
-  initMotScene();
-  renderMotStatic();
+  initMotScene().then(renderMotStatic);
 }
 
 function openRrtSettings() {
@@ -12690,10 +12697,10 @@ function formatClock(ms) {
   return `${minutes}:${seconds}`;
 }
 
-function startMotSession() {
+async function startMotSession() {
   if (!requireAuth("Create a free account to start training.")) return;
   clearMotTimers();
-  initMotScene();
+  await initMotScene();
   mot.config = readMotConfig();
   applyMotAdaptiveStartSpeed();
   mot.running = true;
@@ -12867,7 +12874,8 @@ function finishMotSession() {
   updateMotStats();
 }
 
-function initMotScene() {
+async function initMotScene() {
+  await loadThree();
   if (mot.renderer) {
     resizeMotRenderer();
     return;
