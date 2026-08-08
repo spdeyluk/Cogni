@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260807-web160">
+    <link rel="stylesheet" href="styles.css?v=20260808-web161">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -2346,6 +2346,17 @@
 
         <button class="pricing-upgrade" id="pricing-upgrade" type="button">Continue</button>
         <p class="paywall-renew">Renews automatically, Cancel anytime</p>
+
+        <!-- Preview / comp code. Client-side only — see the note in main.js. -->
+        <div class="pricing-code" id="pricing-code">
+          <label for="pricing-code-input">Have an access code?</label>
+          <div class="pricing-code-row">
+            <input id="pricing-code-input" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="Enter code" aria-describedby="pricing-code-note">
+            <button class="pricing-code-apply" id="pricing-code-apply" type="button">Apply</button>
+          </div>
+          <p class="pricing-code-note" id="pricing-code-note"></p>
+        </div>
         <p class="pricing-note" id="pricing-note"></p>
         <div class="paywall-links">
           <button class="paywall-restore" id="paywall-restore" type="button" hidden>Restore</button>
@@ -2650,6 +2661,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260807-web160"></script>
+    <script type="module" src="src/app/main.js?v=20260808-web161"></script>
   </body>
 </html>

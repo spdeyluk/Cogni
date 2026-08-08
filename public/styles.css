@@ -21014,3 +21014,46 @@ html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list {
   }
   html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list { justify-content: start; }
 }
+
+/* Access-code field in the pricing modal. A preview/comp affordance, so it is
+   deliberately quiet — it should not compete with the actual plans. */
+.pricing-code {
+  margin: 18px auto 0;
+  max-width: 340px;
+  text-align: left;
+}
+.pricing-code > label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pricing-code-row { display: flex; gap: 8px; }
+.pricing-code-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pricing-code-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pricing-code-row input[hidden] { display: none; }
+.pricing-code-apply {
+  flex: none;
+  padding: 10px 16px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 10px !important;
+  background: none !important;
+  color: var(--text) !important;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pricing-code-apply:hover { background: var(--fill-subtle) !important; }
+.pricing-code-note { margin: 8px 0 0; font-size: 0.79rem; line-height: 1.45; color: var(--muted); }

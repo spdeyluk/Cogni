@@ -210,6 +210,51 @@ const screenTimeDailyCapMinutes = 180;
 // localStorage "cogni.uiMode.v1" = "play" | "pro" for testing.
 const cogniUiMode = detectCogniUiMode();
 
+// ---------------------------------------------------------------------------
+// Preview access codes.
+//
+// THIS IS NOT ACCESS CONTROL. The codes are in the client bundle, so anyone who
+// opens devtools can read one — or just set the storage key by hand. It exists
+// so the paid experience can be walked through, demoed and comped without a
+// live subscription. Anything that actually costs money, or exposes data worth
+// protecting, still has to check the real entitlement server-side.
+//
+// Defined here, above everything that reads it, because a `const` in the
+// temporal dead zone throws — and a throw inside one of the try/catch gates
+// below would be swallowed, leaving the whole site silently locked.
+// ---------------------------------------------------------------------------
+const ACCESS_CODE_KEY = "cogni.accessCode.v1";
+const ACCESS_CODES = ["COGNI-FULL"];
+
+function accessCodeActive() {
+  try {
+    return ACCESS_CODES.includes((localStorage.getItem(ACCESS_CODE_KEY) || "").toUpperCase());
+  } catch {
+    return false;
+  }
+}
+
+function applyAccessCode(raw) {
+  const code = String(raw ?? "").trim().toUpperCase();
+  if (!ACCESS_CODES.includes(code)) return false;
+  try { localStorage.setItem(ACCESS_CODE_KEY, code); } catch { /* private mode */ }
+  return true;
+}
+
+function clearAccessCode() {
+  try { localStorage.removeItem(ACCESS_CODE_KEY); } catch { /* private mode */ }
+}
+
+// ?code=COGNI-FULL unlocks, ?code=off goes back to the free view. Handled at
+// boot so the very first paint is already in the right state.
+{
+  const param = new URLSearchParams(window.location.search).get("code");
+  if (param) {
+    if (/^(off|clear|free)$/i.test(param)) clearAccessCode();
+    else applyAccessCode(param);
+  }
+}
+
 // Session coins waiting to float once the player exits the summary.
 let pendingSessionCoinFloat = 0;
 // When true, an N-Back session runs indefinitely (trials generated on the fly) until
@@ -1446,6 +1491,8 @@ function openPricingModal() {
   if (cogniUiMode === "play") loadApplePaywallPrices();
   renderPaywallCta();
   wirePaywallPlans();
+  wireAccessCodeField();
+  syncAccessCodeField();
   const dialog = document.querySelector("#pricing-dialog");
   if (dialog && typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
 }
@@ -1547,7 +1594,7 @@ function showWebOnboarding(onDone = () => {}) {
 // the same treatment as the IQ result. Call at the end of a page's render(); it is
 // a no-op for anyone on a paid plan (these are Basic-level data pages).
 function applyPagePaywall(page, { title, body } = {}) {
-  if (!page || hasPaidPlan()) return;
+  if (!page || webPlanUnlocked()) return;
   const inner = page.innerHTML;
   page.classList.add("page-locked");
   page.innerHTML = `
@@ -1561,6 +1608,40 @@ function applyPagePaywall(page, { title, body } = {}) {
       </div>
     </div>`;
 }
+// The access-code field inside the pricing modal. A full reload after a change
+// is deliberate: entitlement is read in a dozen render paths, and re-running
+// only the ones I remembered is how you end up with half an unlocked page.
+function wireAccessCodeField() {
+  const field = document.querySelector("#pricing-code");
+  const input = document.querySelector("#pricing-code-input");
+  const apply = document.querySelector("#pricing-code-apply");
+  const note = document.querySelector("#pricing-code-note");
+  if (!field || !input || !apply || field.dataset.wired === "1") return;
+  field.dataset.wired = "1";
+
+  const submit = () => {
+    if (accessCodeActive()) { clearAccessCode(); window.location.reload(); return; }
+    if (applyAccessCode(input.value)) { window.location.reload(); return; }
+    if (note) note.textContent = "That code isn't recognised.";
+    input.focus();
+    input.select();
+  };
+  apply.addEventListener("click", submit);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); submit(); }
+  });
+}
+
+function syncAccessCodeField() {
+  const input = document.querySelector("#pricing-code-input");
+  const apply = document.querySelector("#pricing-code-apply");
+  const note = document.querySelector("#pricing-code-note");
+  const active = accessCodeActive();
+  if (input) { input.hidden = active; input.value = ""; }
+  if (apply) apply.textContent = active ? "Remove code" : "Apply";
+  if (note) note.textContent = active ? "An access code is active — paid features are unlocked." : "";
+}
+
 function closePricingModal() {
   document.querySelector("#pricing-dialog")?.close();
   returnFromPaywall();
@@ -8829,12 +8910,22 @@ function renderCatIndices(sessionRecord, unlocked) {
 // TEMPORARY — everything unlocked so the report can be tested end to end.
 // Flip this one constant back to false to restore the paywall; nothing else
 // needs editing, and no other code path was changed to make this work.
-const MEASUREMENT_FREE_FOR_ALL = true;
+// ---------------------------------------------------------------------------
+// What the web plan sells.
+//
+// Exactly two things: the Cogni Measurement report and the Profile data screen.
+// Exercises, their advanced settings, and taking the test itself all stay free,
+// so this is deliberately narrower than hasPaidPlan() — pointing the general
+// gate at web would lock training features that are meant to be open.
+// ---------------------------------------------------------------------------
+function webPlanUnlocked() {
+  if (cogniUiMode !== "pro") return hasPaidPlan();
+  return accessCodeActive() || currentTier() === "basic" || currentTier() === "pro";
+}
 
 // On web the report is what the subscription buys. Native keeps its own Pro tier.
 function measurementReportUnlocked() {
-  if (MEASUREMENT_FREE_FOR_ALL) return true;
-  if (cogniUiMode === "pro") return currentTier() === "pro" || currentTier() === "basic";
+  if (cogniUiMode === "pro") return webPlanUnlocked();
   return isProUser();
 }
 
