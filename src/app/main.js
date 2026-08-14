@@ -7115,10 +7115,11 @@ function showAssessmentList() {
     saveCatActive();
   }
   clearCatSubtestTimers();
-  // Landing on the IQ page always starts clean — the report stays folded until a
-  // previous score is picked, and the side list starts collapsed.
+  // Landing on the IQ page always starts clean — the overview card, report
+  // folded, the side list collapsed, and the subtest picker closed.
   measurementReportOpen = false;
   measureReportsExpanded = false;
+  measureSubtestsOpen = false;
   renderMeasurePicker();
   showCatSection("intro");
 }
@@ -7282,6 +7283,9 @@ let measurementReportOpen = false;
 // Whether the side "Previous scores" list is showing all sittings (scrollable)
 // or just the most recent few.
 let measureReportsExpanded = false;
+// The card is the landing; "Start the test" opens the subtest picker screen
+// (pick any subtest, any order). This tracks which of the two is showing.
+let measureSubtestsOpen = false;
 
 function setMeasurementTab(tab) {
   measurementTab = tab;
@@ -7942,6 +7946,9 @@ function renderMeasurePicker(selectedId) {
   // the subtest picker belongs to taking the test, not to reading the result.
   const takingTest = !loadCatSessions().length || measureAttemptStarted();
   document.querySelector("#cat-intro")?.classList.toggle("is-report-only", !takingTest);
+  // The subtest picker is a distinct screen the card's CTA opens; the two never
+  // show at once.
+  document.querySelector("#cat-intro")?.classList.toggle("is-subtests", measureSubtestsOpen);
   renderMeasureHub(attempt, done, total, takingTest);
 
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
@@ -7968,11 +7975,10 @@ function renderMeasurePicker(selectedId) {
       </section>`;
   }).join("");
 
+  // Pick any subtest, in any order — each opens its brief, then the sitting.
   host.querySelectorAll("[data-subtest]").forEach((button) => {
-    button.addEventListener("click", () => renderSubtestDetail(button.dataset.subtest));
+    button.addEventListener("click", () => openMeasureStartDialog(button.dataset.subtest));
   });
-
-  renderSubtestDetail(selectedId ?? MEASUREMENT_SUBTESTS.find((s) => !attempt.subtests[s.id])?.id ?? MEASUREMENT_SUBTESTS[0].id);
 }
 
 // The test hub — now the whole page. It always presents as one card: what the
@@ -8014,8 +8020,10 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
       cta.dataset.subtest = "";
       cta.dataset.action = "new-test";
     } else {
+      // Opens the picker screen rather than any one subtest, so it doesn't name
+      // one.
       cta.hidden = !next;
-      if (next) cta.textContent = `${done === 0 ? "Start the test" : "Continue"} — ${next.name}`;
+      cta.textContent = done === 0 ? "Start the test" : "Continue the test";
       cta.dataset.subtest = next?.id ?? "";
       cta.dataset.action = "";
     }
@@ -8078,11 +8086,28 @@ function renderMeasureReports(total) {
 }
 
 document.querySelector("#measure-continue")?.addEventListener("click", (event) => {
+  // Both "Start the test" and "Start a new test" go to the picker screen, where
+  // you choose which subtest to sit, in whatever order you like.
+  measureSubtestsOpen = true;
   if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
-  const id = event.currentTarget.dataset.subtest;
-  if (!id) return;
-  openMeasureStartDialog(id);
+  openMeasureSubtests();
 });
+
+// Reveal the subtest picker screen (the card steps aside for it).
+function openMeasureSubtests() {
+  measureSubtestsOpen = true;
+  renderMeasurePicker();
+  document.querySelector("#cat-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Back from the picker to the overview card.
+function closeMeasureSubtests() {
+  measureSubtestsOpen = false;
+  renderMeasurePicker();
+  document.querySelector("#cat-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.querySelector("#measure-subtests-back")?.addEventListener("click", closeMeasureSubtests);
 
 // The pre-subtest brief, now a modal so the page can stay a single card. Shows
 // what the sitting involves, then hands off to startSubtest on "Begin".
@@ -8106,11 +8131,25 @@ function openMeasureStartDialog(subtestId) {
       <div><dt>Timing</dt><dd>${subtest.engine ? (subtest.engine === "speed" ? "Speeded" : "Untimed") : `${subtest.secondsPerQuestion}s each`}</dd></div>
       <div><dt>Length</dt><dd>~${subtestMinutes(subtest)} min</dd></div>`;
   }
+  // A subtest already sat in this attempt can't be retaken — the brief says so
+  // and drops the Begin button instead of pretending to start it.
+  const alreadyDone = Boolean(loadMeasureAttempt().subtests[subtest.id]);
   const body = dialog.querySelector("#measure-start-body");
-  if (body) body.textContent = subtest.summary;
+  if (body) body.textContent = alreadyDone
+    ? "You've already completed this subtest in the current attempt. Start a new test to sit it again."
+    : subtest.summary;
+  const terms = dialog.querySelector(".measure-terms");
+  const aids = dialog.querySelector(".measure-aids");
+  if (terms) terms.hidden = alreadyDone;
+  if (aids) aids.hidden = alreadyDone;
 
   const go = dialog.querySelector("#measure-start-go");
-  if (go) go.onclick = () => { dialog.close(); startSubtest(subtest.id); };
+  if (go) {
+    go.hidden = alreadyDone;
+    go.onclick = () => { dialog.close(); startSubtest(subtest.id); };
+  }
+  const cancel = dialog.querySelector("#measure-start-cancel");
+  if (cancel) cancel.textContent = alreadyDone ? "Close" : "Not yet";
 
   if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
 }

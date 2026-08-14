@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260814-web164">
+    <link rel="stylesheet" href="styles.css?v=20260814-web165">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1081,9 +1081,20 @@
             </aside>
           </section>
 
+          <!-- The subtest picker screen the overview card opens into. -->
+          <div class="measure-subtests-bar">
+            <button class="measure-subtests-back" id="measure-subtests-back" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              Overview
+            </button>
+            <div class="measure-subtests-head">
+              <h2>Pick a subtest</h2>
+              <p>Take them in any order. Each is one sitting — stop early if you need to, but you can't return to it.</p>
+            </div>
+          </div>
           <div class="measure-picker-body">
             <div class="measure-sections" id="measure-sections"></div>
-            <aside class="measure-detail" id="measure-detail" aria-live="polite"></aside>
+            <aside class="measure-detail" id="measure-detail" aria-live="polite" hidden></aside>
           </div>
           <p class="assessment-disclaimer">Scores are estimates from provisional item data, for personal tracking only — this is not a clinically validated intelligence test.</p>
 
@@ -2679,6 +2690,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260814-web164"></script>
+    <script type="module" src="src/app/main.js?v=20260814-web165"></script>
   </body>
 </html>

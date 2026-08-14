@@ -21068,9 +21068,54 @@ html.mode-play .measure-hub-reset {
 }
 .measure-start-go:hover { opacity: 0.9; }
 
-/* This page is a single card for now: nothing else renders under it. */
-.measure-picker .measure-picker-body,
+/* The landing is only the overview card. The subtest picker is a separate
+   screen the CTA opens — the two never show at once. */
+.measure-picker:not(.is-subtests) .measure-picker-body,
+.measure-picker:not(.is-subtests) .measure-subtests-bar,
 .measure-picker > .assessment-disclaimer { display: none !important; }
+.measure-picker.is-subtests .measure-hub,
+.measure-picker.is-subtests .measure-dashboard { display: none !important; }
+.measure-picker.is-subtests .measure-picker-body { grid-template-columns: minmax(0, 1fr); }
+
+.measure-subtests-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.measure-subtests-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 15px 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.measure-subtests-back:hover { background: var(--fill-subtle); color: var(--text); }
+.measure-subtests-back svg {
+  width: 17px; height: 17px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.measure-subtests-head h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.3vw, 1.7rem);
+  letter-spacing: -0.02em;
+}
+.measure-subtests-head p {
+  margin: 4px 0 0;
+  max-width: 60ch;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
 
 @media (max-width: 1000px) {
   html.mode-pro .measure-hub { grid-template-columns: minmax(0, 1fr); gap: 28px; }
