@@ -19348,6 +19348,11 @@ html.mode-pro:not([data-theme="dark"]) {
 }
 html.mode-pro:not([data-theme="dark"]) body { background: var(--bg); }
 html.mode-pro[data-theme="dark"] { color-scheme: dark; }
+/* The marketing landing is a light page. If the app theme is dark the root
+   declares color-scheme: dark, and WebKit/iOS then flickers the light landing's
+   background (it renders the page canvas dark under it). While the landing is
+   showing, the root IS a light surface — say so, so iOS stops inverting it. */
+html.landing-active { color-scheme: light !important; }
 
 /* --- top navigation replaces the sidebar on web --- */
 html.mode-pro .app-sidebar,
