@@ -7091,8 +7091,8 @@ function showAssessments() {
   elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
-  elements.pageTitle.textContent = "Cogni Measurement";
-  elements.pageLede.textContent = `Six CHC abilities, ${MEASUREMENT_SUBTESTS.length} subtests, one score.`;
+  elements.pageTitle.textContent = "IQ Test";
+  elements.pageLede.textContent = `Six abilities, ${MEASUREMENT_SUBTESTS.length} subtests, one score.`;
   showAssessmentList();
 }
 
@@ -7108,9 +7108,10 @@ function showAssessmentList() {
     saveCatActive();
   }
   clearCatSubtestTimers();
-  // Landing on the IQ page always starts clean — the report stays folded behind
-  // the compact previous-scores card until the visitor asks for it.
+  // Landing on the IQ page always starts clean — the report stays folded until a
+  // previous score is picked, and the side list starts collapsed.
   measurementReportOpen = false;
+  measureReportsExpanded = false;
   renderMeasurePicker();
   showCatSection("intro");
 }
@@ -7268,9 +7269,12 @@ let measurementSessionIndex = 0;
 // Which index the Overview's big panel is reading: "overall", or one of the six.
 let measurementFocus = "overall";
 // The report no longer springs open on its own. Landing on the IQ page shows the
-// clean "take the test" state plus a compact previous-scores card; the full
-// dashboard only unfolds when that card is tapped.
+// clean "take the test" card; the full dashboard only unfolds when a previous
+// score is picked from the side list.
 let measurementReportOpen = false;
+// Whether the side "Previous scores" list is showing all sittings (scrollable)
+// or just the most recent few.
+let measureReportsExpanded = false;
 
 function setMeasurementTab(tab) {
   measurementTab = tab;
@@ -7865,53 +7869,26 @@ function renderMeasurementSales() {
   });
 }
 
-// The stand-in for the full report on the clean IQ page: a small card showing
-// the most recent composite. Tapping it unfolds (or refolds) the dashboard.
-function renderMeasurePreviousCard() {
-  const host = document.querySelector("#measure-previous");
+// Short, friendly names for the six abilities — the full CHC titles are too long
+// to read as a colour-chip row.
+const MEASURE_CAT_LABELS = {
+  vci: "Verbal", fri: "Reasoning", vsi: "Spatial",
+  qri: "Numerical", wmi: "Memory", psi: "Speed"
+};
+
+// The colourful "what it measures" strip on the card: one chip per ability, each
+// carrying that index's accent so the card has colour and says what the test
+// touches at a glance.
+function renderMeasureCats() {
+  const host = document.querySelector("#measure-hub-cats");
   if (!host) return;
-  const sessions = loadCatSessions();
-  if (!sessions.length) {
-    host.hidden = true;
-    host.innerHTML = "";
-    return;
-  }
-
-  const unlocked = measurementReportUnlocked();
-  const latest = sessions[0];
-  const when = new Date(latest.completedAt);
-  const dateLabel = when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-  const scoreLabel = unlocked ? latest.score : "•••";
-  // A quiet trail of earlier composites, newest first, so repeat testers can see
-  // movement at a glance without opening the report.
-  const trail = unlocked && sessions.length > 1
-    ? `<span class="measure-prev-trail">${sessions.slice(1, 5)
-        .map((session) => `<i>${session.score}</i>`).join("")}</span>`
-    : "";
-
-  host.hidden = false;
-  host.innerHTML = `
-    <button class="measure-prev-card${measurementReportOpen ? " is-open" : ""}" type="button" data-toggle-report
-            aria-expanded="${measurementReportOpen}">
-      <span class="measure-prev-text">
-        <span class="measure-prev-label">Previous test score</span>
-        <span class="measure-prev-main">
-          <strong class="measure-prev-score">${scoreLabel}</strong>
-          <span class="measure-prev-when">${dateLabel}${sessions.length > 1 ? ` · ${sessions.length} tests` : ""}</span>
-        </span>
-        ${trail}
-      </span>
-      <span class="measure-prev-cta">${measurementReportOpen ? "Hide report" : "View full report"}
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
-    </button>`;
-
-  host.querySelector("[data-toggle-report]")?.addEventListener("click", () => {
-    measurementReportOpen = !measurementReportOpen;
-    if (measurementReportOpen) measurementSessionIndex = 0; // open on the latest sitting
-    renderMeasurePicker();
-    const target = measurementReportOpen ? "#measure-dashboard" : "#measure-previous";
-    document.querySelector(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
+    const meta = MEASUREMENT_INDICES[key];
+    const label = MEASURE_CAT_LABELS[key] ?? meta.short;
+    return `<span class="measure-cat" style="--cat:${meta.accent}"
+                  title="${escapeHtml(meta.name)} · ${escapeHtml(meta.chc)}">
+      <i class="measure-cat-dot" aria-hidden="true"></i>${escapeHtml(label)}</span>`;
+  }).join("");
 }
 
 function renderMeasurePicker(selectedId) {
@@ -7931,9 +7908,8 @@ function renderMeasurePicker(selectedId) {
   }
   const offers = document.querySelector("#measure-offers");
   if (offers) offers.innerHTML = "";
-  // The full report only unfolds on demand. Otherwise the page reads like the
-  // pre-test state, with a compact previous-scores card standing in for it.
-  renderMeasurePreviousCard();
+  // The full report only unfolds on demand — opening one from the side list.
+  // Otherwise the page reads like the pre-test state.
   if (measurementReportOpen) {
     renderMeasurementDashboard();
   } else {
@@ -7992,76 +7968,85 @@ function renderMeasurePicker(selectedId) {
   renderSubtestDetail(selectedId ?? MEASUREMENT_SUBTESTS.find((s) => !attempt.subtests[s.id])?.id ?? MEASUREMENT_SUBTESTS[0].id);
 }
 
-// The test hub. The page under the report is not a list of links — it is where
-// you find out where the attempt stands, get on with the next subtest, start
-// over, or go back to a report you have already earned.
+// The test hub — now the whole page. It always presents as one card: what the
+// test measures, the state of your current attempt, the way in, and the scores
+// already earned down the side. The only real difference between "still taking
+// it" and "already finished a sitting" is what the button does.
 function renderMeasureHub(attempt, done, total, takingTest = true) {
   const hub = document.querySelector("#measure-hub");
   if (!hub) return;
   hub.dataset.mode = takingTest ? "testing" : "report";
+  renderMeasureCats();
 
-  // Reading a finished report: the only thing still on offer here is another
-  // sitting, plus the reports already earned.
-  if (!takingTest) {
-    const cta = document.querySelector("#measure-continue");
-    if (cta) {
-      cta.hidden = false;
-      cta.textContent = "Start a new test";
-      cta.dataset.subtest = "";
-      cta.dataset.action = "new-test";
-    }
-    const restart = document.querySelector("#measure-restart");
-    if (restart) restart.hidden = true;
-    renderMeasureReports(total);
-    return;
-  }
   const remaining = MEASUREMENT_SUBTESTS.filter((subtest) => !attempt.subtests[subtest.id]);
-  const next = remaining[0] ?? null;
+  const next = takingTest ? (remaining[0] ?? null) : null;
   const minutesLeft = remaining.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
 
   const title = document.querySelector("#measure-hub-title");
   if (title) {
-    title.textContent = done === 0
-      ? "Take the measurement"
+    title.textContent = !takingTest
+      ? "Take the test again"
+      : done === 0 ? "Take the test"
       : next ? `${done} of ${total} subtests done` : "Every subtest done";
   }
   const sub = hub.querySelector(".measure-hub-sub");
   if (sub) {
-    sub.textContent = next
-      ? `${done === 0 ? "Nine subtests, taken" : "The rest can be taken"} in any order at your own pace — about `
-        + `${minutesLeft} minutes left. Each one is a single sitting: you can stop early, but you can't return to it.`
-      : "Your composite is scored from all nine. Start a new test whenever you want to measure again.";
+    sub.textContent = !takingTest
+      ? "Your score is built from all nine subtests. Start a fresh sitting whenever you want to measure again."
+      : next
+        ? `${done === 0 ? "Nine short subtests across six abilities, taken" : "The rest can be taken"} in any order — about `
+          + `${minutesLeft} minutes left. Each is a single sitting: you can stop early, but you can't return to it.`
+        : "Your score is built from all nine. Start a new test whenever you want to measure again.";
   }
 
   const cta = document.querySelector("#measure-continue");
   if (cta) {
-    cta.hidden = !next;
-    if (next) cta.textContent = `${done === 0 ? "Start the test" : "Continue"} — ${next.name}`;
-    cta.dataset.subtest = next?.id ?? "";
-    cta.dataset.action = "";
+    if (!takingTest) {
+      cta.hidden = false;
+      cta.textContent = "Start a new test";
+      cta.dataset.subtest = "";
+      cta.dataset.action = "new-test";
+    } else {
+      cta.hidden = !next;
+      if (next) cta.textContent = `${done === 0 ? "Start the test" : "Continue"} — ${next.name}`;
+      cta.dataset.subtest = next?.id ?? "";
+      cta.dataset.action = "";
+    }
   }
 
-  // Nothing to discard until something has been answered.
+  // Nothing to discard until something has been answered in the current attempt.
   const restart = document.querySelector("#measure-restart");
-  if (restart) restart.hidden = done === 0;
+  if (restart) restart.hidden = !takingTest || done === 0;
 
   renderMeasureReports(total);
 }
+
+// The side list stays short so the whole page is one card. Past this many, it
+// collapses behind a "See all" toggle that opens a scrollable full list.
+const MEASURE_REPORTS_VISIBLE = 5;
 
 // Reports already earned. Picking one points the dashboard above at it.
 function renderMeasureReports(total) {
   const sessions = loadCatSessions();
   const reports = document.querySelector("#measure-hub-reports");
   const list = document.querySelector("#measure-history");
+  const more = document.querySelector("#measure-reports-more");
   if (reports) reports.hidden = sessions.length === 0;
   if (!list) return;
-  list.innerHTML = sessions.map((session, index) => {
+
+  const overflowing = sessions.length > MEASURE_REPORTS_VISIBLE;
+  const expanded = overflowing && measureReportsExpanded;
+  const shown = expanded ? sessions : sessions.slice(0, MEASURE_REPORTS_VISIBLE);
+  list.classList.toggle("is-scroll", expanded);
+
+  const unlocked = measurementReportUnlocked();
+  list.innerHTML = shown.map((session, index) => {
     const when = new Date(session.completedAt);
     const taken = Object.keys(session.subtests ?? {}).length || total;
     return `
       <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
               data-measure-session="${index}" type="button">
-        <span class="measure-report-score">${measurementReportUnlocked() ? session.score : "•••"}</span>
+        <span class="measure-report-score">${unlocked ? session.score : "•••"}</span>
         <span class="measure-report-meta">
           <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
           ${taken} of ${total} subtests
@@ -8075,14 +8060,56 @@ function renderMeasureReports(total) {
       document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
+
+  if (more) {
+    more.hidden = !overflowing;
+    if (overflowing) {
+      more.textContent = expanded ? "Show fewer" : `See all ${sessions.length}`;
+      more.onclick = () => { measureReportsExpanded = !measureReportsExpanded; renderMeasureReports(total); };
+    }
+  }
 }
 
 document.querySelector("#measure-continue")?.addEventListener("click", (event) => {
   if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
   const id = event.currentTarget.dataset.subtest;
   if (!id) return;
-  renderSubtestDetail(id);
-  document.querySelector("#measure-detail")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  openMeasureStartDialog(id);
+});
+
+// The pre-subtest brief, now a modal so the page can stay a single card. Shows
+// what the sitting involves, then hands off to startSubtest on "Begin".
+function openMeasureStartDialog(subtestId) {
+  const subtest = subtestById(subtestId);
+  const dialog = document.querySelector("#measure-start-dialog");
+  if (!subtest || !dialog) return;
+  const meta = MEASUREMENT_INDICES[subtest.index];
+
+  const eyebrow = dialog.querySelector("#measure-start-eyebrow");
+  if (eyebrow) {
+    eyebrow.style.setProperty("--index-accent", indexAccent(subtest.index));
+    eyebrow.querySelector("span").textContent = meta.name;
+  }
+  const titleNode = dialog.querySelector("#measure-start-title");
+  if (titleNode) titleNode.textContent = subtest.name;
+  const facts = dialog.querySelector("#measure-start-facts");
+  if (facts) {
+    facts.innerHTML = `
+      <div><dt>Questions</dt><dd>${subtest.engine === "span" ? "Adaptive" : subtest.questions}</dd></div>
+      <div><dt>Timing</dt><dd>${subtest.engine ? (subtest.engine === "speed" ? "Speeded" : "Untimed") : `${subtest.secondsPerQuestion}s each`}</dd></div>
+      <div><dt>Length</dt><dd>~${subtestMinutes(subtest)} min</dd></div>`;
+  }
+  const body = dialog.querySelector("#measure-start-body");
+  if (body) body.textContent = subtest.summary;
+
+  const go = dialog.querySelector("#measure-start-go");
+  if (go) go.onclick = () => { dialog.close(); startSubtest(subtest.id); };
+
+  if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+}
+
+document.querySelector("#measure-start-cancel")?.addEventListener("click", () => {
+  document.querySelector("#measure-start-dialog")?.close();
 });
 
 // Starting over throws away answered subtests, so it asks first.

@@ -20942,86 +20942,135 @@ html.mode-pro .measure-report.is-active {
 .measure-report-meta { font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
 .measure-report-meta em { display: block; font-style: normal; font-weight: 600; color: var(--text-2); }
 
-/* Compact previous-score card — the folded stand-in for the full report on a
-   clean IQ page. Small, but plainly a control that opens the dashboard. */
-.measure-previous { margin: 0 0 22px; }
-.measure-prev-card {
+/* The "what it measures" strip: one colour chip per ability. This is where the
+   card gets its colour, and it says what the test touches at a glance. */
+.measure-hub-cats {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  width: 100%;
-  padding: 16px 20px;
-  border: 1px solid var(--line-strong);
-  border-radius: 16px;
-  background: var(--surface);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
 }
-.measure-prev-card:hover { border-color: var(--text); }
-.measure-prev-card.is-open {
-  border-color: var(--text);
-  background: var(--fill-subtle);
-}
-.measure-prev-text {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-.measure-prev-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.measure-prev-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
-.measure-prev-score {
-  font-size: 1.7rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-.measure-prev-when { font-size: 0.82rem; color: var(--muted); }
-.measure-prev-trail { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
-.measure-prev-trail i {
-  font-style: normal;
-  font-size: 0.74rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-2);
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--fill-subtle);
-}
-.measure-prev-cta {
+.measure-cat {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 0.86rem;
+  gap: 7px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--accent);
+  letter-spacing: -0.01em;
+  color: var(--cat);
+  background: color-mix(in srgb, var(--cat) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat) 30%, transparent);
 }
-.measure-prev-cta svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.2s ease;
+.measure-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cat);
+  flex-shrink: 0;
 }
-.measure-prev-card.is-open .measure-prev-cta svg { transform: rotate(90deg); }
-@media (max-width: 560px) {
-  .measure-prev-card { padding: 14px 16px; gap: 12px; }
-  .measure-prev-cta { font-size: 0; gap: 0; } /* chevron only — the score is the headline */
+/* Chip text needs to stay legible on a dark surface, where the raw accent can go
+   muddy — lift it toward white while the dot keeps the true colour. Play mode is
+   always dark; pro mode carries data-theme explicitly. */
+html[data-theme="dark"] .measure-cat {
+  color: color-mix(in srgb, var(--cat) 62%, #fff);
+  background: color-mix(in srgb, var(--cat) 16%, transparent);
+  border-color: color-mix(in srgb, var(--cat) 34%, transparent);
 }
+
+/* The primary CTA styling above is .mode-pro-scoped, so in play mode the button
+   would fall back to a plain outline. Give it a solid, prominent accent fill. */
+html.mode-play .measure-hub-cta {
+  padding: 14px 22px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+html.mode-play .measure-hub-cta:hover { opacity: 0.9; }
+html.mode-play .measure-hub-reset {
+  padding: 13px 18px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 12px !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+/* "See all / Show fewer" under the side list, and the scrollable state it opens. */
+.measure-hub-list.is-scroll {
+  max-height: 264px;
+  overflow-y: auto;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.measure-reports-more {
+  margin-top: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: none;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.measure-reports-more:hover { background: var(--fill-subtle); color: var(--text); }
+
+/* Pre-subtest brief modal — replaces the old inline detail panel. */
+.measure-start-dialog {
+  width: min(440px, 92vw);
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  padding: 26px 26px 22px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg, 0 24px 60px rgba(0,0,0,0.35));
+}
+.measure-start-dialog::backdrop { background: rgba(0,0,0,0.45); backdrop-filter: blur(2px); }
+.measure-start-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--index-accent, var(--accent));
+}
+.measure-start-eyebrow i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--index-accent, var(--accent));
+}
+.measure-start-dialog h3 {
+  margin: 10px 0 16px;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+}
+.measure-start-body { margin: 14px 0 0; color: var(--text-2); font-size: 0.92rem; line-height: 1.55; }
+.measure-start-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.measure-start-go {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.measure-start-go:hover { opacity: 0.9; }
+
+/* This page is a single card for now: nothing else renders under it. */
+.measure-picker .measure-picker-body,
+.measure-picker > .assessment-disclaimer { display: none !important; }
 
 @media (max-width: 1000px) {
   html.mode-pro .measure-hub { grid-template-columns: minmax(0, 1fr); gap: 28px; }
@@ -21067,34 +21116,9 @@ html.mode-pro .measure-report.is-active {
 .measure-picker.is-report-only .measure-picker-body,
 .measure-picker.is-report-only .assessment-disclaimer { display: none; }
 
-html.mode-pro .measure-hub[data-mode="report"] {
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  align-items: center;
-  gap: 32px;
-  padding: 18px 22px;
-}
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-eyebrow,
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-title,
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-sub,
-html.mode-pro .measure-hub[data-mode="report"] .measure-progress { display: none; }
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-actions { margin-top: 0; }
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-reports .measure-hub-eyebrow {
-  display: block;
-  margin-bottom: 6px;
-}
-html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list {
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(150px, max-content);
-  justify-content: end;
-  overflow-x: auto;
-}
-@media (max-width: 1000px) {
-  html.mode-pro .measure-hub[data-mode="report"] {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-  }
-  html.mode-pro .measure-hub[data-mode="report"] .measure-hub-list { justify-content: start; }
-}
+/* The hub now looks the same whether or not a sitting is finished — the page is
+   always this one card. (The old report-mode layout, which collapsed the card
+   into a strip beneath the dashboard, no longer applies.) */
 
 /* Access-code field in the pricing modal. A preview/comp affordance, so it is
    deliberately quiet — it should not compete with the actual plans. */

@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260814-web162">
+    <link rel="stylesheet" href="styles.css?v=20260814-web163">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1057,19 +1057,17 @@
 
       <section class="assessment-page" aria-label="Cogni Measurement">
         <div class="measure-picker" id="cat-intro">
-          <!-- Compact stand-in for the report. Present once a test exists; taps
-               open the full dashboard below. -->
-          <div class="measure-previous" id="measure-previous" hidden></div>
           <div class="measure-dashboard" id="measure-dashboard" hidden></div>
           <section class="measure-offers" id="measure-offers" aria-label="Tests and pricing"></section>
-          <!-- The test hub: where the current attempt stands, how to get on
-               with it, and every report already earned. -->
-          <section class="measure-hub" id="measure-hub" aria-label="Your test">
+          <!-- The one card this page shows: what the test measures, how to start
+               it, and the reports already earned down the side. -->
+          <section class="measure-hub" id="measure-hub" aria-label="IQ test">
             <div class="measure-hub-state">
-              <p class="measure-hub-eyebrow">Current attempt</p>
-              <h2 class="measure-hub-title" id="measure-hub-title">Cogni Measurement</h2>
-              <p class="measure-hub-sub">Nine subtests, taken in any order at your own pace. Each one is a
+              <p class="measure-hub-eyebrow">Cogni IQ Test</p>
+              <h2 class="measure-hub-title" id="measure-hub-title">Take the test</h2>
+              <p class="measure-hub-sub">Nine short subtests across six abilities, taken in any order. Each is a
                 single sitting — you can stop early, but you can't return to it.</p>
+              <div class="measure-hub-cats" id="measure-hub-cats" aria-label="What it measures"></div>
               <div class="measure-progress" id="measure-progress"></div>
               <div class="measure-hub-actions">
                 <button class="measure-hub-cta" id="measure-continue" type="button">Start the test</button>
@@ -1077,8 +1075,9 @@
               </div>
             </div>
             <aside class="measure-hub-reports" id="measure-hub-reports" hidden>
-              <p class="measure-hub-eyebrow">Previous reports</p>
+              <p class="measure-hub-eyebrow">Previous scores</p>
               <div class="measure-hub-list" id="measure-history"></div>
+              <button class="measure-reports-more" id="measure-reports-more" type="button" hidden></button>
             </aside>
           </section>
 
@@ -1095,6 +1094,22 @@
             <div class="measure-quit-actions">
               <button class="secondary-button" id="measure-restart-cancel" type="button">Keep going</button>
               <button class="danger-button" id="measure-restart-confirm" type="button">Start a new test</button>
+            </div>
+          </dialog>
+
+          <!-- The pre-subtest brief. Replaces the old inline detail panel so the
+               page stays a single card until you commit to a sitting. -->
+          <dialog class="measure-start-dialog" id="measure-start-dialog">
+            <span class="measure-start-eyebrow" id="measure-start-eyebrow"><i aria-hidden="true"></i><span></span></span>
+            <h3 id="measure-start-title">Subtest</h3>
+            <dl class="measure-facts" id="measure-start-facts"></dl>
+            <p class="measure-start-body" id="measure-start-body"></p>
+            <p class="measure-terms"><strong>One sitting.</strong> You can stop early and whatever you've answered
+              is scored — but you can't pause it, come back to it, or retake it in this attempt.</p>
+            <p class="measure-aids">No external aids — no calculator, notes, search or AI.</p>
+            <div class="measure-start-actions">
+              <button class="secondary-button" id="measure-start-cancel" type="button">Not yet</button>
+              <button class="measure-start-go" id="measure-start-go" type="button">Begin <span aria-hidden="true">→</span></button>
             </div>
           </dialog>
         </div>
@@ -2664,6 +2679,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260814-web162"></script>
+    <script type="module" src="src/app/main.js?v=20260814-web163"></script>
   </body>
 </html>
