@@ -62,6 +62,7 @@ import {
   scoreWorkingMemoryIndex, scoreProcessingSpeedIndex, scoreComposite,
   compositeStandardError, indexConfidenceInterval, scoreToPercentile, scoreDescriptor
 } from "../core/assessments/measurement.js";
+import { archetypeForIndices } from "../core/assessments/archetype.js";
 // three.js (634 kB) is only used by the 3D MOT exercise. A static import here
 // put it in front of first paint on every page, landing included, which is the
 // single biggest thing making the site feel slow to arrive. It is now fetched
@@ -7887,6 +7888,79 @@ const MEASURE_CAT_LABELS = {
   qri: "Numerical", wmi: "Memory", psi: "Speed"
 };
 
+// --- Cognitive archetype ("what type of intelligence you are") ---------------
+// Content lives in public/data/archetypes.json; the derivation is in
+// src/core/assessments/archetype.js. The card teases it with a cycling word; the
+// results screen shows the sitting's actual one.
+let archetypeBank = null; // { byKey, words } once loaded
+async function ensureArchetypeBank() {
+  if (archetypeBank) return archetypeBank;
+  const json = await (await fetch("data/archetypes.json")).json();
+  const entries = Object.entries(json).filter(([key, val]) => !key.startsWith("_") && val && val.word);
+  archetypeBank = { byKey: Object.fromEntries(entries), words: entries.map(([, val]) => val.word) };
+  return archetypeBank;
+}
+
+// The six category tints, in order — the same hues the pills use. Words cycle
+// through them so the teaser stays on-palette.
+const ARCHETYPE_TINTS = MEASUREMENT_INDEX_ORDER.map((key) => MEASUREMENT_INDICES[key].accent);
+let resultsTeaserTimer = null;
+
+// Cycling teaser on the card: "Find out if you read as <word>", the word rolling
+// slowly through every archetype. Calm (3s a word), and static under
+// prefers-reduced-motion.
+function renderResultsTeaser() {
+  const host = document.querySelector("#results-teaser");
+  if (!host) return;
+  if (resultsTeaserTimer) { clearInterval(resultsTeaserTimer); resultsTeaserTimer = null; }
+  ensureArchetypeBank().then((bank) => {
+    if (!host.isConnected) return;
+    const words = bank.words;
+    if (!words.length) { host.hidden = true; host.innerHTML = ""; return; }
+    host.hidden = false;
+    host.innerHTML = `
+      <p class="teaser-lead">Find out if you read as<br>
+        <span class="teaser-cycle"><span class="teaser-cycle-word"></span></span></p>
+      <p class="teaser-note">Results include your six-axis strength map, fields that fit how you think,
+        and your cognitive style in plain words.</p>`;
+    const wordEl = host.querySelector(".teaser-cycle-word");
+    let i = 0;
+    const paint = (idx) => {
+      wordEl.textContent = words[idx];
+      wordEl.style.color = ARCHETYPE_TINTS[idx % ARCHETYPE_TINTS.length];
+    };
+    paint(0);
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || words.length < 2) return; // one word, held still
+    resultsTeaserTimer = window.setInterval(() => {
+      if (!wordEl.isConnected) { clearInterval(resultsTeaserTimer); resultsTeaserTimer = null; return; }
+      // Slide the current word up and out.
+      wordEl.style.opacity = "0";
+      wordEl.style.transform = "translateY(-0.45em)";
+      window.setTimeout(() => {
+        if (!wordEl.isConnected) return;
+        i = (i + 1) % words.length;
+        paint(i);
+        // Jump below (no transition), then ease it up into place.
+        wordEl.style.transition = "none";
+        wordEl.style.opacity = "0";
+        wordEl.style.transform = "translateY(0.45em)";
+        void wordEl.offsetWidth; // commit the jump before re-enabling transitions
+        wordEl.style.transition = "";
+        wordEl.style.opacity = "1";
+        wordEl.style.transform = "translateY(0)";
+      }, 460);
+    }, 3000);
+  }).catch(() => { host.hidden = true; });
+}
+
+// The sitting's archetype content, or null if too little was measured.
+function sessionArchetype(record) {
+  const key = record?.archetypeKey ?? (record?.indices ? archetypeForIndices(record.indices) : null);
+  if (!key || !archetypeBank) return null;
+  return { key, ...(archetypeBank.byKey[key] ?? null) };
+}
+
 // The colourful "what it measures" strip on the card: one chip per ability, each
 // carrying that index's accent so the card has colour and says what the test
 // touches at a glance.
@@ -7990,6 +8064,7 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   if (!hub) return;
   hub.dataset.mode = takingTest ? "testing" : "report";
   renderMeasureCats();
+  renderResultsTeaser();
 
   const remaining = MEASUREMENT_SUBTESTS.filter((subtest) => !attempt.subtests[subtest.id]);
   const next = takingTest ? (remaining[0] ?? null) : null;
@@ -8767,6 +8842,9 @@ function finishMeasurement(attempt) {
     descriptor: scoreDescriptor(score),
     ci: indexConfidenceInterval(compositeTheta, compositeSe),
     indices,
+    // The archetype is derived once and stored, so past sittings can show their
+    // word without recomputing (nullable when too little was measured).
+    archetypeKey: archetypeForIndices(indices),
     subtests: attempt.subtests,
     provisional: true,
     responses
@@ -9006,6 +9084,7 @@ function renderCatResult(sessionRecord) {
     `${sessionRecord.descriptor ?? scoreDescriptor(score)} — higher than about ${percentile}% of a typical population, `
     + `from ${sessionRecord.responses.length} questions and 2 timed subtests in ${minutes} min.`;
 
+  renderResultArchetype(sessionRecord);
   renderCatIndices(sessionRecord, unlocked);
   const report = document.querySelector("#cat-report");
   if (report) report.innerHTML = unlocked ? buildCatReport(sessionRecord) : "";
@@ -9015,6 +9094,26 @@ function renderCatResult(sessionRecord) {
   document.querySelector("#cat-report-region")?.classList.toggle("cat-report-locked", !unlocked);
   const paywall = document.querySelector("#cat-paywall");
   if (paywall) paywall.hidden = unlocked;
+}
+
+// The settled ("locked") archetype on the results screen: the sitting's actual
+// word, its definition line, the fields that fit and the plain-words style.
+function renderResultArchetype(record) {
+  const host = document.querySelector("#cat-archetype");
+  if (!host) return;
+  ensureArchetypeBank().then(() => {
+    const arch = sessionArchetype(record);
+    if (!host.isConnected || !arch?.word) { host.hidden = true; host.innerHTML = ""; return; }
+    host.hidden = false;
+    host.innerHTML = `
+      <p class="cat-archetype-eyebrow">You read as</p>
+      <h3 class="cat-archetype-word">${escapeHtml(arch.word)}</h3>
+      <p class="cat-archetype-line">${escapeHtml(arch.line ?? "")}</p>
+      <dl class="cat-archetype-detail">
+        <div><dt>Fields that fit</dt><dd>${(arch.fields ?? []).map(escapeHtml).join(" · ")}</dd></div>
+        <div><dt>How you think</dt><dd>${escapeHtml(arch.style ?? "")}</dd></div>
+      </dl>`;
+  }).catch(() => { host.hidden = true; });
 }
 
 // The five index cards. When locked the scores are withheld rather than faked —

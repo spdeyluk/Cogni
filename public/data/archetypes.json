@@ -1,0 +1,99 @@
+{
+  "_comment": "TODO: placeholder copy — coherent but not final. Final wording pending review. Keys are top-two axis ids joined alphabetically with '+', plus 'balanced'. Fields are affinity framing (fields that fit how you think), never career advice.",
+  "memory+numerical": {
+    "word": "a meticulous tracker",
+    "line": "a word for someone who keeps the running total in their head and never loses the thread.",
+    "fields": ["accounting and audit", "logistics and planning", "data-heavy research"],
+    "style": "you hold a lot of moving parts at once and keep the numbers straight while you do."
+  },
+  "memory+reasoning": {
+    "word": "a strategist",
+    "line": "a word for someone who can juggle the whole board and still see the next move.",
+    "fields": ["strategy and operations", "law and case-building", "research"],
+    "style": "you keep many threads in mind and reason across all of them at once."
+  },
+  "memory+spatial": {
+    "word": "a mental mapper",
+    "line": "a word for someone who builds the whole map in their head and walks it from memory.",
+    "fields": ["architecture and design", "engineering", "navigation-heavy work"],
+    "style": "you picture how things fit and keep the whole layout in mind while you work."
+  },
+  "memory+speed": {
+    "word": "quick and retentive",
+    "line": "a word for someone who takes it in fast and doesn't let it slip.",
+    "fields": ["fast-paced coordination", "live operations", "interpreting and translation"],
+    "style": "you absorb things quickly and hold onto them under pressure."
+  },
+  "memory+verbal": {
+    "word": "an archivist",
+    "line": "a word for someone who keeps every thread and can always find the words for it.",
+    "fields": ["writing and editing", "teaching", "research and reference work"],
+    "style": "you remember what was said, and you can put it back into words when it matters."
+  },
+  "numerical+reasoning": {
+    "word": "an analyst",
+    "line": "a word for someone who reads the shape of a problem in its numbers.",
+    "fields": ["quantitative research", "economics and finance", "engineering"],
+    "style": "you reason through problems with quantity and proportion doing the heavy lifting."
+  },
+  "numerical+spatial": {
+    "word": "a builder",
+    "line": "a word for someone who sees how it fits together and how much it takes.",
+    "fields": ["engineering and design", "architecture", "the physical sciences"],
+    "style": "you think in shapes and magnitudes, and you can turn one into the other."
+  },
+  "numerical+speed": {
+    "word": "a fast reckoner",
+    "line": "a word for someone who runs the numbers before anyone else has found a pen.",
+    "fields": ["trading and markets", "live analytics", "operations"],
+    "style": "you estimate and calculate quickly, and you trust the quick read."
+  },
+  "numerical+verbal": {
+    "word": "an explainer",
+    "line": "a word for someone who can turn a number into a sentence people actually understand.",
+    "fields": ["teaching and communication", "analysis and reporting", "science writing"],
+    "style": "you hold the quantitative side and the words for it in the same hand."
+  },
+  "reasoning+spatial": {
+    "word": "a systems thinker",
+    "line": "a word for someone who sees the structure before the noise.",
+    "fields": ["engineering and systems design", "architecture", "problem-solving research"],
+    "style": "you find the underlying pattern and can picture how the pieces move."
+  },
+  "reasoning+speed": {
+    "word": "a quick thinker",
+    "line": "a word for someone who gets to the answer while the question is still in the air.",
+    "fields": ["fast problem-solving", "competitive and live settings", "diagnostics"],
+    "style": "you reason fast and back yourself to be right the first time."
+  },
+  "reasoning+verbal": {
+    "word": "a sharp mind",
+    "line": "a word for someone who can think it through and say it clean.",
+    "fields": ["law and argument", "writing and analysis", "teaching"],
+    "style": "you reason your way to the point and put it into clear words."
+  },
+  "spatial+speed": {
+    "word": "quick on your feet",
+    "line": "a word for someone who reads the space and reacts before it closes.",
+    "fields": ["sport and reaction work", "hands-on trades", "real-time visual tasks"],
+    "style": "you take in the whole scene fast and move on what you see."
+  },
+  "spatial+verbal": {
+    "word": "a visual storyteller",
+    "line": "a word for someone who can see the picture and put it into words.",
+    "fields": ["design and communication", "teaching", "media and writing"],
+    "style": "you picture things clearly and describe them so others can see them too."
+  },
+  "speed+verbal": {
+    "word": "quick-witted",
+    "line": "a word for someone who finds the right words before the moment passes.",
+    "fields": ["conversation-driven roles", "live communication", "improvisation"],
+    "style": "you think and speak quickly, and the words keep up with you."
+  },
+  "balanced": {
+    "word": "an all-rounder",
+    "line": "a word for someone with no weak side to hide — even strength across the board.",
+    "fields": ["broad, generalist roles", "coordination across teams", "anything that rewards range"],
+    "style": "you don't lean on one strength; you bring a bit of everything."
+  }
+}

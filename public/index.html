@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260814-web168">
+    <link rel="stylesheet" href="styles.css?v=20260814-web169">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1067,6 +1067,7 @@
               <p class="measure-hub-sub">Nine short subtests across six abilities, taken in any order. Each is a
                 single sitting — you can stop early, but you can't return to it.</p>
               <div class="measure-hub-cats" id="measure-hub-cats" aria-label="What it measures"></div>
+              <div class="results-teaser" id="results-teaser" hidden></div>
               <div class="measure-progress" id="measure-progress"></div>
               <div class="measure-hub-actions">
                 <button class="measure-hub-cta" id="measure-continue" type="button">Start test</button>
@@ -1162,6 +1163,7 @@
               </div>
               <div class="cat-curve" id="cat-curve" aria-hidden="true"></div>
               <p id="cat-result-summary"></p>
+              <div class="cat-archetype" id="cat-archetype" hidden></div>
             </div>
             <!-- Everything below the headline score is the paid report. -->
             <div class="cat-report-region" id="cat-report-region">
@@ -2691,6 +2693,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260814-web168"></script>
+    <script type="module" src="src/app/main.js?v=20260814-web169"></script>
   </body>
 </html>
