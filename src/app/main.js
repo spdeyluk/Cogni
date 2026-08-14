@@ -8016,14 +8016,14 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   if (cta) {
     if (!takingTest) {
       cta.hidden = false;
-      cta.textContent = "Start a new test";
+      cta.textContent = "Start new test";
       cta.dataset.subtest = "";
       cta.dataset.action = "new-test";
     } else {
       // Opens the picker screen rather than any one subtest, so it doesn't name
       // one.
       cta.hidden = !next;
-      cta.textContent = done === 0 ? "Start the test" : "Continue the test";
+      cta.textContent = done === 0 ? "Start test" : "Continue test";
       cta.dataset.subtest = next?.id ?? "";
       cta.dataset.action = "";
     }
