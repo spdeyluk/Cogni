@@ -20858,11 +20858,8 @@ html.mode-pro .mdash-subtab.is-active {
    and holds every report already earned.
    =================================================================== */
 html.mode-pro .measure-hub {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 330px);
-  gap: 44px;
-  align-items: start;
-  margin-bottom: 36px;
+  /* Just the card now — previous scores moved out, below it. */
+  margin-bottom: 16px;
   padding: 26px 28px 24px;
   border: 1px solid var(--line-strong);
   border-radius: 20px;
@@ -21028,6 +21025,23 @@ html.mode-play .measure-hub-reset {
   cursor: pointer;
 }
 .measure-reports-more:hover { background: var(--fill-subtle); color: var(--text); }
+
+/* Previous scores now sit below the card as a quiet secondary block you scroll
+   to — not a headline element sharing the card. */
+html.mode-pro .measure-hub-reports {
+  margin: 0 0 40px;
+  padding: 6px 2px 0;
+}
+html.mode-pro .measure-hub-reports .measure-hub-eyebrow { margin-bottom: 12px; }
+html.mode-pro .measure-hub-reports .measure-hub-list {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+}
+html.mode-pro .measure-hub-reports .measure-reports-more {
+  width: auto;
+  max-width: 220px;
+}
+/* The picker screen shows only itself. */
+.measure-picker.is-subtests .measure-hub-reports { display: none !important; }
 
 /* Pre-subtest brief modal — replaces the old inline detail panel. */
 .measure-start-dialog {

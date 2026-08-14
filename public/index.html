@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260814-web167">
+    <link rel="stylesheet" href="styles.css?v=20260814-web168">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1059,8 +1059,7 @@
         <div class="measure-picker" id="cat-intro">
           <div class="measure-dashboard" id="measure-dashboard" hidden></div>
           <section class="measure-offers" id="measure-offers" aria-label="Tests and pricing"></section>
-          <!-- The one card this page shows: what the test measures, how to start
-               it, and the reports already earned down the side. -->
+          <!-- The card: what the test measures and how to start it. -->
           <section class="measure-hub" id="measure-hub" aria-label="IQ test">
             <div class="measure-hub-state">
               <p class="measure-hub-eyebrow">Cogni IQ Test</p>
@@ -1074,12 +1073,14 @@
                 <button class="measure-hub-reset" id="measure-restart" type="button" hidden>Start a new test</button>
               </div>
             </div>
-            <aside class="measure-hub-reports" id="measure-hub-reports" hidden>
-              <p class="measure-hub-eyebrow">Previous scores</p>
-              <div class="measure-hub-list" id="measure-history"></div>
-              <button class="measure-reports-more" id="measure-reports-more" type="button" hidden></button>
-            </aside>
           </section>
+
+          <!-- Past scores live quietly below the card — scroll to reach them. -->
+          <aside class="measure-hub-reports" id="measure-hub-reports" hidden>
+            <p class="measure-hub-eyebrow">Previous scores</p>
+            <div class="measure-hub-list" id="measure-history"></div>
+            <button class="measure-reports-more" id="measure-reports-more" type="button" hidden></button>
+          </aside>
 
           <!-- The subtest picker screen the overview card opens into. -->
           <div class="measure-subtests-bar">
@@ -2690,6 +2691,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260814-web167"></script>
+    <script type="module" src="src/app/main.js?v=20260814-web168"></script>
   </body>
 </html>
