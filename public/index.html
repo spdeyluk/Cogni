@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260808-web161">
+    <link rel="stylesheet" href="styles.css?v=20260814-web162">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1057,6 +1057,9 @@
 
       <section class="assessment-page" aria-label="Cogni Measurement">
         <div class="measure-picker" id="cat-intro">
+          <!-- Compact stand-in for the report. Present once a test exists; taps
+               open the full dashboard below. -->
+          <div class="measure-previous" id="measure-previous" hidden></div>
           <div class="measure-dashboard" id="measure-dashboard" hidden></div>
           <section class="measure-offers" id="measure-offers" aria-label="Tests and pricing"></section>
           <!-- The test hub: where the current attempt stands, how to get on
@@ -2661,6 +2664,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260808-web161"></script>
+    <script type="module" src="src/app/main.js?v=20260814-web162"></script>
   </body>
 </html>

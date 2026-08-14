@@ -7108,6 +7108,9 @@ function showAssessmentList() {
     saveCatActive();
   }
   clearCatSubtestTimers();
+  // Landing on the IQ page always starts clean — the report stays folded behind
+  // the compact previous-scores card until the visitor asks for it.
+  measurementReportOpen = false;
   renderMeasurePicker();
   showCatSection("intro");
 }
@@ -7264,6 +7267,10 @@ let measurementTab = "overview";
 let measurementSessionIndex = 0;
 // Which index the Overview's big panel is reading: "overall", or one of the six.
 let measurementFocus = "overall";
+// The report no longer springs open on its own. Landing on the IQ page shows the
+// clean "take the test" state plus a compact previous-scores card; the full
+// dashboard only unfolds when that card is tapped.
+let measurementReportOpen = false;
 
 function setMeasurementTab(tab) {
   measurementTab = tab;
@@ -7278,6 +7285,7 @@ function setMeasurementFocus(key) {
 
 function selectMeasurementSession(index) {
   measurementSessionIndex = index;
+  measurementReportOpen = true;
   renderMeasurementDashboard();
 }
 
@@ -7857,6 +7865,55 @@ function renderMeasurementSales() {
   });
 }
 
+// The stand-in for the full report on the clean IQ page: a small card showing
+// the most recent composite. Tapping it unfolds (or refolds) the dashboard.
+function renderMeasurePreviousCard() {
+  const host = document.querySelector("#measure-previous");
+  if (!host) return;
+  const sessions = loadCatSessions();
+  if (!sessions.length) {
+    host.hidden = true;
+    host.innerHTML = "";
+    return;
+  }
+
+  const unlocked = measurementReportUnlocked();
+  const latest = sessions[0];
+  const when = new Date(latest.completedAt);
+  const dateLabel = when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  const scoreLabel = unlocked ? latest.score : "•••";
+  // A quiet trail of earlier composites, newest first, so repeat testers can see
+  // movement at a glance without opening the report.
+  const trail = unlocked && sessions.length > 1
+    ? `<span class="measure-prev-trail">${sessions.slice(1, 5)
+        .map((session) => `<i>${session.score}</i>`).join("")}</span>`
+    : "";
+
+  host.hidden = false;
+  host.innerHTML = `
+    <button class="measure-prev-card${measurementReportOpen ? " is-open" : ""}" type="button" data-toggle-report
+            aria-expanded="${measurementReportOpen}">
+      <span class="measure-prev-text">
+        <span class="measure-prev-label">Previous test score</span>
+        <span class="measure-prev-main">
+          <strong class="measure-prev-score">${scoreLabel}</strong>
+          <span class="measure-prev-when">${dateLabel}${sessions.length > 1 ? ` · ${sessions.length} tests` : ""}</span>
+        </span>
+        ${trail}
+      </span>
+      <span class="measure-prev-cta">${measurementReportOpen ? "Hide report" : "View full report"}
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>`;
+
+  host.querySelector("[data-toggle-report]")?.addEventListener("click", () => {
+    measurementReportOpen = !measurementReportOpen;
+    if (measurementReportOpen) measurementSessionIndex = 0; // open on the latest sitting
+    renderMeasurePicker();
+    const target = measurementReportOpen ? "#measure-dashboard" : "#measure-previous";
+    document.querySelector(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function renderMeasurePicker(selectedId) {
   const attempt = loadMeasureAttempt();
   // A visitor with nothing measured and nothing started gets the sales page.
@@ -7874,7 +7931,18 @@ function renderMeasurePicker(selectedId) {
   }
   const offers = document.querySelector("#measure-offers");
   if (offers) offers.innerHTML = "";
-  renderMeasurementDashboard();
+  // The full report only unfolds on demand. Otherwise the page reads like the
+  // pre-test state, with a compact previous-scores card standing in for it.
+  renderMeasurePreviousCard();
+  if (measurementReportOpen) {
+    renderMeasurementDashboard();
+  } else {
+    document.documentElement.classList.remove("mdash-on");
+    const topbar = document.querySelector("#mdash-topbar");
+    if (topbar) topbar.innerHTML = "";
+    const dash = document.querySelector("#measure-dashboard");
+    if (dash) { dash.hidden = true; dash.innerHTML = ""; }
+  }
   const host = document.querySelector("#measure-sections");
   const progress = document.querySelector("#measure-progress");
   if (!host) return;

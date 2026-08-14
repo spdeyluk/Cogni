@@ -20942,6 +20942,87 @@ html.mode-pro .measure-report.is-active {
 .measure-report-meta { font-size: 0.78rem; line-height: 1.4; color: var(--muted); }
 .measure-report-meta em { display: block; font-style: normal; font-weight: 600; color: var(--text-2); }
 
+/* Compact previous-score card — the folded stand-in for the full report on a
+   clean IQ page. Small, but plainly a control that opens the dashboard. */
+.measure-previous { margin: 0 0 22px; }
+.measure-prev-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 16px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.measure-prev-card:hover { border-color: var(--text); }
+.measure-prev-card.is-open {
+  border-color: var(--text);
+  background: var(--fill-subtle);
+}
+.measure-prev-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.measure-prev-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.measure-prev-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+.measure-prev-score {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.measure-prev-when { font-size: 0.82rem; color: var(--muted); }
+.measure-prev-trail { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.measure-prev-trail i {
+  font-style: normal;
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--fill-subtle);
+}
+.measure-prev-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.measure-prev-cta svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease;
+}
+.measure-prev-card.is-open .measure-prev-cta svg { transform: rotate(90deg); }
+@media (max-width: 560px) {
+  .measure-prev-card { padding: 14px 16px; gap: 12px; }
+  .measure-prev-cta { font-size: 0; gap: 0; } /* chevron only — the score is the headline */
+}
+
 @media (max-width: 1000px) {
   html.mode-pro .measure-hub { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
