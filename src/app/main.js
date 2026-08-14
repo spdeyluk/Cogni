@@ -1430,7 +1430,7 @@ elements.catOpenHistory?.addEventListener("click", () => {
   renderCatHistory();
   showCatSection("history");
 });
-elements.catHistoryBack?.addEventListener("click", () => showCatSection("detail"));
+elements.catHistoryBack?.addEventListener("click", () => showAssessmentList());
 elements.catResultBack?.addEventListener("click", showAssessmentList);
 document.querySelector("[data-cat-upgrade]")?.addEventListener("click", openPricingModal);
 // Any upgrade CTA rendered into a paywalled page opens the pricing modal.
@@ -1446,7 +1446,6 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("[data-open-pricing]")) openPricingModal();
   else if (event.target.closest("[data-open-iq]")) {
     showAssessments();
-    showCatSection("detail");
   }
 });
 // Reflect the entitlement on <html> so CSS can lock plan-gated affordances.
@@ -5617,7 +5616,17 @@ function wireLanding() {
     enterApp();
     showExerciseHub();
   };
-  document.querySelector("#landing-start")?.addEventListener("click", start);
+  // "Take the measurement" is a promise about the IQ test, so it lands there —
+  // whether the visitor is already signed in (go now) or has to sign in first
+  // (pendingLandingDestination survives the gate so onAuthenticated lands there).
+  const startMeasurement = () => {
+    pendingLandingDestination = "assessments";
+    if (!requireAuth("Sign in to take the IQ test.")) return;
+    pendingLandingDestination = null;
+    enterApp();
+    showAssessments();
+  };
+  document.querySelector("#landing-start")?.addEventListener("click", startMeasurement);
   document.querySelector("#landing-start-2")?.addEventListener("click", start);
   document.querySelector("#landing-start-top")?.addEventListener("click", start);
   wirePricing();
@@ -5634,11 +5643,10 @@ function wireLanding() {
   document.querySelector("#landing-testiq")?.addEventListener("click", () => {
     // Remembered across the gate so signing in lands on the test, not the hub.
     pendingLandingDestination = "assessments";
-    if (!requireAuth("Sign in to take Cogni Measurement.")) return;
+    if (!requireAuth("Sign in to take the IQ test.")) return;
     pendingLandingDestination = null;
     enterApp();
     showAssessments();
-    showCatSection("detail");
   });
   document.querySelector("#landing-signin")?.addEventListener("click", () => {
     wireAuthGate();
@@ -6026,7 +6034,6 @@ function onAuthenticated() {
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
-    showCatSection("detail");
     landedPath = routeTabToPath.assessments;
   } else if (bootTab && routeTabHandler(bootTab)) {
     routeTabHandler(bootTab)();
