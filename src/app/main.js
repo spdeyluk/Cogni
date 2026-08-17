@@ -7457,6 +7457,9 @@ function renderMeasurementDashboard() {
   }
 
   host.hidden = false;
+  // Locked reports render behind a blur with an unlock overlay; unlocking opens
+  // the pricing/checkout flow.
+  host.classList.toggle("mdash-locked", !unlocked);
   host.innerHTML = `
     <div class="mdash mdash-single">
       <div class="mdash-main">
@@ -7465,7 +7468,16 @@ function renderMeasurementDashboard() {
           : measurementTab === "abilities" ? measureAbilitiesTab(record, ranked, unlocked)
           : measureInsightsTab(record, ranked, shape, unlocked)}
       </div>
-    </div>`;
+    </div>
+    ${unlocked ? "" : `
+      <div class="mdash-unlock">
+        <div class="mdash-unlock-card">
+          <span class="mdash-unlock-lock" aria-hidden="true">🔒</span>
+          <h3>Your results are ready</h3>
+          <p>Unlock to reveal your composite, all six index scores, percentiles and the full written breakdown.</p>
+          <button class="mdash-unlock-btn" type="button" data-mdash-unlock>Unlock my results</button>
+        </div>
+      </div>`}`;
 
   for (const scope of [topbar, host]) {
     scope?.querySelectorAll("[data-measure-tab]").forEach((tab) => {
@@ -7478,6 +7490,9 @@ function renderMeasurementDashboard() {
   host.querySelectorAll("[data-measure-session]").forEach((item) => {
     item.addEventListener("click", () => selectMeasurementSession(Number(item.dataset.measureSession)));
   });
+  // Wired explicitly rather than via [data-open-pricing], which pro mode hides
+  // globally. Opens the pricing/checkout flow.
+  host.querySelector("[data-mdash-unlock]")?.addEventListener("click", openPricingModal);
 }
 
 // A locked value shows its shape but not its number.
@@ -8104,6 +8119,14 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
     }
   }
 
+  // "Get results" rides alongside the start button while an attempt is underway,
+  // greyed out until every subtest is done — then it's the way to the report.
+  const results = document.querySelector("#measure-results");
+  if (results) {
+    results.hidden = !takingTest;
+    results.disabled = done < total;
+  }
+
   // Nothing to discard until something has been answered in the current attempt.
   const restart = document.querySelector("#measure-restart");
   if (restart) restart.hidden = !takingTest || done === 0;
@@ -8183,6 +8206,46 @@ function closeMeasureSubtests() {
 }
 
 document.querySelector("#measure-subtests-back")?.addEventListener("click", closeMeasureSubtests);
+
+// "Get results": only live once every subtest is done. Computes the sitting and
+// opens the report dashboard (blurred + unlockable), not the checkout.
+document.querySelector("#measure-results")?.addEventListener("click", () => {
+  const attempt = loadMeasureAttempt();
+  if (measureCompletedCount(attempt) < MEASUREMENT_SUBTESTS.length) return;
+  finishMeasurement(attempt, { destination: "dashboard" });
+});
+
+// TODO(dev): temporary. Fills every not-yet-taken subtest with a plausible dummy
+// result so the results/checkout flow can be reached without sitting the test.
+// Remove this handler and #measure-dev-complete before release.
+document.querySelector("#measure-dev-complete")?.addEventListener("click", () => {
+  const attempt = loadMeasureAttempt();
+  if (!attempt.startedAt) attempt.startedAt = Date.now();
+  const thetas = [1.5, 1.2, 0.9, 0.6, 0.4, 0.2, 1.1, 0.8, 0.5];
+  MEASUREMENT_SUBTESTS.forEach((subtest, i) => {
+    if (attempt.subtests[subtest.id]) return; // keep anything real
+    const theta = thetas[i % thetas.length];
+    const answered = subtest.questions ?? 10;
+    attempt.subtests[subtest.id] = {
+      subtestId: subtest.id,
+      index: subtest.index,
+      completedAt: new Date().toISOString(),
+      theta,
+      se: 0.3,
+      score: thetaToIndexScore(theta),
+      ci: indexConfidenceInterval(theta, 0.3),
+      answered,
+      count: answered,
+      itemIds: [],
+      provisional: true,
+      partial: false
+    };
+  });
+  saveMeasureAttempt(attempt);
+  measureSubtestsOpen = false; // land on the card, where "Get results" is now live
+  renderMeasurePicker();
+  showCatSection("intro");
+});
 
 // The pre-subtest brief, now a modal so the page can stay a single card. Shows
 // what the sitting involves, then hands off to startSubtest on "Begin".
@@ -8424,9 +8487,11 @@ function finishSubtest({ abandoned = false } = {}) {
   catActive = null;
   saveCatActive();
 
+  // Completing the last subtest no longer jumps straight to the score — it
+  // returns to the card, where "Get results" is now live. Otherwise stay in the
+  // picker to sit the next one.
   if (measureCompletedCount(attempt) >= MEASUREMENT_SUBTESTS.length) {
-    finishMeasurement(attempt);
-    return;
+    measureSubtestsOpen = false;
   }
   renderMeasurePicker(subtest.id);
   showCatSection("intro");
@@ -8793,7 +8858,7 @@ function catSpeedAnswer(saidSame) {
 
 
 // Every subtest is in: fold them into six indices and a composite.
-function finishMeasurement(attempt) {
+function finishMeasurement(attempt, { destination = "result" } = {}) {
   const indices = {};
   const thetas = {};
   const errors = [];
@@ -8857,6 +8922,18 @@ function finishMeasurement(attempt) {
   syncUntakenIqTestNudge();
   catActive = null;
   saveCatActive();
+
+  // "Get results" opens the report dashboard for the new sitting (locked +
+  // blurred until unlocked); the default path is the animated score reveal.
+  if (destination === "dashboard") {
+    measurementReportOpen = true;
+    measurementSessionIndex = 0;
+    measureSubtestsOpen = false;
+    renderMeasurePicker();
+    showCatSection("intro");
+    document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
   renderCatResult(sessionRecord);
   runCatComputing(sessionRecord, () => showCatSection("result"));
 }

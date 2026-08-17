@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260814-web169">
+    <link rel="stylesheet" href="styles.css?v=20260817-web170">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1071,6 +1071,7 @@
               <div class="measure-progress" id="measure-progress"></div>
               <div class="measure-hub-actions">
                 <button class="measure-hub-cta" id="measure-continue" type="button">Start test</button>
+                <button class="measure-hub-results" id="measure-results" type="button" hidden disabled>Get results</button>
                 <button class="measure-hub-reset" id="measure-restart" type="button" hidden>Start a new test</button>
               </div>
             </div>
@@ -1093,6 +1094,9 @@
               <h2>Pick a subtest</h2>
               <p>Take them in any order. Each is one sitting — stop early if you need to, but you can't return to it.</p>
             </div>
+            <!-- TODO(dev): temporary bypass — fills every subtest so results can be
+                 reached without sitting the test. Remove before release. -->
+            <button class="measure-dev-complete" id="measure-dev-complete" type="button">⚡ Complete all (dev)</button>
           </div>
           <div class="measure-picker-body">
             <div class="measure-sections" id="measure-sections"></div>
@@ -2693,6 +2697,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260814-web169"></script>
+    <script type="module" src="src/app/main.js?v=20260817-web170"></script>
   </body>
 </html>

@@ -21066,6 +21066,80 @@ html[data-theme="dark"] .measure-cat {
   color: var(--text);
 }
 
+/* "Get results": the accent CTA that goes live once every subtest is done. */
+.measure-hub-results {
+  padding: 13px 22px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-size: 0.97rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.measure-hub-results:hover:not(:disabled) { opacity: 0.9; }
+.measure-hub-results:disabled {
+  background: var(--fill-subtle) !important;
+  color: var(--muted) !important;
+  cursor: not-allowed;
+}
+
+/* TODO(dev): temporary "complete all subtests" affordance on the picker. */
+.measure-dev-complete {
+  margin-left: auto;
+  align-self: center;
+  padding: 8px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.measure-dev-complete:hover { color: var(--text); background: var(--fill-subtle); }
+
+/* Locked report dashboard: blurred behind an unlock overlay. */
+.measure-dashboard.mdash-locked { position: relative; }
+.measure-dashboard.mdash-locked .mdash-main {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+.mdash-unlock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+  z-index: 5;
+}
+.mdash-unlock-card {
+  max-width: 380px;
+  text-align: center;
+  padding: 28px 26px 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg, 0 24px 60px rgba(0, 0, 0, 0.35));
+}
+.mdash-unlock-lock { font-size: 1.7rem; }
+.mdash-unlock-card h3 { margin: 10px 0 8px; font-size: 1.3rem; letter-spacing: -0.02em; }
+.mdash-unlock-card p { margin: 0 0 18px; font-size: 0.92rem; line-height: 1.5; color: var(--text-2); }
+.mdash-unlock-btn {
+  padding: 13px 24px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.mdash-unlock-btn:hover { opacity: 0.9; }
+
 /* The primary CTA styling above is .mode-pro-scoped, so in play mode the button
    would fall back to a plain outline. Give it a solid, prominent accent fill. */
 html.mode-play .measure-hub-cta {
