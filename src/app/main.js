@@ -7677,16 +7677,56 @@ function renderMeasurementDashboard() {
   host.querySelectorAll("[data-mdash-unlock]").forEach((btn) => {
     btn.addEventListener("click", openPricingModal);
   });
+  // Keep the fake scores rolling under the blur (locked only).
+  if (unlocked) stopMdashRoll(); else startMdashRoll(host);
 }
 
-// A locked value blurs a decoy number rather than showing the real one — the UI
-// stays usable and readable, only the scores are veiled. Decoys (never the real
-// value) mean a de-blurred screenshot leaks nothing.
-const MDASH_DECOYS = ["114", "128", "97", "132", "106", "121", "119", "101", "108", "124"];
+// A locked score blurs a fake, rolling number rather than the real one — the UI
+// stays usable, the decoys leak nothing, and under the blur you can tell it's a
+// score (a colour-graded number whose digits roll every few seconds, like the
+// teaser reels on FaceIQ-style pages). Colour grades the fake value: green good,
+// amber mid, red low. Each tier keeps a fixed digit count so the reels line up.
+const MDASH_TIERS = [
+  { color: "#18B87B", min: 118, max: 141 }, // green
+  { color: "#F5B942", min: 100, max: 113 }, // amber
+  { color: "#18B87B", min: 121, max: 138 }, // green
+  { color: "#F2597A", min: 76, max: 92 },   // red (two digits)
+  { color: "#F5B942", min: 101, max: 112 }, // amber
+  { color: "#18B87B", min: 116, max: 134 }  // green
+];
+const MDASH_DIGIT_STRIP = "0123456789".split("").map((d) => `<b>${d}</b>`).join("");
 let mdashDecoyCounter = 0;
+
 function lockedValue(value, unlocked) {
   if (unlocked) return String(value);
-  return `<span class="mdash-blur" aria-hidden="true">${MDASH_DECOYS[mdashDecoyCounter++ % MDASH_DECOYS.length]}</span>`;
+  const tier = MDASH_TIERS[mdashDecoyCounter++ % MDASH_TIERS.length];
+  const n = String(tier.min + Math.floor(Math.random() * (tier.max - tier.min + 1)));
+  const reels = n.split("").map((d) =>
+    `<span class="mdash-reel"><span class="mdash-reel-strip" style="transform:translateY(-${d}em)">${MDASH_DIGIT_STRIP}</span></span>`
+  ).join("");
+  return `<span class="mdash-score" aria-hidden="true" data-roll data-min="${tier.min}" data-max="${tier.max}"
+    style="--roll-color:${tier.color}">${reels}</span>`;
+}
+
+// Roll every locked score to a fresh in-tier value on a slow, staggered loop, so
+// the fake numbers keep changing under the blur (digits cascade left to right).
+let mdashRollTimer = null;
+function stopMdashRoll() { if (mdashRollTimer) { clearInterval(mdashRollTimer); mdashRollTimer = null; } }
+function startMdashRoll(host) {
+  stopMdashRoll();
+  const scores = [...host.querySelectorAll("[data-roll]")];
+  if (!scores.length) return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return; // held still
+  const rollOne = (el) => {
+    const min = Number(el.dataset.min), max = Number(el.dataset.max);
+    const reels = el.querySelectorAll(".mdash-reel-strip");
+    const digits = String(min + Math.floor(Math.random() * (max - min + 1))).padStart(reels.length, "0");
+    reels.forEach((strip, i) => { strip.style.transform = `translateY(-${digits[i]}em)`; });
+  };
+  mdashRollTimer = window.setInterval(() => {
+    if (!scores[0].isConnected) { stopMdashRoll(); return; }
+    scores.forEach((el, i) => window.setTimeout(() => rollOne(el), i * 170));
+  }, 3000);
 }
 
 // A small, self-contained unlock button for a locked score box. Every box gets

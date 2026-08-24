@@ -21173,8 +21173,35 @@ html[data-theme="dark"] .measure-cat {
   filter: blur(7px);
   user-select: none;
   pointer-events: none;
-  /* A touch of letter-spacing so the blurred digits read as "a number is here". */
   letter-spacing: 0.04em;
+}
+
+/* A fake, colour-graded score whose digits roll under the blur. Each reel is a
+   1em window onto a 0-9 strip; JS translates the strip to the target digit and
+   the transition rolls through the numbers in between. */
+.mdash-score {
+  display: inline-flex;
+  align-items: flex-start;
+  color: var(--roll-color, var(--text));
+  filter: blur(6px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  pointer-events: none;
+}
+.mdash-reel { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
+.mdash-reel-strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mdash-reel-strip b { display: block; height: 1em; line-height: 1; font-weight: inherit; text-align: center; }
+/* Digits roll left-to-right, one after the next. */
+.mdash-reel:nth-child(2) .mdash-reel-strip { transition-delay: 0.11s; }
+.mdash-reel:nth-child(3) .mdash-reel-strip { transition-delay: 0.22s; }
+@media (prefers-reduced-motion: reduce) {
+  .mdash-reel-strip { transition: none; }
 }
 .mdash-unlock-chip {
   display: inline-flex;
