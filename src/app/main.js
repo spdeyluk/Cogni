@@ -7457,9 +7457,11 @@ function renderMeasurementDashboard() {
   }
 
   host.hidden = false;
-  // Locked reports render behind a blur with an unlock overlay; unlocking opens
-  // the pricing/checkout flow.
+  // Locked reports stay fully usable — only the scores are blurred, each with
+  // its own unlock button (wired below). Decoy counter resets so the blurred
+  // numbers are stable across re-renders.
   host.classList.toggle("mdash-locked", !unlocked);
+  mdashDecoyCounter = 0;
   host.innerHTML = `
     <div class="mdash mdash-single">
       <div class="mdash-main">
@@ -7468,16 +7470,7 @@ function renderMeasurementDashboard() {
           : measurementTab === "abilities" ? measureAbilitiesTab(record, ranked, unlocked)
           : measureInsightsTab(record, ranked, shape, unlocked)}
       </div>
-    </div>
-    ${unlocked ? "" : `
-      <div class="mdash-unlock">
-        <div class="mdash-unlock-card">
-          <span class="mdash-unlock-lock" aria-hidden="true">🔒</span>
-          <h3>Your results are ready</h3>
-          <p>Unlock to reveal your composite, all six index scores, percentiles and the full written breakdown.</p>
-          <button class="mdash-unlock-btn" type="button" data-mdash-unlock>Unlock my results</button>
-        </div>
-      </div>`}`;
+    </div>`;
 
   for (const scope of [topbar, host]) {
     scope?.querySelectorAll("[data-measure-tab]").forEach((tab) => {
@@ -7490,14 +7483,29 @@ function renderMeasurementDashboard() {
   host.querySelectorAll("[data-measure-session]").forEach((item) => {
     item.addEventListener("click", () => selectMeasurementSession(Number(item.dataset.measureSession)));
   });
-  // Wired explicitly rather than via [data-open-pricing], which pro mode hides
-  // globally. Opens the pricing/checkout flow.
-  host.querySelector("[data-mdash-unlock]")?.addEventListener("click", openPricingModal);
+  // Every per-box unlock button opens the same pricing/checkout flow. Wired
+  // explicitly rather than via [data-open-pricing], which pro mode hides globally.
+  host.querySelectorAll("[data-mdash-unlock]").forEach((btn) => {
+    btn.addEventListener("click", openPricingModal);
+  });
 }
 
-// A locked value shows its shape but not its number.
+// A locked value blurs a decoy number rather than showing the real one — the UI
+// stays usable and readable, only the scores are veiled. Decoys (never the real
+// value) mean a de-blurred screenshot leaks nothing.
+const MDASH_DECOYS = ["114", "128", "97", "132", "106", "121", "119", "101", "108", "124"];
+let mdashDecoyCounter = 0;
 function lockedValue(value, unlocked) {
-  return unlocked ? value : "•••";
+  if (unlocked) return String(value);
+  return `<span class="mdash-blur" aria-hidden="true">${MDASH_DECOYS[mdashDecoyCounter++ % MDASH_DECOYS.length]}</span>`;
+}
+
+// A small, self-contained unlock button for a locked score box. Every box gets
+// its own — they all open the same checkout, but pressing one feels direct.
+function mdashUnlockButton(extraClass = "") {
+  return `<button class="mdash-unlock-chip${extraClass ? " " + extraClass : ""}" type="button" data-mdash-unlock>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 9.6-2"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>
+    Unlock</button>`;
 }
 
 // "Top 8.1%" / "Bottom 47.3%" — how a percentile reads out loud.
@@ -7535,22 +7543,30 @@ function measurePillars(ranked, unlocked) {
       }
       const rarity = rarityFromPercentile(entry.percentile);
       const focused = measurementFocus === key;
+      const head = `<span class="mdash-pillar-head">${indexGlyph(position)}
+          <span class="mdash-pillar-name">${escapeHtml(meta.short)}</span>
+          ${unlocked ? `<svg class="mdash-pillar-go" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h13M13 6l6 6-6 6"/></svg>` : ""}
+        </span>
+        <span class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</span>
+        <span class="mdash-pillar-title">${escapeHtml(meta.name)}</span>`;
+      // Unlocked, each pillar is a control that focuses the panel below. Locked,
+      // it's a static box with its own unlock button — nothing to focus yet, and
+      // a button can't nest inside a button.
+      if (!unlocked) {
+        return `<article class="mdash-pillar mdash-pillar-locked">
+          ${head}
+          ${mdashUnlockButton("mdash-pillar-unlock")}
+        </article>`;
+      }
       return `<button class="mdash-pillar${focused ? " is-focused" : ""}" type="button"
                       data-measure-focus="${key}" aria-pressed="${focused}"
                       title="${escapeHtml(meta.name)} (${escapeHtml(meta.chc)})">
-        <span class="mdash-pillar-head">${indexGlyph(position)}
-          <span class="mdash-pillar-name">${escapeHtml(meta.short)}</span>
-          <svg class="mdash-pillar-go" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 12h13M13 6l6 6-6 6"/></svg>
-        </span>
-        <span class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</span>
-        <span class="mdash-pillar-title">${escapeHtml(meta.name)}</span>
-        <span class="mdash-pillar-desc">${unlocked
-          ? escapeHtml(interpretationBand(entry.score).label)
-          : "Locked"}</span>
+        ${head}
+        <span class="mdash-pillar-desc">${escapeHtml(interpretationBand(entry.score).label)}</span>
         <span class="mdash-pillar-foot">
-          <span class="mdash-chip">${unlocked ? standingLabel(entry.percentile) : "•••"}</span>
-          <span class="mdash-rarity">${unlocked ? `1 in ${rarity.one_in}` : ""}</span>
+          <span class="mdash-chip">${standingLabel(entry.percentile)}</span>
+          <span class="mdash-rarity">1 in ${rarity.one_in}</span>
         </span>
       </button>`;
     }).join("")}
@@ -7613,13 +7629,13 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
 
       <div class="mdash-overall-lead">
         <p class="mdash-overall-score">${lockedValue(score, unlocked)}${
-          spread != null ? `<span>±${spread}</span>` : ""}</p>
+          spread != null ? `<span>±${spread}</span>` : ""}${unlocked ? "" : mdashUnlockButton("mdash-overall-unlock")}</p>
         ${unlocked ? `<p class="mdash-overall-band">${escapeHtml(interpretationBand(score).label)}</p>` : ""}
         <p class="mdash-overall-sub">${unlocked
           ? `${focus ? escapeHtml(focus.blurb) + " " : "Your composite across all six abilities. "}
              Higher than about ${pct}% of a typical population — roughly 1 in
              ${rarityFromPercentile(pct).one_in} people.`
-          : "Unlock the report to see your percentile, index scores and the breakdown behind them."}</p>
+          : "Unlock to see your percentile, index scores and the breakdown behind them."}</p>
       </div>
 
       <div class="mdash-subtabs" role="tablist" aria-label="Which score to read">
