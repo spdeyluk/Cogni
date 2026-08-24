@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260824-web171">
+    <link rel="stylesheet" href="styles.css?v=20260824-web172">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1031,6 +1031,14 @@
             <p class="exercise-type">Verbal</p>
             <h2>Spot the Fallacy</h2>
             <p>Read a short everyday argument and name what's wrong with it — or spot when it's actually valid. Adapts as you sharpen.</p>
+          </div>
+        </article>
+
+          <article class="exercise-card exercise-card-active" data-open-mini="patience" tabindex="0">
+          <div>
+            <p class="exercise-type">Focus</p>
+            <h2>Patience</h2>
+            <p>Hold one word in mind while others drift slowly past. Press only when yours returns. A long, calm session that rewards the quiet hold.</p>
           </div>
         </article>
 
@@ -2697,6 +2705,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260824-web171"></script>
+    <script type="module" src="src/app/main.js?v=20260824-web172"></script>
   </body>
 </html>

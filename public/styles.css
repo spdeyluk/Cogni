@@ -18592,6 +18592,65 @@ html.mode-pro .page-paywall {
 .fallacy-difficulty-option strong { font-size: 1.05rem; font-weight: 700; }
 .fallacy-difficulty-option span { color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
 
+/* Patience: a slow vigilance / impulse-control session. Deliberately quiet —
+   one big word, one press, gentle fades. */
+.patience-picker-lede { max-width: 42ch; margin: 0 auto 24px; color: var(--muted); font-size: 0.92rem; line-height: 1.55; }
+.patience-picker-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 340px; margin: 0 auto; }
+.patience-picker-option {
+  display: grid; gap: 2px; justify-items: center;
+  padding: 18px 12px !important;
+  border: 2px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  background: var(--surface) !important; color: var(--text) !important;
+  cursor: pointer;
+}
+.patience-picker-option:hover { border-color: var(--muted) !important; }
+.patience-picker-option.is-selected { border-color: var(--accent) !important; }
+.patience-picker-option strong { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; }
+.patience-picker-option span { color: var(--muted); font-size: 0.8rem; }
+
+.patience-stage {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 48px; min-height: 58vh; text-align: center;
+}
+.patience-slot { min-height: 4.6rem; display: flex; align-items: center; justify-content: center; }
+.patience-word {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  letter-spacing: -0.02em;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(7px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.patience-word.is-in { opacity: 1; transform: translateY(0); }
+.patience-word.is-out { opacity: 0; transform: translateY(-7px); }
+.patience-word.patience-target { color: var(--accent); }
+.patience-press {
+  padding: 16px 42px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.05rem; font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+}
+.patience-press:disabled { opacity: 0.5; cursor: default; }
+.patience-press:not(:disabled):hover { border-color: var(--muted); }
+.patience-press:not(:disabled):active { transform: scale(0.97); }
+.patience-press.is-hit {
+  border-color: #18B87B; background: color-mix(in srgb, #18B87B 16%, var(--surface)); color: #18B87B;
+  animation: patience-pulse 0.5s ease;
+}
+.patience-press.is-early { border-color: #F5B942; color: #F5B942; animation: patience-nudge 0.4s ease; }
+@keyframes patience-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
+@keyframes patience-nudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .patience-word { transition: opacity 0.3s ease; transform: none !important; }
+  .patience-press.is-hit, .patience-press.is-early { animation: none; }
+}
+
 /* ===================================================================
    IQ test not yet taken: the card pulses so the one thing a new user
    should do first is unmistakable once they reach the Tests tab. Pairs

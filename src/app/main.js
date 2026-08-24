@@ -141,7 +141,8 @@ const trainingCatalog = [
   { id: "verbal", kind: "game", open: "mini", domain: "Language", name: "Word Memory", minutes: 5, coins: 60, icon: "book" },
   { id: "fallacy", kind: "game", open: "mini", domain: "Logic", name: "Spot the Fallacy", minutes: 5, coins: 60, icon: "scales" },
   { id: "mentalmath", kind: "game", open: "mini", domain: "Math", name: "Mental Math", minutes: 5, coins: 60, icon: "sigma" },
-  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 5, coins: 0, icon: "bolt" }
+  { id: "reaction", kind: "game", open: "mini", domain: "Focus", name: "Reaction Time", minutes: 5, coins: 0, icon: "bolt" },
+  { id: "patience", kind: "game", open: "mini", domain: "Focus", name: "Patience", minutes: 20, coins: 120, icon: "hourglass" }
 ];
 // Section order for the hub; anything tagged outside this list falls in after.
 const trainingDomainOrder = ["Memory", "Focus", "Logic", "Language", "Math"];
@@ -168,7 +169,8 @@ const trainIconPaths = {
   book: `<path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v14.5H7a2.5 2.5 0 0 0-2.5 2.5V5.5Z"/><path d="M4.5 20A2.5 2.5 0 0 1 7 17.5h12.5V21H7a2.5 2.5 0 0 1-2.5-1Z"/>`,
   scales: `<path d="M12 4.5v15M7.5 19.5h9M4.5 8.5h15"/><path d="M4.5 8.5 2 14.5a2.8 2.8 0 0 0 5 0l-2.5-6ZM19.5 8.5 17 14.5a2.8 2.8 0 0 0 5 0l-2.5-6Z"/><circle cx="12" cy="4.6" r="1.2"/>`,
   sigma: `<path d="M17.5 5.5H7l6 6.5-6 6.5h10.5"/>`,
-  bolt: `<path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6l1-8Z"/>`
+  bolt: `<path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6l1-8Z"/>`,
+  hourglass: `<path d="M6 3.5h12M6 20.5h12M7.5 3.5v3.2a4.5 4.5 0 0 0 2 3.7l2.5 1.6 2.5-1.6a4.5 4.5 0 0 0 2-3.7V3.5M7.5 20.5v-3.2a4.5 4.5 0 0 1 2-3.7l2.5-1.6 2.5 1.6a4.5 4.5 0 0 1 2 3.7v3.2"/>`
 };
 const trainDomainIcons = {
   Memory: `<path d="M12 4.5a3.5 3.5 0 0 0-3.4 4.3A3 3 0 0 0 7.5 14v2.2a3 3 0 0 0 4.5 2.6 3 3 0 0 0 4.5-2.6V14a3 3 0 0 0-1.1-5.2A3.5 3.5 0 0 0 12 4.5Z"/><path d="M12 5v13.5"/>`,
@@ -459,7 +461,8 @@ const routineExerciseMeta = {
   numrecall: { label: "Number Recall", defaultMinutes: 5, mini: true },
   verbal: { label: "Word Memory", defaultMinutes: 5, mini: true },
   reaction: { label: "Reaction Time", defaultMinutes: 5, mini: true },
-  fallacy: { label: "Spot the Fallacy", defaultMinutes: 5, mini: true }
+  fallacy: { label: "Spot the Fallacy", defaultMinutes: 5, mini: true },
+  patience: { label: "Patience", defaultMinutes: 20, mini: true }
 };
 
 const nBackTrialTimeLimits = {
@@ -2937,6 +2940,16 @@ const miniIntros = {
       "Some arguments are actually fine: pick \"Nothing — the argument is valid\" when nothing's wrong.",
       "Keep it up and harder arguments unlock; slip and it eases off."
     ]
+  },
+  patience: {
+    tag: "Focus & impulse control",
+    title: "Patience",
+    steps: [
+      "You're given one word to hold in mind — memorise it.",
+      "Then words drift by slowly, one at a time. Most are not yours.",
+      "When your word reappears — and only then — press the button.",
+      "A long, calm session. The reward is patience: catch your word, and don't twitch at the rest."
+    ]
   }
 };
 
@@ -3013,6 +3026,10 @@ function runMiniGame(id) {
   // before each run rather than remembering a choice made once.
   if (id === "fallacy") {
     renderFallacyDifficultyPicker(ctx, () => beginMiniCountdown(id, stage, game, ctx));
+    return;
+  }
+  if (id === "patience") {
+    renderPatienceDurationPicker(ctx, () => beginMiniCountdown(id, stage, game, ctx));
     return;
   }
   beginMiniCountdown(id, stage, game, ctx);
@@ -3342,7 +3359,179 @@ function buildFallacyRound(state) {
   return round;
 }
 
+// --- Patience: a slow vigilance / impulse-control task ----------------------
+// Remember one word. Words drift by, calmly, one at a time. Every so often the
+// one you're holding reappears — and only then do you press. Reward is for the
+// long, quiet hold: catching your word, and NOT twitching at the others.
+const PATIENCE_DURATION_KEY = "cogni.patienceMinutes.v1";
+const PATIENCE_DURATIONS = [15, 20, 25, 30]; // minutes the user can pick
+const PATIENCE_SHOW_MS = 2200;   // a word is on screen this long
+const PATIENCE_REST_MS = 1300;   // calm gap between words
+const PATIENCE_TARGET_MIN_GAP = 5;   // stimuli that must pass between targets
+const PATIENCE_TARGET_CHANCE = 0.15; // per eligible stimulus, once the gap clears
+
+function patienceMinutes() {
+  try {
+    const v = Number(localStorage.getItem(PATIENCE_DURATION_KEY));
+    return PATIENCE_DURATIONS.includes(v) ? v : 20;
+  } catch { return 20; }
+}
+function setPatienceMinutes(min) {
+  try { localStorage.setItem(PATIENCE_DURATION_KEY, String(min)); } catch { /* private mode */ }
+}
+
+// Plain, concrete, calm words — easy to read at a glance and hold in mind.
+const PATIENCE_WORDS = [
+  "river", "stone", "candle", "meadow", "harbor", "lantern", "willow", "pebble",
+  "cloud", "ember", "acorn", "feather", "cabin", "orchard", "anchor", "cotton",
+  "maple", "kettle", "garden", "pillow", "marble", "beacon", "cedar", "petal",
+  "clover", "hollow", "sparrow", "birch", "linen", "compass", "harvest", "meadow",
+  "thunder", "amber", "ivory", "velvet", "coral", "quartz", "copper", "willow",
+  "island", "meadow", "lantern", "pinecone", "seashell", "driftwood", "moss", "fern",
+  "brook", "boulder", "canyon", "dune", "glacier", "prairie", "summit", "valley",
+  "bison", "otter", "heron", "badger", "falcon", "beaver", "lizard", "minnow",
+  "biscuit", "walnut", "honey", "cinnamon", "pepper", "barley", "clover", "basil",
+  "mitten", "satchel", "kettle", "teapot", "saucer", "ladle", "thimble", "spindle",
+  "attic", "cellar", "porch", "hearth", "cottage", "meadow", "windmill", "bridge",
+  "comet", "planet", "meteor", "eclipse", "aurora", "twilight", "horizon", "dawn"
+];
+
+// Pick a target duration, then start. Its own screen (like the fallacy split)
+// so the choice is deliberate every time.
+function renderPatienceDurationPicker(ctx, onChosen) {
+  const current = patienceMinutes();
+  ctx.setStatus("Choose a length");
+  ctx.stage.innerHTML = `
+    <div class="mini-intro patience-picker">
+      <h2>Patience</h2>
+      <p class="patience-picker-lede">A slow, calm session. Hold your word, wait for it to return, and only then press.</p>
+      <div class="patience-picker-options">
+        ${PATIENCE_DURATIONS.map((min) => `
+          <button class="patience-picker-option${min === current ? " is-selected" : ""}" type="button" data-patience-min="${min}">
+            <strong>${min}</strong><span>minutes</span>
+          </button>`).join("")}
+      </div>
+    </div>`;
+  ctx.stage.querySelectorAll("[data-patience-min]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setPatienceMinutes(Number(button.dataset.patienceMin));
+      onChosen();
+    });
+  });
+}
+
 const miniGames = {
+  patience: {
+    label: "Patience",
+    start(ctx) {
+      const timers = miniTimers();
+      const durationMs = patienceMinutes() * 60000;
+      const startedAt = Date.now();
+      const bank = [...new Set(PATIENCE_WORDS)];
+      const target = miniShuffle([...bank])[0];
+      const distractors = bank.filter((w) => w !== target);
+
+      let stimuli = 0;      // words shown (after the reminder)
+      let targets = 0;      // times the target appeared
+      let hits = 0;         // target pressed in time
+      let misses = 0;       // target passed without a press
+      let falseAlarms = 0;  // pressed on a non-target
+      let sinceTarget = 0;  // stimuli since the last target
+      let currentIsTarget = false;
+      let active = false;   // a word is on screen and awaiting a decision
+      let responded = false;
+
+      function result() {
+        const detection = targets > 0 ? hits / targets : 1;
+        const headline = falseAlarms === 0 && misses === 0 && targets > 0 ? "Unshakeable"
+          : falseAlarms === 0 ? "Calm and steady"
+          : falseAlarms <= 2 ? "Nicely held"
+          : "A little jumpy";
+        return {
+          metricValue: `${hits}/${targets}`,
+          metricLabel: "caught",
+          headline,
+          sub: `${falseAlarms} early press${falseAlarms === 1 ? "" : "es"} · your word was “${target}”.`,
+          correct: hits,
+          incorrect: misses + falseAlarms,
+          accuracy: targets > 0 ? detection : (falseAlarms === 0 ? 1 : 0),
+          completedTrials: stimuli,
+          difficultyScore: patienceMinutes() / 15
+        };
+      }
+      ctx.setSnapshot(result);
+
+      const timeLeft = () => Math.max(0, durationMs - (Date.now() - startedAt));
+      function tickStatus() {
+        const s = Math.round(timeLeft() / 1000);
+        ctx.setStatus(`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")} left · ${hits} caught`);
+      }
+
+      // A single calm surface: the word, and one press.
+      ctx.stage.innerHTML = `
+        <div class="patience-stage">
+          <div class="patience-slot"><span class="patience-word" id="patience-word"></span></div>
+          <button class="patience-press" id="patience-press" type="button">I see it</button>
+        </div>`;
+      const wordEl = ctx.stage.querySelector("#patience-word");
+      const pressEl = ctx.stage.querySelector("#patience-press");
+
+      function flash(kind) {
+        pressEl.classList.remove("is-hit", "is-early");
+        void pressEl.offsetWidth;
+        pressEl.classList.add(kind === "hit" ? "is-hit" : "is-early");
+      }
+      function onPress() {
+        if (!active || responded) return; // one decision per word; ignore the quiet gaps
+        responded = true;
+        if (currentIsTarget) { hits += 1; flash("hit"); }
+        else { falseAlarms += 1; flash("early"); }
+        tickStatus();
+      }
+      pressEl.addEventListener("click", onPress);
+
+      function showNext() {
+        if (timeLeft() <= 0) { ctx.finish(result()); return; }
+        const eligible = sinceTarget >= PATIENCE_TARGET_MIN_GAP;
+        const isTarget = eligible && Math.random() < PATIENCE_TARGET_CHANCE;
+        const word = isTarget ? target : distractors[Math.floor(Math.random() * distractors.length)];
+        currentIsTarget = isTarget;
+        responded = false;
+        active = true;
+        stimuli += 1;
+        if (isTarget) { targets += 1; sinceTarget = 0; } else { sinceTarget += 1; }
+        tickStatus();
+        wordEl.textContent = word;
+        wordEl.classList.remove("is-out");
+        void wordEl.offsetWidth;
+        wordEl.classList.add("is-in");
+
+        timers.after(() => {
+          active = false;
+          if (currentIsTarget && !responded) misses += 1;
+          wordEl.classList.remove("is-in");
+          wordEl.classList.add("is-out");
+          timers.after(showNext, PATIENCE_REST_MS);
+        }, PATIENCE_SHOW_MS);
+      }
+
+      // Show the word to remember first (same element, no DOM swapping), then
+      // begin the calm stream.
+      ctx.setStatus("Remember this word");
+      wordEl.textContent = target;
+      wordEl.classList.add("patience-target", "is-in");
+      pressEl.textContent = "Hold it in mind…";
+      pressEl.disabled = true;
+      timers.after(() => {
+        wordEl.classList.remove("patience-target", "is-in");
+        pressEl.disabled = false;
+        pressEl.textContent = "I see it";
+        showNext();
+      }, 4200);
+
+      return () => timers.clearAll();
+    }
+  },
   gridmemory: {
     label: "Grid Memory",
     start(ctx) {
@@ -4736,7 +4925,7 @@ function profileHexagonStats(sessions) {
   // 600 ms average answers score 100; 2500 ms score 0.
   const speedScore = speeds.length ? Math.round(100 * clamp01((2500 - mean(speeds)) / 1900)) : 0;
   return [
-    { label: "Focus", value: axisScore(byExercise(["ict", "ufov", "mot"])) },
+    { label: "Focus", value: axisScore(byExercise(["ict", "ufov", "mot", "patience"])) },
     { label: "Memory", value: axisScore(byExercise(["nback"])) },
     { label: "Speed", value: speedScore },
     { label: "Logic", value: axisScore(byExercise(["rrt"])) },
@@ -13194,7 +13383,8 @@ const customTaskExerciseLabels = {
   numrecall: "Number Recall",
   verbal: "Word Memory",
   reaction: "Reaction Time",
-  fallacy: "Spot the Fallacy"
+  fallacy: "Spot the Fallacy",
+  patience: "Patience"
 };
 // Every trainable exercise (classic + minis); "Any exercise" tasks count all.
 const allTrainableExerciseIds = Object.keys(customTaskExerciseLabels).filter((id) => id !== "any");
