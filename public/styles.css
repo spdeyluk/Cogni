@@ -16630,6 +16630,7 @@ html.mode-play .nav-hamburger { display: none !important; }
    Pricing / upgrade modal
    =================================================================== */
 .pricing-dialog {
+  position: relative;
   width: min(560px, calc(100% - 24px));
   max-height: 88dvh;
   overflow: auto;
@@ -16641,24 +16642,31 @@ html.mode-play .nav-hamburger { display: none !important; }
   box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
 }
 .pricing-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
-.pricing-dialog-inner { padding: 28px 26px max(28px, env(safe-area-inset-bottom)); display: grid; gap: 18px; }
+.pricing-dialog-inner { padding: 28px 28px max(28px, env(safe-area-inset-bottom)); display: grid; gap: 18px; }
 .pricing-dialog h2 { margin: 0; font-size: 1.6rem; }
 
+/* The web paywall is a plan-comparison, not the native onboarding hero — drop
+   the big brand illustration and the native-only blocks. */
+html.mode-pro .pricing-dialog .paywall-hero,
+html.mode-pro .pricing-dialog .paywall-timeline,
+html.mode-pro .pricing-dialog .paywall-includes { display: none !important; }
+html.mode-pro .pricing-dialog h2 { padding-right: 40px; } /* clear the close button */
+
 .pricing-close {
-  position: sticky;
-  top: 12px;
-  float: right;
-  margin: 12px 12px -30px 0;
-  width: 32px; height: 32px;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px; height: 34px;
   display: grid; place-items: center;
   border: 0 !important;
   border-radius: 999px !important;
   background: var(--surface-2) !important;
   color: var(--text) !important;
-  font-size: 1.2rem; line-height: 1;
+  font-size: 1.3rem; line-height: 1;
   cursor: pointer; box-shadow: none !important;
-  z-index: 2;
+  z-index: 5;
 }
+.pricing-close:hover { background: var(--line-strong) !important; }
 
 .pricing-billing { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pricing-billing-toggle {
