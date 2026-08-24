@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260824-web174">
+    <link rel="stylesheet" href="styles.css?v=20260824-web175">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1079,7 +1079,9 @@
               <div class="measure-progress" id="measure-progress"></div>
               <div class="measure-hub-actions">
                 <button class="measure-hub-cta" id="measure-continue" type="button">Start test</button>
-                <button class="measure-hub-results" id="measure-results" type="button" hidden disabled>Get results</button>
+                <button class="measure-hub-results" id="measure-results" type="button" hidden disabled>
+                  <svg class="measure-hub-results-spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l1.7 4.8L18.5 9l-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7z"/><path d="M18.5 14l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/></svg>
+                  <span>Get results</span></button>
                 <button class="measure-hub-reset" id="measure-restart" type="button" hidden>Start a new test</button>
               </div>
             </div>
@@ -2705,6 +2707,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260824-web174"></script>
+    <script type="module" src="src/app/main.js?v=20260824-web175"></script>
   </body>
 </html>

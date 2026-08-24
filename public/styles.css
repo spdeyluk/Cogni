@@ -21133,23 +21133,56 @@ html[data-theme="dark"] .measure-cat {
   color: var(--text);
 }
 
-/* "Get results": the accent CTA that goes live once every subtest is done. */
+/* "Get results": the reward button. Deliberately a different species from the
+   plain start/reset buttons — a pill with a spark, an accent glow, and a slow
+   shine sweep once it's live, so it reads as the payoff, not another CTA. */
 .measure-hub-results {
-  padding: 13px 22px !important;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px !important;
   border: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 999px !important;
   background: var(--accent) !important;
   color: #fff !important;
-  font-size: 0.97rem;
-  font-weight: 650;
+  font-size: 0.98rem;
+  font-weight: 700;
   letter-spacing: -0.01em;
   cursor: pointer;
+  box-shadow: 0 8px 24px -8px var(--accent);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-.measure-hub-results:hover:not(:disabled) { opacity: 0.9; }
+.measure-hub-results > * { position: relative; z-index: 1; }
+.measure-hub-results-spark { width: 17px; height: 17px; fill: #fff; flex: none; }
+/* The shine: a light band that sweeps across every few seconds. */
+.measure-hub-results::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.42) 50%, transparent 62%);
+  transform: translateX(-130%);
+  animation: results-shine 3.8s ease-in-out infinite;
+}
+@keyframes results-shine {
+  0%, 62% { transform: translateX(-130%); }
+  88%, 100% { transform: translateX(130%); }
+}
+.measure-hub-results:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px -8px var(--accent);
+}
 .measure-hub-results:disabled {
   background: var(--fill-subtle) !important;
   color: var(--muted) !important;
   cursor: not-allowed;
+  box-shadow: none;
+}
+.measure-hub-results:disabled .measure-hub-results-spark { fill: var(--muted); }
+.measure-hub-results:disabled::after { display: none; } /* no shine until it's earned */
+@media (prefers-reduced-motion: reduce) {
+  .measure-hub-results::after { display: none; }
 }
 
 /* TODO(dev): temporary "complete all subtests" affordance on the picker. */
