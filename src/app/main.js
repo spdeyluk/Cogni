@@ -7639,10 +7639,14 @@ function renderMeasurementDashboard() {
   if (topbar) {
     topbar.innerHTML = `
       <div class="mdash-topbar-inner">
+        <button class="mdash-back" type="button" data-mdash-back aria-label="Back to the IQ test">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Back</span>
+        </button>
         ${tabs.map(([key, label]) => `
           <button class="mdash-tab${measurementTab === key ? " is-active" : ""}"
                   data-measure-tab="${key}" type="button">${label}</button>`).join("")}
       </div>`;
+    topbar.querySelector("[data-mdash-back]")?.addEventListener("click", closeMeasureReport);
   }
 
   host.hidden = false;
@@ -8283,6 +8287,9 @@ function renderMeasurePicker(selectedId) {
   // The subtest picker is a distinct screen the card's CTA opens; the two never
   // show at once.
   document.querySelector("#cat-intro")?.classList.toggle("is-subtests", measureSubtestsOpen);
+  // Reading a report is its own area — the card, side list and subtest grid all
+  // step aside so the dashboard stands alone.
+  document.querySelector("#cat-intro")?.classList.toggle("is-report-open", measurementReportOpen);
   renderMeasureHub(attempt, done, total, takingTest);
 
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
@@ -8446,6 +8453,13 @@ function openMeasureSubtests() {
 // Back from the picker to the overview card.
 function closeMeasureSubtests() {
   measureSubtestsOpen = false;
+  renderMeasurePicker();
+  document.querySelector("#cat-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Leave the report area and return to the IQ test card.
+function closeMeasureReport() {
+  measurementReportOpen = false;
   renderMeasurePicker();
   document.querySelector("#cat-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }

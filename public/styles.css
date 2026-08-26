@@ -20591,9 +20591,39 @@ html.rail-collapsed.mode-pro .mdash-topbar { padding-left: 108px; }
 html.mode-pro .mdash-topbar-inner {
   display: flex;
   align-items: stretch;
-  gap: 28px;
+  gap: 24px;
   min-height: 58px;
 }
+/* The way out of the report area, back to the IQ test card. */
+html.mode-pro .mdash-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+  margin-right: 4px;
+  padding: 7px 15px 7px 11px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 999px !important;
+  background: none !important;
+  color: var(--text-2) !important;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+html.mode-pro .mdash-back:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
+.mdash-back svg {
+  width: 16px; height: 16px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Reading a report is its own area — the card, side list, subtest grid and
+   disclaimer all step aside so the dashboard stands alone. */
+html.mode-pro .measure-picker.is-report-open .measure-hub,
+html.mode-pro .measure-picker.is-report-open .measure-hub-reports,
+html.mode-pro .measure-picker.is-report-open .measure-picker-body,
+html.mode-pro .measure-picker.is-report-open .measure-offers,
+html.mode-pro .measure-picker.is-report-open > .assessment-disclaimer { display: none !important; }
 html.mode-pro .mdash-tab {
   padding: 0 2px !important;
   border: 0 !important;
