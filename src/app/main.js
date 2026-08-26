@@ -7719,7 +7719,8 @@ function stopMdashRoll() { if (mdashRollTimer) { clearInterval(mdashRollTimer); 
 function startMdashRoll(host) {
   stopMdashRoll();
   const scores = [...host.querySelectorAll("[data-roll]")];
-  if (!scores.length) return;
+  const rollCurve = setupMcurveRoll(host);
+  if (!scores.length && !rollCurve) return;
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return; // held still
   const rollOne = (el) => {
     const min = Number(el.dataset.min), max = Number(el.dataset.max);
@@ -7727,10 +7728,34 @@ function startMdashRoll(host) {
     const digits = String(min + Math.floor(Math.random() * (max - min + 1))).padStart(reels.length, "0");
     reels.forEach((strip, i) => { strip.style.transform = `translateY(-${digits[i]}em)`; });
   };
+  const anchor = scores[0] ?? host.querySelector("[data-mcurve-roll]");
+  if (rollCurve) window.setTimeout(rollCurve, 600); // start the curve moving sooner than the first tick
   mdashRollTimer = window.setInterval(() => {
-    if (!scores[0].isConnected) { stopMdashRoll(); return; }
+    if (!anchor?.isConnected) { stopMdashRoll(); return; }
     scores.forEach((el, i) => window.setTimeout(() => rollOne(el), i * 170));
+    if (rollCurve) rollCurve();
   }, 3000);
+}
+
+// The locked chart's marker (line + dot) drifts to random realistic scores,
+// riding the bell curve — the graph's version of the rolling numbers.
+function setupMcurveRoll(host) {
+  const svg = host.querySelector("[data-mcurve-roll]");
+  if (!svg) return null;
+  const d = svg.dataset;
+  const pl = +d.pl, pw = +d.pw, min = +d.min, max = +d.max, by = +d.by, pt = +d.pt;
+  const baseX = +d.mx, baseY = +d.my;
+  const line = svg.querySelector(".mcurve-marker");
+  const dot = svg.querySelector(".mcurve-dot");
+  if (!line || !dot) return null;
+  const xf = (v) => pl + ((Math.max(min, Math.min(max, v)) - min) / (max - min)) * pw;
+  const yf = (v) => by - Math.exp(-0.5 * ((v - 100) / 15) ** 2) * (by - pt);
+  return () => {
+    const v = 84 + Math.random() * 48; // 84–132: a believable spread, off the extremes
+    const dx = (xf(v) - baseX).toFixed(1);
+    line.style.transform = `translateX(${dx}px)`;
+    dot.style.transform = `translate(${dx}px, ${(yf(v) - baseY).toFixed(1)}px)`;
+  };
 }
 
 // A small, self-contained unlock button for a locked score box. Every box gets
@@ -9567,13 +9592,21 @@ function measureCurveSvg({ score, percentile, ceilingScore, ceilingPercentile, a
     </g>`;
   };
 
-  const markerX = x(score);
+  // Locked: the marker must not sit at the real score (it would read straight off
+  // the axis). It starts near the centre and rolls to random realistic positions.
+  const markerScore = unlocked ? score : 105;
+  const markerX = x(markerScore);
+  const markerDotY = y(markerScore);
   const hasHeadroom = unlocked && Number.isFinite(ceilingScore) && ceilingScore > score;
   const ceilingX = hasHeadroom ? x(ceilingScore) : null;
   const bandWidth = hasHeadroom ? Math.max(ceilingX - markerX, 2) : 0;
+  // Geometry the JS roller needs to move the marker along the curve.
+  const rollData = unlocked ? "" : ` data-mcurve-roll data-pl="${padLeft}" data-pw="${plotWidth}"`
+    + ` data-min="${minScore}" data-max="${maxScore}" data-by="${baseY}" data-pt="${padTop}"`
+    + ` data-mx="${markerX.toFixed(1)}" data-my="${markerDotY.toFixed(1)}"`;
 
   return `
-    <svg class="mcurve" viewBox="0 0 ${width} ${height}" role="img"
+    <svg class="mcurve${unlocked ? "" : " mcurve-locked"}" viewBox="0 0 ${width} ${height}" role="img"${rollData}
          aria-label="${escapeHtml(axisTitle)} of ${unlocked ? score : "hidden"} on the population curve">
       ${grid}
       <path class="mcurve-area" d="${area}"></path>
@@ -9591,7 +9624,7 @@ function measureCurveSvg({ score, percentile, ceilingScore, ceilingPercentile, a
 
       <line class="mcurve-marker" x1="${markerX.toFixed(1)}" y1="${padTop - 12}"
             x2="${markerX.toFixed(1)}" y2="${baseY}"></line>
-      <circle class="mcurve-dot" cx="${markerX.toFixed(1)}" cy="${y(score).toFixed(1)}" r="5"></circle>
+      <circle class="mcurve-dot" cx="${markerX.toFixed(1)}" cy="${markerDotY.toFixed(1)}" r="5"></circle>
       ${unlocked ? pill(`${score} · ${standingLabel(percentile)}`, markerX, hasHeadroom ? 40 : 20, "is-you") : ""}
 
       <line class="mcurve-axis" x1="${padLeft}" y1="${baseY}" x2="${width - padRight}" y2="${baseY}"></line>

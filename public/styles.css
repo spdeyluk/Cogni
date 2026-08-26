@@ -20921,6 +20921,19 @@ html.mode-pro .mdash-subtab.is-active {
 .mcurve-ceiling { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 5; opacity: 0.7; }
 .mcurve-marker { stroke: var(--accent); stroke-width: 2; }
 .mcurve-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 3; }
+
+/* Locked chart: the fake result is veiled, and its marker drifts to random
+   realistic positions along the curve (JS sets the transforms). */
+.mcurve-locked { filter: blur(3px); }
+.mcurve-locked .mcurve-marker,
+.mcurve-locked .mcurve-dot {
+  transition: transform 1s cubic-bezier(0.45, 0, 0.25, 1);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcurve-locked .mcurve-marker,
+  .mcurve-locked .mcurve-dot { transition: none; }
+}
 .mcurve-pill rect { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
 .mcurve-pill text { fill: var(--text); font-size: 12.5px; font-weight: 600; }
 .mcurve-pill.is-ceiling rect { stroke: color-mix(in srgb, var(--accent) 40%, transparent); }
