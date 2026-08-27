@@ -7687,29 +7687,29 @@ function renderMeasurementDashboard() {
 
 // A locked score blurs a fake, rolling number rather than the real one — the UI
 // stays usable, the decoys leak nothing, and under the blur you can tell it's a
-// score (a colour-graded number whose digits roll every few seconds, like the
-// teaser reels on FaceIQ-style pages). Colour grades the fake value: green good,
-// amber mid, red low. Each tier keeps a fixed digit count so the reels line up.
-const MDASH_TIERS = [
-  { color: "#18B87B", min: 118, max: 141 }, // green
-  { color: "#F5B942", min: 100, max: 113 }, // amber
-  { color: "#18B87B", min: 121, max: 138 }, // green
-  { color: "#F2597A", min: 76, max: 92 },   // red (two digits)
-  { color: "#F5B942", min: 101, max: 112 }, // amber
-  { color: "#18B87B", min: 116, max: 134 }  // green
-];
+// score (a colour-graded number whose digits roll, like the teaser reels on
+// FaceIQ-style pages). The value is graded by band — green good, amber mid, red
+// low — and every roll can jump far enough to flip the colour. Three reels
+// throughout (low values pad with a leading zero) so the colour can change
+// without the digit count changing.
+const MDASH_DECOY_MIN = 68;
+const MDASH_DECOY_MAX = 141;
 const MDASH_DIGIT_STRIP = "0123456789".split("").map((d) => `<b>${d}</b>`).join("");
 let mdashDecoyCounter = 0;
 
+function mdashBandColor(v) {
+  return v >= 116 ? "#18B87B" : v >= 96 ? "#F5B942" : "#F2597A"; // green / amber / red
+}
+
 function lockedValue(value, unlocked) {
   if (unlocked) return String(value);
-  const tier = MDASH_TIERS[mdashDecoyCounter++ % MDASH_TIERS.length];
-  const n = String(tier.min + Math.floor(Math.random() * (tier.max - tier.min + 1)));
-  const reels = n.split("").map((d) =>
+  mdashDecoyCounter += 1;
+  const v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
+  const reels = String(v).padStart(3, "0").split("").map((d) =>
     `<span class="mdash-reel"><span class="mdash-reel-strip" style="transform:translateY(-${d}em)">${MDASH_DIGIT_STRIP}</span></span>`
   ).join("");
-  return `<span class="mdash-score" aria-hidden="true" data-roll data-min="${tier.min}" data-max="${tier.max}"
-    style="--roll-color:${tier.color}">${reels}</span>`;
+  return `<span class="mdash-score" aria-hidden="true" data-roll data-v="${v}"
+    style="--roll-color:${mdashBandColor(v)}">${reels}</span>`;
 }
 
 // Roll every locked score to a fresh in-tier value on a slow, staggered loop, so
@@ -7723,10 +7723,20 @@ function startMdashRoll(host) {
   if (!scores.length && !rollCurve) return;
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return; // held still
   const rollOne = (el) => {
-    const min = Number(el.dataset.min), max = Number(el.dataset.max);
     const reels = el.querySelectorAll(".mdash-reel-strip");
-    const digits = String(min + Math.floor(Math.random() * (max - min + 1))).padStart(reels.length, "0");
+    const cur = Number(el.dataset.v) || 110;
+    // Half the time jump anywhere in range (the colour usually flips); otherwise
+    // a smaller drift that stays roughly the same.
+    let v;
+    if (Math.random() < 0.5) {
+      v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
+    } else {
+      v = Math.max(MDASH_DECOY_MIN, Math.min(MDASH_DECOY_MAX, cur + (Math.floor(Math.random() * 25) - 12)));
+    }
+    el.dataset.v = v;
+    const digits = String(v).padStart(reels.length, "0");
     reels.forEach((strip, i) => { strip.style.transform = `translateY(-${digits[i]}em)`; });
+    el.style.setProperty("--roll-color", mdashBandColor(v));
   };
   const anchor = scores[0] ?? host.querySelector("[data-mcurve-roll]");
   if (rollCurve) window.setTimeout(rollCurve, 600); // start the curve moving sooner than the first tick
