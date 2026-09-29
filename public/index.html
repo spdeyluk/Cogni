@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20260827-web178">
+    <link rel="stylesheet" href="styles.css?v=20260929-web179">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -39,12 +39,10 @@
               if (k && /^sb-.*auth-token/.test(k) && localStorage.getItem(k)) { hasSession = true; break; }
             }
           } catch (e) {}
-          // The root is ALWAYS the marketing landing — even when signed in,
-          // entering the app is a deliberate action. Only a deep link to a known
-          // app path with an existing session paints the app shell straight away.
-          var appPaths = ["/measurement", "/exercises", "/community", "/profile", "/assessments"];
-          var showApp = appPaths.indexOf(window.location.pathname) !== -1 && hasSession;
-          if (mode === "pro" && !showApp) document.documentElement.classList.add("landing-active");
+          // The web app opens straight on the dashboard — no marketing landing —
+          // so the app shell paints from the first frame (never landing-active).
+          // hasSession is kept only so main.js can tell fresh vs returning.
+          void hasSession;
 
           // Paint in the right skin from the very first frame. Both of these are
           // also set by main.js, but that runs after the first paint, so the page
@@ -542,6 +540,7 @@
           </div>
         </div>
         <button class="site-rail-upgrade" id="site-rail-upgrade" type="button">Unlock full report</button>
+        <button class="site-rail-login" id="site-login-rail" type="button" hidden>Log in</button>
       </div>
 
       <nav class="site-rail-nav" aria-label="Sections">
@@ -2707,6 +2706,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20260827-web178"></script>
+    <script type="module" src="src/app/main.js?v=20260929-web179"></script>
   </body>
 </html>

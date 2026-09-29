@@ -6138,16 +6138,18 @@ async function initAuth() {
     session = data?.session ?? null;
   } catch {
     // Auth unreachable. Native keeps the wall (nothing loads without it);
-    // web falls back to the browsable landing page.
+    // web opens the app as a guest.
+    if (cogniUiMode === "pro") { bootWebIntoApp(); return; }
     showLanding();
     finalizeBootAsLanding();
     return;
   }
   if (!session?.user) {
-    // Not signed in. Native keeps the sign-in wall; web shows the landing and
-    // asks for sign-in only when the user starts something.
+    // Not signed in. Native keeps the sign-in wall; web goes straight to the
+    // dashboard as a guest and asks for sign-in only when the user starts something.
     const authError = new URLSearchParams(window.location.search).get("autherror");
     if (authError && nativeWall) setSignInError("Sign-in didn't complete. Please try again.");
+    if (cogniUiMode === "pro") { bootWebIntoApp(); return; }
     showLanding();
     finalizeBootAsLanding();
     return;
@@ -6165,6 +6167,28 @@ function finalizeBootAsLanding() {
     history.replaceState({ landing: true }, "", "/");
   }
   routerReady = true;
+}
+
+// Web opens straight on the app — the dashboard is the front door, there is no
+// marketing landing. A deep link routes to its tab; anything else lands on Cogni
+// Measurement. Works signed in or as a guest (sign-in is prompted when needed).
+function bootWebIntoApp() {
+  enterApp();
+  const bootTab = routePathToTab[routeBootPath];
+  applyingRoute = true;
+  let landedPath = routeTabToPath.assessments;
+  if (bootTab && routeTabHandler(bootTab)) {
+    routeTabHandler(bootTab)();
+    landedPath = routeTabToPath[bootTab] ?? landedPath;
+  } else {
+    showAssessments();
+  }
+  applyingRoute = false;
+  if (window.location.pathname !== landedPath) {
+    history.replaceState({ tab: routePathToTab[landedPath] }, "", landedPath);
+  }
+  routerReady = true;
+  renderProfileOnboarding();
 }
 
 function onAuthenticated() {
@@ -6194,18 +6218,8 @@ function onAuthenticated() {
     if (justSignedIn) sessionStorage.removeItem("cogni.enterAfterAuth");
   } catch { /* sessionStorage unavailable */ }
 
-  // Booting straight onto the marketing root with an existing session: stay on
-  // the landing. Entering the app is deliberate (Get sharper / a deep link) —
-  // we don't yank a returning visitor into the app just because they're signed
-  // in. But a fresh sign-in (justSignedIn) does enter the app.
-  if (isBoot && cogniUiMode === "pro" && !bootTab && !justSignedIn) {
-    showLanding();
-    if (window.location.pathname !== "/") history.replaceState({ landing: true }, "", "/");
-    routerReady = true;
-    renderProfileOnboarding();
-    return;
-  }
-
+  // No marketing landing any more: a returning, signed-in visitor on the root
+  // opens straight on the dashboard, same as a deep link or a fresh sign-in.
   enterApp();
   // Pick the initial section. On the first (boot) auth, honor a deep-linked
   // path like /profile; otherwise default to Home (the AI Chat page).
@@ -7599,8 +7613,10 @@ function syncRailAccount() {
   if (name) name.textContent = label;
   if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
   if (plan) plan.textContent = unlocked ? "FULL" : "FREE";
-  if (upgrade) upgrade.hidden = unlocked;
-  if (login) login.textContent = authUser ? "Account" : "Log in";
+  // Guests get a Log in button and no upgrade CTA (sign in first); signed-in
+  // free users get the upgrade CTA.
+  if (login) { login.hidden = Boolean(authUser); login.textContent = "Log in"; }
+  if (upgrade) upgrade.hidden = unlocked || !authUser;
 }
 
 function renderMeasurementDashboard() {
