@@ -7600,6 +7600,28 @@ document.querySelectorAll("[data-site-tab]").forEach((tab) => {
   });
 });
 
+// Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
+document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.dashboardView === "performance") showStatistics();
+    else showAssessments();
+  });
+});
+
+// Reflect which sub-view is showing on the switch (position the thumb, light the
+// active button). Driven by which section the shell has open.
+function syncDashboardSwitch() {
+  const sw = document.querySelector("#dashboard-switch");
+  if (!sw) return;
+  const view = elements.appShell?.classList.contains("profile-open") ? "performance" : "results";
+  sw.dataset.active = view;
+  sw.querySelectorAll("[data-dashboard-view]").forEach((button) => {
+    const active = button.dataset.dashboardView === view;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+}
+
 // The rail's account block: who you are and what you're on. The upgrade button
 // disappears once there is nothing left to sell you.
 function syncRailAccount() {
@@ -10161,12 +10183,16 @@ function setActiveTab(tab) {
   elements.sideNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.section === tab);
   });
+  // The web Dashboard tab owns both the IQ test (assessments) and the exercise
+  // stats (statistics) sub-views, so it stays lit for either.
+  const railTab = (tab === "statistics") ? "assessments" : tab;
   document.querySelectorAll("[data-site-tab]").forEach((siteTab) => {
-    siteTab.classList.toggle("active", siteTab.dataset.siteTab === tab);
+    siteTab.classList.toggle("active", siteTab.dataset.siteTab === railTab);
   });
   const loginButton = document.querySelector("#site-login");
   if (loginButton) loginButton.textContent = authUser ? "Profile" : "Log in";
   syncRailAccount();
+  syncDashboardSwitch();
   const mobileTabOrder = ["home", "exercises", "assessments", "statistics"];
   const activeIndex = Math.max(0, mobileTabOrder.indexOf(tab));
   elements.sideNav?.style.setProperty("--active-nav-shift", `${activeIndex * 100}%`);

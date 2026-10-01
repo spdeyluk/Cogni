@@ -20579,9 +20579,61 @@ html.mode-pro .app-shell.assessments-open .measure-picker {
   max-width: none;
   margin: 0;
 }
-/* No page header here at all: the report's tab bar and the hub's own heading
-   say everything the brand lockup used to. */
-html.mode-pro .app-shell.assessments-open .hero { display: none; }
+/* No page header on the Dashboard — the view switch (and the report's own tab
+   bar) carry it. */
+html.mode-pro .app-shell.assessments-open .hero,
+html.mode-pro .app-shell.profile-open .hero { display: none; }
+
+/* --- Dashboard view switch: Performance ↔ Test results ------------------- */
+.dashboard-switch { display: none; }
+html.mode-pro .app-shell.assessments-open .dashboard-switch,
+html.mode-pro .app-shell.profile-open .dashboard-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: fit-content;
+  margin: 2px auto 26px;
+  padding: 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+/* The report view brings its own top bar, so the switch steps aside there. */
+html.mdash-on .dashboard-switch { display: none !important; }
+.dashboard-switch-btn {
+  position: relative;
+  z-index: 1;
+  padding: 9px 28px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: none !important;
+  color: var(--muted) !important;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: color 0.25s ease;
+  box-shadow: none !important;
+}
+.dashboard-switch-btn.active { color: #fff !important; }
+.dashboard-switch-btn:hover { background: none !important; }
+.dashboard-switch-btn:hover:not(.active) { color: var(--text) !important; }
+.dashboard-switch-thumb {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  bottom: 5px;
+  width: calc(50% - 5px);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 6px 16px -6px var(--accent);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dashboard-switch[data-active="results"] .dashboard-switch-thumb { transform: translateX(100%); }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-switch-thumb, .dashboard-switch-btn { transition: none; }
+}
 
 /* --- The top bar: first thing on the page, and it stays there ---------
    It lives in the shell, outside the transformed page wrapper, so `fixed`
