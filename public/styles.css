@@ -16972,6 +16972,59 @@ html.web-onboarding-open { overflow: hidden; }
   cursor: pointer;
 }
 .web-onboarding-next:hover { filter: brightness(1.06); }
+.web-onboarding-next:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+/* Question slides: a name field or a grid of single-select options. */
+.web-onboarding-slide-q { gap: 22px; }
+.web-onboarding-input {
+  width: min(380px, 100%);
+  margin: 0 auto;
+  padding: 15px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.1rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.web-onboarding-input::placeholder { color: var(--muted); }
+.web-onboarding-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.web-onboarding-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(440px, 100%);
+  margin: 0 auto;
+}
+.web-onboarding-option {
+  padding: 15px 16px;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 14px !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease;
+}
+.web-onboarding-option:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line-strong)) !important;
+  background: var(--fill-subtle) !important;
+}
+.web-onboarding-option.is-selected {
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)) !important;
+  color: var(--accent) !important;
+}
+@media (max-width: 440px) {
+  .web-onboarding-options { grid-template-columns: 1fr; }
+}
 
 /* ===================================================================
    IQ test: full-screen immersive run (like the exercises)
@@ -20212,6 +20265,14 @@ html.mode-pro .site-rail {
 html.mode-pro.landing-active .site-rail { display: none; }
 html.mode-pro:not(.landing-active) .site-header { display: none; }
 html.mode-pro:not(.landing-active) .app-content { padding-left: 280px !important; }
+
+/* Onboarding funnel: a signed-in visitor with no result yet sees only the test.
+   No rail, no view switch, no other navigation — the content fills the page. */
+html.web-funnel.mode-pro .site-rail { display: none !important; }
+html.web-funnel.mode-pro .dashboard-switch { display: none !important; }
+html.web-funnel.mode-pro:not(.landing-active) .app-content { padding-left: 32px !important; }
+/* A single, deliberate "Start test" screen — drop the explainer grid beneath it. */
+html.web-funnel .sales-section { display: none !important; }
 
 .site-rail-brand {
   display: flex !important;

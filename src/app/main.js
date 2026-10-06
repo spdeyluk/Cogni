@@ -1043,6 +1043,12 @@ installNativeNavigationBridge();
 // the session is known (which also drives boot-time URL routing).
 if (cogniUiMode === "play") {
   showSignInFirst();
+} else if (cogniUiMode === "pro") {
+  // Pre-paint the wall for a likely-signed-out web visitor so the app never
+  // flashes behind it; initAuth() hides it the moment a real session resolves.
+  let likelySignedIn = false;
+  try { likelySignedIn = !!localStorage.getItem("cogni.supabaseAuth.v1"); } catch { /* private mode */ }
+  if (!likelySignedIn) showSignInFirst();
 }
 // Deferred so the auth/sign-in module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
@@ -1510,36 +1516,43 @@ function markWebOnboardingSeen() {
   try { localStorage.setItem(WEB_ONBOARDING_KEY, "1"); } catch { /* private mode */ }
 }
 
-const WEB_ONBOARDING_SLIDES = [
+// A few quick questions after sign-in, before the first test. Answers land on
+// onboardingAnswers (the same object the native story uses) and persist.
+const WEB_ONBOARDING_QUESTIONS = [
   {
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 3.5 3.5 0 0 0-1 6.8V17a3 3 0 0 0 5 2.2A3 3 0 0 0 17 17v-3.2A3.5 3.5 0 0 0 16 7a4 4 0 0 0-4-4Z"/><path d="M12 3v16"/></svg>`,
-    eyebrow: "The rules just changed",
-    title: "AI now does the easy thinking",
-    body: "Routine tasks, lookups, first drafts — machines handle them now. What's left, and what's rewarded, is sharp reasoning, focus and judgment. A degree alone no longer sets you apart. How well you think does."
+    key: "name", type: "text",
+    eyebrow: "Welcome to Cogni",
+    title: "First — what should we call you?",
+    placeholder: "Your first name"
   },
   {
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/><path d="M9.5 6.5h5M9.5 9.5h5M9.5 12.5h3"/></svg>`,
-    eyebrow: "You're already being trained",
-    title: "Just by the wrong things",
-    body: "Endless scrolling rewires your attention for distraction. Offloading every decision to AI lets the mental muscles you stop using quietly weaken. Cognitive ability isn't fixed — but it fades when it's never challenged."
+    key: "age", type: "choice",
+    eyebrow: "A little about you",
+    title: "How old are you?",
+    options: [["u18", "Under 18"], ["18-24", "18–24"], ["25-34", "25–34"], ["35-44", "35–44"], ["45-54", "45–54"], ["55+", "55 or older"]]
   },
   {
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3.5-4 3 3L21 7"/><path d="M21 11V7h-4"/></svg>`,
-    eyebrow: "It predicts more than you'd think",
-    title: "Cognition compounds",
-    body: "Decades of research place cognitive ability among the strongest single predictors of job performance, learning speed, income and long-term health — ahead of experience, interviews or years of schooling."
+    key: "education", type: "choice",
+    eyebrow: "A little about you",
+    title: "Your highest level of education?",
+    options: [["hs", "High school"], ["some-college", "Some college"], ["bachelors", "Bachelor's"], ["masters", "Master's"], ["doctorate", "Doctorate"], ["other", "Other"]]
   },
   {
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6 4.5 4.5M18 6l1.5-1.5M6 18l-1.5 1.5M18 18l1.5 1.5"/><circle cx="12" cy="12" r="3.4"/></svg>`,
-    eyebrow: "The good news",
-    title: "It's trainable",
-    body: "Like any capacity, focus, memory and reasoning grow when you train them deliberately. Cogni turns that into a few focused minutes a day — real cognitive training, not puzzle games. Let's begin."
+    key: "reason", type: "choice",
+    eyebrow: "What brings you here",
+    title: "What do you most want to improve?",
+    options: [["iq", "My cognitive score"], ["focus", "Focus & attention"], ["memory", "Memory"], ["academic", "Academic performance"], ["career", "Career & work"], ["general", "General sharpness"]]
   }
 ];
 
+function saveWebOnboardingAnswers() {
+  try { localStorage.setItem(onboardingAnswersKey, JSON.stringify(onboardingAnswers)); } catch { /* best effort */ }
+}
+
 // A plain fixed-position overlay (not a <dialog>) so it works identically on
 // every browser — no showModal()/::backdrop/dvh, which vary across iOS Safari
-// versions and were the likeliest cause of a blank screen after sign-in.
+// versions and were the likeliest cause of a blank screen after sign-in. There
+// is no Skip and no Escape — onboarding is required before the test.
 function showWebOnboarding(onDone = () => {}) {
   if (document.querySelector("#web-onboarding")) return;
   const overlay = document.createElement("div");
@@ -1548,46 +1561,82 @@ function showWebOnboarding(onDone = () => {}) {
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   let index = 0;
+  const total = WEB_ONBOARDING_QUESTIONS.length;
+  const answered = (q) => {
+    const value = onboardingAnswers[q.key];
+    return q.type === "text" ? !!(value && String(value).trim()) : !!value;
+  };
   const render = () => {
-    const slide = WEB_ONBOARDING_SLIDES[index];
-    const isLast = index === WEB_ONBOARDING_SLIDES.length - 1;
+    const q = WEB_ONBOARDING_QUESTIONS[index];
+    const isLast = index === total - 1;
+    const field = q.type === "text"
+      ? `<input type="text" class="web-onboarding-input" id="web-onboarding-input"
+                placeholder="${escapeHtml(q.placeholder || "")}"
+                value="${escapeHtml(onboardingAnswers[q.key] || "")}"
+                autocomplete="off" autocapitalize="words" maxlength="40" />`
+      : `<div class="web-onboarding-options" role="listbox">
+          ${q.options.map(([value, label]) => `
+            <button type="button" class="web-onboarding-option${onboardingAnswers[q.key] === value ? " is-selected" : ""}"
+                    data-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`).join("")}
+         </div>`;
     overlay.innerHTML = `
       <div class="web-onboarding-inner">
-        <button type="button" class="web-onboarding-skip" data-onboard-skip>Skip</button>
-        <div class="web-onboarding-slide">
-          <div class="web-onboarding-icon" aria-hidden="true">${slide.icon}</div>
-          <p class="web-onboarding-eyebrow">${escapeHtml(slide.eyebrow)}</p>
-          <h2 class="web-onboarding-title">${escapeHtml(slide.title)}</h2>
-          <p class="web-onboarding-body">${escapeHtml(slide.body)}</p>
+        <div class="web-onboarding-slide web-onboarding-slide-q">
+          <p class="web-onboarding-eyebrow">${escapeHtml(q.eyebrow)}</p>
+          <h2 class="web-onboarding-title">${escapeHtml(q.title)}</h2>
+          ${field}
         </div>
         <div class="web-onboarding-footer">
           <div class="web-onboarding-dots" aria-hidden="true">
-            ${WEB_ONBOARDING_SLIDES.map((_, i) => `<span class="${i === index ? "is-active" : ""}"></span>`).join("")}
+            ${WEB_ONBOARDING_QUESTIONS.map((_, i) => `<span class="${i === index ? "is-active" : ""}"></span>`).join("")}
           </div>
           <div class="web-onboarding-actions">
             ${index > 0 ? `<button type="button" class="web-onboarding-back" data-onboard-back>Back</button>` : ""}
-            <button type="button" class="web-onboarding-next" data-onboard-next>${isLast ? "Start training" : "Next"}</button>
+            <button type="button" class="web-onboarding-next" data-onboard-next ${answered(q) ? "" : "disabled"}>${isLast ? "Done" : "Continue"}</button>
           </div>
         </div>
       </div>`;
+    const input = overlay.querySelector("#web-onboarding-input");
+    if (input) {
+      window.setTimeout(() => input.focus(), 120);
+      input.addEventListener("input", () => {
+        onboardingAnswers[q.key] = input.value;
+        const next = overlay.querySelector("[data-onboard-next]");
+        if (next) next.disabled = !answered(q);
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && answered(q)) overlay.querySelector("[data-onboard-next]")?.click();
+      });
+    }
   };
   const finish = () => {
+    saveWebOnboardingAnswers();
     markWebOnboardingSeen();
-    document.removeEventListener("keydown", onKey);
     overlay.remove();
     document.documentElement.classList.remove("web-onboarding-open");
     onDone();
   };
-  function onKey(event) { if (event.key === "Escape") finish(); }
   overlay.addEventListener("click", (event) => {
-    if (event.target.closest("[data-onboard-skip]")) { finish(); return; }
+    const option = event.target.closest(".web-onboarding-option");
+    if (option) {
+      const q = WEB_ONBOARDING_QUESTIONS[index];
+      onboardingAnswers[q.key] = option.dataset.value;
+      // Single-select auto-advances; the last question waits on Done.
+      if (index < total - 1) {
+        option.classList.add("is-selected");
+        window.setTimeout(() => { index += 1; render(); }, 160);
+      } else {
+        render();
+      }
+      return;
+    }
     if (event.target.closest("[data-onboard-back]")) { index = Math.max(0, index - 1); render(); return; }
     if (event.target.closest("[data-onboard-next]")) {
-      if (index >= WEB_ONBOARDING_SLIDES.length - 1) finish();
+      if (!answered(WEB_ONBOARDING_QUESTIONS[index])) return;
+      if (index >= total - 1) finish();
       else { index += 1; render(); }
     }
   });
-  document.addEventListener("keydown", onKey);
   render();
   document.documentElement.classList.add("web-onboarding-open");
   document.body.appendChild(overlay);
@@ -5753,6 +5802,7 @@ function showLanding() {
 
 function enterApp() {
   document.documentElement.classList.remove("landing-active");
+  syncWebFunnel();
 }
 
 // Set when the gate is opened from a landing-page button, so onAuthenticated
@@ -6145,11 +6195,12 @@ async function initAuth() {
     return;
   }
   if (!session?.user) {
-    // Not signed in. Native keeps the sign-in wall; web goes straight to the
-    // dashboard as a guest and asks for sign-in only when the user starts something.
+    // Not signed in. Both native and web open on the sign-in wall now — a new
+    // web visitor signs in with Google first, then onboarding, then the test;
+    // there is no guest dashboard any more.
     const authError = new URLSearchParams(window.location.search).get("autherror");
-    if (authError && nativeWall) setSignInError("Sign-in didn't complete. Please try again.");
-    if (cogniUiMode === "pro") { bootWebIntoApp(); return; }
+    if (authError) setSignInError("Sign-in didn't complete. Please try again.");
+    if (cogniUiMode === "pro") { bootWebIntoSignIn(); return; }
     showLanding();
     finalizeBootAsLanding();
     return;
@@ -6191,6 +6242,28 @@ function bootWebIntoApp() {
   renderProfileOnboarding();
 }
 
+// Web first-run gate: no session yet, so the sign-in wall is the whole screen.
+// Nothing behind it renders until Google (or email) sign-in succeeds — a new
+// visitor has no way into the app without an account.
+function bootWebIntoSignIn() {
+  showSignInFirst();
+  routerReady = true;
+}
+
+// The web onboarding funnel: a signed-in visitor who has answered the onboarding
+// questions but not yet taken a test is funnelled straight to it — no rail, no
+// switch, no other navigation — until the first sitting exists. Once they have a
+// result the funnel lifts and the full dashboard (rail included) appears.
+function webFunnelActive() {
+  return cogniUiMode === "pro"
+    && !!authUser && !guestMode
+    && hasSeenWebOnboarding()
+    && loadCatSessions().length === 0;
+}
+function syncWebFunnel() {
+  document.documentElement.classList.toggle("web-funnel", webFunnelActive());
+}
+
 function onAuthenticated() {
   hideAuthGate();
   hideSignInFirst();
@@ -6204,6 +6277,25 @@ function onAuthenticated() {
   // First launch on mobile: the story onboarding runs before the app.
   if (needsOnboarding()) {
     showOnboarding();
+    return;
+  }
+  // First launch on web: Google sign-in is done, so now the onboarding questions,
+  // then the test funnel. Nothing else is reachable until the first test is taken.
+  if (cogniUiMode === "pro" && !guestMode && !hasSeenWebOnboarding()) {
+    renderAccountMenu();
+    enterApp();
+    applyingRoute = true;
+    showAssessments();
+    applyingRoute = false;
+    if (window.location.pathname !== routeTabToPath.assessments) {
+      history.replaceState({ tab: "assessments" }, "", routeTabToPath.assessments);
+    }
+    routerReady = true;
+    showWebOnboarding(() => {
+      syncWebFunnel();
+      showAssessments();
+    });
+    handleCheckoutReturn();
     return;
   }
   renderAccountMenu();
@@ -6440,6 +6532,12 @@ function wireSignInFirst() {
   if (signInFirstWired) return;
   signInFirstWired = true;
   wireGoogleDeepLink();
+  // Apple sign-in needs the native plugin, so on the web it would only ever fail
+  // — hide it there and let Google (and email) be the path.
+  if (!window.Capacitor?.isNativePlatform?.()) {
+    const apple = document.querySelector("#signin-apple");
+    if (apple) apple.hidden = true;
+  }
   document.querySelector("#signin-apple")?.addEventListener("click", handleAppleSignIn);
   document.querySelector("#signin-google")?.addEventListener("click", () => {
     if (window.Capacitor?.isNativePlatform?.()) {
@@ -8168,15 +8266,26 @@ function renderMeasurementSales() {
   const insight = (title, body) =>
     `<article class="sales-card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></article>`;
 
+  // In the onboarding funnel the hero is the "you're all set, now take it" screen
+  // (no rail, no nav). Personalise it with the name from the onboarding questions.
+  const funnel = webFunnelActive();
+  let firstName = (onboardingAnswers.name || "").trim().split(/\s+/)[0];
+  if (!firstName) {
+    try { firstName = (JSON.parse(localStorage.getItem(onboardingAnswersKey))?.name || "").trim().split(/\s+/)[0]; } catch { /* ignore */ }
+  }
+  const eyebrow = funnel ? "You're all set" : "Cogni Measurement";
+  const title = funnel
+    ? (firstName ? `You're all set, ${escapeHtml(firstName)}.` : "You're all set.")
+    : "Find out how your mind actually works";
+  const lede = funnel
+    ? `One sitting sets your baseline — ${total} short subtests across the six core abilities. Take them now; you'll get a composite score and a full breakdown at the end.`
+    : `${total} subtests across the six abilities in the Cattell-Horn-Carroll model. You'll get a composite score, every index behind it, and a plain reading of where you're strong and where you're not.`;
+
   host.innerHTML = `
     <div class="sales-hero">
-      <p class="sales-eyebrow">Cogni Measurement</p>
-      <h2 class="sales-title">Find out how your mind actually works</h2>
-      <p class="sales-lede">
-        ${total} subtests across the six abilities in the Cattell-Horn-Carroll model. You'll get a
-        composite score, every index behind it, and a plain reading of where you're strong and
-        where you're not.
-      </p>
+      <p class="sales-eyebrow">${eyebrow}</p>
+      <h2 class="sales-title">${title}</h2>
+      <p class="sales-lede">${lede}</p>
 
       <button class="sales-cta" id="sales-start" type="button">Start test</button>
 
@@ -8318,6 +8427,9 @@ function renderMeasureCats() {
 }
 
 function renderMeasurePicker(selectedId) {
+  // The funnel lifts the instant a result exists, so re-evaluate it on every
+  // measure render (this is the path the first completed sitting flows through).
+  syncWebFunnel();
   const attempt = loadMeasureAttempt();
   // A visitor with nothing measured and nothing started gets the sales page.
   const isNewVisitor = !loadCatSessions().length && measureCompletedCount(attempt) === 0;
