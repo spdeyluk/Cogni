@@ -7319,9 +7319,14 @@ function showAssessmentList() {
     saveCatActive();
   }
   clearCatSubtestTimers();
-  // Landing on the IQ page always starts clean — the overview card, report
-  // folded, the side list collapsed, and the subtest picker closed.
-  measurementReportOpen = false;
+  // Landing on the IQ page: the side list collapsed and the subtest picker closed.
+  // On the web there's no "previous scores" strip to open a report from, so the
+  // report IS the dashboard — a returning visitor with results and no attempt
+  // underway lands straight on their latest sitting (Back steps out to the hub).
+  // Native (and mid-attempt, and anyone with no results) starts folded.
+  measurementReportOpen = cogniUiMode === "pro"
+    && !measureAttemptStarted()
+    && loadCatSessions().length > 0;
   measureReportsExpanded = false;
   measureSubtestsOpen = false;
   renderMeasurePicker();
@@ -7480,9 +7485,8 @@ let measurementTab = "overview";
 let measurementSessionIndex = 0;
 // Which index the Overview's big panel is reading: "overall", or one of the six.
 let measurementFocus = "overall";
-// The report no longer springs open on its own. Landing on the IQ page shows the
-// clean "take the test" card; the full dashboard only unfolds when a previous
-// score is picked from the side list.
+// Default folded; showAssessmentList() decides per visit (see there — on the web
+// a returning visitor with results lands straight on their latest report).
 let measurementReportOpen = false;
 // Whether the side "Previous scores" list is showing all sittings (scrollable)
 // or just the most recent few.

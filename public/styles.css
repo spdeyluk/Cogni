@@ -20228,12 +20228,12 @@ html.mode-pro:not(.landing-active) .app-content { padding-left: 280px !important
 .site-rail-brand img { width: auto; height: 24px; object-fit: contain; }
 
 .site-rail-account {
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--bg);
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 0;
+  background: none;
 }
-.site-rail-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.site-rail-user { display: flex; align-items: center; gap: 10px; margin-bottom: 0; }
 .site-rail-avatar {
   display: grid; place-items: center;
   width: 38px; height: 38px;
@@ -20253,32 +20253,26 @@ html.mode-pro:not(.landing-active) .app-content { padding-left: 280px !important
   font-weight: 700;
   letter-spacing: 0.08em;
 }
-.site-rail-upgrade {
-  width: 100%;
-  min-height: 42px;
+/* Guests get a quiet Log in link under their name — no boxed CTA in the rail. */
+.site-rail-account .site-rail-login {
+  display: inline-block;
+  width: auto;
+  min-height: 0;
+  margin: 10px 0 0 48px;
+  padding: 0 !important;
   border: 0 !important;
-  border-radius: 10px !important;
-  background: var(--text) !important;
-  color: var(--bg) !important;
-  font-weight: 650;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-.site-rail-upgrade:hover { opacity: 0.88; }
-
-/* Guests get a Log in button in place of the upgrade CTA. */
-.site-rail-login {
-  width: 100%;
-  min-height: 42px;
-  border: 1px solid var(--line-strong) !important;
-  border-radius: 10px !important;
+  border-radius: 0 !important;
   background: none !important;
-  color: var(--text) !important;
-  font-weight: 650;
-  font-size: 0.9rem;
+  color: var(--accent) !important;
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
 }
-.site-rail-login:hover { background: var(--fill-subtle) !important; }
+.site-rail-account .site-rail-login:hover {
+  background: none !important;
+  color: var(--accent) !important;
+  text-decoration: underline;
+}
 
 .site-rail-nav { display: grid; gap: 2px; }
 html.mode-pro .site-rail-nav .site-tab {
@@ -20594,48 +20588,42 @@ html.mode-pro .app-shell.profile-open .hero { display: none; }
 html.mode-pro .app-shell.assessments-open .dashboard-switch,
 html.mode-pro .app-shell.profile-open .dashboard-switch {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  gap: 6px;
   width: fit-content;
-  margin: 2px auto 26px;
-  padding: 5px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  margin: 2px auto 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 /* The report view brings its own top bar, so the switch steps aside there. */
 html.mdash-on .dashboard-switch { display: none !important; }
 .dashboard-switch-btn {
   position: relative;
   z-index: 1;
-  padding: 9px 28px !important;
+  padding: 6px 14px 11px !important;
   border: 0 !important;
-  border-radius: 999px !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
   background: none !important;
   color: var(--muted) !important;
-  font-size: 0.95rem;
-  font-weight: 650;
+  font-size: 0.98rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
-  transition: color 0.25s ease;
+  transition: color 0.18s ease, border-color 0.18s ease;
   box-shadow: none !important;
 }
-.dashboard-switch-btn.active { color: #fff !important; }
+.dashboard-switch-btn.active {
+  color: var(--text) !important;
+  border-bottom-color: var(--text) !important;
+}
 .dashboard-switch-btn:hover { background: none !important; }
 .dashboard-switch-btn:hover:not(.active) { color: var(--text) !important; }
-.dashboard-switch-thumb {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  bottom: 5px;
-  width: calc(50% - 5px);
-  border-radius: 999px;
-  background: var(--accent);
-  box-shadow: 0 6px 16px -6px var(--accent);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.dashboard-switch[data-active="results"] .dashboard-switch-thumb { transform: translateX(100%); }
+/* Underline tabs — the sliding pill thumb is gone. */
+.dashboard-switch-thumb { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .dashboard-switch-thumb, .dashboard-switch-btn { transition: none; }
 }
@@ -21427,10 +21415,9 @@ html.mode-play .measure-hub-reset {
 
 /* Previous scores now sit below the card as a quiet secondary block you scroll
    to — not a headline element sharing the card. */
-html.mode-pro .measure-hub-reports {
-  margin: 0 0 40px;
-  padding: 6px 2px 0;
-}
+/* "Previous scores" strip removed from the web hub — the dashboard shows the
+   latest result on its own; a horizontal history row cluttered the clean page. */
+html.mode-pro .measure-hub-reports { display: none !important; }
 html.mode-pro .measure-hub-reports .measure-hub-eyebrow { margin-bottom: 12px; }
 html.mode-pro .measure-hub-reports .measure-hub-list {
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
