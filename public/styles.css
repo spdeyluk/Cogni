@@ -19385,24 +19385,29 @@ html.mode-pro .measure-dashboard {
    of those tokens rather than a second stylesheet. Native keeps the dark
    palette regardless — applyTheme() pins data-theme="dark" in play mode.
    =================================================================== */
+/* Clinical / medical-dashboard rebrand (web): all sans, no serif display face. */
+html.mode-pro { --font-serif: var(--font-sans); }
+
 html.mode-pro:not([data-theme="dark"]) {
   color-scheme: light;
-  --bg: #FFFFFF;
+  /* A light cool-grey page so white cards read as cards — the medical-dashboard
+     look. Neutrals are cool slate (Untitled-UI family) rather than warm zinc. */
+  --bg: #F6F7F9;
   --surface: #FFFFFF;
-  --surface-2: #F4F4F5;
-  --text: #18181B;
-  --text-2: #3F3F46;
-  --muted: #71717A;
-  --line: #E4E4E7;
-  --line-strong: #D4D4D8;
-  --fill-subtle: rgba(24, 24, 27, 0.05);
+  --surface-2: #EEF1F5;
+  --text: #0F172A;
+  --text-2: #475467;
+  --muted: #667085;
+  --line: #E7EAEF;
+  --line-strong: #D5DAE2;
+  --fill-subtle: rgba(15, 23, 42, 0.04);
   --accent: #4A5BFF;
   --accent-2: #3B49D6;      /* darkened: the light accent had no contrast on white */
   --on-accent: #FFFFFF;
   --success: #15803D;
   --error: #DC2626;
   --warning: #B45309;
-  --shadow: 0 1px 2px rgba(24, 24, 27, 0.08);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.04);
   --glass: rgba(255, 255, 255, 0.9);
   --sidebar: var(--surface);
   --surface-soft: var(--surface-2);
