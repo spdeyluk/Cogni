@@ -15,7 +15,7 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20261001-web189">
+    <link rel="stylesheet" href="styles.css?v=20261001-web190">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -2263,10 +2263,17 @@
     <dialog class="session-summary-dialog" id="session-summary-dialog">
       <form method="dialog">
         <div class="session-summary-header">
-          <span>Session summary</span>
+          <span>Round summary</span>
           <button id="close-session-summary" value="close" type="submit" aria-label="Close summary">Done</button>
         </div>
-        <h2>N-back complete</h2>
+        <div class="summary-scoreblock">
+          <p class="summary-score-eyebrow" id="summary-title">Round complete</p>
+          <div class="summary-score-row">
+            <span class="summary-score-value" id="summary-score">0</span>
+            <span class="summary-best-badge" id="summary-best-badge" hidden>New best</span>
+          </div>
+          <p class="summary-score-sub" id="summary-best"></p>
+        </div>
         <dl class="session-summary-grid">
           <div>
             <dt>Test</dt>
@@ -2709,6 +2716,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261001-web189"></script>
+    <script type="module" src="src/app/main.js?v=20261001-web190"></script>
   </body>
 </html>

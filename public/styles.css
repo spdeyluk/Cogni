@@ -4440,6 +4440,51 @@ pre {
   line-height: 1;
 }
 
+/* The round score headlines the summary — the number a player compares. */
+.summary-scoreblock {
+  text-align: center;
+  padding: 4px 0 2px;
+}
+.summary-score-eyebrow {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.summary-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.summary-score-value {
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.summary-best-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.summary-best {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  min-height: 1em;
+}
+
 .session-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -20266,12 +20311,10 @@ html.mode-pro.landing-active .site-rail { display: none; }
 html.mode-pro:not(.landing-active) .site-header { display: none; }
 html.mode-pro:not(.landing-active) .app-content { padding-left: 280px !important; }
 
-/* Onboarding funnel: a signed-in visitor with no result yet sees only the test.
-   No rail, no view switch, no other navigation — the content fills the page. */
-html.web-funnel.mode-pro .site-rail { display: none !important; }
-html.web-funnel.mode-pro .dashboard-switch { display: none !important; }
-html.web-funnel.mode-pro:not(.landing-active) .app-content { padding-left: 32px !important; }
-/* A single, deliberate "Start test" screen — drop the explainer grid beneath it. */
+/* Onboarding funnel: a freshly-onboarded visitor with no result yet lands on a
+   clean, personalised "You're all set / Start test" screen. The rail stays —
+   exercises are free and reachable without taking the test first — but the
+   dashboard explainer grid is dropped so the first screen is a single action. */
 html.web-funnel .sales-section { display: none !important; }
 
 .site-rail-brand {

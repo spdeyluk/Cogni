@@ -11322,15 +11322,10 @@ function quitSession() {
   // for what was completed, rather than ending silently.
   if (session.results.length > 0) {
     const score = scoreQuadNBackSession(session.results, session.config.activeModalities);
-    showSessionSummary({
+    maybeShowExerciseSummary("nback", savedProgress, {
       test: `${session.config.n}-back · ${session.config.activeModalities.map(formatModalityName).join(", ")} (ended early)`,
-      durationMs: elapsedSessionMs(session.startedAt),
-      correct: score.hits,
       misses: score.misses,
-      falseAlarms: score.falseAlarms,
-      answerSpeedMs: averageNBackReactionTime(),
-      accuracy: score.accuracy,
-      coinsEarned: savedProgress?.coinAward ?? 0
+      falseAlarms: score.falseAlarms
     });
   }
 }
@@ -11507,17 +11502,12 @@ function finishSession() {
   elements.feedback.textContent = "";
   const savedProgress = saveNBackProgress("complete", score);
   elements.appShell.classList.remove("game-active", "nback-game-active");
-  showSessionSummary({
+  const shown = maybeShowExerciseSummary("nback", savedProgress, {
     test: `${session.config.n}-back · ${session.config.activeModalities.map(formatModalityName).join(", ")}`,
-    durationMs: elapsedSessionMs(session.startedAt),
-    correct: score.hits,
     misses: score.misses,
-    falseAlarms: score.falseAlarms,
-    answerSpeedMs: averageNBackReactionTime(),
-    accuracy: score.accuracy,
-    coinsEarned: savedProgress?.coinAward ?? 0
+    falseAlarms: score.falseAlarms
   });
-  handleRoutineExerciseFinished({ waitForSummary: true });
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 function updateLiveStats() {
@@ -11773,7 +11763,8 @@ function finishRrtSession() {
     settings: rrtSettingsSummary(),
     today: savedProgress.today
   }, null, 2);
-  handleRoutineExerciseFinished();
+  const shown = maybeShowExerciseSummary("rrt", savedProgress);
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 function startRrtTimer() {
@@ -12103,7 +12094,8 @@ function finishCctSession() {
     today: savedProgress.today
   }, null, 2);
   updateCctStats();
-  handleRoutineExerciseFinished();
+  const shown = maybeShowExerciseSummary("cct", savedProgress);
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 function updateCctStats() {
@@ -12373,6 +12365,8 @@ function finishUfovSession() {
     today: savedProgress.today
   }, null, 2);
   updateUfovStats();
+  const shown = maybeShowExerciseSummary("ufov", savedProgress);
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 function updateUfovStats() {
@@ -12586,7 +12580,8 @@ function finishIctSession() {
     today: savedProgress.today
   }, null, 2);
   updateIctStats();
-  handleRoutineExerciseFinished();
+  const shown = maybeShowExerciseSummary("ict", savedProgress);
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 function renderIctPreview() {
@@ -14009,12 +14004,87 @@ function nBackTrialTimeMs() {
   return value;
 }
 
+// A round's score is the weighted score the exercise already computes
+// (accuracy scaled by how hard the settings were). It is the one number a
+// player can compare with others, so it headlines the summary, with their own
+// personal best underneath. Bests are kept per exercise on the device.
+const EXERCISE_SUMMARY_LABELS = {
+  nback: "N-Back",
+  rrt: "Relational Reasoning",
+  cct: "Cognitive Control",
+  ict: "Inhibitory Control",
+  mot: "Multiple Object Tracking",
+  ufov: "Useful Field of View"
+};
+const EXERCISE_BESTS_KEY = "cogni.exerciseBests.v1";
+function loadExerciseBests() {
+  try { return JSON.parse(localStorage.getItem(EXERCISE_BESTS_KEY)) || {}; } catch { return {}; }
+}
+function recordExerciseBest(exerciseId, score) {
+  const bests = loadExerciseBests();
+  const previous = Number(bests[exerciseId]) || 0;
+  const isBest = score > previous;
+  if (isBest) {
+    bests[exerciseId] = score;
+    try { localStorage.setItem(EXERCISE_BESTS_KEY, JSON.stringify(bests)); } catch { /* best effort */ }
+  }
+  return { best: Math.max(previous, score), isBest };
+}
+
+// Show the end-of-round summary from an exercise's saved progress. Returns true
+// when a dialog was shown (a round with trials), so the caller knows whether a
+// routine should wait on it. nback passes its signal-detection cells through.
+function maybeShowExerciseSummary(exerciseId, savedProgress, extras = {}) {
+  const session = savedProgress?.session;
+  if (!session || !(session.completedTrials > 0)) return false;
+  const score = Math.round(Number(session.weightedScore) || 0);
+  const { best, isBest } = recordExerciseBest(exerciseId, score);
+  showSessionSummary({
+    test: extras.test ?? EXERCISE_SUMMARY_LABELS[exerciseId] ?? "Session",
+    durationMs: Math.round((session.durationMinutes ?? 0) * 60000),
+    correct: session.correct ?? 0,
+    misses: extras.misses ?? null,
+    falseAlarms: extras.falseAlarms ?? null,
+    answerSpeedMs: session.avgAnswerSpeedMs,
+    accuracy: session.accuracy,
+    score,
+    best,
+    isBest,
+    coinsEarned: savedProgress?.coinAward ?? 0
+  });
+  return true;
+}
+
+// Fill a summary cell, hiding its whole row when the value is absent (so the
+// signal-detection cells only appear for the exercise that reports them).
+function setSummaryCell(selector, value, format = (v) => v) {
+  const dd = document.querySelector(selector);
+  if (!dd) return;
+  const cell = dd.closest("div");
+  const show = value !== null && value !== undefined && value !== "";
+  if (cell) cell.hidden = !show;
+  if (show) dd.textContent = format(value);
+}
+
 function showSessionSummary(summary) {
+  const title = document.querySelector("#summary-title");
+  if (title) title.textContent = summary.test ? `${summary.test} complete` : "Round complete";
+  const scoreEl = document.querySelector("#summary-score");
+  if (scoreEl) scoreEl.textContent = Number.isFinite(summary.score) ? String(summary.score) : "–";
+  const badge = document.querySelector("#summary-best-badge");
+  if (badge) badge.hidden = !summary.isBest;
+  const bestEl = document.querySelector("#summary-best");
+  if (bestEl) {
+    bestEl.textContent = summary.isBest
+      ? "A new personal best"
+      : (Number.isFinite(summary.best) && summary.best > 0 ? `Your best: ${summary.best}` : "");
+  }
+
   elements.summaryTest.textContent = summary.test;
   elements.summaryTime.textContent = formatDuration(summary.durationMs);
   elements.summaryCorrect.textContent = summary.correct;
-  elements.summaryMisses.textContent = summary.misses;
-  elements.summaryFalseAlarms.textContent = summary.falseAlarms;
+  setSummaryCell("#summary-misses", summary.misses);
+  setSummaryCell("#summary-false-alarms", summary.falseAlarms);
   elements.summarySpeed.textContent = Number.isFinite(summary.answerSpeedMs)
     ? `${Math.round(summary.answerSpeedMs)} ms`
     : "-";
@@ -14387,6 +14457,8 @@ function finishMotSession() {
     today: savedProgress.today
   }, null, 2);
   updateMotStats();
+  const shown = maybeShowExerciseSummary("mot", savedProgress);
+  handleRoutineExerciseFinished({ waitForSummary: shown });
 }
 
 async function initMotScene() {
