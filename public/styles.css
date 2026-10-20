@@ -20749,7 +20749,7 @@ html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar {
   border-bottom: 1px solid var(--line-strong);
 }
 /* Out of flow, so the report reserves the height it takes. */
-html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .app-content { padding-top: 62px !important; }
+html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .app-content { padding-top: 88px !important; }
 html.rail-collapsed.mode-pro .mdash-topbar { padding-left: 108px; }
 html.mode-pro .mdash-topbar-inner {
   display: flex;
@@ -20907,8 +20907,8 @@ html.mode-pro .mdash-connect {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
-  height: 32px;
-  margin-top: -18px;
+  height: 36px;
+  margin-top: 0;
 }
 html.mode-pro .mdash-connect i {
   display: block;
@@ -20920,7 +20920,9 @@ html.mode-pro .mdash-connect i {
     color-mix(in srgb, var(--text) 42%, transparent),
     color-mix(in srgb, var(--text) 16%, transparent));
 }
-html.mode-pro .mdash-connect + .mdash-overall { margin-top: -18px; }
+/* The connector strip IS the gap: the lines run the full 36px from the cards'
+   bottom edge to the panel's top edge, with no overlap either side. */
+html.mode-pro .mdash-connect + .mdash-overall { margin-top: 0; }
 
 /* --- The panel everything funnels into -------------------------------- */
 html.mode-pro .mdash-overall {
@@ -21107,6 +21109,8 @@ html.mode-pro .mdash-subtab.is-active {
 @media (max-width: 1280px) {
   html.mode-pro .mdash-pillars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   html.mode-pro .mdash-connect { display: none; }
+  /* No connector lines on narrow screens, so keep the gap explicitly. */
+  html.mode-pro .mdash-connect + .mdash-overall { margin-top: 20px; }
   html.mode-pro .mdash-overall-body { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 @media (max-width: 900px) {
