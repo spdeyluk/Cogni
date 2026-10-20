@@ -20046,19 +20046,19 @@ html.mode-pro.landing-active .site-login { background: #fff !important; color: #
    target rather than something to aim at. */
 .sales-cta {
   width: min(320px, 100%);
-  min-height: 58px;
+  min-height: 56px;
   border: 0 !important;
-  border-radius: 12px !important;
-  background: var(--accent) !important;
-  color: #fff !important;
-  font-size: 1.08rem;
-  font-weight: 650;
+  border-radius: 999px !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-size: 1.04rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(74, 91, 255, 0.28);
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--text) 60%, transparent);
+  transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
 }
-.sales-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 36px rgba(74, 91, 255, 0.34); }
+.sales-cta:hover { transform: translateY(-1px); opacity: 0.9; background: var(--text) !important; color: var(--bg) !important; box-shadow: 0 14px 32px -12px color-mix(in srgb, var(--text) 70%, transparent); }
 .sales-cta:active { transform: translateY(0); }
 
 .sales-meta { margin: 18px 0 0; color: var(--muted); font-size: 0.9rem; }
@@ -20401,7 +20401,7 @@ html.mode-pro .site-rail-nav .site-tab svg {
 html.mode-pro .site-rail-nav .site-tab:hover { background: var(--fill-subtle) !important; color: var(--text) !important; }
 html.mode-pro .site-rail-nav .site-tab.active {
   background: var(--fill-subtle) !important;
-  color: var(--accent) !important;
+  color: var(--text) !important;
   font-weight: 600;
 }
 
@@ -21351,17 +21351,17 @@ html[data-theme="dark"] .measure-cat {
   padding: 13px 26px !important;
   border: 0 !important;
   border-radius: 999px !important;
-  background: var(--accent) !important;
-  color: #fff !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
   font-size: 0.98rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 8px 24px -8px var(--accent);
+  box-shadow: 0 10px 26px -12px color-mix(in srgb, var(--text) 70%, transparent);
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .measure-hub-results > * { position: relative; z-index: 1; }
-.measure-hub-results-spark { width: 17px; height: 17px; fill: #fff; flex: none; }
+.measure-hub-results-spark { width: 17px; height: 17px; fill: currentColor; flex: none; }
 /* The shine: a light band that sweeps across every few seconds. */
 .measure-hub-results::after {
   content: "";
@@ -21377,8 +21377,9 @@ html[data-theme="dark"] .measure-cat {
 }
 .measure-hub-results:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px -8px var(--accent);
-  background: var(--accent) !important; /* survive the global button:hover repaint */
+  box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--text) 80%, transparent);
+  background: var(--text) !important; /* survive the global button:hover repaint */
+  color: var(--bg) !important;
 }
 .measure-hub-results:disabled {
   background: var(--fill-subtle) !important;
@@ -21445,32 +21446,86 @@ html[data-theme="dark"] .measure-cat {
 @media (prefers-reduced-motion: reduce) {
   .mdash-reel-strip { transition: none; }
 }
+/* Primary CTAs are dark pills (ink on paper), the professional-dashboard idiom:
+   the accent is kept for badges and the live marker, not for buttons. In dark
+   mode --text/--bg invert so the pill stays the high-contrast one. */
 .mdash-unlock-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 11px 5px 9px !important;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px 9px 14px !important;
   border: 0 !important;
   border-radius: 999px !important;
-  background: var(--accent) !important;
-  color: #fff !important;
-  font-size: 0.76rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--text) 60%, transparent);
+  transition: transform 0.14s ease, opacity 0.14s ease;
 }
 /* The global button:hover repaints hovered buttons to --surface; keep the pill. */
-.mdash-unlock-chip:hover { background: var(--accent) !important; border: 0 !important; opacity: 0.9; }
+.mdash-unlock-chip:hover { background: var(--text) !important; color: var(--bg) !important; border: 0 !important; opacity: 0.88; transform: translateY(-1px); }
 .mdash-unlock-chip svg {
+  width: 14px; height: 14px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+/* A locked pillar is a static box (not a control) with its score blurred and a
+   full-width unlock pill pinned to its foot. */
+.mdash-pillar-locked { cursor: default; }
+.mdash-pillar-unlock {
+  margin-top: auto;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px !important;
+  font-size: 0.78rem;
+}
+.mdash-pillar-unlock svg { width: 13px; height: 13px; }
+.mdash-overall-unlock { margin-left: 12px; vertical-align: middle; }
+
+/* Unlocked pillar: a quiet teal "view" line, the positive counterpart to the
+   dark unlock pill. */
+.mdash-pillar-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #1FA98F 14%, transparent);
+  color: #15806C;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mdash-pillar-view svg {
   width: 13px; height: 13px; flex: none;
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
-/* A locked pillar is a static box (not a control) with its score blurred and an
-   unlock button pinned to its foot. */
-.mdash-pillar-locked { cursor: default; }
-.mdash-pillar-unlock { margin-top: auto; align-self: flex-start; }
-.mdash-overall-unlock { margin-left: 12px; vertical-align: middle; }
+html[data-theme="dark"] .mdash-pillar-view { color: #4FD1B5; }
+
+/* Locked curve: the unlock pill floats over the veiled chart. */
+.mdash-chart.is-locked { position: relative; }
+.mdash-chart-veil {
+  position: absolute;
+  inset: 0 0 auto 0;
+  top: 38%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.mdash-chart-veil .mdash-chart-unlock {
+  pointer-events: auto;
+  padding: 12px 20px 12px 17px !important;
+  font-size: 0.92rem;
+  box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--text) 70%, transparent);
+}
 
 /* The primary CTA styling above is .mode-pro-scoped, so in play mode the button
    would fall back to a plain outline. Give it a solid, prominent accent fill. */

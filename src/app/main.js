@@ -7910,10 +7910,10 @@ function setupMcurveRoll(host) {
 
 // A small, self-contained unlock button for a locked score box. Every box gets
 // its own — they all open the same checkout, but pressing one feels direct.
-function mdashUnlockButton(extraClass = "") {
+function mdashUnlockButton(extraClass = "", label = "Unlock your score") {
   return `<button class="mdash-unlock-chip${extraClass ? " " + extraClass : ""}" type="button" data-mdash-unlock>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 9.6-2"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>
-    Unlock</button>`;
+    ${escapeHtml(label)}</button>`;
 }
 
 // "Top 8.1%" / "Bottom 47.3%" — how a percentile reads out loud.
@@ -7964,7 +7964,7 @@ function measurePillars(ranked, unlocked) {
       if (!unlocked) {
         return `<article class="mdash-pillar mdash-pillar-locked">
           ${head}
-          ${mdashUnlockButton("mdash-pillar-unlock")}
+          ${mdashUnlockButton("mdash-pillar-unlock", "Unlock score")}
         </article>`;
       }
       return `<button class="mdash-pillar${focused ? " is-focused" : ""}" type="button"
@@ -7976,6 +7976,7 @@ function measurePillars(ranked, unlocked) {
           <span class="mdash-chip">${standingLabel(entry.percentile)}</span>
           <span class="mdash-rarity">1 in ${rarity.one_in}</span>
         </span>
+        <span class="mdash-pillar-view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>View ${escapeHtml(meta.short)} breakdown</span>
       </button>`;
     }).join("")}
   </div>`;
@@ -8064,7 +8065,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
           ${unlocked ? measureFacts(record, focus, best, worst) : `
             <p class="mdash-body">Unlock the report to see the breakdown behind this score.</p>`}
         </div>
-        <figure class="mdash-chart">
+        <figure class="mdash-chart${unlocked ? "" : " is-locked"}">
           ${measureCurveSvg({
             score, percentile: pct,
             ceilingScore: ceiling?.score ?? null,
@@ -8072,6 +8073,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
             axisTitle: focus ? `${focus.short} score` : "Composite score",
             unlocked
           })}
+          ${unlocked ? "" : `<div class="mdash-chart-veil">${mdashUnlockButton("mdash-chart-unlock", "Unlock to see where you stand")}</div>`}
           <figcaption>${unlocked && ceiling
             ? `Your ${focus ? "strongest subtest" : "strongest index"},
                ${escapeHtml(ceiling.name ?? ceiling.short ?? "")}, sits ${ceiling.score - score} points higher.
