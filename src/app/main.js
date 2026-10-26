@@ -1497,6 +1497,17 @@ function openPricingModal() {
   renderPaywallProof();
   renderPaywallTimeline();
   renderPaywallFeatures();
+  if (cogniUiMode === "pro") {
+    const dialog = document.querySelector("#pricing-dialog");
+    const h2 = dialog?.querySelector("h2");
+    const sub = dialog?.querySelector(".paywall-sub");
+    const title = dialog?.querySelector(".paywall-includes-title");
+    const cta = dialog?.querySelector("#pricing-upgrade");
+    if (h2) h2.textContent = "Cogni Pass";
+    if (sub) sub.textContent = "Training is free for everyone. Pass is the IQ test, the full report, and your complete record.";
+    if (title) title.textContent = "What Pass includes";
+    if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
+  }
   if (cogniUiMode === "play") loadApplePaywallPrices();
   renderPaywallCta();
   wirePaywallPlans();
@@ -1654,9 +1665,9 @@ function applyPagePaywall(page, { title, body } = {}) {
     <div class="page-paywall">
       <div class="page-paywall-card">
         <div class="page-paywall-lock" aria-hidden="true">🔒</div>
-        <h2>${escapeHtml(title || "A members feature")}</h2>
-        <p>${escapeHtml(body || "Upgrade to unlock this page.")}</p>
-        <button class="page-paywall-btn" type="button" data-open-pricing>See plans</button>
+        <h2>${escapeHtml(title || "Cogni Pass")}</h2>
+        <p>${escapeHtml(body || "Your stats and history are saved and shown with Cogni Pass.")}</p>
+        <button class="page-paywall-btn" type="button" data-open-pricing>Get Cogni Pass</button>
       </div>
     </div>`;
 }
@@ -1917,7 +1928,12 @@ const paywallTrialDays = 0;
 // What the subscription actually unlocks. Each line maps to a real gate:
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
-const paywallProFeatures = [
+const paywallProFeatures = cogniUiMode === "pro" ? [
+  "The adaptive IQ test and your full report",
+  "Six ability indices, percentile and confidence band",
+  "Every training session saved, with trends over time",
+  "Full session breakdowns, not just the score"
+] : [
   "All stats and history",
   "Full Cogni Measurement report",
   "Advanced training settings",
@@ -4591,8 +4607,8 @@ function showExerciseHub() {
   // Keep whichever hub this build uses populated.
   if (cogniUiMode === "play") renderTrainSections(); else initExerciseTagFilter();
   setActiveTab("exercises");
-  elements.pageTitle.textContent = "Exercises";
-  elements.pageLede.textContent = "Build routines first, or open a standalone cognitive training module below.";
+  elements.pageTitle.textContent = "Train";
+  elements.pageLede.textContent = "Every exercise is open, at every difficulty, as often as you like.";
   elements.start.disabled = false;
   elements.quit.disabled = true;
   elements.startMot.disabled = false;
@@ -4890,9 +4906,14 @@ function renderProfile() {
       </section>
     `}
   `;
+  // Web: the profile itself (identity, shape, friends) is free and social; the
+  // Data view is the saved record, which is what Pass buys.
+  if (cogniUiMode === "pro" && selectedProfileView !== "data") { /* free view */ } else
   applyPagePaywall(elements.profilePage, {
-    title: "Upgrade to access your statistics",
-    body: "Your full cognition profile, trends and per-exercise breakdowns — included with Basic and Pro."
+    title: cogniUiMode === "pro" ? "Your record, kept" : "Upgrade to access your statistics",
+    body: cogniUiMode === "pro"
+      ? "Every session saved, trends by ability, per-exercise breakdowns and your IQ report in one place. Included with Cogni Pass."
+      : "Your full cognition profile, trends and per-exercise breakdowns — included with Basic and Pro."
   });
   if (elements.profilePage.classList.contains("page-locked")) {
     // Native goes straight to the offer rather than making you tap "See plans".
@@ -6227,12 +6248,12 @@ function bootWebIntoApp() {
   enterApp();
   const bootTab = routePathToTab[routeBootPath];
   applyingRoute = true;
-  let landedPath = routeTabToPath.assessments;
+  let landedPath = routeTabToPath.exercises;
   if (bootTab && routeTabHandler(bootTab)) {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab] ?? landedPath;
   } else {
-    showAssessments();
+    showExerciseHub();
   }
   applyingRoute = false;
   if (window.location.pathname !== landedPath) {
@@ -6318,14 +6339,14 @@ function onAuthenticated() {
   // applyingRoute suppresses the automatic pushState so we can replaceState the
   // final URL (no phantom history entry).
   applyingRoute = true;
-  let landedPath = routeTabToPath.assessments;
+  let landedPath = routeTabToPath.exercises;
   if (justSignedIn && cogniUiMode === "pro") {
     // A brand-new sign-in / sign-up always lands on Home, which surfaces the
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
-    showAssessments();
-    // Never let the intro blank the app: Measurement is already rendered underneath.
+    showExerciseHub();
+    // Never let the intro blank the app: Train is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -6335,7 +6356,7 @@ function onAuthenticated() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
-    showAssessments(); // web default: Cogni Measurement is the front door
+    showExerciseHub(); // web default: training is free and open, so it is the front door
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
@@ -6561,7 +6582,9 @@ function wireSignInFirst() {
 // The skip is a mobile-only convenience — it appears only in the native app, never on
 // the web. Remove or tighten this before an App Store release.
 function skipSignInAllowed() {
-  return window.Capacitor?.isNativePlatform?.() === true;
+  if (window.Capacitor?.isNativePlatform?.() === true) return true;
+  // Local development only: lets a dev server preview the app without a session.
+  return ["localhost", "127.0.0.1"].includes(window.location.hostname);
 }
 
 // Enters the app as a local guest — no Supabase session, sync suppressed. Goes
@@ -7348,7 +7371,7 @@ function currentTheme() {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "dark" || saved === "light") return saved;
   } catch { /* private mode */ }
-  return "light";
+  return "dark";
 }
 
 function applyTheme(theme) {
@@ -7736,7 +7759,7 @@ function syncRailAccount() {
   const label = authUser ? (authUser.email?.split("@")[0] ?? "You") : "Guest";
   if (name) name.textContent = label;
   if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
-  if (plan) plan.textContent = unlocked ? "FULL" : "FREE";
+  if (plan) { plan.textContent = unlocked ? "PASS" : "FREE"; plan.classList.toggle("is-pass", unlocked); }
   // Guests get a Log in button and no upgrade CTA (sign in first); signed-in
   // free users get the upgrade CTA.
   if (login) { login.hidden = Boolean(authUser); login.textContent = "Log in"; }
@@ -8292,7 +8315,7 @@ function renderMeasurementSales() {
       <button class="sales-cta" id="sales-start" type="button">Start test</button>
 
       <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
-      <p class="sales-note">Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready.</p>
+      <p class="sales-note">${cogniUiMode === "pro" ? "Included with Cogni Pass, with the full report and your saved history. Training is always free." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
     </div>
 
     <section class="sales-section">
@@ -8810,7 +8833,9 @@ function subtestItemPool(subtest) {
 }
 
 function startSubtest(subtestId) {
-  if (!requireAuth("Sign in to take Cogni Measurement.")) return;
+  if (!requireAuth("Sign in to take the IQ test.")) return;
+  // On the web the test is what Cogni Pass buys. Training stays free.
+  if (cogniUiMode === "pro" && !webPlanUnlocked()) { openPricingModal(); return; }
   const subtest = subtestById(subtestId);
   if (!subtest) return;
   const attempt = loadMeasureAttempt();
@@ -10303,7 +10328,7 @@ function setActiveTab(tab) {
   });
   // The web Dashboard tab owns both the IQ test (assessments) and the exercise
   // stats (statistics) sub-views, so it stays lit for either.
-  const railTab = (tab === "statistics") ? "assessments" : tab;
+  const railTab = tab;
   document.querySelectorAll("[data-site-tab]").forEach((siteTab) => {
     siteTab.classList.toggle("active", siteTab.dataset.siteTab === railTab);
   });
@@ -14104,10 +14129,20 @@ function showSessionSummary(summary) {
     coinsValue.textContent = `+${coins}`;
     coinsCell.hidden = coins <= 0;
   }
+  // Web: the free recap is the score and three numbers for this session. The
+  // full breakdown and the saved history are what Cogni Pass buys.
+  const passLocked = cogniUiMode === "pro" && !webPlanUnlocked();
+  elements.sessionSummaryDialog.classList.toggle("is-free", passLocked);
+  const passCard = document.querySelector("#summary-pass");
+  if (passCard) passCard.hidden = !passLocked;
   if (typeof elements.sessionSummaryDialog.showModal === "function") {
     elements.sessionSummaryDialog.showModal();
   }
 }
+document.querySelector("#summary-pass-cta")?.addEventListener("click", () => {
+  elements.sessionSummaryDialog?.close();
+  openPricingModal();
+});
 
 function formatModalityName(modality) {
   const labels = {

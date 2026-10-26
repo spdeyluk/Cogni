@@ -1,0 +1,791 @@
+/* ===================================================================
+   Cogni V2 — the "luxe" skin (web build only, html.mode-pro).
+   -------------------------------------------------------------------
+   Loaded after styles.css. The product palette is token-driven, so most
+   of the look changes by re-pointing the tokens here; the rest of this
+   file restyles the handful of components that carry the brand: the
+   rail, page titles, cards, buttons, dialogs, the report and the recap.
+
+   Palette: obsidian surfaces, bone type, one champagne accent.
+   Type: Bodoni Moda for the wordmark, titles and big numbers; Geist for
+   everything else. Nothing glows, nothing is blue.
+   =================================================================== */
+
+@font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("assets/fonts/Geist-SemiBold.ttf") format("truetype"); font-weight: 600 700; font-style: normal; font-display: swap; }
+
+/* ---------- tokens ---------- */
+html.mode-pro {
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", "Times New Roman", serif;
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-display);
+  --font-mono: "Geist", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 14px;
+  --radius-s: 10px;
+  --luxe-pill: 999px;
+  font-family: var(--font-sans) !important;
+  font-feature-settings: "kern" 1, "ss01" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dark is the default. The light block below re-declares the same tokens. */
+html.mode-pro,
+html.mode-pro[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0a0c;
+  --surface: #121215;
+  --surface-2: #1a1a20;
+  --text: #ede9e1;
+  --text-2: #b7b2a8;
+  --muted: #8a857b;
+  --line: rgba(237, 233, 225, 0.08);
+  --line-strong: rgba(237, 233, 225, 0.17);
+  --fill-subtle: rgba(237, 233, 225, 0.05);
+  --accent: #cdb98b;
+  --accent-2: #dccba0;
+  --on-accent: #1a1508;
+  --success: #a9d3b0;
+  --error: #d9958a;
+  --warning: #d8b86a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --glass: rgba(10, 10, 12, 0.82);
+  --luxe-accent-soft: rgba(205, 185, 139, 0.12);
+  --luxe-accent-line: rgba(205, 185, 139, 0.38);
+  --sidebar: var(--bg);
+  --surface-soft: var(--surface);
+  --surface-raised: var(--surface-2);
+  --line-soft: var(--line);
+  --dim: var(--muted);
+  --active: var(--fill-subtle);
+  --control-bg: var(--fill-subtle);
+  --control-bg-hover: rgba(237, 233, 225, 0.1);
+  --accent-blue: var(--accent);
+  --accent-cyan: var(--accent);
+  --accent-purple: var(--accent);
+  --accent-pink: var(--error);
+  --card-shadow: none;
+  --professional-card-shadow: none;
+  --professional-flat-shadow: none;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Light: ivory and ink, with the champagne darkened so it still reads. */
+html.mode-pro:not([data-theme="dark"]) {
+  color-scheme: light;
+  --bg: #f2efe8;
+  --surface: #faf8f3;
+  --surface-2: #e9e5dc;
+  --text: #16140f;
+  --text-2: #4d4941;
+  --muted: #7a756b;
+  --line: rgba(22, 20, 15, 0.09);
+  --line-strong: rgba(22, 20, 15, 0.18);
+  --fill-subtle: rgba(22, 20, 15, 0.04);
+  --accent: #8f7a46;
+  --accent-2: #7a6738;
+  --on-accent: #fffdf7;
+  --success: #2f7a4a;
+  --error: #b4473a;
+  --warning: #8a6a1f;
+  --shadow: 0 1px 2px rgba(22, 20, 15, 0.06);
+  --glass: rgba(250, 248, 243, 0.86);
+  --luxe-accent-soft: rgba(143, 122, 70, 0.12);
+  --luxe-accent-line: rgba(143, 122, 70, 0.4);
+  --sidebar: var(--bg);
+  --surface-soft: var(--surface);
+  --surface-raised: var(--surface-2);
+  --line-soft: var(--line);
+  --dim: var(--muted);
+  --active: var(--fill-subtle);
+  --control-bg: var(--fill-subtle);
+  --control-bg-hover: rgba(22, 20, 15, 0.08);
+  --card-shadow: none;
+  --professional-card-shadow: none;
+  --professional-flat-shadow: none;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- base ---------- */
+html.mode-pro,
+html.mode-pro body,
+html.mode-pro .app-shell,
+html.mode-pro .app-content,
+html.mode-pro .home-page,
+html.mode-pro .exercise-page,
+html.mode-pro .assessment-page,
+html.mode-pro .profile-page {
+  background: var(--bg) !important;
+  background-image: none !important;
+}
+html.mode-pro body,
+html.mode-pro button,
+html.mode-pro input,
+html.mode-pro select,
+html.mode-pro textarea {
+  font-family: var(--font-sans) !important;
+}
+html.mode-pro ::selection { background: var(--luxe-accent-soft); color: var(--text); }
+html.mode-pro :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+html.mode-pro a { color: inherit; }
+
+/* Display type: titles and the numbers that matter. */
+html.mode-pro #page-title,
+html.mode-pro .section-heading h2,
+html.mode-pro .mdash-pillar-score,
+html.mode-pro .mdash-overall-score,
+html.mode-pro .mdash-score,
+html.mode-pro .mdash-reel,
+html.mode-pro .summary-score-value,
+html.mode-pro .pricing-plan-amount,
+html.mode-pro .pricing-dialog h2,
+html.mode-pro .page-paywall-card h2,
+html.mode-pro .signin-first h1,
+html.mode-pro .auth-gate h1,
+html.mode-pro #auth-title,
+html.mode-pro .onboarding h2,
+html.mode-pro .measure-hub-title,
+html.mode-pro .profile-simple-panel h2,
+html.mode-pro .cat-result h2,
+html.mode-pro .measure-start-dialog h2,
+html.mode-pro .landing-display {
+  font-family: var(--font-display) !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.012em;
+  font-variation-settings: "opsz" 72;
+}
+
+/* ---------- page header ---------- */
+html.mode-pro .hero .brand-logo { display: none !important; }
+html.mode-pro .hero .eyebrow {
+  font-size: 11px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  margin: 0 0 6px !important;
+}
+html.mode-pro #page-title {
+  font-size: clamp(34px, 3.6vw, 46px) !important;
+  line-height: 1 !important;
+  color: var(--text) !important;
+  margin: 0 !important;
+}
+html.mode-pro .hero .lede {
+  font-size: 15px !important;
+  color: var(--text-2) !important;
+  max-width: 56ch;
+}
+html.mode-pro .page-notification-button {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line) !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .page-notification-button:hover { border-color: var(--line-strong) !important; color: var(--text) !important; }
+html.mode-pro .theme-toggle {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line) !important;
+  background: var(--bg) !important;
+  color: var(--text-2) !important;
+  box-shadow: none !important;
+}
+
+/* ---------- the rail ---------- */
+html.mode-pro .site-rail {
+  background: var(--bg) !important;
+  border-right: 1px solid var(--line) !important;
+  gap: 14px !important;
+}
+html.mode-pro .site-rail-brand img { display: none !important; }
+html.mode-pro .site-rail-brand {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 6px 10px !important;
+  box-shadow: none !important;
+}
+html.mode-pro .site-rail-brand span {
+  font-family: var(--font-display) !important;
+  font-size: 26px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--text) !important;
+  line-height: 1 !important;
+}
+html.mode-pro .site-rail-brand span::after { content: "."; color: var(--accent); }
+html.mode-pro .site-rail-collapse {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .site-rail-collapse:hover { border-color: var(--line) !important; color: var(--text) !important; }
+
+html.mode-pro .site-rail-account {
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .site-rail-avatar {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--line-strong) !important;
+  color: var(--text) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 400 !important;
+}
+html.mode-pro .site-rail-name { color: var(--text) !important; font-weight: 500 !important; }
+html.mode-pro .site-rail-plan {
+  display: inline-block;
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 9.5px !important;
+  letter-spacing: 0.14em !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+}
+html.mode-pro .site-rail-plan.is-pass {
+  border-color: var(--luxe-accent-line) !important;
+  color: var(--accent) !important;
+}
+html.mode-pro .site-rail-login {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+html.mode-pro .site-tab {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  padding: 10px 16px !important;
+  letter-spacing: 0.005em;
+}
+html.mode-pro .site-tab svg { stroke: currentColor; }
+html.mode-pro .site-tab:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .site-tab.active {
+  color: var(--text) !important;
+  background: var(--fill-subtle) !important;
+  border-color: var(--line) !important;
+  font-weight: 500 !important;
+}
+html.mode-pro .site-tab.active span { position: relative; }
+html.mode-pro .site-tab.active span::after {
+  content: "";
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateY(-50%);
+}
+
+/* Rail footer: Discord + the Pass call to action. */
+html.mode-pro .site-rail-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+html.mode-pro .site-rail-foot a,
+html.mode-pro .site-rail-foot button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px !important;
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: none !important;
+  text-align: left;
+}
+html.mode-pro .site-rail-foot a:hover,
+html.mode-pro .site-rail-foot button:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .site-rail-foot svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+html.mode-pro .site-rail-foot .site-rail-pass {
+  color: var(--accent) !important;
+  border-color: var(--luxe-accent-line) !important;
+  justify-content: center;
+  font-family: var(--font-display) !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.005em;
+}
+html.mode-pro .site-rail-foot .site-rail-pass:hover { background: var(--luxe-accent-soft) !important; }
+html.rail-collapsed.mode-pro .site-rail-foot span { display: none; }
+html.rail-collapsed.mode-pro .site-rail-foot a,
+html.rail-collapsed.mode-pro .site-rail-foot button { justify-content: center; padding: 10px !important; }
+html.rail-collapsed.mode-pro .site-tab.active span::after { display: none; }
+
+/* ---------- cards ---------- */
+html.mode-pro .exercise-card,
+html.mode-pro .routines-tile,
+html.mode-pro .panel,
+html.mode-pro .profile-simple-panel,
+html.mode-pro .profile-panel,
+html.mode-pro .mdash-card,
+html.mode-pro .mdash-pillar,
+html.mode-pro .mdash-overall,
+html.mode-pro .measure-hub,
+html.mode-pro .measure-picker,
+html.mode-pro .assessment-intro,
+html.mode-pro .assessment-detail,
+html.mode-pro .assessment-result,
+html.mode-pro .assessment-history,
+html.mode-pro .friends-add-card,
+html.mode-pro .friends-card,
+html.mode-pro .home-streak-card,
+html.mode-pro .page-paywall-card,
+html.mode-pro .cat-result,
+html.mode-pro .cat-report,
+html.mode-pro .stats-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+html.mode-pro .exercise-card:hover,
+html.mode-pro .routines-tile:hover,
+html.mode-pro .mdash-pillar:hover {
+  border-color: var(--line-strong) !important;
+  background: var(--surface) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+html.mode-pro .exercise-card:focus-visible { border-color: var(--accent) !important; }
+
+html.mode-pro .exercise-card { padding: 20px 20px 22px !important; }
+html.mode-pro .exercise-card h2 {
+  font-family: var(--font-sans) !important;
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--text) !important;
+  margin: 8px 0 6px !important;
+}
+html.mode-pro .exercise-card p:not(.exercise-type) {
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+  color: var(--muted) !important;
+}
+html.mode-pro .exercise-type,
+html.mode-pro .measure-hub-eyebrow,
+html.mode-pro .mdash-eyebrow,
+html.mode-pro .summary-score-eyebrow,
+html.mode-pro .measure-start-eyebrow {
+  display: inline-block;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  line-height: 1.3 !important;
+}
+html.mode-pro .section-heading h2 { font-size: 28px !important; color: var(--text) !important; }
+html.mode-pro .routines-tile strong { font-weight: 500 !important; font-size: 15px !important; }
+html.mode-pro .routines-tile-copy > span { color: var(--muted) !important; font-size: 13px !important; }
+
+/* Tag filter chips */
+html.mode-pro .exercise-tag-filter button {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  padding: 7px 14px !important;
+  box-shadow: none !important;
+}
+html.mode-pro .exercise-tag-filter button:hover { color: var(--text) !important; border-color: var(--text-2) !important; }
+html.mode-pro .exercise-tag-filter button.active,
+html.mode-pro .exercise-tag-filter button.is-active,
+html.mode-pro .exercise-tag-filter button[aria-pressed="true"] {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--luxe-accent-soft) !important;
+}
+
+/* ---------- buttons ---------- */
+/* The one primary action per screen. */
+html.mode-pro .routine-actions button:first-child,
+html.mode-pro .primary-panel button,
+html.mode-pro #start-session,
+html.mode-pro #start-mot-session,
+html.mode-pro #start-rrt-session,
+html.mode-pro #start-cct-session,
+html.mode-pro #start-ufov-session,
+html.mode-pro #start-ict-session,
+html.mode-pro .assessment-list-actions button:first-child,
+html.mode-pro .profile-edit-actions button[type="submit"],
+html.mode-pro .friends-leaderboard-button,
+html.mode-pro .friends-add-card button,
+html.mode-pro .social-add-friend-row button,
+html.mode-pro .friends-invite-button,
+html.mode-pro .measure-hub-cta,
+html.mode-pro .page-paywall-btn,
+html.mode-pro .pricing-upgrade,
+html.mode-pro .mdash-unlock-chip,
+html.mode-pro .mdash-pillar-go,
+html.mode-pro .summary-pass-cta,
+html.mode-pro .measure-start-actions button:last-child,
+html.mode-pro .signin-first-submit,
+html.mode-pro .auth-submit,
+html.mode-pro .auth-gate button[type="submit"],
+html.mode-pro .onboarding-next,
+html.mode-pro .landing-cta {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid transparent !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+html.mode-pro .routine-actions button:first-child:hover,
+html.mode-pro #start-session:hover,
+html.mode-pro .measure-hub-cta:hover,
+html.mode-pro .page-paywall-btn:hover,
+html.mode-pro .pricing-upgrade:hover,
+html.mode-pro .mdash-unlock-chip:hover,
+html.mode-pro .summary-pass-cta:hover {
+  background: var(--accent-2) !important;
+  color: var(--on-accent) !important;
+}
+html.mode-pro .mdash-unlock-chip svg { stroke: currentColor; }
+
+/* Everything secondary: quiet pills. */
+html.mode-pro .secondary-button,
+html.mode-pro .back-button,
+html.mode-pro .dialog-close-button,
+html.mode-pro .mdash-chip,
+html.mode-pro .mdash-subtab,
+html.mode-pro .measure-subtests-back,
+html.mode-pro .measure-hub-reset,
+html.mode-pro .profile-view-switch button,
+html.mode-pro .session-summary-header button,
+html.mode-pro .measure-quit-actions button:first-child,
+html.mode-pro .measure-start-actions button:first-child,
+html.mode-pro #cancel-quit {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+html.mode-pro .secondary-button:hover,
+html.mode-pro .back-button:hover,
+html.mode-pro .mdash-chip:hover,
+html.mode-pro .mdash-subtab:hover { background: var(--fill-subtle) !important; border-color: var(--text-2) !important; }
+html.mode-pro .mdash-chip.is-active,
+html.mode-pro .mdash-subtab.is-active,
+html.mode-pro .mdash-chip.active,
+html.mode-pro .mdash-subtab.active,
+html.mode-pro .mdash-chip[aria-selected="true"],
+html.mode-pro .mdash-subtab[aria-selected="true"],
+html.mode-pro .profile-view-switch button.active {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  border-color: var(--text) !important;
+}
+html.mode-pro .danger-button {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--error) !important;
+  box-shadow: none !important;
+}
+
+/* ---------- the report (mdash) ---------- */
+html.mode-pro .mdash-topbar {
+  background: var(--glass) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .mdash-tab {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+html.mode-pro .mdash-tab:hover { color: var(--text) !important; }
+html.mode-pro .mdash-tab.is-active { color: var(--text) !important; border-bottom-color: var(--accent) !important; }
+html.mode-pro .mdash-pillar-name { font-weight: 500 !important; color: var(--text) !important; }
+html.mode-pro .mdash-pillar-desc,
+html.mode-pro .mdash-caveat,
+html.mode-pro .mdash-overall-meta,
+html.mode-pro .mdash-overall-sub,
+html.mode-pro .mdash-row-desc { color: var(--muted) !important; }
+html.mode-pro .mdash-overall-head h2,
+html.mode-pro .mdash-overall-lead h2 { font-weight: 500 !important; letter-spacing: -0.01em; }
+html.mode-pro .mdash-row-track { background: var(--surface-2) !important; border-radius: var(--luxe-pill); }
+html.mode-pro .mdash-row-track i,
+html.mode-pro .mdash-row-track > span { background: var(--accent) !important; border-radius: var(--luxe-pill); }
+html.mode-pro .mdash-rarity { color: var(--accent) !important; }
+html.mode-pro .measure-progress-track i { background: var(--accent) !important; }
+html.mode-pro .measure-hub-cta { padding: 13px 24px !important; font-size: 15px !important; }
+
+/* ---------- dialogs ---------- */
+html.mode-pro dialog {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.85) !important;
+}
+html.mode-pro dialog::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Session recap */
+html.mode-pro .session-summary-header { border-bottom: 1px solid var(--line) !important; }
+html.mode-pro .session-summary-header > span {
+  font-size: 11px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+}
+html.mode-pro .summary-scoreblock { text-align: center; padding: 22px 0 10px !important; }
+html.mode-pro .summary-score-value {
+  font-size: 72px !important;
+  line-height: 1 !important;
+  color: var(--accent) !important;
+}
+html.mode-pro .summary-best-badge {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--luxe-accent-line) !important;
+  background: var(--luxe-accent-soft) !important;
+  color: var(--accent) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+html.mode-pro .summary-score-sub { color: var(--muted) !important; }
+html.mode-pro .session-summary-grid > div {
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-s) !important;
+  background: transparent !important;
+}
+html.mode-pro .session-summary-grid dt {
+  font-size: 10px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+}
+html.mode-pro .session-summary-grid dd {
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--text) !important;
+}
+/* The free recap: score plus three numbers. The rest is Pass. */
+html.mode-pro .session-summary-grid > div[data-summary="test"] { display: none !important; }
+html.mode-pro .session-summary-dialog.is-free .session-summary-grid > div[data-pass] { display: none !important; }
+html.mode-pro .summary-pass {
+  margin: 14px 0 4px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--luxe-accent-line);
+  border-radius: var(--radius);
+  background: var(--luxe-accent-soft);
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+html.mode-pro .summary-pass h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+html.mode-pro .summary-pass p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
+html.mode-pro .summary-pass-cta { margin-top: 6px; padding: 11px 18px !important; font-size: 14px !important; justify-self: start; }
+
+/* Pricing → Cogni Pass */
+html.mode-pro .pricing-dialog .paywall-hero,
+html.mode-pro .pricing-dialog .paywall-timeline,
+html.mode-pro .pricing-dialog .pricing-billing,
+html.mode-pro .pricing-dialog .pricing-compare,
+html.mode-pro .pricing-dialog .pricing-plans-native,
+html.mode-pro .pricing-dialog .paywall-plans,
+html.mode-pro .pricing-dialog .pricing-quote,
+html.mode-pro .pricing-dialog .paywall-stats,
+html.mode-pro .pricing-dialog .paywall-quotes { display: none !important; }
+html.mode-pro .pricing-dialog .paywall-includes { display: block !important; margin: 18px 0 6px; }
+html.mode-pro .pricing-dialog h2 { font-size: 40px !important; line-height: 1 !important; margin: 6px 0 10px !important; }
+html.mode-pro .pricing-dialog h2::after { content: "."; color: var(--accent); }
+html.mode-pro .paywall-sub { color: var(--text-2) !important; font-size: 14.5px !important; line-height: 1.55 !important; max-width: 46ch; }
+html.mode-pro .paywall-includes-title {
+  font-size: 10.5px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+  margin: 0 0 10px !important;
+}
+html.mode-pro .paywall-feature { color: var(--text-2) !important; font-size: 14px !important; }
+html.mode-pro .paywall-feature-tick {
+  background: transparent !important;
+  border: 1px solid var(--luxe-accent-line) !important;
+  color: var(--accent) !important;
+  border-radius: 50% !important;
+}
+html.mode-pro .paywall-feature-tick svg { stroke: currentColor; }
+html.mode-pro .pricing-plan {
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  background: var(--bg) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .pricing-plan.is-selected { border-color: var(--luxe-accent-line) !important; background: var(--luxe-accent-soft) !important; }
+html.mode-pro .pricing-plan-name { font-weight: 500 !important; color: var(--text) !important; }
+html.mode-pro .pricing-plan-amount { font-size: 38px !important; line-height: 1 !important; color: var(--text) !important; }
+html.mode-pro .pricing-plan-per { color: var(--muted) !important; }
+html.mode-pro .pricing-plan-note { color: var(--muted) !important; }
+html.mode-pro .pricing-upgrade { padding: 14px 22px !important; font-size: 15px !important; min-height: 0 !important; }
+html.mode-pro .paywall-renew,
+html.mode-pro .paywall-links,
+html.mode-pro .pricing-note,
+html.mode-pro .pricing-code-note { color: var(--muted) !important; }
+html.mode-pro .pricing-close {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line) !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+}
+html.mode-pro .pricing-code-row input { border-radius: var(--luxe-pill) !important; background: var(--bg) !important; }
+html.mode-pro .pricing-code-apply { border-radius: var(--luxe-pill) !important; }
+
+/* Locked pages (stats, history) */
+html.mode-pro .page-paywall-lock { display: none !important; }
+html.mode-pro .page-paywall-card { padding: 30px 28px !important; border-color: var(--luxe-accent-line) !important; }
+html.mode-pro .page-paywall-card h2 { font-size: 32px !important; margin: 0 0 8px !important; }
+html.mode-pro .page-paywall-card h2::after { content: "."; color: var(--accent); }
+html.mode-pro .page-paywall-card p { color: var(--text-2) !important; font-size: 14.5px !important; }
+html.mode-pro .page-paywall-btn { padding: 12px 22px !important; font-size: 14.5px !important; margin-top: 8px; }
+
+/* ---------- sign-in, onboarding ---------- */
+html.mode-pro .landing,
+html.mode-pro .onboarding {
+  --l-bg: #0a0a0c;
+  --l-ink: #ede9e1;
+  --l-ink-2: #b7b2a8;
+  --l-muted: #8a857b;
+  --l-line: rgba(237, 233, 225, 0.08);
+  --l-line-strong: rgba(237, 233, 225, 0.17);
+  --l-surface: #121215;
+  --l-surface-2: #1a1a20;
+  --l-accent: #cdb98b;
+  --l-accent-press: #dccba0;
+  --on-accent: #1a1508;
+  color-scheme: dark;
+}
+html.mode-pro .signin-first-brand img { display: none !important; }
+html.mode-pro .signin-first-brand span,
+html.mode-pro .auth-gate-brand span {
+  font-family: var(--font-display) !important;
+  font-size: 30px !important;
+  font-weight: 400 !important;
+  color: var(--text) !important;
+}
+html.mode-pro .signin-first-brand span::after { content: "."; color: var(--accent); }
+html.mode-pro .signin-first button,
+html.mode-pro .auth-gate button,
+html.mode-pro .signin-first input,
+html.mode-pro .auth-gate input { border-radius: var(--luxe-pill) !important; }
+
+/* ---------- misc chrome ---------- */
+html.mode-pro .dashboard-switch button,
+html.mode-pro .seg-sliding > button { border-radius: var(--luxe-pill) !important; font-weight: 500 !important; }
+html.mode-pro .dashboard-switch,
+html.mode-pro .seg-sliding { border-radius: var(--luxe-pill) !important; background: var(--surface) !important; border: 1px solid var(--line) !important; }
+html.mode-pro .toast,
+html.mode-pro .app-toast {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.8) !important;
+}
+html.mode-pro input[type="text"],
+html.mode-pro input[type="email"],
+html.mode-pro input[type="password"],
+html.mode-pro input[type="search"],
+html.mode-pro select,
+html.mode-pro textarea {
+  background: var(--bg) !important;
+  border: 1px solid var(--line-strong) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+html.mode-pro ::-webkit-scrollbar { width: 10px; height: 10px; }
+html.mode-pro ::-webkit-scrollbar-thumb { background: var(--surface-2); border: 3px solid var(--bg); border-radius: 10px; }
+html.mode-pro ::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.mode-pro * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* The Performance/Test-results switch is redundant now that Profile is its own tab. */
+html.mode-pro .dashboard-switch { display: none !important; }
+/* Small headings stay in the grotesk; the Didone is for titles and numbers only. */
+html.mode-pro h3,
+html.mode-pro .measure-facts h3,
+html.mode-pro .measure-hub-sub { font-family: var(--font-sans) !important; font-weight: 500 !important; letter-spacing: -0.005em; }
+html.mode-pro .summary-pass h3 { font-family: var(--font-display) !important; font-weight: 400 !important; }
+
+/* Locked pages on the web show the Pass card (an older pass hid every upgrade
+   affordance back when the web build was free). */
+html.mode-pro .page-paywall { display: grid !important; }
+html.mode-pro .page-paywall-btn[data-open-pricing] { display: inline-flex !important; align-items: center; justify-content: center; }
+html.mode-pro .page-paywall-card { background: var(--surface) !important; }
+
+/* The IQ hub's start button is the same primary pill as everything else. */
+html.mode-pro .sales-cta {
+  border-radius: var(--luxe-pill) !important;
+  border: 1px solid transparent !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+html.mode-pro .sales-cta:hover { background: var(--accent-2) !important; color: var(--on-accent) !important; transform: none !important; box-shadow: none !important; opacity: 1 !important; }
+html.mode-pro .sales-title { font-family: var(--font-display) !important; font-weight: 400 !important; }
+html.mode-pro .sales-eyebrow { color: var(--muted) !important; letter-spacing: 0.16em !important; }
+html.mode-pro .sales-section-title { font-family: var(--font-sans) !important; font-weight: 500 !important; }
