@@ -6,7 +6,7 @@
    file restyles the handful of components that carry the brand: the
    rail, page titles, cards, buttons, dialogs, the report and the recap.
 
-   Palette: obsidian surfaces, bone type, one champagne accent.
+   Palette: charcoal surfaces, white and light-grey type, white as the only accent.
    Type: Bodoni Moda for the wordmark, titles and big numbers; Geist for
    everything else. Nothing glows, nothing is blue.
    =================================================================== */
@@ -33,25 +33,25 @@ html.mode-pro {
 html.mode-pro,
 html.mode-pro[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0a0a0c;
-  --surface: #121215;
-  --surface-2: #1a1a20;
-  --text: #ede9e1;
-  --text-2: #b7b2a8;
-  --muted: #8a857b;
-  --line: rgba(237, 233, 225, 0.08);
-  --line-strong: rgba(237, 233, 225, 0.17);
-  --fill-subtle: rgba(237, 233, 225, 0.05);
-  --accent: #cdb98b;
-  --accent-2: #dccba0;
-  --on-accent: #1a1508;
-  --success: #a9d3b0;
-  --error: #d9958a;
-  --warning: #d8b86a;
+  --bg: #141416;
+  --surface: #1b1b1e;
+  --surface-2: #232327;
+  --text: #f4f4f5;
+  --text-2: #b4b4b9;
+  --muted: #7c7c83;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --fill-subtle: rgba(255, 255, 255, 0.05);
+  --accent: #f4f4f5;
+  --accent-2: #dadadd;
+  --on-accent: #141416;
+  --success: #b5cdb9;
+  --error: #d6a39b;
+  --warning: #d2c29a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --glass: rgba(10, 10, 12, 0.82);
-  --luxe-accent-soft: rgba(205, 185, 139, 0.12);
-  --luxe-accent-line: rgba(205, 185, 139, 0.38);
+  --glass: rgba(20, 20, 22, 0.84);
+  --luxe-accent-soft: rgba(255, 255, 255, 0.08);
+  --luxe-accent-line: rgba(255, 255, 255, 0.3);
   --sidebar: var(--bg);
   --surface-soft: var(--surface);
   --surface-raised: var(--surface-2);
@@ -59,7 +59,7 @@ html.mode-pro[data-theme="dark"] {
   --dim: var(--muted);
   --active: var(--fill-subtle);
   --control-bg: var(--fill-subtle);
-  --control-bg-hover: rgba(237, 233, 225, 0.1);
+  --control-bg-hover: rgba(255, 255, 255, 0.1);
   --accent-blue: var(--accent);
   --accent-cyan: var(--accent);
   --accent-purple: var(--accent);
@@ -71,28 +71,28 @@ html.mode-pro[data-theme="dark"] {
   color: var(--text);
 }
 
-/* Light: ivory and ink, with the champagne darkened so it still reads. */
+/* Light: pale grey and ink. */
 html.mode-pro:not([data-theme="dark"]) {
   color-scheme: light;
-  --bg: #f2efe8;
-  --surface: #faf8f3;
-  --surface-2: #e9e5dc;
-  --text: #16140f;
-  --text-2: #4d4941;
-  --muted: #7a756b;
-  --line: rgba(22, 20, 15, 0.09);
-  --line-strong: rgba(22, 20, 15, 0.18);
-  --fill-subtle: rgba(22, 20, 15, 0.04);
-  --accent: #8f7a46;
-  --accent-2: #7a6738;
-  --on-accent: #fffdf7;
-  --success: #2f7a4a;
-  --error: #b4473a;
-  --warning: #8a6a1f;
-  --shadow: 0 1px 2px rgba(22, 20, 15, 0.06);
-  --glass: rgba(250, 248, 243, 0.86);
-  --luxe-accent-soft: rgba(143, 122, 70, 0.12);
-  --luxe-accent-line: rgba(143, 122, 70, 0.4);
+  --bg: #ebebed;
+  --surface: #f7f7f8;
+  --surface-2: #e1e1e4;
+  --text: #141416;
+  --text-2: #4b4b50;
+  --muted: #7a7a80;
+  --line: rgba(20, 20, 22, 0.09);
+  --line-strong: rgba(20, 20, 22, 0.18);
+  --fill-subtle: rgba(20, 20, 22, 0.04);
+  --accent: #141416;
+  --accent-2: #2e2e33;
+  --on-accent: #f7f7f8;
+  --success: #2f6e45;
+  --error: #a8463b;
+  --warning: #71602a;
+  --shadow: 0 1px 2px rgba(20, 20, 22, 0.06);
+  --glass: rgba(247, 247, 248, 0.86);
+  --luxe-accent-soft: rgba(20, 20, 22, 0.07);
+  --luxe-accent-line: rgba(20, 20, 22, 0.3);
   --sidebar: var(--bg);
   --surface-soft: var(--surface);
   --surface-raised: var(--surface-2);
@@ -215,7 +215,7 @@ html.mode-pro .site-rail-brand span {
   color: var(--text) !important;
   line-height: 1 !important;
 }
-html.mode-pro .site-rail-brand span::after { content: "."; color: var(--accent); }
+html.mode-pro .site-rail-brand span::after { content: "."; color: var(--muted); }
 html.mode-pro .site-rail-collapse {
   border-radius: var(--luxe-pill) !important;
   border: 1px solid transparent !important;
@@ -649,7 +649,7 @@ html.mode-pro .pricing-dialog .paywall-stats,
 html.mode-pro .pricing-dialog .paywall-quotes { display: none !important; }
 html.mode-pro .pricing-dialog .paywall-includes { display: block !important; margin: 18px 0 6px; }
 html.mode-pro .pricing-dialog h2 { font-size: 40px !important; line-height: 1 !important; margin: 6px 0 10px !important; }
-html.mode-pro .pricing-dialog h2::after { content: "."; color: var(--accent); }
+html.mode-pro .pricing-dialog h2::after { content: "."; color: var(--muted); }
 html.mode-pro .paywall-sub { color: var(--text-2) !important; font-size: 14.5px !important; line-height: 1.55 !important; max-width: 46ch; }
 html.mode-pro .paywall-includes-title {
   font-size: 10.5px !important;
@@ -696,24 +696,24 @@ html.mode-pro .pricing-code-apply { border-radius: var(--luxe-pill) !important; 
 html.mode-pro .page-paywall-lock { display: none !important; }
 html.mode-pro .page-paywall-card { padding: 30px 28px !important; border-color: var(--luxe-accent-line) !important; }
 html.mode-pro .page-paywall-card h2 { font-size: 32px !important; margin: 0 0 8px !important; }
-html.mode-pro .page-paywall-card h2::after { content: "."; color: var(--accent); }
+html.mode-pro .page-paywall-card h2::after { content: "."; color: var(--muted); }
 html.mode-pro .page-paywall-card p { color: var(--text-2) !important; font-size: 14.5px !important; }
 html.mode-pro .page-paywall-btn { padding: 12px 22px !important; font-size: 14.5px !important; margin-top: 8px; }
 
 /* ---------- sign-in, onboarding ---------- */
 html.mode-pro .landing,
 html.mode-pro .onboarding {
-  --l-bg: #0a0a0c;
-  --l-ink: #ede9e1;
-  --l-ink-2: #b7b2a8;
-  --l-muted: #8a857b;
-  --l-line: rgba(237, 233, 225, 0.08);
-  --l-line-strong: rgba(237, 233, 225, 0.17);
-  --l-surface: #121215;
-  --l-surface-2: #1a1a20;
-  --l-accent: #cdb98b;
-  --l-accent-press: #dccba0;
-  --on-accent: #1a1508;
+  --l-bg: #141416;
+  --l-ink: #f4f4f5;
+  --l-ink-2: #b4b4b9;
+  --l-muted: #7c7c83;
+  --l-line: rgba(255, 255, 255, 0.08);
+  --l-line-strong: rgba(255, 255, 255, 0.16);
+  --l-surface: #1b1b1e;
+  --l-surface-2: #232327;
+  --l-accent: #f4f4f5;
+  --l-accent-press: #dadadd;
+  --on-accent: #141416;
   color-scheme: dark;
 }
 html.mode-pro .signin-first-brand img { display: none !important; }
@@ -724,7 +724,7 @@ html.mode-pro .auth-gate-brand span {
   font-weight: 400 !important;
   color: var(--text) !important;
 }
-html.mode-pro .signin-first-brand span::after { content: "."; color: var(--accent); }
+html.mode-pro .signin-first-brand span::after { content: "."; color: var(--muted); }
 html.mode-pro .signin-first button,
 html.mode-pro .auth-gate button,
 html.mode-pro .signin-first input,
