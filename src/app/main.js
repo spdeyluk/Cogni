@@ -41,6 +41,7 @@ import {
   thetaToScore
 } from "../core/assessments/irt.js";
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
+import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState } from "./battle.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -300,6 +301,7 @@ function detectCogniUiMode() {
 // ---------------------------------------------------------------------------
 // Cogni Measurement is the front door on web — there is no separate home page.
 const routeTabToPath = {
+  battle: "/battle",
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
@@ -313,6 +315,7 @@ const routePathToTab = {
 };
 function routeTabHandler(tab) {
   const handlers = {
+    battle: showBattle,
     exercises: showExerciseHub,
     assessments: showAssessments,
     statistics: showStatistics,
@@ -1504,7 +1507,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training is free for everyone. Pass is the IQ test, the full report, and your complete record.";
+    if (sub) sub.textContent = "Training and the IQ test are free for everyone. Pass is your complete training record.";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -1929,10 +1932,10 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
-  "The adaptive IQ test and your full report",
-  "Six ability indices, percentile and confidence band",
   "Every training session saved, with trends over time",
-  "Full session breakdowns, not just the score"
+  "Full session breakdowns: misses, false alarms, answer speed",
+  "Per-exercise progress by ability",
+  "Your IQ sittings and duels side by side in one record"
 ] : [
   "All stats and history",
   "Full Cogni Measurement report",
@@ -4642,7 +4645,7 @@ function showStatistics() {
 // only some of the copies meant navigating away from Community left its panels
 // on screen over the next page. Derive, never duplicate.
 const sectionOpenClasses = [
-  "community-open", "home-open", "friends-open", "dashboard-open",
+  "community-open", "battle-open", "home-open", "friends-open", "dashboard-open",
   "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open",
   "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open",
   "leaderboard-open", "coach-open", "screentime-open"
@@ -4912,7 +4915,7 @@ function renderProfile() {
   applyPagePaywall(elements.profilePage, {
     title: cogniUiMode === "pro" ? "Your record, kept" : "Upgrade to access your statistics",
     body: cogniUiMode === "pro"
-      ? "Every session saved, trends by ability, per-exercise breakdowns and your IQ report in one place. Included with Cogni Pass."
+      ? "Every session saved, trends by ability and per-exercise breakdowns in one place. Included with Cogni Pass."
       : "Your full cognition profile, trends and per-exercise breakdowns — included with Basic and Pro."
   });
   if (elements.profilePage.classList.contains("page-locked")) {
@@ -4965,8 +4968,22 @@ function renderProfileAvatarContent({ avatarImage, initial }) {
 }
 
 function renderProfileIdentityStats(stats) {
+  const latest = loadCatSessions()[0] ?? null;
+  const status = battleStatus();
+  const iq = status?.iq_score ?? latest?.score ?? null;
+  const pct = status?.iq_percentile ?? latest?.percentile ?? null;
+  const rating = status?.battle_rating ?? null;
+  const statusCells = cogniUiMode === "pro" ? `
+      <div class="is-iq">
+        <strong>${iq ? Math.round(iq) : "—"}</strong>
+        <span>${iq && pct ? `IQ · top ${Math.max(1, Math.round(100 - pct))}%` : "IQ"}</span>
+      </div>
+      <div>
+        <strong>${rating ?? 1000}</strong>
+        <span>Battle rating</span>
+      </div>` : "";
   return `
-    <div class="profile-social-stats" aria-label="Profile stats">
+    <div class="profile-social-stats" aria-label="Profile stats">${statusCells}
       <div>
         <strong>${Math.max(0, Math.round(stats.currentStreak ?? 0))}</strong>
         <span>Day streak</span>
@@ -6248,12 +6265,12 @@ function bootWebIntoApp() {
   enterApp();
   const bootTab = routePathToTab[routeBootPath];
   applyingRoute = true;
-  let landedPath = routeTabToPath.exercises;
+  let landedPath = routeTabToPath.battle;
   if (bootTab && routeTabHandler(bootTab)) {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab] ?? landedPath;
   } else {
-    showExerciseHub();
+    showBattle();
   }
   applyingRoute = false;
   if (window.location.pathname !== landedPath) {
@@ -6295,6 +6312,9 @@ function onAuthenticated() {
   startSyncLoop();
   // Load the real Pro entitlement (paywall unlocks reflect it once it resolves).
   refreshEntitlement();
+  // Publish display name + latest IQ to the social profile; pull ratings back.
+  resetBattleState();
+  syncPublicStatus().then(() => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); });
   // First launch on mobile: the story onboarding runs before the app.
   if (needsOnboarding()) {
     showOnboarding();
@@ -6339,14 +6359,14 @@ function onAuthenticated() {
   // applyingRoute suppresses the automatic pushState so we can replaceState the
   // final URL (no phantom history entry).
   applyingRoute = true;
-  let landedPath = routeTabToPath.exercises;
+  let landedPath = cogniUiMode === "pro" ? routeTabToPath.battle : routeTabToPath.exercises;
   if (justSignedIn && cogniUiMode === "pro") {
     // A brand-new sign-in / sign-up always lands on Home, which surfaces the
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
-    showExerciseHub();
-    // Never let the intro blank the app: Train is already rendered underneath.
+    showBattle();
+    // Never let the intro blank the app: Battle is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -6356,7 +6376,7 @@ function onAuthenticated() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
-    showExerciseHub(); // web default: training is free and open, so it is the front door
+    showBattle(); // web default: the 1v1 is the front door
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
@@ -7389,8 +7409,8 @@ function showCommunity() {
   elements.appShell.classList.remove(...sectionResetClasses);
   elements.appShell.classList.add("community-open");
   setActiveTab("community");
-  elements.pageTitle.textContent = "Community";
-  elements.pageLede.textContent = "Compare notes with people training the same things.";
+  elements.pageTitle.textContent = "Ranks";
+  elements.pageLede.textContent = "Where you stand, and who to duel next.";
   renderCommunity();
 }
 
@@ -7398,6 +7418,7 @@ function showCommunity() {
 function renderCommunity() {
   const page = document.querySelector(".community-page");
   if (!page) return;
+  if (cogniUiMode === "pro") { renderRanksPage(page); return; }
   page.innerHTML = `
     <div class="page-narrow">
       <section class="panel">
@@ -7725,6 +7746,34 @@ document.querySelectorAll("[data-site-tab]").forEach((tab) => {
   });
 });
 
+initBattle({
+  supabase,
+  supabaseEnabled,
+  getAuthUser: () => authUser,
+  isGuest: () => guestMode || authUser?.provider === "guest",
+  requireAuth,
+  catItemBank,
+  catItemsById,
+  catOptionOrder,
+  catCellSvg,
+  catMatrixSvg,
+  catWeightsSvg,
+  domainLabel: (domain) => CAT_DOMAIN_LABELS[domain] ?? domain,
+  escapeHtml,
+  appShell: elements.appShell,
+  sectionResetClasses,
+  setActiveTab,
+  setPageHeader: (title, lede) => { elements.pageTitle.textContent = title; elements.pageLede.textContent = lede; },
+  isGameRunning: () => session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running,
+  loadUserProfile,
+  profileDisplayName,
+  loadCatSessions,
+  socialApiRequest,
+  upsertSocialProfile,
+  showAssessments,
+  onStatusChange: () => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); }
+});
+
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -7755,7 +7804,8 @@ function syncRailAccount() {
   const avatar = document.querySelector("#site-rail-avatar");
   const upgrade = document.querySelector("#site-rail-upgrade");
   const login = document.querySelector("#site-login-rail");
-  const unlocked = measurementReportUnlocked();
+  // The rail badge reflects the subscription, not the (now free) IQ report.
+  const unlocked = cogniUiMode === "pro" ? webPlanUnlocked() : measurementReportUnlocked();
   const label = authUser ? (authUser.email?.split("@")[0] ?? "You") : "Guest";
   if (name) name.textContent = label;
   if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
@@ -8315,7 +8365,7 @@ function renderMeasurementSales() {
       <button class="sales-cta" id="sales-start" type="button">Start test</button>
 
       <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
-      <p class="sales-note">${cogniUiMode === "pro" ? "Included with Cogni Pass, with the full report and your saved history. Training is always free." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
+      <p class="sales-note">${cogniUiMode === "pro" ? "Free. Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
     </div>
 
     <section class="sales-section">
@@ -8834,8 +8884,6 @@ function subtestItemPool(subtest) {
 
 function startSubtest(subtestId) {
   if (!requireAuth("Sign in to take the IQ test.")) return;
-  // On the web the test is what Cogni Pass buys. Training stays free.
-  if (cogniUiMode === "pro" && !webPlanUnlocked()) { openPricingModal(); return; }
   const subtest = subtestById(subtestId);
   if (!subtest) return;
   const attempt = loadMeasureAttempt();
@@ -9395,6 +9443,7 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
   saveCatSessions(sessions.slice(0, 50));
   clearMeasureAttempt();
   syncUntakenIqTestNudge();
+  syncPublicStatus().catch(() => {});
   catActive = null;
   saveCatActive();
 
@@ -9715,9 +9764,11 @@ function webPlanUnlocked() {
   return accessCodeActive() || currentTier() === "basic" || currentTier() === "pro";
 }
 
-// On web the report is what the subscription buys. Native keeps its own Pro tier.
+// On web the IQ test and its full report are free: the score is the status
+// symbol the social layer runs on. Pass buys the training record. Native keeps
+// its own Pro tier.
 function measurementReportUnlocked() {
-  if (cogniUiMode === "pro") return webPlanUnlocked();
+  if (cogniUiMode === "pro") return true;
   return isProUser();
 }
 
