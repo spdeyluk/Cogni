@@ -5262,6 +5262,24 @@ function renderProfileOnboarding() {
   renderAccountMenu();
 }
 
+// Accounts created before handles were derived from the email still carry the
+// shared "@cogni" placeholder. Now that handles are public (leaderboards, friend
+// search) give those accounts their own, once, from the sign-in email.
+function repairPlaceholderProfile() {
+  if (!authUser?.email || guestMode) return;
+  const profile = loadUserProfile();
+  const placeholder = normalizeProfileHandle(profile.handle) === "@cogni" || !profile.handle;
+  const unnamed = !profile.name || profile.name === "Cogni";
+  if (!placeholder && !unnamed) return;
+  const base = String(authUser.email).split("@")[0];
+  const next = { ...profile };
+  if (placeholder) next.handle = normalizeProfileHandle(base || "cogni");
+  if (unnamed) next.name = displayNameFromEmail(authUser.email);
+  next.avatarInitial = normalizeProfileAvatar(next.name, next.handle);
+  saveUserProfile(next);
+  syncSocialProfileQuietly();
+}
+
 function handleProfileOnboardingSubmit(event) {
   const form = event.target.closest("[data-profile-onboarding-form]");
   if (!form) return;
@@ -6313,6 +6331,7 @@ function onAuthenticated() {
   // Load the real Pro entitlement (paywall unlocks reflect it once it resolves).
   refreshEntitlement();
   // Publish display name + latest IQ to the social profile; pull ratings back.
+  repairPlaceholderProfile();
   resetBattleState();
   syncPublicStatus().then(() => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); });
   // First launch on mobile: the story onboarding runs before the app.
