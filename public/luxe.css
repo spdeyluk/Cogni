@@ -7,8 +7,8 @@
    rail, page titles, cards, buttons, dialogs, the report and the recap.
 
    Palette: charcoal surfaces, white and light-grey type, white as the only accent.
-   Type: Bodoni Moda for the wordmark, titles and big numbers; Geist for
-   everything else. Nothing glows, nothing is blue.
+   Type: Geist everywhere. Titles and big numbers are the same face, heavier
+   and tighter, so nothing on the page looks borrowed from a magazine.
    =================================================================== */
 
 @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
@@ -17,7 +17,7 @@
 
 /* ---------- tokens ---------- */
 html.mode-pro {
-  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", "Times New Roman", serif;
+  --font-display: "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-display);
   --font-mono: "Geist", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -152,9 +152,8 @@ html.mode-pro .cat-result h2,
 html.mode-pro .measure-start-dialog h2,
 html.mode-pro .landing-display {
   font-family: var(--font-display) !important;
-  font-weight: 400 !important;
+  font-weight: 600 !important;
   letter-spacing: -0.012em;
-  font-variation-settings: "opsz" 72;
 }
 
 /* ---------- page header ---------- */
@@ -209,8 +208,8 @@ html.mode-pro .site-rail-brand {
 }
 html.mode-pro .site-rail-brand span {
   font-family: var(--font-display) !important;
-  font-size: 26px !important;
-  font-weight: 400 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
   letter-spacing: -0.01em !important;
   color: var(--text) !important;
   line-height: 1 !important;
@@ -236,7 +235,7 @@ html.mode-pro .site-rail-avatar {
   border: 1px solid var(--line-strong) !important;
   color: var(--text) !important;
   font-family: var(--font-display) !important;
-  font-weight: 400 !important;
+  font-weight: 600 !important;
 }
 html.mode-pro .site-rail-name { color: var(--text) !important; font-weight: 500 !important; }
 html.mode-pro .site-rail-plan {
@@ -328,8 +327,8 @@ html.mode-pro .site-rail-foot .site-rail-pass {
   border-color: var(--luxe-accent-line) !important;
   justify-content: center;
   font-family: var(--font-display) !important;
-  font-size: 16px !important;
-  font-weight: 400 !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
   letter-spacing: 0.005em;
 }
 html.mode-pro .site-rail-foot .site-rail-pass:hover { background: var(--luxe-accent-soft) !important; }
@@ -628,8 +627,7 @@ html.mode-pro .summary-pass {
 html.mode-pro .summary-pass h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
+  font-weight: 600;
   font-size: 22px;
   color: var(--accent);
   letter-spacing: -0.01em;
@@ -720,8 +718,8 @@ html.mode-pro .signin-first-brand img { display: none !important; }
 html.mode-pro .signin-first-brand span,
 html.mode-pro .auth-gate-brand span {
   font-family: var(--font-display) !important;
-  font-size: 30px !important;
-  font-weight: 400 !important;
+  font-size: 28px !important;
+  font-weight: 600 !important;
   color: var(--text) !important;
 }
 html.mode-pro .signin-first-brand span::after { content: "."; color: var(--muted); }
@@ -768,7 +766,7 @@ html.mode-pro .dashboard-switch { display: none !important; }
 html.mode-pro h3,
 html.mode-pro .measure-facts h3,
 html.mode-pro .measure-hub-sub { font-family: var(--font-sans) !important; font-weight: 500 !important; letter-spacing: -0.005em; }
-html.mode-pro .summary-pass h3 { font-family: var(--font-display) !important; font-weight: 400 !important; }
+html.mode-pro .summary-pass h3 { font-family: var(--font-display) !important; font-weight: 600 !important; }
 
 /* Locked pages on the web show the Pass card (an older pass hid every upgrade
    affordance back when the web build was free). */
@@ -786,6 +784,6 @@ html.mode-pro .sales-cta {
   box-shadow: none !important;
 }
 html.mode-pro .sales-cta:hover { background: var(--accent-2) !important; color: var(--on-accent) !important; transform: none !important; box-shadow: none !important; opacity: 1 !important; }
-html.mode-pro .sales-title { font-family: var(--font-display) !important; font-weight: 400 !important; }
+html.mode-pro .sales-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
 html.mode-pro .sales-eyebrow { color: var(--muted) !important; letter-spacing: 0.16em !important; }
 html.mode-pro .sales-section-title { font-family: var(--font-sans) !important; font-weight: 500 !important; }

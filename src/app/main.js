@@ -41,6 +41,7 @@ import {
   thetaToScore
 } from "../core/assessments/irt.js";
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
+import { resolveGeneratedItem, generateCandidates, generatedItemId, GENERATED_FORMATS } from "../core/assessments/catGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState } from "./battle.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
@@ -7501,6 +7502,10 @@ function showAssessmentList() {
 const catStateStorageKey = "cogni.catActiveSession.v1";
 const catSessionsStorageKey = "cogni.catSessions.v1";
 const catItemsById = new Map(catItemBank.map((item) => [item.id, item]));
+// Bank items by id, or a procedurally generated item rebuilt from its id.
+function catItem(id) {
+  return catItemsById.get(id) ?? resolveGeneratedItem(id) ?? null;
+}
 let catActive = loadCatActive();
 let catTimerHandle = null;
 let catItemStartedAt = 0;
@@ -7574,7 +7579,7 @@ function showCatSection(section) {
 
 function catResponsesWithItems() {
   return catActive.responses
-    .map((response) => ({ item: catItemsById.get(response.itemId), correct: response.correct }))
+    .map((response) => ({ item: catItem(response.itemId), correct: response.correct }))
     .filter((response) => response.item);
 }
 
@@ -7772,7 +7777,8 @@ initBattle({
   isGuest: () => guestMode || authUser?.provider === "guest",
   requireAuth,
   catItemBank,
-  catItemsById,
+  catItem,
+  generatedItemId,
   catOptionOrder,
   catCellSvg,
   catMatrixSvg,
@@ -8915,6 +8921,7 @@ function startSubtest(subtestId) {
     startedAt: Date.now(),
     responses: [],
     currentItemId: null,
+    seed: Math.random().toString(36).slice(2, 10),
     avoidIds: [...catRecentlyServedIds()]
   };
 
@@ -9061,7 +9068,17 @@ function pickNextCatItem() {
   // Prefer items the last test didn't use, but only while that leaves enough
   // bank to still measure against — precision wins over novelty at the margin.
   const fresh = unadministered.filter((item) => !catActive.avoidIds?.includes(item.id));
-  const available = fresh.length >= CAT_MIN_FRESH_POOL ? fresh : unadministered;
+  const banked = fresh.length >= CAT_MIN_FRESH_POOL ? fresh : unadministered;
+  // Visual formats are generated on the fly around the current ability, so
+  // the pool is new on every sitting and a repeat is practically impossible.
+  const generatedKinds = (subtest?.kinds ?? []).filter((kind) => GENERATED_FORMATS[kind]);
+  const generated = generatedKinds.flatMap((kind) => generateCandidates(kind, {
+    seed: catActive.seed ?? "legacy",
+    slot: catActive.responses.length,
+    theta,
+    count: 12
+  }));
+  const available = generated.length ? [...generated, ...banked] : banked;
   // Randomesque exposure control: pick among the most informative items rather
   // than always the single best, so two people of the same ability — or one
   // person retaking — don't walk the same path through the bank.
@@ -9086,7 +9103,7 @@ function catOptionOrder(item) {
 }
 
 function renderCatQuestion() {
-  const item = catItemsById.get(catActive?.currentItemId);
+  const item = catItem(catActive?.currentItemId);
   if (!item) {
     finishSubtest();
     return;
@@ -9153,7 +9170,7 @@ function stopCatTimer() {
 
 function answerCatQuestion(answerIndex) {
   stopCatTimer();
-  const item = catItemsById.get(catActive?.currentItemId);
+  const item = catItem(catActive?.currentItemId);
   if (!item) return;
   // The click reports a display position; translate it back to the bank's own
   // index so scoring and the stored response stay in bank space. null = timeout.
@@ -9940,9 +9957,47 @@ function renderCatHistory() {
   `).join("");
 }
 
+function catPolygonPath(sides, size, startDeg = -90) {
+  const radius = size / 2;
+  const points = [];
+  for (let i = 0; i < sides; i += 1) {
+    const angle = ((startDeg + (360 / sides) * i) * Math.PI) / 180;
+    points.push(`${(Math.cos(angle) * radius).toFixed(1)} ${(Math.sin(angle) * radius).toFixed(1)}`);
+  }
+  return `M ${points.join(" L ")} Z`;
+}
+
 const catShapePaths = {
   triangle: (size) => `M 0 ${-size / 2} L ${size * 0.42} ${size * 0.36} L ${-size * 0.42} ${size * 0.36} Z`,
   diamond: (size) => `M 0 ${-size / 2} L ${size / 2} 0 L 0 ${size / 2} L ${-size / 2} 0 Z`,
+  pentagon: (size) => catPolygonPath(5, size),
+  hexagon: (size) => catPolygonPath(6, size, 0),
+  star: (size) => {
+    const outer = size / 2;
+    const inner = outer * 0.45;
+    const points = [];
+    for (let i = 0; i < 10; i += 1) {
+      const radius = i % 2 === 0 ? outer : inner;
+      const angle = ((-90 + 36 * i) * Math.PI) / 180;
+      points.push(`${(Math.cos(angle) * radius).toFixed(1)} ${(Math.sin(angle) * radius).toFixed(1)}`);
+    }
+    return `M ${points.join(" L ")} Z`;
+  },
+  arrow: (size) => {
+    const h = size / 2;
+    const w = size * 0.22;
+    return `M 0 ${-h} L ${h * 0.7} ${-h * 0.1} L ${w} ${-h * 0.1} L ${w} ${h} L ${-w} ${h} L ${-w} ${-h * 0.1} L ${-h * 0.7} ${-h * 0.1} Z`;
+  },
+  ell: (size) => {
+    const h = size / 2;
+    const t = size * 0.3;
+    return `M ${-h} ${-h} H ${-h + t} V ${h - t} H ${h} V ${h} H ${-h} Z`;
+  },
+  tee: (size) => {
+    const h = size / 2;
+    const t = size * 0.3;
+    return `M ${-h} ${-h} H ${h} V ${-h + t} H ${t / 2} V ${h} H ${-t / 2} V ${-h + t} H ${-h} Z`;
+  },
   cross: (size) => {
     const arm = size / 6;
     const half = size / 2;
@@ -9957,6 +10012,7 @@ function catGlyphSvg(glyph, cellSize) {
     : 'fill="none" stroke="var(--text)" stroke-width="2"';
   let shapeMarkup;
   if (glyph.s === "circle") shapeMarkup = `<circle r="${(size / 2).toFixed(1)}" ${paint}></circle>`;
+  else if (glyph.s === "ring") shapeMarkup = `<circle r="${(size / 2).toFixed(1)}" fill="none" stroke="var(--text)" stroke-width="${Math.max(2, size * 0.22).toFixed(1)}"></circle>`;
   else if (glyph.s === "square") shapeMarkup = `<rect x="${(-size / 2).toFixed(1)}" y="${(-size / 2).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" ${paint}></rect>`;
   else if (glyph.s === "bar") shapeMarkup = `<rect x="${(-size / 2).toFixed(1)}" y="${(-size / 8).toFixed(1)}" width="${size.toFixed(1)}" height="${(size / 4).toFixed(1)}" rx="2" ${paint}></rect>`;
   else shapeMarkup = `<path d="${catShapePaths[glyph.s]?.(size) ?? catShapePaths.diamond(size)}" ${paint}></path>`;

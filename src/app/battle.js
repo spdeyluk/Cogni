@@ -336,10 +336,17 @@ function rngFrom(seed) {
   };
 }
 
+const GENERATED_DOMAIN = { fluid: "mx", spatial: "rot", weights: "fw" };
+
 function pickItemIds(seed) {
   const rng = rngFrom(seed);
   const used = new Set();
-  return PLAN.map((domain) => {
+  return PLAN.map((domain, slot) => {
+    // Visual formats are generated from the seed, so no two duels share a puzzle.
+    if (GENERATED_DOMAIN[domain]) {
+      const level = 4 + Math.floor(rng() * 3);
+      return d.generatedItemId(GENERATED_DOMAIN[domain], seed, slot, level);
+    }
     const pool = d.catItemBank.filter((it) => it.domain === domain && Math.abs(it.b) <= MAX_B && !used.has(it.id));
     const list = pool.length ? pool : d.catItemBank.filter((it) => it.domain === domain && !used.has(it.id));
     const pick = list[Math.floor(rng() * list.length)];
@@ -422,7 +429,7 @@ let itemStartedAt = 0;
 function playRound(row) {
   stopTimer();
   unwatchRound();
-  const items = (row.item_ids ?? []).map((id) => d.catItemsById.get(id)).filter(Boolean);
+  const items = (row.item_ids ?? []).map((id) => d.catItem(id)).filter(Boolean);
   if (!items.length) { hub.error = "This battle has no items."; renderHub(); return; }
   arena = { row, items, index: 0, answers: [], score: 0, correct: 0, ms: 0, locked: false };
   view = "arena";
