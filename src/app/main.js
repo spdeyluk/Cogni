@@ -4739,6 +4739,7 @@ function handleProfilePageClick(event) {
   const exerciseButton = event.target.closest("[data-profile-exercise]");
   const editButton = event.target.closest("[data-profile-edit]");
   const cancelEditButton = event.target.closest("[data-profile-edit-cancel]");
+  if (event.target.closest("[data-profile-take-test]")) { showAssessments(); return; }
   if (editButton) {
     profileEditorOpen = true;
     renderProfile();
@@ -4849,11 +4850,12 @@ function renderProfile() {
     ${selectedProfileView === "profile" ? `
       <section class="profile-simple-panel" aria-label="Profile overview">
         ${renderProfileIdentity(userProfile, profileStats)}
-        ${renderProfileHexagon(allSessions)}
+        ${cogniUiMode === "pro" ? "" : renderProfileHexagon(allSessions)}
         ${renderProfileCompletionCalendar(progress, exerciseIds)}
         ${renderProfileImprovementSection(allSessions)}
       </section>
     ` : `
+      ${cogniUiMode === "pro" ? `<section class="profile-simple-panel" aria-label="Training shape">${renderProfileHexagon(allSessions)}</section>` : ""}
       <section class="profile-board" aria-label="${escapeHtml(timeframeTitle)} stats">
         <div class="profile-board-header">
           <div>
@@ -4914,7 +4916,7 @@ function renderProfile() {
   `;
   // Web: the profile itself (identity, shape, friends) is free and social; the
   // Data view is the saved record, which is what Pass buys.
-  if (cogniUiMode === "pro" && selectedProfileView !== "data") { /* free view */ } else
+  if (cogniUiMode === "pro") { /* the whole profile is free on web */ } else
   applyPagePaywall(elements.profilePage, {
     title: cogniUiMode === "pro" ? "Your record, kept" : "Upgrade to access your statistics",
     body: cogniUiMode === "pro"
@@ -4976,12 +4978,13 @@ function renderProfileIdentityStats(stats) {
   const iq = status?.iq_score ?? latest?.score ?? null;
   const pct = status?.iq_percentile ?? latest?.percentile ?? null;
   const rating = status?.battle_rating ?? null;
+  // No score yet: a blurred placeholder number where the score will be.
   const statusCells = cogniUiMode === "pro" ? `
-      <div class="is-iq">
-        <strong>${iq ? Math.round(iq) : "—"}</strong>
-        <span>${iq && pct ? `IQ · top ${Math.max(1, Math.round(100 - pct))}%` : "IQ"}</span>
+      <div class="is-iq is-big${iq ? "" : " is-empty"}">
+        <strong aria-hidden="${iq ? "false" : "true"}">${iq ? Math.round(iq) : "118"}</strong>
+        <span>${iq && pct ? `IQ · top ${Math.max(1, Math.round(100 - pct))}%` : iq ? "IQ" : `IQ <button class="battle-link" data-profile-take-test type="button">· Take the test</button>`}</span>
       </div>
-      <div>
+      <div class="is-big">
         <strong>${rating ?? 1000}</strong>
         <span>Battle rating</span>
       </div>` : "";
@@ -5174,39 +5177,23 @@ function renderProfileImprovementSection(sessions) {
   `;
 }
 
+// Bars for the per-session score, a thin line for the settings weight, both on
+// one 0-100 scale. HTML bars (not a stretched SVG) so nothing distorts with the
+// card width; the line uses a non-scaling stroke for the same reason.
 function profileGraphSvg(seriesList, pointCount) {
-  const width = 320;
-  const height = 120;
-  const padX = 8;
-  const padY = 10;
-  const stepX = pointCount > 1 ? (width - padX * 2) / (pointCount - 1) : 0;
-  const toY = (value) => padY + (1 - clamp01(value / 100)) * (height - padY * 2);
-  const grid = [0, 0.5, 1].map((fraction) => {
-    const y = padY + fraction * (height - padY * 2);
-    return `<line class="profile-graph-grid" x1="${padX}" y1="${y.toFixed(1)}" x2="${width - padX}" y2="${y.toFixed(1)}"></line>`;
-  }).join("");
-  const paths = seriesList.map((series) => {
-    const xs = [];
-    const ys = [];
-    series.values.forEach((value, index) => {
-      if (value == null) return;
-      xs.push(padX + index * stepX);
-      ys.push(toY(value));
-    });
-    if (!xs.length) return "";
-    let d = `M ${xs[0].toFixed(1)} ${ys[0].toFixed(1)}`;
-    for (let index = 1; index < xs.length - 1; index += 1) {
-      const midX = (xs[index] + xs[index + 1]) / 2;
-      const midY = (ys[index] + ys[index + 1]) / 2;
-      d += ` Q ${xs[index].toFixed(1)} ${ys[index].toFixed(1)} ${midX.toFixed(1)} ${midY.toFixed(1)}`;
-    }
-    if (xs.length > 1) d += ` L ${xs.at(-1).toFixed(1)} ${ys.at(-1).toFixed(1)}`;
-    return `
-      <path d="${d}" fill="none" stroke="${series.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-      <circle cx="${xs.at(-1).toFixed(1)}" cy="${ys.at(-1).toFixed(1)}" r="3.5" fill="${series.color}"></circle>
-    `;
-  }).join("");
-  return `<svg class="profile-graph" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">${grid}${paths}</svg>`;
+  const bars = seriesList[0]?.values ?? [];
+  const line = seriesList[1]?.values ?? [];
+  const n = Math.max(1, pointCount);
+  const barHtml = bars.map((value, index) => `<b style="height: ${Math.max(2, clamp01((value ?? 0) / 100) * 100).toFixed(1)}%" title="Session ${index + 1}: ${value ?? "—"}"></b>`).join("");
+  const points = line.map((value, index) => value == null ? null : `${(((index + 0.5) / n) * 100).toFixed(2)},${(100 - clamp01(value / 100) * 100).toFixed(2)}`).filter(Boolean);
+  const last = line.length ? { x: ((line.length - 0.5) / n) * 100, y: 100 - clamp01((line.at(-1) ?? 0) / 100) * 100 } : null;
+  return `
+    <div class="profile-bars" style="--n: ${n}" aria-hidden="true">
+      <div class="profile-bars-grid"><i></i><i></i><i></i></div>
+      <div class="profile-bars-row">${barHtml}</div>
+      ${points.length > 1 ? `<svg class="profile-bars-line" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${points.join(" ")}" vector-effect="non-scaling-stroke"></polyline></svg>` : ""}
+      ${last ? `<span class="profile-bars-dot" style="left: ${last.x.toFixed(2)}%; top: ${last.y.toFixed(2)}%"></span>` : ""}
+    </div>`;
 }
 
 function loadUserProfile() {
@@ -6326,6 +6313,7 @@ function syncWebFunnel() {
 function onAuthenticated() {
   hideAuthGate();
   hideSignInFirst();
+  resolveIqOwner();
   const emailNode = document.querySelector("#settings-account-email");
   const accountBlock = document.querySelector("#settings-account");
   if (emailNode) emailNode.textContent = authUser.email;
@@ -8406,11 +8394,11 @@ function renderMeasurementSales() {
       <h2 class="sales-title">${title}</h2>
       <p class="sales-lede">${lede}</p>
 
-      <button class="sales-cta" id="sales-start" type="button">${cogniUiMode === "pro" && !iqTestUnlocked() ? "Unlock the IQ test" : "Start test"}</button>
+      <button class="sales-cta" id="sales-start" type="button" ${!iqTestAvailable() ? "disabled" : ""}>${!iqTestAvailable() ? "Not open yet" : cogniUiMode === "pro" && !iqTestUnlocked() ? "Unlock the IQ test" : "Start test"}</button>
 
       <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
-      <p class="sales-note">${cogniUiMode === "pro" ? "Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
-      ${cogniUiMode === "pro" && !iqTestUnlocked() ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
+      <p class="sales-note">${!iqTestAvailable() ? "The IQ test is being calibrated and opens to everyone soon." : cogniUiMode === "pro" ? "Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
+      ${cogniUiMode === "pro" && iqTestAvailable() && !iqTestUnlocked() ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
     </div>
 
     <section class="sales-section">
@@ -8692,9 +8680,18 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   const restart = document.querySelector("#measure-restart");
   if (restart) restart.hidden = !takingTest || done === 0;
 
+  // Not open yet (owner-only while calibrated): one note, nothing to start.
+  let off = hub.querySelector(".measure-hub-off");
+  if (!iqTestAvailable()) {
+    if (!off) { off = document.createElement("p"); off.className = "measure-hub-off"; hub.querySelector(".measure-hub-actions")?.after(off); }
+    off.textContent = "The IQ test isn't open yet. It is being calibrated and opens to everyone soon.";
+  } else if (off) {
+    off.remove();
+  }
+
   // Locked on web until three referrals or Pass: the invite panel sits under the actions.
   let lock = hub.querySelector("[data-referral-host]");
-  const locked = cogniUiMode === "pro" && !iqTestUnlocked();
+  const locked = cogniUiMode === "pro" && iqTestAvailable() && !iqTestUnlocked();
   if (locked) {
     if (!lock) { lock = document.createElement("div"); lock.dataset.referralHost = "compact"; hub.querySelector(".measure-hub-actions")?.after(lock); }
     lock.innerHTML = referralPanelHtml({ compact: true });
@@ -8759,6 +8756,7 @@ document.querySelector("#measure-continue")?.addEventListener("click", (event) =
   // Both "Start the test" and "Start a new test" go to the picker screen, where
   // you choose which subtest to sit, in whatever order you like.
   if (!requireAuth("Sign in to take the IQ test.")) return;
+  if (!iqTestAvailable()) return;
   if (!iqTestUnlocked()) { openReferralDialog(); return; }
   measureSubtestsOpen = true;
   if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
@@ -8942,6 +8940,7 @@ function subtestItemPool(subtest) {
 
 function startSubtest(subtestId) {
   if (!requireAuth("Sign in to take the IQ test.")) return;
+  if (!iqTestAvailable()) return;
   if (!iqTestUnlocked()) { openReferralDialog(); return; }
   const subtest = subtestById(subtestId);
   if (!subtest) return;
@@ -9847,6 +9846,38 @@ function measurementReportUnlocked() {
 function iqTestUnlocked() {
   if (cogniUiMode !== "pro") return isProUser();
   return webPlanUnlocked() || referralUnlocked();
+}
+
+// While the test is calibrated it is open to the owner only. The bundle holds
+// hashes of the allowed addresses, not the addresses. Everyone else sees the
+// tab and the Home button gone, and a "not open yet" note on the IQ page.
+const IQ_OWNER_HASHES = new Set([
+  "15be1241dadf1ee8c519fc63ad796cb41bb8b3ea9af1cfc107e3846e48d21493",
+  "9916f43945dcf9810c646f77a7f3becc2a62a6cb5402f7907a0cf17478a875e1"
+]);
+let iqOwner = false;
+async function sha256Hex(text) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function resolveIqOwner() {
+  const email = String(authUser?.email ?? "").trim().toLowerCase();
+  let next = false;
+  if (email && authUser?.provider !== "guest" && globalThis.crypto?.subtle) {
+    try { next = IQ_OWNER_HASHES.has(await sha256Hex(email)); } catch { next = false; }
+  }
+  iqOwner = next;
+  applyIqAvailability();
+}
+function iqTestAvailable() {
+  return cogniUiMode !== "pro" || iqOwner;
+}
+function applyIqAvailability() {
+  const off = !iqTestAvailable();
+  document.documentElement.classList.toggle("iq-off", off);
+  const tab = document.querySelector('.site-tab[data-site-tab="assessments"]');
+  if (tab) tab.hidden = off;
+  if (elements.appShell?.classList.contains("assessments-open")) renderMeasurePicker();
 }
 
 // Figure weights: each scale is two pans over a fulcrum. The last pan is the

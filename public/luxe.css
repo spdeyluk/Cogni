@@ -45,6 +45,10 @@ html.mode-pro[data-theme="dark"] {
   --accent: #f4f4f5;
   --accent-2: #dadadd;
   --on-accent: #141416;
+  --btn-fill: #2a2a30;
+  --btn-fill-hover: #35353c;
+  --btn-text: #f4f4f5;
+  --btn-line: rgba(255, 255, 255, 0.12);
   --success: #b5cdb9;
   --error: #d6a39b;
   --warning: #d2c29a;
@@ -86,6 +90,10 @@ html.mode-pro:not([data-theme="dark"]) {
   --accent: #141416;
   --accent-2: #2e2e33;
   --on-accent: #f7f7f8;
+  --btn-fill: #141416;
+  --btn-fill-hover: #2e2e33;
+  --btn-text: #f7f7f8;
+  --btn-line: transparent;
   --success: #2f6e45;
   --error: #a8463b;
   --warning: #71602a;
@@ -446,9 +454,9 @@ html.mode-pro .auth-gate button[type="submit"],
 html.mode-pro .onboarding-next,
 html.mode-pro .landing-cta {
   border-radius: var(--luxe-pill) !important;
-  border: 1px solid transparent !important;
-  background: var(--accent) !important;
-  color: var(--on-accent) !important;
+  border: 1px solid var(--btn-line) !important;
+  background: var(--btn-fill) !important;
+  color: var(--btn-text) !important;
   font-weight: 500 !important;
   letter-spacing: 0.01em;
   box-shadow: none !important;
@@ -461,8 +469,8 @@ html.mode-pro .page-paywall-btn:hover,
 html.mode-pro .pricing-upgrade:hover,
 html.mode-pro .mdash-unlock-chip:hover,
 html.mode-pro .summary-pass-cta:hover {
-  background: var(--accent-2) !important;
-  color: var(--on-accent) !important;
+  background: var(--btn-fill-hover) !important;
+  color: var(--btn-text) !important;
 }
 html.mode-pro .mdash-unlock-chip svg { stroke: currentColor; }
 
@@ -764,13 +772,13 @@ html.mode-pro .page-paywall-card { background: var(--surface) !important; }
 /* The IQ hub's start button is the same primary pill as everything else. */
 html.mode-pro .sales-cta {
   border-radius: var(--luxe-pill) !important;
-  border: 1px solid transparent !important;
-  background: var(--accent) !important;
-  color: var(--on-accent) !important;
+  border: 1px solid var(--btn-line) !important;
+  background: var(--btn-fill) !important;
+  color: var(--btn-text) !important;
   font-weight: 500 !important;
   box-shadow: none !important;
 }
-html.mode-pro .sales-cta:hover { background: var(--accent-2) !important; color: var(--on-accent) !important; transform: none !important; box-shadow: none !important; opacity: 1 !important; }
+html.mode-pro .sales-cta:hover { background: var(--btn-fill-hover) !important; color: var(--btn-text) !important; transform: none !important; box-shadow: none !important; opacity: 1 !important; }
 html.mode-pro .sales-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
 html.mode-pro .sales-eyebrow { color: var(--muted) !important; letter-spacing: 0.16em !important; }
 html.mode-pro .sales-section-title { font-family: var(--font-sans) !important; font-weight: 500 !important; }
@@ -1057,3 +1065,126 @@ html.mode-pro .mdash-connect { display: none !important; }
 html.mode-pro .mdash-connect + .mdash-overall { margin-top: 16px !important; }
 html.mode-pro .mdash-pillar-view { white-space: normal !important; line-height: 1.25; text-align: left; }
 html.mode-pro .measure-dashboard:not(:has(*)) { display: none !important; }
+
+/* ===================================================================
+   2026-11-12, later: collapsed rail, centered dialogs, compact RRT,
+   profile numbers, the IQ "not open yet" state.
+   =================================================================== */
+/* Collapsed rail: the wordmark goes, the expand button stays, Pass shows an icon. */
+html.rail-collapsed.mode-pro .site-rail-brand { display: none !important; }
+html.rail-collapsed.mode-pro .site-rail-head .site-rail-collapse { display: grid !important; }
+html.mode-pro .site-rail-pass svg { display: none; }
+html.rail-collapsed.mode-pro .site-rail-foot .site-rail-pass svg { display: block; }
+html.rail-collapsed.mode-pro .site-rail-foot .site-rail-pass { padding: 10px !important; }
+
+/* Back buttons: the chevron sits inside the pill, not on its edge. */
+html.mode-pro .back-button { padding: 6px 14px 6px 12px !important; gap: 8px !important; }
+html.mode-pro .back-button::before { width: 8px !important; height: 8px !important; margin-right: 0 !important; }
+
+/* Dialogs: one centered card. No grabber, no card inside a card. */
+html.mode-pro .screen-time-dialog,
+html.mode-pro #tasks-dialog,
+html.mode-pro .friend-dialog,
+html.mode-pro .social-leaderboard-dialog,
+html.mode-pro .routine-dialog,
+html.mode-pro .routine-load-dialog,
+html.mode-pro .session-summary-dialog {
+  inset: 0 !important;
+  margin: auto !important;
+  max-height: min(86vh, 860px);
+  animation: none !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8) !important;
+}
+html.mode-pro .screen-time-dialog::before,
+html.mode-pro #tasks-dialog::before,
+html.mode-pro .friend-dialog::before,
+html.mode-pro .social-leaderboard-dialog::before,
+html.mode-pro .routine-dialog::before,
+html.mode-pro .routine-load-dialog::before,
+html.mode-pro .exercise-sheet::before,
+html.mode-pro .session-summary-dialog::before { display: none !important; }
+html.mode-pro .routine-dialog form,
+html.mode-pro .routine-load-dialog form { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+html.mode-pro .routine-create-inline,
+html.mode-pro .routine-load-dialog .routine-create-inline {
+  background: transparent !important;
+  border: 1px dashed var(--line-strong) !important;
+  color: var(--text-2) !important;
+  border-radius: var(--radius-s) !important;
+}
+html.mode-pro .routine-load-dialog .routine-create-inline:hover { color: var(--text) !important; border-style: solid !important; }
+html.mode-pro .routine-empty { border: 1px dashed var(--line) !important; border-radius: var(--radius-s) !important; background: transparent !important; }
+
+/* RRT in play: no screen-high card, everything a short scroll-free stack. */
+html.mode-pro .rrt-game-active .rrt-stage-card {
+  min-height: 0 !important;
+  grid-template-rows: auto auto auto auto auto !important;
+  gap: 14px !important;
+  padding: 0 0 8px !important;
+  align-content: start !important;
+}
+html.mode-pro .rrt-game-active .rrt-prompt { align-self: start !important; }
+html.mode-pro .rrt-game-active .rrt-frame h2 { margin-top: 0; }
+
+/* Profile: the Profile/Data switch is a pair of quiet tabs, not a box above the card. */
+html.mode-pro .profile-view-switch {
+  display: inline-flex !important;
+  width: auto !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  gap: 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.mode-pro .profile-view-switch::before,
+html.mode-pro .profile-view-switch::after { display: none !important; }
+html.mode-pro .profile-view-switch button {
+  padding: 7px 14px !important;
+  border-radius: var(--radius-s) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  font-size: 13.5px !important;
+}
+html.mode-pro .profile-view-switch button:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .profile-view-switch button.active,
+html.mode-pro .profile-view-switch button[aria-pressed="true"] { background: var(--surface-2) !important; color: var(--text) !important; border-color: transparent !important; }
+
+/* Profile numbers: IQ and rating big, streak and XP small. No score yet: blurred. */
+html.mode-pro .profile-social-stats { display: flex !important; flex-wrap: wrap; gap: 6px 28px !important; align-items: flex-end; margin-top: 10px; }
+html.mode-pro .profile-social-stats div { display: grid; gap: 4px; }
+html.mode-pro .profile-social-stats div strong { font-family: var(--font-display) !important; font-size: 20px !important; line-height: 1 !important; letter-spacing: -0.01em; }
+html.mode-pro .profile-social-stats div.is-big strong { font-size: 40px !important; letter-spacing: -0.03em; }
+html.mode-pro .profile-social-stats div span { font-size: 12px !important; color: var(--muted) !important; }
+html.mode-pro .profile-social-stats .is-iq.is-empty strong { filter: blur(7px); opacity: 0.5; user-select: none; }
+html.mode-pro .profile-social-stats .is-iq span .battle-link { font-size: 12px; color: var(--text-2) !important; }
+
+/* Lobby panel: single-line pills, a title, a hint. */
+html.mode-pro .lobby-title { margin: 0 0 10px; font-size: 13px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+html.mode-pro .lobby-create { display: flex; gap: 10px; }
+html.mode-pro .lobby-create .battle-secondary { flex: 1; min-height: 44px !important; padding: 0 18px !important; border-radius: 999px !important; font-size: 14px !important; font-weight: 500 !important; border-color: var(--line-strong) !important; }
+html.mode-pro .lobby-create .battle-secondary:hover { background: var(--fill-subtle) !important; border-color: var(--text-2) !important; }
+html.mode-pro .lobby-hint { margin: 10px 0 0 !important; font-size: 12.5px !important; }
+
+/* IQ test not open (owner-only while it is calibrated). */
+html.iq-off .site-tab[data-site-tab="assessments"],
+html.iq-off [data-battle-take-test],
+html.iq-off [data-profile-take-test],
+html.iq-off .measure-hub-actions,
+html.iq-off .measure-hub-cats,
+html.iq-off #measure-progress,
+html.iq-off #results-teaser,
+html.iq-off .measure-hub-reports { display: none !important; }
+html.mode-pro .measure-hub-off {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}

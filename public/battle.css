@@ -43,16 +43,16 @@ html.mode-pro .community-open .hero { display: block; }
   border-radius: 999px; padding: 14px 22px; font: inherit; font-weight: 600; font-size: 15px; cursor: pointer;
   transition: transform .15s ease, background .15s ease, border-color .15s ease;
 }
-.battle-primary { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); }
+.battle-primary { background: var(--btn-fill, var(--accent)); color: var(--btn-text, var(--on-accent)); border: 1px solid var(--btn-line, var(--accent)); }
 .battle-primary small { font-weight: 500; font-size: 11.5px; opacity: .7; }
-.battle-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.battle-primary:hover { background: var(--btn-fill-hover, var(--accent-2)); }
 .battle-secondary { background: transparent; color: var(--text); border: 1px solid var(--line-strong); }
 .battle-secondary:hover { border-color: var(--text-2); }
 .battle-primary:active, .battle-secondary:active { transform: scale(.985); }
 
 .battle-pill {
   border-radius: 999px; padding: 8px 16px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent);
+  background: var(--btn-fill, var(--accent)); color: var(--btn-text, var(--on-accent)); border: 1px solid var(--btn-line, var(--accent));
 }
 .battle-pill.is-ghost { background: transparent; color: var(--text); border-color: var(--line-strong); }
 .battle-pill:hover { filter: brightness(.95); }
@@ -267,9 +267,9 @@ html.mode-pro .app-shell.battle-open .hero { display: none; }
 html.mode-pro .home-brand { margin: 0 0 10px; line-height: 1.2; }
 html.mode-pro .home-head { gap: 10px; }
 /* One primary action on Home: Quick 1v1 is the only filled button. */
-html.mode-pro .battle-primary { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
+html.mode-pro .battle-primary { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: var(--btn-line) !important; }
 html.mode-pro .battle-primary small { color: inherit; opacity: .7; }
-html.mode-pro .battle-primary:hover { background: var(--accent-2) !important; border-color: var(--accent-2) !important; }
+html.mode-pro .battle-primary:hover { background: var(--btn-fill-hover) !important; border-color: var(--btn-line) !important; }
 
 /* Text links are plain text: no box, no underline until hover. */
 html.mode-pro .battle-link,
@@ -314,3 +314,5 @@ html.mode-pro .home-cta.is-special {
 }
 html.mode-pro .home-cta.is-special i { font-style: normal; font-size: 12px; color: var(--muted); }
 html.mode-pro .home-cta.is-special:hover { color: var(--text) !important; border-color: var(--text-2) !important; border-style: solid !important; }
+html.mode-pro .battle-loading-bot { margin-top: 18px; }
+html.mode-pro .battle-loading-cancel { margin-top: 12px; }

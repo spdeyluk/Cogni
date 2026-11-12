@@ -30,6 +30,8 @@ const MAX_B = 1.3;
 const BOT_NAME = "Cogni";
 const BOT_NAMES = ["nora_k","Dmitri","elias.b","Yuki","Mateo","Ingrid","Kwame","sofia.r","Arjun","Lena","tomasz","Priya","Jonas","maya_v","Rafael","Aoife","Hugo","Zara","niklas","Chloe"];
 const LIVE_WINDOW_MS = 6000;   // how long a quick search waits for a human
+let skipWait = null;           // "Play a bot now" ends the wait early
+let quickToken = 0;            // guards the offline fallback against a double start
 let searchSeatId = null;       // open seat while searching, cancelled on leave
 
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
@@ -153,6 +155,7 @@ function onHostClick(event) {
   const t = event.target;
   const act = (sel) => t.closest(sel);
   if (act("[data-battle-quick]")) { startQuickMatch(); return; }
+  if (act("[data-battle-bot-now]")) { botNow(); return; }
   if (act("[data-battle-friends]")) { toggleFriendsPanel(); return; }
   const mk = act("[data-lobby-create]");
   if (mk) { createLobby(mk.dataset.lobbyCreate); return; }
@@ -398,10 +401,12 @@ function renderLobbyPanel() {
       <button class="battle-pill is-ghost" data-battle-challenge="${esc(f.id)}" type="button">Challenge</button>
     </li>`).join("");
   return `<section class="lobby-panel">
+    <h3 class="lobby-title">Open a lobby</h3>
     <div class="lobby-create">
-      <button class="battle-secondary" data-lobby-create="private" type="button" ${lobbyBusy ? "disabled" : ""}><span>Private lobby</span><small>Only with the code</small></button>
-      <button class="battle-secondary" data-lobby-create="public" type="button" ${lobbyBusy ? "disabled" : ""}><span>Public lobby</span><small>Anyone can join</small></button>
+      <button class="battle-secondary" data-lobby-create="private" type="button" ${lobbyBusy ? "disabled" : ""}>Private lobby</button>
+      <button class="battle-secondary" data-lobby-create="public" type="button" ${lobbyBusy ? "disabled" : ""}>Public lobby</button>
     </div>
+    <p class="battle-note lobby-hint">Private: only people with the code. Public: listed below for anyone to join.</p>
     <form class="lobby-join" onsubmit="return false">
       <input type="text" data-lobby-code maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Enter a code" aria-label="Lobby code">
       <button class="battle-pill" data-lobby-join-submit type="button" ${lobbyBusy ? "disabled" : ""}>Join</button>
@@ -635,10 +640,11 @@ async function startQuickMatch() {
   const me = d.getAuthUser();
   const online = d.supabaseEnabled && me && !d.isGuest();
   hub.error = "";
-  showLoading({ eyebrow: "Quick 1v1", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true });
+  showLoading({ eyebrow: "Quick 1v1", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true, botNow: true });
+  const token = ++quickToken;
   if (!online) {
     await wait(1800);
-    if (view !== "loading") return;
+    if (view !== "loading" || token !== quickToken || loading?.count != null) return;
     startLocalBot();
     return;
   }
@@ -688,9 +694,11 @@ function waitForOpponent(id, ms) {
     const finish = (row) => {
       if (done) return;
       done = true;
+      skipWait = null;
       if (channel) { try { d.supabase.removeChannel(channel); } catch { /* ignore */ } }
       resolve(row && row.opponent ? row : null);
     };
+    skipWait = () => finish(null);
     try {
       channel = d.supabase.channel(`seat:${id}`)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "battles", filter: `id=eq.${id}` }, (payload) => {
@@ -712,6 +720,14 @@ function waitForOpponent(id, ms) {
 function cancelSeat(id) {
   if (!id || !d.supabaseEnabled) return;
   d.supabase.rpc("battle_cancel", { p_battle: id }).then(() => loadBattles().catch(() => {})).catch(() => {});
+}
+
+// "Play a bot now" on the search screen: end the wait for a human early.
+function botNow() {
+  if (view !== "loading" || loading?.count != null) return;
+  if (skipWait) { skipWait(); return; }
+  quickToken += 1;
+  startLocalBot();
 }
 
 // Unrated bot duel for guests, or when the server has no bot support yet.
@@ -787,6 +803,7 @@ function renderLoading() {
       <p class="battle-eyebrow">${esc(l.eyebrow ?? "")}</p>
       <h2 class="battle-loading-title">${l.vs ? `You <i>vs</i> ${esc(l.vs)}` : esc(l.title ?? "")}</h2>
       ${l.sub ? `<p class="battle-note">${esc(l.sub)}</p>` : ""}
+      ${l.botNow ? `<button class="battle-pill is-ghost battle-loading-bot" data-battle-bot-now type="button">Play a bot now</button>` : ""}
       ${l.cancel ? `<button class="battle-link battle-loading-cancel" data-battle-back type="button">Cancel</button>` : ""}
     </div>`;
 }
