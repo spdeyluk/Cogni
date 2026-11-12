@@ -12,6 +12,7 @@ let view = "hub";        // hub | arena | result
 let hub = { battles: [], names: new Map(), friends: [], loading: false, error: "" };
 let arena = null;        // in-flight round state
 let result = null;       // last result shown
+let loading = null;      // match loading / countdown screen state
 let hubChannel = null;
 let roundChannel = null;
 let friendPickerOpen = false;   // the "Play with friends" panel
@@ -106,6 +107,7 @@ export function showBattle() {
   d.setPageHeader("Cogni", "IQ duels. Same questions, fastest right answers win.");
   if (view === "arena" && arena) { renderArena(); return; }
   if (view === "result" && result) { renderResult(); return; }
+  if (view === "loading" && loading) { renderLoading(); return; }
   view = "hub";
   renderHub();
   refreshHub();
@@ -130,7 +132,7 @@ function onHostClick(event) {
   const ch = act("[data-battle-challenge]");
   if (ch) { challengeUser(ch.dataset.battleChallenge); return; }
   const play = act("[data-battle-play]");
-  if (play) { const row = hub.battles.find((b) => b.id === play.dataset.battlePlay); if (row) playRound(row); return; }
+  if (play) { const row = hub.battles.find((b) => b.id === play.dataset.battlePlay); if (row) prepareRound(row, row.mode === "friend" ? "Friend duel" : "Quick 1v1"); return; }
   const cancel = act("[data-battle-cancel]");
   if (cancel) { cancelOpen(cancel.dataset.battleCancel); return; }
   const ans = act("[data-battle-answer]");
@@ -145,6 +147,7 @@ function leaveToHub() {
   stopTimer();
   unwatchRound();
   unwatchPublicLobbies();
+  stopLoading();
   arena = null;
   result = null;
   view = "hub";
@@ -414,7 +417,7 @@ async function joinLobby(code) {
     unwatchPublicLobbies();
     await loadNames([data.challenger, data.opponent]);
     if (!isOpen()) showBattle();
-    playRound(data);
+    prepareRound(data, "Lobby duel");
     return;
   } catch (error) {
     hub.error = lobbyError(error);
@@ -482,7 +485,7 @@ async function startFromLobby(row) {
   if (!data) { renderHub(); return; }
   await loadNames([data.challenger, data.opponent]);
   if (!isOpen()) showBattle();
-  playRound(data);
+  prepareRound(data, "Lobby duel");
 }
 
 let publicChannel = null;
@@ -602,13 +605,16 @@ async function startQuickMatch() {
   const seed = newSeed();
   const ids = pickItemIds(seed);
   hub.error = "";
+  showLoading({ eyebrow: "Quick 1v1", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true });
   try {
     const { data, error } = await d.supabase.rpc("battle_quick_match", { p_seed: seed, p_item_ids: ids });
     if (error) throw new Error(error.message);
-    if (myDone(data)) { hub.error = "You already have a round waiting for an opponent."; renderHub(); return; }
+    if (view !== "loading") return; // cancelled while searching
+    if (myDone(data)) { stopLoading(); view = "hub"; hub.error = "You already have a round waiting for an opponent."; renderHub(); return; }
     await loadNames([data.challenger, data.opponent]);
-    playRound(data);
+    prepareRound(data, "Quick 1v1");
   } catch (error) {
+    stopLoading(); view = "hub";
     hub.error = friendlyError(error);
     renderHub();
   }
@@ -624,7 +630,7 @@ export async function challengeUser(opponentId) {
     if (error) throw new Error(error.message);
     await loadNames([data.challenger, data.opponent]);
     if (!isOpen()) showBattle();
-    playRound(data);
+    prepareRound(data, "Friend duel");
   } catch (error) {
     hub.error = friendlyError(error);
     if (!isOpen()) showBattle();
@@ -644,7 +650,7 @@ function startPractice() {
     id: `local-${seed}`, local: true, status: "active", mode: "practice",
     challenger: d.getAuthUser()?.id ?? "me", opponent: "bot", seed, item_ids: pickItemIds(seed), created_at: new Date().toISOString()
   };
-  playRound(row);
+  prepareRound(row, "Practice");
 }
 
 function friendlyError(error) {
@@ -652,6 +658,57 @@ function friendlyError(error) {
   if (/function .*does not exist|battle_quick_match|schema cache/i.test(m)) return "Battles are not switched on for this server yet.";
   if (/not signed in|JWT/i.test(m)) return "Sign in to play rated battles.";
   return m || "Something went wrong.";
+}
+
+// ---------------------------------------------------------------------------
+// Loading screen: searching, then "you vs X" with a short countdown.
+// ---------------------------------------------------------------------------
+let loadingTimer = null;
+
+function showLoading(state) {
+  stopLoading();
+  loading = state;
+  view = "loading";
+  renderLoading();
+}
+
+function stopLoading() {
+  if (loadingTimer) window.clearInterval(loadingTimer);
+  loadingTimer = null;
+  loading = null;
+}
+
+function renderLoading() {
+  if (!host || !loading) return;
+  const esc = d.escapeHtml;
+  const l = loading;
+  host.innerHTML = `
+    <div class="battle-loading" role="status" aria-live="polite">
+      ${l.count != null
+        ? `<div class="battle-count"><span key="${l.count}">${l.count}</span></div>`
+        : `<div class="battle-spinner" aria-hidden="true"></div>`}
+      <p class="battle-eyebrow">${esc(l.eyebrow ?? "")}</p>
+      <h2 class="battle-loading-title">${l.vs ? `You <i>vs</i> ${esc(l.vs)}` : esc(l.title ?? "")}</h2>
+      ${l.sub ? `<p class="battle-note">${esc(l.sub)}</p>` : ""}
+      ${l.cancel ? `<button class="battle-link battle-loading-cancel" data-battle-back type="button">Cancel</button>` : ""}
+    </div>`;
+}
+
+// Hold the match card for three seconds, then drop into the arena.
+function prepareRound(row, eyebrow) {
+  const me = d.getAuthUser();
+  const who = row.local ? BOT_NAME : nameOf(otherId(row));
+  const seatOpen = !row.local && !row.opponent;
+  showLoading(seatOpen
+    ? { eyebrow, title: "No one is searching right now", sub: "Your round still counts. The next player to search plays this same set against your score.", count: 3 }
+    : { eyebrow, vs: who, sub: "Same eight questions. Fastest right answers win.", count: 3 });
+  loadingTimer = window.setInterval(() => {
+    if (!loading || view !== "loading") { stopLoading(); return; }
+    loading.count -= 1;
+    if (loading.count > 0) { renderLoading(); return; }
+    stopLoading();
+    playRound(row);
+  }, 1000);
 }
 
 // ---------------------------------------------------------------------------
@@ -1020,7 +1077,7 @@ export function resetBattleState() {
   stopTimer(); unwatchRound();
   if (hubChannel) { try { d.supabase.removeChannel(hubChannel); } catch { /* ignore */ } hubChannel = null; }
   my = null; arena = null; result = null; view = "hub";
-  lobby = null; unwatchLobby(); unwatchPublicLobbies(); friendPickerOpen = false; publicLobbies = []; lobbyBusy = false;
+  lobby = null; unwatchLobby(); unwatchPublicLobbies(); friendPickerOpen = false; publicLobbies = []; lobbyBusy = false; stopLoading();
   hub = { battles: [], names: new Map(), friends: [], loading: false, error: "" };
   ranksData = { iq: null, battle: null, incoming: [], outgoing: [], status: "", statusState: "" };
 }

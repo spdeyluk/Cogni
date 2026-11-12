@@ -281,3 +281,16 @@ html.mode-pro .battle-link:active {
 }
 html.mode-pro .battle-link:hover { color: var(--text) !important; text-decoration: underline !important; text-underline-offset: 3px; }
 html.mode-pro .battle-link:focus-visible { outline: 1px solid var(--text-2) !important; outline-offset: 3px; border-radius: 2px !important; }
+
+/* ---------- match loading ---------- */
+.battle-loading { max-width: 520px; margin: 96px auto 0; display: grid; gap: 10px; justify-items: center; text-align: center; animation: battle-fade .25s ease; }
+.battle-loading-title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 30px; letter-spacing: -.02em; color: var(--text); }
+.battle-loading-title i { font-style: normal; font-weight: 500; font-size: 16px; color: var(--muted); margin: 0 10px; vertical-align: middle; }
+.battle-loading .battle-note { max-width: 40ch; }
+.battle-loading-cancel { margin-top: 8px; }
+.battle-spinner { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--line-strong); border-top-color: var(--text); animation: battle-spin .8s linear infinite; margin-bottom: 14px; }
+.battle-count { width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; margin-bottom: 14px; }
+.battle-count span { font-family: var(--font-display); font-weight: 600; font-size: 32px; color: var(--text); font-variant-numeric: tabular-nums; animation: battle-pop .5s ease; }
+@keyframes battle-spin { to { transform: rotate(360deg); } }
+@keyframes battle-pop { from { transform: scale(1.25); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+@keyframes battle-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
