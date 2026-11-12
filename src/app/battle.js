@@ -34,6 +34,21 @@ export function initBattle(deps) {
 // Public status: push my display name + latest IQ score to profiles, read back
 // my ratings. Rating columns are protected server-side; we only write status.
 // ---------------------------------------------------------------------------
+const STATUS_COLUMNS = "id, handle, display_name, avatar_initial, iq_score, iq_percentile, iq_taken_at, battle_rating, battle_wins, battle_losses, battle_draws";
+const REFERRAL_COLUMNS = ", referral_code, referrals";
+let statusColumns = STATUS_COLUMNS + REFERRAL_COLUMNS;
+
+// Until referrals.sql has run, selecting the referral columns 400s; drop back
+// to the base columns rather than losing ratings and IQ on the hub.
+async function selectMyStatus(query) {
+  let result = await query(statusColumns);
+  if (result.error && statusColumns !== STATUS_COLUMNS && /referral/i.test(result.error.message ?? "")) {
+    statusColumns = STATUS_COLUMNS;
+    result = await query(statusColumns);
+  }
+  return result;
+}
+
 export async function syncPublicStatus() {
   const me = d?.getAuthUser();
   if (!d?.supabaseEnabled || !me || d.isGuest()) return null;
@@ -48,12 +63,12 @@ export async function syncPublicStatus() {
     patch.iq_taken_at = latest.completedAt ?? new Date().toISOString();
   }
   try {
-    const { data } = await d.supabase
+    const { data } = await selectMyStatus((columns) => d.supabase
       .from("profiles")
       .update(patch)
       .eq("id", me.id)
-      .select("id, handle, display_name, avatar_initial, iq_score, iq_percentile, iq_taken_at, battle_rating, battle_wins, battle_losses, battle_draws")
-      .maybeSingle();
+      .select(columns)
+      .maybeSingle());
     if (data) my = data;
   } catch {
     // Status is best effort; the UI falls back to local data.
@@ -66,11 +81,11 @@ export function myStatus() { return my; }
 async function loadMyStatus() {
   const me = d.getAuthUser();
   if (!d.supabaseEnabled || !me || d.isGuest()) return null;
-  const { data } = await d.supabase
+  const { data } = await selectMyStatus((columns) => d.supabase
     .from("profiles")
-    .select("id, handle, display_name, avatar_initial, iq_score, iq_percentile, iq_taken_at, battle_rating, battle_wins, battle_losses, battle_draws")
+    .select(columns)
     .eq("id", me.id)
-    .maybeSingle();
+    .maybeSingle());
   if (data) my = data;
   return my;
 }

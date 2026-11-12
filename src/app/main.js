@@ -43,6 +43,7 @@ import {
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
 import { resolveGeneratedItem, generateCandidates, generatedItemId, GENERATED_FORMATS } from "../core/assessments/catGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState } from "./battle.js";
+import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -1508,7 +1509,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training and the IQ test are free for everyone. Pass is your complete training record.";
+    if (sub) sub.textContent = "Training and battles are free for everyone. Pass opens the IQ test right away and keeps your complete training record.";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -1933,6 +1934,7 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
+  "The IQ test, unlocked now instead of after three invites",
   "Every training session saved, with trends over time",
   "Full session breakdowns: misses, false alarms, answer speed",
   "Per-exercise progress by ability",
@@ -6334,7 +6336,9 @@ function onAuthenticated() {
   // Publish display name + latest IQ to the social profile; pull ratings back.
   repairPlaceholderProfile();
   resetBattleState();
-  syncPublicStatus().then(() => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); });
+  syncPublicStatus().then(() => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); refreshReferralPanels(); });
+  // A new account that arrived through an invite link credits its referrer.
+  claimPendingReferral().then((claimed) => { if (claimed) syncPublicStatus().then(refreshReferralPanels); });
   // First launch on mobile: the story onboarding runs before the app.
   if (needsOnboarding()) {
     showOnboarding();
@@ -7796,8 +7800,19 @@ initBattle({
   socialApiRequest,
   upsertSocialProfile,
   showAssessments,
-  onStatusChange: () => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); }
+  onStatusChange: () => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); refreshReferralPanels(); }
 });
+initReferral({
+  supabase,
+  supabaseEnabled,
+  getAuthUser: () => authUser,
+  isGuest: () => guestMode || authUser?.provider === "guest",
+  myStatus: battleStatus,
+  syncPublicStatus,
+  openPricingModal,
+  escapeHtml
+});
+captureReferralCode();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
@@ -8387,10 +8402,11 @@ function renderMeasurementSales() {
       <h2 class="sales-title">${title}</h2>
       <p class="sales-lede">${lede}</p>
 
-      <button class="sales-cta" id="sales-start" type="button">Start test</button>
+      <button class="sales-cta" id="sales-start" type="button">${cogniUiMode === "pro" && !iqTestUnlocked() ? "Unlock the IQ test" : "Start test"}</button>
 
       <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
-      <p class="sales-note">${cogniUiMode === "pro" ? "Free. Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
+      <p class="sales-note">${cogniUiMode === "pro" ? "Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
+      ${cogniUiMode === "pro" && !iqTestUnlocked() ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
     </div>
 
     <section class="sales-section">
@@ -8672,6 +8688,17 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   const restart = document.querySelector("#measure-restart");
   if (restart) restart.hidden = !takingTest || done === 0;
 
+  // Locked on web until three referrals or Pass: the invite panel sits under the actions.
+  let lock = hub.querySelector("[data-referral-host]");
+  const locked = cogniUiMode === "pro" && !iqTestUnlocked();
+  if (locked) {
+    if (!lock) { lock = document.createElement("div"); lock.dataset.referralHost = "compact"; hub.querySelector(".measure-hub-actions")?.after(lock); }
+    lock.innerHTML = referralPanelHtml({ compact: true });
+    if (cta) cta.textContent = "Unlock the IQ test";
+  } else if (lock) {
+    lock.remove();
+  }
+
   renderMeasureReports(total);
 }
 
@@ -8727,6 +8754,8 @@ function renderMeasureReports(total) {
 document.querySelector("#measure-continue")?.addEventListener("click", (event) => {
   // Both "Start the test" and "Start a new test" go to the picker screen, where
   // you choose which subtest to sit, in whatever order you like.
+  if (!requireAuth("Sign in to take the IQ test.")) return;
+  if (!iqTestUnlocked()) { openReferralDialog(); return; }
   measureSubtestsOpen = true;
   if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
   openMeasureSubtests();
@@ -8909,6 +8938,7 @@ function subtestItemPool(subtest) {
 
 function startSubtest(subtestId) {
   if (!requireAuth("Sign in to take the IQ test.")) return;
+  if (!iqTestUnlocked()) { openReferralDialog(); return; }
   const subtest = subtestById(subtestId);
   if (!subtest) return;
   const attempt = loadMeasureAttempt();
@@ -9806,6 +9836,13 @@ function webPlanUnlocked() {
 function measurementReportUnlocked() {
   if (cogniUiMode === "pro") return true;
   return isProUser();
+}
+
+// Sitting the test is the one gated thing on web: three referred sign-ups or
+// Cogni Pass. Reports already earned stay readable either way.
+function iqTestUnlocked() {
+  if (cogniUiMode !== "pro") return isProUser();
+  return webPlanUnlocked() || referralUnlocked();
 }
 
 // Figure weights: each scale is two pans over a fulcrum. The last pan is the
