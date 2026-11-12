@@ -80,6 +80,7 @@ html.mode-pro .community-open .hero { display: block; }
 .battle-outcome.is-loss { color: var(--muted); }
 .battle-outcome.is-draw { color: var(--text-2); }
 
+.battle-how-ranks { margin-top: 12px; }
 .battle-how ol { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 13.5px; line-height: 1.65; display: grid; gap: 4px; }
 
 /* ---------- arena ---------- */

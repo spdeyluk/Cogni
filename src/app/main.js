@@ -7800,6 +7800,7 @@ initBattle({
   socialApiRequest,
   upsertSocialProfile,
   showAssessments,
+  showCommunity,
   onStatusChange: () => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); refreshReferralPanels(); }
 });
 initReferral({

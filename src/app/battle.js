@@ -98,7 +98,7 @@ export function showBattle() {
   d.appShell.classList.remove(...d.sectionResetClasses);
   d.appShell.classList.add("battle-open");
   d.setActiveTab("battle");
-  d.setPageHeader("Battle", "Eight questions. Same set for both of you. Fastest right answers win.");
+  d.setPageHeader("Home", "Your rating, your IQ, and your next duel.");
   if (view === "arena" && arena) { renderArena(); return; }
   if (view === "result" && result) { renderResult(); return; }
   view = "hub";
@@ -125,6 +125,7 @@ function onHostClick(event) {
   if (act("[data-battle-back]")) { leaveToHub(); return; }
   if (act("[data-battle-rematch]")) { rematch(); return; }
   if (act("[data-battle-take-test]")) { d.showAssessments(); return; }
+  if (act("[data-battle-ranks]")) { d.showCommunity?.(); return; }
 }
 
 function leaveToHub() {
@@ -306,6 +307,7 @@ function renderHub() {
           <li>Right answer is 100. Up to 50 more for speed. Nothing for a miss.</li>
           <li>Rating moves like chess Elo. Beat someone above you and it moves more.</li>
         </ol>
+        <button class="battle-link battle-how-ranks" data-battle-ranks type="button">See the leaderboard and add friends</button>
       </section>
     </div>`;
 }
@@ -314,7 +316,7 @@ function renderFriendPicker() {
   const esc = d.escapeHtml;
   if (!d.getAuthUser() || d.isGuest()) return `<section class="battle-friends"><p class="battle-note">Sign in to challenge friends.</p></section>`;
   if (!hub.friends.length) {
-    return `<section class="battle-friends"><p class="battle-note">No friends yet. Add people by their @username on the Ranks page, then challenge them here.</p></section>`;
+    return `<section class="battle-friends"><p class="battle-note">No friends yet. Add people by their @username on the leaderboard, then challenge them here.</p></section>`;
   }
   return `<section class="battle-friends"><ul>${hub.friends.map((f) => `
     <li class="battle-row">

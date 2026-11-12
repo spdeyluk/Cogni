@@ -280,18 +280,6 @@ html.mode-pro .site-tab.active {
   border-color: var(--line) !important;
   font-weight: 500 !important;
 }
-html.mode-pro .site-tab.active span { position: relative; }
-html.mode-pro .site-tab.active span::after {
-  content: "";
-  position: absolute;
-  right: -14px;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  transform: translateY(-50%);
-}
 
 /* Rail footer: Discord + the Pass call to action. */
 html.mode-pro .site-rail-foot {
@@ -335,7 +323,6 @@ html.mode-pro .site-rail-foot .site-rail-pass:hover { background: var(--luxe-acc
 html.rail-collapsed.mode-pro .site-rail-foot span { display: none; }
 html.rail-collapsed.mode-pro .site-rail-foot a,
 html.rail-collapsed.mode-pro .site-rail-foot button { justify-content: center; padding: 10px !important; }
-html.rail-collapsed.mode-pro .site-tab.active span::after { display: none; }
 
 /* ---------- cards ---------- */
 html.mode-pro .exercise-card,

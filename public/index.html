@@ -15,9 +15,9 @@
          immediately in the fallback and the webfont applies when it arrives —
          preloading them was working against that. They now load normally.
          Converting these to woff2 would cut roughly two thirds again. -->
-    <link rel="stylesheet" href="styles.css?v=20261112-ref1">
-    <link rel="stylesheet" href="luxe.css?v=20261112-ref1">
-    <link rel="stylesheet" href="battle.css?v=20261112-ref1">
+    <link rel="stylesheet" href="styles.css?v=20261112-home1">
+    <link rel="stylesheet" href="luxe.css?v=20261112-home1">
+    <link rel="stylesheet" href="battle.css?v=20261112-home1">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -546,8 +546,8 @@
 
       <nav class="site-rail-nav" aria-label="Sections">
         <button class="site-tab" data-site-tab="battle" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5 21 18v3h-3L6.5 9.5"/><path d="M5 14l-2 2"/><path d="M8 16l-4 4"/></svg>
-          <span>Battle</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+          <span>Home</span>
         </button>
         <button class="site-tab" data-site-tab="exercises" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -556,10 +556,6 @@
         <button class="site-tab" data-site-tab="assessments" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>
           <span>IQ Test</span>
-        </button>
-        <button class="site-tab" data-site-tab="community" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4"/></svg>
-          <span>Ranks</span>
         </button>
         <button class="site-tab" data-site-tab="statistics" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -2740,6 +2736,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261112-ref1"></script>
+    <script type="module" src="src/app/main.js?v=20261112-home1"></script>
   </body>
 </html>
