@@ -294,3 +294,14 @@ html.mode-pro .battle-link:focus-visible { outline: 1px solid var(--text-2) !imp
 @keyframes battle-spin { to { transform: rotate(360deg); } }
 @keyframes battle-pop { from { transform: scale(1.25); opacity: .4; } to { transform: scale(1); opacity: 1; } }
 @keyframes battle-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Home actions: two single-line pills, one filled. */
+html.mode-pro .home-actions { display: flex; justify-content: center; gap: 12px; width: auto; max-width: none; margin-top: 12px; }
+html.mode-pro .home-cta {
+  display: inline-flex !important; align-items: center; justify-content: center;
+  min-height: 48px !important; min-width: 196px; padding: 0 28px !important;
+  border-radius: 999px !important; font-size: 15px !important; font-weight: 600 !important; letter-spacing: -.005em;
+}
+html.mode-pro .home-cta.battle-secondary { border-color: var(--line-strong) !important; }
+html.mode-pro .home-cta.battle-secondary:hover { background: var(--fill-subtle) !important; border-color: var(--text-2) !important; }
+@media (max-width: 720px) { html.mode-pro .home-actions { flex-direction: column; align-items: stretch; } html.mode-pro .home-cta { min-width: 0; } }

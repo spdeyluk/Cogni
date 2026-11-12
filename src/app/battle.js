@@ -289,12 +289,8 @@ function renderHub() {
       </header>
 
       <div class="home-actions">
-        <button class="battle-primary home-cta" data-battle-quick type="button">
-          <span>Quick 1v1</span><small>Rated</small>
-        </button>
-        <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">
-          <span>Play with friends</span><small>Public or private lobby</small>
-        </button>
+        <button class="battle-primary home-cta" data-battle-quick type="button">Quick 1v1</button>
+        <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">Play with friends</button>
       </div>
       <button class="battle-link home-practice" data-battle-practice type="button">Practice against ${BOT_NAME}</button>
 
