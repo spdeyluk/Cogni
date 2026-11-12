@@ -774,3 +774,97 @@ html.mode-pro .sales-cta:hover { background: var(--accent-2) !important; color: 
 html.mode-pro .sales-title { font-family: var(--font-display) !important; font-weight: 600 !important; }
 html.mode-pro .sales-eyebrow { color: var(--muted) !important; letter-spacing: 0.16em !important; }
 html.mode-pro .sales-section-title { font-family: var(--font-sans) !important; font-weight: 500 !important; }
+
+/* ===================================================================
+   Editor layout (2026-11-12). The app sits as one inset panel on a
+   near-black frame, the way a code editor frames its workspace: hairline
+   borders, left-aligned compact headers, denser type. Tokens first, then
+   the few layout rules that make the panel.
+   =================================================================== */
+html.mode-pro {
+  --frame: #0d0d0e;
+  --bg: #131315;
+  --surface: #19191c;
+  --surface-2: #212125;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+  --fill-subtle: rgba(255, 255, 255, 0.045);
+  --radius: 10px;
+  --radius-s: 8px;
+}
+html.mode-pro[data-theme="light"] {
+  --frame: #e4e4e7;
+  --bg: #f4f4f5;
+  --surface: #fbfbfc;
+  --surface-2: #e9e9ec;
+  --line: rgba(0, 0, 0, 0.07);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --fill-subtle: rgba(0, 0, 0, 0.04);
+}
+
+/* The frame behind everything; the panel is the app. */
+html.mode-pro,
+html.mode-pro body,
+html.mode-pro .app-shell { background: var(--frame) !important; }
+html.mode-pro:not(.landing-active) .app-content {
+  box-sizing: border-box;
+  margin: 10px 10px 10px 258px;
+  min-height: calc(100vh - 20px);
+  padding: 22px 30px 56px !important;
+  padding-left: 30px !important;
+  background: var(--bg) !important;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+html.rail-collapsed.mode-pro:not(.landing-active) .app-content { margin-left: 86px; padding-left: 30px !important; }
+html.mode-pro .site-rail { background: var(--frame) !important; border-right: 0 !important; padding: 16px 12px !important; gap: 12px !important; }
+html.mode-pro .site-rail-brand span { font-size: 20px !important; }
+html.mode-pro .site-rail-account { background: var(--bg) !important; }
+html.mode-pro .site-tab {
+  border-radius: var(--radius-s) !important;
+  font-size: 13.5px !important;
+  padding: 8px 12px !important;
+}
+html.mode-pro .site-tab.active { background: var(--surface-2) !important; border-color: transparent !important; }
+html.mode-pro .site-rail-foot a,
+html.mode-pro .site-rail-foot button { border-radius: var(--radius-s) !important; font-size: 13px !important; }
+html.mode-pro .app-topright .theme-toggle { width: 34px; height: 34px; background: transparent !important; box-shadow: none; }
+html.mode-pro:not(.landing-active) .app-topright { top: 24px; right: 34px; }
+
+/* Page header: left-aligned, compact, a hairline under it. */
+html.mode-pro .hero { margin-bottom: 22px !important; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+html.mode-pro .hero .brand-lockup { justify-content: flex-start !important; text-align: left !important; }
+html.mode-pro #page-title { font-size: 24px !important; letter-spacing: -0.02em; }
+html.mode-pro .hero .lede { text-align: left !important; margin-inline: 0 !important; font-size: 13.5px !important; margin-top: 4px !important; }
+html.mode-pro .hero .eyebrow { margin-bottom: 4px !important; }
+
+/* Denser hub. */
+html.mode-pro .battle-hub, html.mode-pro .ranks { margin: 0; max-width: 820px; gap: 14px; }
+html.mode-pro .battle-me-card { padding: 16px 18px; }
+html.mode-pro .battle-big { font-size: 36px; }
+html.mode-pro .battle-primary, html.mode-pro .battle-secondary { min-height: 54px; font-size: 14px; border-radius: var(--radius-s); }
+html.mode-pro .battle-list, html.mode-pro .battle-how, html.mode-pro .battle-friends, html.mode-pro .ranks-board, html.mode-pro .ranks-friends { padding: 14px 16px; }
+html.mode-pro .battle-how ol { font-size: 13px; }
+html.mode-pro .battle-note { font-size: 13px; }
+html.mode-pro .battle-pill { border-radius: var(--radius-s); }
+html.mode-pro .referral-panel { border-radius: var(--radius); }
+
+@media (max-width: 900px) {
+  html.mode-pro:not(.landing-active) .app-content { margin: 0; border: 0; border-radius: 0; min-height: auto; padding: 18px 16px 48px !important; }
+  html.mode-pro .site-rail { border-bottom: 1px solid var(--line) !important; }
+}
+/* The IQ page used to drop the panel margins to go full-bleed; keep it in the panel. */
+html.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { width: auto; margin: 10px 10px 10px 258px; }
+html.rail-collapsed.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { margin-left: 86px; }
+html.mode-pro .hero { margin-inline: 0 !important; max-width: none !important; }
+html.mode-pro .referral-panel .battle-secondary { background: transparent !important; border-color: var(--line-strong) !important; color: var(--text) !important; }
+@media (max-width: 900px) {
+  html.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { margin: 0; }
+}
+html.mode-pro:not(.landing-active) .app-content,
+html.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { width: auto !important; max-width: none !important; }
+html.mode-pro .hero { width: auto !important; }
+/* IQ page: the panel is the frame now, so the picker card loses its own box. */
+html.mode-pro .measure-picker.is-selling { border: 0 !important; border-radius: 0 !important; background: transparent !important; padding-top: 8px !important; }
+html.mode-pro .sales-title { font-size: clamp(28px, 2.8vw, 36px) !important; }
+html.mode-pro .sales-lede { font-size: 15px !important; }
