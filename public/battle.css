@@ -270,3 +270,14 @@ html.mode-pro .home-head { gap: 10px; }
 html.mode-pro .battle-primary { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
 html.mode-pro .battle-primary small { color: inherit; opacity: .7; }
 html.mode-pro .battle-primary:hover { background: var(--accent-2) !important; border-color: var(--accent-2) !important; }
+
+/* Text links are plain text: no box, no underline until hover. */
+html.mode-pro .battle-link,
+html.mode-pro .battle-link:focus,
+html.mode-pro .battle-link:active {
+  border: 0 !important; background: none !important; box-shadow: none !important; outline: none !important;
+  padding: 0 !important; border-radius: 0 !important; min-height: 0 !important;
+  color: var(--text-2) !important; text-decoration: none !important; font-weight: 500;
+}
+html.mode-pro .battle-link:hover { color: var(--text) !important; text-decoration: underline !important; text-underline-offset: 3px; }
+html.mode-pro .battle-link:focus-visible { outline: 1px solid var(--text-2) !important; outline-offset: 3px; border-radius: 2px !important; }
