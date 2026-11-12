@@ -24,8 +24,19 @@ const LOBBY_KEY = "cogni.lobby.v1";
 
 const ROUNDS = 8;
 const PLAN = ["fluid", "verbal", "quant", "fluid", "weights", "verbal", "spatial", "quant"];
-const TEXT_LIMIT_MS = 20000;
-const VISUAL_LIMIT_MS = 30000;
+// Round length. Quick 1v1 is always two minutes; a lobby host picks one of
+// ROUND_LENGTHS. The budget is split across the eight tasks by weight, so a
+// visual puzzle (matrix, figure, scale) gets 1.5x the time of a text item.
+const QUICK_ROUND_MS = 120000;
+const ROUND_LENGTHS = [
+  { ms: 60000, label: "1 min" },
+  { ms: 120000, label: "2 min" },
+  { ms: 180000, label: "3 min" },
+  { ms: 300000, label: "5 min" }
+];
+const TEXT_WEIGHT = 2;
+const VISUAL_WEIGHT = 3;
+let lobbyRoundMs = QUICK_ROUND_MS;
 const MAX_B = 1.3;
 const BOT_NAME = "Cogni";
 const BOT_NAMES = ["nora_k","Dmitri","elias.b","Yuki","Mateo","Ingrid","Kwame","sofia.r","Arjun","Lena","tomasz","Priya","Jonas","maya_v","Rafael","Aoife","Hugo","Zara","niklas","Chloe"];
@@ -157,6 +168,8 @@ function onHostClick(event) {
   if (act("[data-battle-quick]")) { startQuickMatch(); return; }
   if (act("[data-battle-bot-now]")) { botNow(); return; }
   if (act("[data-battle-friends]")) { toggleFriendsPanel(); return; }
+  const len = act("[data-lobby-length]");
+  if (len) { lobbyRoundMs = Number(len.dataset.lobbyLength) || QUICK_ROUND_MS; renderHub(); return; }
   const mk = act("[data-lobby-create]");
   if (mk) { createLobby(mk.dataset.lobbyCreate); return; }
   if (act("[data-lobby-join-submit]")) { joinLobby(host.querySelector("[data-lobby-code]")?.value); return; }
@@ -385,14 +398,14 @@ function renderLobbyPanel() {
     return `<section class="lobby-panel is-waiting">
       <span class="battle-eyebrow">${lobby.visibility === "public" ? "Public lobby" : "Private lobby"}</span>
       <strong class="lobby-code">${esc(lobby.code)}</strong>
-      <p class="battle-note">Waiting for a friend to join. Share the code or the link; the duel starts the moment they do.</p>
+      <p class="battle-note">${esc(roundLabel(roundMsOf(lobby)))} round · 8 tasks. Waiting for a friend to join. Share the code or the link; the duel starts the moment they do.</p>
       <div class="lobby-link"><input type="text" readonly value="${esc(lobbyLink(lobby.code))}" aria-label="Lobby link"><button class="battle-pill" data-lobby-copy type="button">Copy</button></div>
       <button class="battle-link" data-lobby-close type="button">Close lobby</button>
     </section>`;
   }
   const rooms = publicLobbies.map((r) => `
     <li class="battle-row">
-      <div><strong>${esc(displayName(r))}</strong><span>Rating ${r.battle_rating ?? 1000}${r.iq_score ? ` · IQ ${r.iq_score}` : ""} · ${timeAgo(r.created_at)}</span></div>
+      <div><strong>${esc(displayName(r))}</strong><span>Rating ${r.battle_rating ?? 1000}${r.iq_score ? ` · IQ ${r.iq_score}` : ""} · ${esc(roundLabel(roundMsOf(r)))} · ${timeAgo(r.created_at)}</span></div>
       <button class="battle-pill" data-lobby-join="${esc(r.code)}" type="button" ${lobbyBusy ? "disabled" : ""}>Join</button>
     </li>`).join("");
   const friends = hub.friends.map((f) => `
@@ -402,6 +415,10 @@ function renderLobbyPanel() {
     </li>`).join("");
   return `<section class="lobby-panel">
     <h3 class="lobby-title">Open a lobby</h3>
+    <div class="lobby-length" role="radiogroup" aria-label="Round length">
+      <span class="lobby-length-label">Round</span>
+      ${ROUND_LENGTHS.map((r) => `<button class="lobby-length-pill${r.ms === lobbyRoundMs ? " is-on" : ""}" data-lobby-length="${r.ms}" type="button" role="radio" aria-checked="${r.ms === lobbyRoundMs}">${r.label}</button>`).join("")}
+    </div>
     <div class="lobby-create">
       <button class="battle-secondary" data-lobby-create="private" type="button" ${lobbyBusy ? "disabled" : ""}>Private lobby</button>
       <button class="battle-secondary" data-lobby-create="public" type="button" ${lobbyBusy ? "disabled" : ""}>Public lobby</button>
@@ -428,7 +445,11 @@ async function createLobby(visibility) {
   const ids = pickItemIds(seed);
   lobbyBusy = true; hub.error = ""; renderHub();
   try {
-    const { data, error } = await d.supabase.rpc("lobby_create", { p_visibility: visibility, p_seed: seed, p_item_ids: ids });
+    let { data, error } = await d.supabase.rpc("lobby_create", { p_visibility: visibility, p_seed: seed, p_item_ids: ids, p_round_ms: lobbyRoundMs });
+    if (error && /p_round_ms|lobby_create\(/i.test(error.message ?? "")) {
+      // Server predates round lengths: open the lobby at the default two minutes.
+      ({ data, error } = await d.supabase.rpc("lobby_create", { p_visibility: visibility, p_seed: seed, p_item_ids: ids }));
+    }
     if (error) throw new Error(error.message);
     lobby = data;
     watchLobby(data.id);
@@ -630,7 +651,26 @@ function pickItemIds(seed) {
 
 function newSeed() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`; }
 
-function limitFor(item) { return (item.matrix || item.figure || item.weights) ? VISUAL_LIMIT_MS : TEXT_LIMIT_MS; }
+function itemWeight(item) { return (item.matrix || item.figure || item.weights) ? VISUAL_WEIGHT : TEXT_WEIGHT; }
+function roundMsOf(row) {
+  const ms = Number(row?.round_ms);
+  return Number.isFinite(ms) && ms >= 30000 ? ms : QUICK_ROUND_MS;
+}
+// Per-item time limits that add up to the round length.
+function itemLimits(items, roundMs) {
+  const total = items.reduce((t, it) => t + itemWeight(it), 0) || 1;
+  return items.map((it) => Math.max(5000, Math.round(roundMs * itemWeight(it) / total)));
+}
+function roundLabel(ms) {
+  const found = ROUND_LENGTHS.find((r) => r.ms === ms);
+  if (found) return found.label;
+  const m = ms / 60000;
+  return Number.isInteger(m) ? `${m} min` : `${Math.round(ms / 1000)} s`;
+}
+function clock(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
 
 // ---------------------------------------------------------------------------
 // Starting duels
@@ -737,7 +777,7 @@ function startLocalBot() {
   const row = {
     id: `local-${seed}`, local: true, status: "active", mode: "bot",
     bot_name: BOT_NAMES[Math.floor(rng() * BOT_NAMES.length)],
-    challenger: d.getAuthUser()?.id ?? "me", opponent: null, seed, item_ids: pickItemIds(seed), created_at: new Date().toISOString()
+    challenger: d.getAuthUser()?.id ?? "me", opponent: null, seed, item_ids: pickItemIds(seed), round_ms: QUICK_ROUND_MS, created_at: new Date().toISOString()
   };
   prepareRound(row, "Quick 1v1");
 }
@@ -816,7 +856,7 @@ async function prepareRound(row, eyebrow) {
   const seatOpen = !isBot && !row.opponent;
   showLoading(seatOpen
     ? { eyebrow, title: "No one is searching right now", sub: "Your round still counts. The next player to search plays this same set against your score.", count: 3 }
-    : { eyebrow, vs: who, sub: "Same eight questions. Fastest right answers win.", count: 3 });
+    : { eyebrow, vs: who, sub: `Same eight questions, ${roundLabel(roundMsOf(row))} on the clock. Fastest right answers win.`, count: 3 });
   loadingTimer = window.setInterval(() => {
     if (!loading || view !== "loading") { stopLoading(); return; }
     loading.count -= 1;
@@ -837,7 +877,8 @@ function playRound(row) {
   unwatchRound();
   const items = (row.item_ids ?? []).map((id) => d.catItem(id)).filter(Boolean);
   if (!items.length) { hub.error = "This battle has no items."; renderHub(); return; }
-  arena = { row, items, index: 0, answers: [], score: 0, correct: 0, ms: 0, locked: false };
+  const roundMs = roundMsOf(row);
+  arena = { row, items, limits: itemLimits(items, roundMs), roundMs, index: 0, answers: [], score: 0, correct: 0, ms: 0, locked: false };
   view = "arena";
   renderArena();
   startTimer();
@@ -878,7 +919,7 @@ function renderArena() {
         <div class="battle-side is-them"><span>${esc(them)}</span><strong>${theirScore != null ? theirScore : "·"}</strong></div>
       </header>
       <div class="battle-timer" aria-hidden="true"><i id="battle-timer-bar"></i></div>
-      <p class="battle-domain">${esc(d.domainLabel(item.domain))} · ${index + 1} / ${items.length}</p>
+      <p class="battle-domain">${esc(d.domainLabel(item.domain))} · ${index + 1} / ${items.length} · <span id="battle-round-clock">${clock(arena.roundMs - arena.ms)}</span></p>
       <h2 class="battle-prompt ${visual ? "" : "is-text"}">${esc(item.prompt)}</h2>
       <div class="battle-stage">${stage}</div>
       <div class="cat-options ${visual ? "cat-options-matrix" : ""} battle-options">${options.join("")}</div>
@@ -889,8 +930,7 @@ function renderArena() {
 function startTimer() {
   stopTimer();
   if (!arena) return;
-  const item = arena.items[arena.index];
-  const limit = limitFor(item);
+  const limit = arena.limits[arena.index];
   itemStartedAt = Date.now();
   const bar = () => document.querySelector("#battle-timer-bar");
   if (bar()) bar().style.width = "100%";
@@ -900,10 +940,13 @@ function startTimer() {
       answer(null, true);
       return;
     }
-    const remaining = limit - (Date.now() - itemStartedAt);
+    const spent = Date.now() - itemStartedAt;
+    const remaining = limit - spent;
     if (remaining <= 0) { answer(null); return; }
     const el = bar();
     if (el) el.style.width = `${Math.max(0, (remaining / limit) * 100)}%`;
+    const rc = document.querySelector("#battle-round-clock");
+    if (rc) rc.textContent = clock(arena.roundMs - arena.ms - spent);
   }, 100);
 }
 
@@ -917,7 +960,7 @@ function answer(displayIndex, silent = false) {
   arena.locked = true;
   stopTimer();
   const item = arena.items[arena.index];
-  const limit = limitFor(item);
+  const limit = arena.limits[arena.index];
   const ms = Math.min(limit, Date.now() - itemStartedAt);
   const chosen = displayIndex == null ? null : d.catOptionOrder(item)[displayIndex] ?? null;
   const correct = chosen !== null && chosen === item.answerIndex;
@@ -1008,8 +1051,8 @@ function unwatchRound() {
 function simulateBot(a) {
   const rng = rngFrom(`${a.row.seed}-bot`);
   let score = 0, correct = 0;
-  a.items.forEach((item) => {
-    const limit = limitFor(item);
+  a.items.forEach((item, i) => {
+    const limit = a.limits[i];
     const hard = Math.abs(item.b) / MAX_B;           // harder items miss more
     const p = 0.78 - 0.28 * hard;
     if (rng() < p) {

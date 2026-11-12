@@ -1188,3 +1188,11 @@ html.mode-pro .measure-hub-off {
   font-size: 14px;
   line-height: 1.5;
 }
+
+/* Lobby round length (2026-11-12) */
+html.mode-pro .lobby-length { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
+html.mode-pro .lobby-length-label { font-size: 12.5px; color: var(--muted); margin-right: 4px; }
+html.mode-pro .lobby-length-pill { min-height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+html.mode-pro .lobby-length-pill:hover { background: var(--fill-subtle); color: var(--text); }
+html.mode-pro .lobby-length-pill.is-on { background: var(--surface-2); border-color: var(--text-2); color: var(--text); }
+html.mode-pro #battle-round-clock { font-variant-numeric: tabular-nums; color: var(--text-2); }

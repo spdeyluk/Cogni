@@ -108,6 +108,14 @@ create table if not exists public.lobbies (
   started_at  timestamptz
 );
 
+-- Round length chosen by the host (Quick 1v1 is always 120000). The client
+-- splits it across the eight tasks by task type.
+alter table public.lobbies
+  add column if not exists round_ms integer not null default 120000
+  check (round_ms between 30000 and 600000);
+alter table public.battles
+  add column if not exists round_ms integer not null default 120000;
+
 create index if not exists lobbies_public_idx on public.lobbies (created_at desc) where status = 'waiting' and visibility = 'public';
 create index if not exists lobbies_host_idx on public.lobbies (host, created_at desc);
 
@@ -153,7 +161,8 @@ end;
 $$;
 
 -- Open a lobby. Any earlier lobby of mine still waiting is closed first.
-create or replace function public.lobby_create(p_visibility text, p_seed text, p_item_ids text[])
+drop function if exists public.lobby_create(text, text, text[]);
+create or replace function public.lobby_create(p_visibility text, p_seed text, p_item_ids text[], p_round_ms integer default 120000)
 returns public.lobbies
 language plpgsql
 security definer
@@ -163,11 +172,12 @@ declare
   me uuid := auth.uid();
   row public.lobbies;
   vis text := case when p_visibility = 'public' then 'public' else 'private' end;
+  len integer := greatest(30000, least(coalesce(p_round_ms, 120000), 600000));
 begin
   if me is null then raise exception 'not signed in'; end if;
   update public.lobbies set status = 'closed' where host = me and status = 'waiting';
-  insert into public.lobbies (code, host, visibility, seed, item_ids)
-  values (public.lobby_new_code(), me, vis, p_seed, p_item_ids)
+  insert into public.lobbies (code, host, visibility, seed, item_ids, round_ms)
+  values (public.lobby_new_code(), me, vis, p_seed, p_item_ids, len)
   returning * into row;
   return row;
 end;
@@ -194,8 +204,8 @@ begin
   if not found then raise exception 'lobby not found'; end if;
   if l.host = me then raise exception 'that is your own lobby'; end if;
 
-  insert into public.battles (challenger, opponent, status, mode, seed, item_ids)
-  values (l.host, me, 'active', 'friend', l.seed, l.item_ids)
+  insert into public.battles (challenger, opponent, status, mode, seed, item_ids, round_ms)
+  values (l.host, me, 'active', 'friend', l.seed, l.item_ids, l.round_ms)
   returning * into b;
 
   update public.lobbies
@@ -216,14 +226,14 @@ as $$
    where id = p_lobby and host = auth.uid() and status = 'waiting';
 $$;
 
-grant execute on function public.lobby_create(text, text, text[]) to authenticated;
+grant execute on function public.lobby_create(text, text, text[], integer) to authenticated;
 grant execute on function public.lobby_join(text) to authenticated;
 grant execute on function public.lobby_close(uuid) to authenticated;
 
 -- Public rooms anyone can join, with the host's name and rating.
 create or replace view public.open_lobbies as
   select l.id, l.code, l.host, l.created_at,
-         p.display_name, p.handle, p.battle_rating, p.iq_score
+         p.display_name, p.handle, p.battle_rating, p.iq_score, l.round_ms
     from public.lobbies l
     join public.profiles p on p.id = l.host
    where l.visibility = 'public' and l.status = 'waiting'
