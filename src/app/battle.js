@@ -14,7 +14,12 @@ let arena = null;        // in-flight round state
 let result = null;       // last result shown
 let hubChannel = null;
 let roundChannel = null;
-let friendPickerOpen = false;
+let friendPickerOpen = false;   // the "Play with friends" panel
+let lobby = null;               // my open lobby row (host side)
+let lobbyChannel = null;
+let publicLobbies = [];
+let lobbyBusy = false;
+const LOBBY_KEY = "cogni.lobby.v1";
 
 const ROUNDS = 8;
 const PLAN = ["fluid", "verbal", "quant", "fluid", "weights", "verbal", "spatial", "quant"];
@@ -98,7 +103,7 @@ export function showBattle() {
   d.appShell.classList.remove(...d.sectionResetClasses);
   d.appShell.classList.add("battle-open");
   d.setActiveTab("battle");
-  d.setPageHeader("Home", "Your rating, your IQ, and your next duel.");
+  d.setPageHeader("Cogni", "IQ duels. Same questions, fastest right answers win.");
   if (view === "arena" && arena) { renderArena(); return; }
   if (view === "result" && result) { renderResult(); return; }
   view = "hub";
@@ -113,7 +118,15 @@ function onHostClick(event) {
   const act = (sel) => t.closest(sel);
   if (act("[data-battle-quick]")) { startQuickMatch(); return; }
   if (act("[data-battle-practice]")) { startPractice(); return; }
-  if (act("[data-battle-friends]")) { friendPickerOpen = !friendPickerOpen; renderHub(); if (friendPickerOpen) loadFriends().then(renderHub); return; }
+  if (act("[data-battle-friends]")) { toggleFriendsPanel(); return; }
+  const mk = act("[data-lobby-create]");
+  if (mk) { createLobby(mk.dataset.lobbyCreate); return; }
+  if (act("[data-lobby-join-submit]")) { joinLobby(host.querySelector("[data-lobby-code]")?.value); return; }
+  const jn = act("[data-lobby-join]");
+  if (jn) { joinLobby(jn.dataset.lobbyJoin); return; }
+  if (act("[data-lobby-close]")) { closeLobby(); return; }
+  if (act("[data-lobby-copy]")) { copyLobbyLink(); return; }
+  if (act("[data-lobby-refresh]")) { loadPublicLobbies().then(renderHub); return; }
   const ch = act("[data-battle-challenge]");
   if (ch) { challengeUser(ch.dataset.battleChallenge); return; }
   const play = act("[data-battle-play]");
@@ -131,6 +144,7 @@ function onHostClick(event) {
 function leaveToHub() {
   stopTimer();
   unwatchRound();
+  unwatchPublicLobbies();
   arena = null;
   result = null;
   view = "hub";
@@ -237,7 +251,7 @@ function renderHub() {
 
   const yourTurn = hub.battles.filter((b) => (b.status === "active" || b.status === "open") && !myDone(b));
   const waiting = hub.battles.filter((b) => (b.status === "active" || b.status === "open") && myDone(b));
-  const finished = hub.battles.filter((b) => b.status === "finished").slice(0, 8);
+  const finished = hub.battles.filter((b) => b.status === "finished").slice(0, 6);
 
   const rowHtml = (b, kind) => {
     const who = nameOf(otherId(b));
@@ -247,14 +261,14 @@ function renderHub() {
     const delta = b[`${side}_delta`];
     if (kind === "turn") {
       return `<li class="battle-row">
-        <div><strong>${esc(who)}</strong><span>${b.mode === "friend" ? "Friend challenge" : "Quick match"} · ${timeAgo(b.created_at)}</span></div>
+        <div><strong>${esc(who)}</strong><span>${b.mode === "friend" ? "Friend duel" : "Quick 1v1"} · ${timeAgo(b.created_at)}</span></div>
         <button class="battle-pill" data-battle-play="${esc(b.id)}" type="button">Play</button>
       </li>`;
     }
     if (kind === "wait") {
       const open = b.status === "open";
       return `<li class="battle-row is-dim">
-        <div><strong>${esc(open ? "Searching for an opponent" : who)}</strong><span>${open ? "Your round is in. The next player to search gets matched with you." : `Waiting for ${esc(who)} to play`}${mine != null ? ` · you scored ${mine}` : ""}</span></div>
+        <div><strong>${esc(open ? "Searching for an opponent" : who)}</strong><span>${open ? "Your round is in. The next player to search is matched with you." : `Waiting for ${esc(who)} to play`}${mine != null ? ` · you scored ${mine}` : ""}</span></div>
         ${open ? `<button class="battle-pill is-ghost" data-battle-cancel="${esc(b.id)}" type="button">Cancel</button>` : ""}
       </li>`;
     }
@@ -266,50 +280,253 @@ function renderHub() {
   };
 
   host.innerHTML = `
-    <div class="battle-hub">
-      <section class="battle-me">
-        <div class="battle-me-card">
-          <span class="battle-eyebrow">Battle rating</span>
-          <strong class="battle-big">${rating}</strong>
-          <em>${w}W · ${l}L · ${dr}D</em>
-        </div>
-        <div class="battle-me-card">
-          <span class="battle-eyebrow">IQ</span>
-          ${iq ? `<strong class="battle-big">${Math.round(iq)}</strong><em>${pct ? `Top ${Math.max(1, Math.round(100 - pct))}%` : "Verified score"}</em>`
-               : `<strong class="battle-big is-empty">—</strong><button class="battle-link" data-battle-take-test type="button">Take the IQ test</button>`}
-        </div>
-      </section>
+    <div class="battle-hub is-home">
+      <header class="home-head">
+        <h1 class="home-brand">Cogni<span>.</span></h1>
+        <p class="home-sub">IQ duels. Eight questions, the same set for both, fastest right answers win.</p>
+      </header>
 
-      <section class="battle-actions">
-        <button class="battle-primary" data-battle-quick type="button" ${signedIn ? "" : "data-needs-auth"}>
-          <span>Quick match</span><small>Rated · live or async</small>
+      <div class="home-actions">
+        <button class="battle-primary home-cta" data-battle-quick type="button">
+          <span>Quick 1v1</span><small>Rated</small>
         </button>
-        <button class="battle-secondary" data-battle-friends type="button">
-          <span>Challenge a friend</span>
+        <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">
+          <span>Play with friends</span><small>Public or private lobby</small>
         </button>
-        <button class="battle-secondary" data-battle-practice type="button">
-          <span>Practice vs ${BOT_NAME}</span>
-        </button>
-      </section>
-      ${friendPickerOpen ? renderFriendPicker() : ""}
+      </div>
+      <button class="battle-link home-practice" data-battle-practice type="button">Practice against ${BOT_NAME}</button>
+
+      ${friendPickerOpen ? renderLobbyPanel() : ""}
       ${hub.error ? `<p class="battle-error">${esc(hub.error)}</p>` : ""}
-      ${!signedIn ? `<p class="battle-note">Sign in to play rated duels. Practice rounds are open to everyone.</p>` : ""}
+      ${!signedIn ? `<p class="battle-note">Sign in to play rated duels and lobbies. Practice is open to everyone.</p>` : ""}
+
+      <section class="home-stats" aria-label="Your status">
+        <div><span class="battle-eyebrow">Rating</span><strong>${rating}</strong><em>${w}W · ${l}L · ${dr}D</em></div>
+        <div><span class="battle-eyebrow">IQ</span>${iq
+          ? `<strong>${Math.round(iq)}</strong><em>${pct ? `Top ${Math.max(1, Math.round(100 - pct))}%` : "Verified"}</em>`
+          : `<strong class="is-empty">—</strong><button class="battle-link" data-battle-take-test type="button">Take the test</button>`}</div>
+      </section>
 
       ${yourTurn.length ? `<section class="battle-list"><h3>Your turn</h3><ul>${yourTurn.map((b) => rowHtml(b, "turn")).join("")}</ul></section>` : ""}
       ${waiting.length ? `<section class="battle-list"><h3>Waiting</h3><ul>${waiting.map((b) => rowHtml(b, "wait")).join("")}</ul></section>` : ""}
       ${finished.length ? `<section class="battle-list"><h3>Recent</h3><ul>${finished.map((b) => rowHtml(b, "done")).join("")}</ul></section>` : ""}
-      ${signedIn && !hub.loading && !hub.battles.length ? `<section class="battle-list"><h3>No duels yet</h3><p class="battle-note">Your first quick match opens a seat. If nobody is online, your round still counts and the next player to search is matched against it.</p></section>` : ""}
 
-      <section class="battle-how">
-        <h3>How it works</h3>
-        <ol>
-          <li>Eight items: pattern, verbal, number, spatial and weights. Both players get the same set.</li>
-          <li>Right answer is 100. Up to 50 more for speed. Nothing for a miss.</li>
-          <li>Rating moves like chess Elo. Beat someone above you and it moves more.</li>
-        </ol>
-        <button class="battle-link battle-how-ranks" data-battle-ranks type="button">See the leaderboard and add friends</button>
-      </section>
+      <footer class="home-foot">
+        <button class="battle-link" data-battle-ranks type="button">Leaderboard</button>
+        <details class="home-how">
+          <summary>How it works</summary>
+          <ol>
+            <li>Eight items: pattern, verbal, number, spatial and weights. Both players get the same set.</li>
+            <li>Right answer is 100. Up to 50 more for speed. Nothing for a miss.</li>
+            <li>Rating moves like chess Elo. Beat someone above you and it moves more.</li>
+          </ol>
+        </details>
+      </footer>
     </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Lobbies: play with friends. Host opens a room (public or private), guest
+// joins by code, link, or from the public list; the server makes the battle.
+// ---------------------------------------------------------------------------
+function toggleFriendsPanel() {
+  friendPickerOpen = !friendPickerOpen;
+  renderHub();
+  if (friendPickerOpen) {
+    loadFriends().then(renderHub).catch(() => {});
+    loadPublicLobbies().then(renderHub).catch(() => {});
+    watchPublicLobbies();
+  } else {
+    unwatchPublicLobbies();
+  }
+}
+
+function renderLobbyPanel() {
+  const esc = d.escapeHtml;
+  if (!d.getAuthUser() || d.isGuest()) return `<section class="lobby-panel"><p class="battle-note">Sign in to open a lobby or join one.</p></section>`;
+  if (lobby) {
+    return `<section class="lobby-panel is-waiting">
+      <span class="battle-eyebrow">${lobby.visibility === "public" ? "Public lobby" : "Private lobby"}</span>
+      <strong class="lobby-code">${esc(lobby.code)}</strong>
+      <p class="battle-note">Waiting for a friend to join. Share the code or the link; the duel starts the moment they do.</p>
+      <div class="lobby-link"><input type="text" readonly value="${esc(lobbyLink(lobby.code))}" aria-label="Lobby link"><button class="battle-pill" data-lobby-copy type="button">Copy</button></div>
+      <button class="battle-link" data-lobby-close type="button">Close lobby</button>
+    </section>`;
+  }
+  const rooms = publicLobbies.map((r) => `
+    <li class="battle-row">
+      <div><strong>${esc(displayName(r))}</strong><span>Rating ${r.battle_rating ?? 1000}${r.iq_score ? ` · IQ ${r.iq_score}` : ""} · ${timeAgo(r.created_at)}</span></div>
+      <button class="battle-pill" data-lobby-join="${esc(r.code)}" type="button" ${lobbyBusy ? "disabled" : ""}>Join</button>
+    </li>`).join("");
+  const friends = hub.friends.map((f) => `
+    <li class="battle-row">
+      <div><strong>${esc(displayName(f))}</strong><span>${f.iq_score ? `IQ ${f.iq_score} · ` : ""}Rating ${f.battle_rating ?? 1000}</span></div>
+      <button class="battle-pill is-ghost" data-battle-challenge="${esc(f.id)}" type="button">Challenge</button>
+    </li>`).join("");
+  return `<section class="lobby-panel">
+    <div class="lobby-create">
+      <button class="battle-secondary" data-lobby-create="private" type="button" ${lobbyBusy ? "disabled" : ""}><span>Private lobby</span><small>Only with the code</small></button>
+      <button class="battle-secondary" data-lobby-create="public" type="button" ${lobbyBusy ? "disabled" : ""}><span>Public lobby</span><small>Anyone can join</small></button>
+    </div>
+    <form class="lobby-join" onsubmit="return false">
+      <input type="text" data-lobby-code maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Enter a code" aria-label="Lobby code">
+      <button class="battle-pill" data-lobby-join-submit type="button" ${lobbyBusy ? "disabled" : ""}>Join</button>
+    </form>
+    <div class="lobby-section">
+      <h3>Public lobbies <button class="battle-link" data-lobby-refresh type="button">Refresh</button></h3>
+      ${rooms ? `<ul>${rooms}</ul>` : `<p class="battle-note">No open rooms right now. Open a public one and the next player sees it here.</p>`}
+    </div>
+    ${friends ? `<div class="lobby-section"><h3>Challenge a friend</h3><ul>${friends}</ul></div>` : ""}
+  </section>`;
+}
+
+function lobbyLink(code) { return `${window.location.origin}/?lobby=${code}`; }
+
+async function createLobby(visibility) {
+  if (!d.requireAuth("Sign in to open a lobby.")) return;
+  if (!d.supabaseEnabled || lobbyBusy) return;
+  const seed = newSeed();
+  const ids = pickItemIds(seed);
+  lobbyBusy = true; hub.error = ""; renderHub();
+  try {
+    const { data, error } = await d.supabase.rpc("lobby_create", { p_visibility: visibility, p_seed: seed, p_item_ids: ids });
+    if (error) throw new Error(error.message);
+    lobby = data;
+    watchLobby(data.id);
+  } catch (error) {
+    hub.error = lobbyError(error);
+  }
+  lobbyBusy = false;
+  renderHub();
+}
+
+async function joinLobby(code) {
+  const clean = String(code ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!clean) return;
+  if (!d.requireAuth("Sign in to join a lobby.")) return;
+  if (!d.supabaseEnabled || lobbyBusy) return;
+  lobbyBusy = true; hub.error = ""; renderHub();
+  try {
+    const { data, error } = await d.supabase.rpc("lobby_join", { p_code: clean });
+    if (error) throw new Error(error.message);
+    lobbyBusy = false;
+    friendPickerOpen = false;
+    unwatchPublicLobbies();
+    await loadNames([data.challenger, data.opponent]);
+    if (!isOpen()) showBattle();
+    playRound(data);
+    return;
+  } catch (error) {
+    hub.error = lobbyError(error);
+  }
+  lobbyBusy = false;
+  renderHub();
+}
+
+async function closeLobby() {
+  const id = lobby?.id;
+  lobby = null;
+  unwatchLobby();
+  renderHub();
+  if (id) { try { await d.supabase.rpc("lobby_close", { p_lobby: id }); } catch { /* best effort */ } }
+}
+
+async function copyLobbyLink() {
+  if (!lobby) return;
+  const btn = host.querySelector("[data-lobby-copy]");
+  try { await navigator.clipboard.writeText(lobbyLink(lobby.code)); if (btn) { btn.textContent = "Copied"; setTimeout(() => { btn.textContent = "Copy"; }, 1600); } }
+  catch { host.querySelector(".lobby-link input")?.select(); }
+}
+
+async function loadPublicLobbies() {
+  const me = d.getAuthUser();
+  if (!d.supabaseEnabled || !me || d.isGuest()) { publicLobbies = []; return; }
+  const { data, error } = await d.supabase.from("open_lobbies").select("*").limit(20);
+  if (error) { publicLobbies = []; return; }
+  publicLobbies = (data ?? []).filter((r) => r.host !== me.id);
+}
+
+// Host side: the lobby row flips to "started" with a battle id when someone joins.
+function watchLobby(id) {
+  unwatchLobby();
+  if (!d.supabaseEnabled) return;
+  lobbyChannel = d.supabase.channel(`lobby:${id}`)
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "lobbies", filter: `id=eq.${id}` }, (payload) => {
+      const row = payload?.new;
+      if (row?.status === "started" && row.battle_id) startFromLobby(row);
+    })
+    .subscribe();
+  // Belt and braces: realtime can miss a message, so poll too while waiting.
+  const poll = async () => {
+    if (!lobby || lobby.id !== id) return;
+    const { data } = await d.supabase.from("lobbies").select("*").eq("id", id).maybeSingle();
+    if (data?.status === "started" && data.battle_id) { startFromLobby(data); return; }
+    if (data?.status === "closed") { lobby = null; unwatchLobby(); renderHub(); return; }
+    setTimeout(poll, 4000);
+  };
+  setTimeout(poll, 4000);
+}
+
+function unwatchLobby() {
+  if (lobbyChannel) { try { d.supabase.removeChannel(lobbyChannel); } catch { /* ignore */ } }
+  lobbyChannel = null;
+}
+
+async function startFromLobby(row) {
+  if (!lobby || lobby.id !== row.id) return;
+  lobby = null;
+  unwatchLobby();
+  friendPickerOpen = false;
+  unwatchPublicLobbies();
+  const { data } = await d.supabase.from("battles").select("*").eq("id", row.battle_id).maybeSingle();
+  if (!data) { renderHub(); return; }
+  await loadNames([data.challenger, data.opponent]);
+  if (!isOpen()) showBattle();
+  playRound(data);
+}
+
+let publicChannel = null;
+function watchPublicLobbies() {
+  if (publicChannel || !d.supabaseEnabled || !d.getAuthUser() || d.isGuest()) return;
+  publicChannel = d.supabase.channel("lobbies:public")
+    .on("postgres_changes", { event: "*", schema: "public", table: "lobbies" }, () => {
+      if (friendPickerOpen && view === "hub") loadPublicLobbies().then(renderHub).catch(() => {});
+    })
+    .subscribe();
+}
+function unwatchPublicLobbies() {
+  if (publicChannel) { try { d.supabase.removeChannel(publicChannel); } catch { /* ignore */ } }
+  publicChannel = null;
+}
+
+function lobbyError(error) {
+  const m = error?.message || "";
+  if (/function .*does not exist|lobby_|schema cache|open_lobbies/i.test(m)) return "Lobbies are not switched on for this server yet.";
+  if (/lobby not found/i.test(m)) return "No open lobby with that code.";
+  if (/your own lobby/i.test(m)) return "That is your own lobby.";
+  if (/not signed in|JWT/i.test(m)) return "Sign in to use lobbies.";
+  return m || "Something went wrong.";
+}
+
+// A ?lobby=CODE link is remembered until the visitor is signed in, then joined.
+export function captureLobbyCode() {
+  try {
+    const url = new URL(window.location.href);
+    const code = String(url.searchParams.get("lobby") ?? "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (!code) return;
+    sessionStorage.setItem(LOBBY_KEY, code);
+    url.searchParams.delete("lobby");
+    history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  } catch { /* ignore */ }
+}
+
+export async function claimPendingLobby() {
+  let code = "";
+  try { code = sessionStorage.getItem(LOBBY_KEY) ?? ""; sessionStorage.removeItem(LOBBY_KEY); } catch { /* ignore */ }
+  if (!code || !d?.getAuthUser() || d.isGuest()) return false;
+  if (!isOpen()) showBattle();
+  await joinLobby(code);
+  return true;
 }
 
 function renderFriendPicker() {
@@ -803,6 +1020,7 @@ export function resetBattleState() {
   stopTimer(); unwatchRound();
   if (hubChannel) { try { d.supabase.removeChannel(hubChannel); } catch { /* ignore */ } hubChannel = null; }
   my = null; arena = null; result = null; view = "hub";
+  lobby = null; unwatchLobby(); unwatchPublicLobbies(); friendPickerOpen = false; publicLobbies = []; lobbyBusy = false;
   hub = { battles: [], names: new Map(), friends: [], loading: false, error: "" };
   ranksData = { iq: null, battle: null, incoming: [], outgoing: [], status: "", statusState: "" };
 }

@@ -212,3 +212,61 @@ html.mode-pro .profile-social-stats div.is-iq strong { font-family: var(--font-d
 }
 .referral-dialog-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .referral-dialog-close:hover { color: var(--text); border-color: var(--line-strong); }
+
+/* ---------- Home (centered) ---------- */
+html.mode-pro .battle-hub.is-home { max-width: 640px; margin: 40px auto 0; justify-items: center; text-align: center; gap: 24px; }
+html.mode-pro .app-shell.battle-open .hero { display: none; }
+.home-head { display: grid; gap: 8px; justify-items: center; }
+.home-brand { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 48px; line-height: 1.1; letter-spacing: -.03em; color: var(--text); }
+.home-brand span { color: var(--muted); }
+.home-sub { margin: 0; max-width: 42ch; color: var(--text-2); font-size: 15px; line-height: 1.5; }
+.home-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 480px; margin-top: 8px; }
+.home-cta { min-height: 64px !important; }
+.home-cta small { font-size: 12px; opacity: .65; }
+.battle-secondary.is-open { background: var(--surface-2); border-color: var(--line-strong); }
+.home-practice { color: var(--muted); }
+.home-stats { display: flex; gap: 32px; justify-content: center; padding: 8px 0; }
+.home-stats > div { display: grid; gap: 2px; justify-items: center; }
+.home-stats strong { font-family: var(--font-display); font-weight: 600; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.home-stats strong.is-empty { color: var(--muted); }
+.home-stats em { font-style: normal; color: var(--muted); font-size: 12.5px; }
+.battle-hub.is-home .battle-list { width: 100%; text-align: left; }
+.battle-hub.is-home .battle-error, .battle-hub.is-home .battle-note { max-width: 48ch; }
+.home-foot { display: grid; gap: 12px; justify-items: center; margin-top: 16px; width: 100%; }
+.home-how { width: 100%; max-width: 520px; text-align: left; }
+.home-how summary { cursor: pointer; list-style: none; text-align: center; font-size: 13px; color: var(--muted); }
+.home-how summary::-webkit-details-marker { display: none; }
+.home-how summary:hover { color: var(--text); }
+.home-how ol { margin: 12px 0 0; padding-left: 18px; color: var(--text-2); font-size: 13px; line-height: 1.6; display: grid; gap: 4px; }
+
+/* ---------- lobbies ---------- */
+.lobby-panel {
+  width: 100%; max-width: 520px; display: grid; gap: 16px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px;
+}
+.lobby-panel.is-waiting { justify-items: center; text-align: center; padding: 24px 18px; }
+.lobby-code { font-family: var(--font-display); font-weight: 600; font-size: 40px; letter-spacing: .18em; line-height: 1; color: var(--text); padding-left: .18em; }
+.lobby-create { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lobby-create .battle-secondary { min-height: 56px !important; }
+.lobby-create small { font-size: 11.5px; color: var(--muted); }
+.lobby-join, .lobby-link { display: flex; gap: 8px; width: 100%; }
+.lobby-join input, .lobby-link input {
+  flex: 1; min-width: 0; border-radius: var(--radius-s); border: 1px solid var(--line-strong); background: var(--bg); color: var(--text);
+  padding: 10px 14px; font: inherit; font-size: 14px;
+}
+.lobby-join input { text-transform: uppercase; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.lobby-join input:focus, .lobby-link input:focus { outline: none; border-color: var(--text-2); }
+.lobby-section h3 { margin: 0 0 6px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.lobby-section h3 .battle-link { font-size: 12px; text-transform: none; letter-spacing: 0; }
+.lobby-section ul { list-style: none; margin: 0; padding: 0; }
+
+@media (max-width: 720px) {
+  .home-actions, .lobby-create { grid-template-columns: 1fr; }
+  .home-brand { font-size: 40px; }
+}
+html.mode-pro .home-brand { margin: 0 0 10px; line-height: 1.2; }
+html.mode-pro .home-head { gap: 10px; }
+/* One primary action on Home: Quick 1v1 is the only filled button. */
+html.mode-pro .battle-primary { background: var(--accent) !important; color: var(--on-accent) !important; border-color: var(--accent) !important; }
+html.mode-pro .battle-primary small { color: inherit; opacity: .7; }
+html.mode-pro .battle-primary:hover { background: var(--accent-2) !important; border-color: var(--accent-2) !important; }

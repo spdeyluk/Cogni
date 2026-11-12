@@ -42,7 +42,7 @@ import {
 } from "../core/assessments/irt.js";
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
 import { resolveGeneratedItem, generateCandidates, generatedItemId, GENERATED_FORMATS } from "../core/assessments/catGenerator.js";
-import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState } from "./battle.js";
+import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
@@ -6339,6 +6339,8 @@ function onAuthenticated() {
   syncPublicStatus().then(() => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); refreshReferralPanels(); });
   // A new account that arrived through an invite link credits its referrer.
   claimPendingReferral().then((claimed) => { if (claimed) syncPublicStatus().then(refreshReferralPanels); });
+  // An invite to a friend's lobby joins it once the account is in.
+  claimPendingLobby().catch(() => {});
   // First launch on mobile: the story onboarding runs before the app.
   if (needsOnboarding()) {
     showOnboarding();
@@ -7814,6 +7816,7 @@ initReferral({
   escapeHtml
 });
 captureReferralCode();
+captureLobbyCode();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
