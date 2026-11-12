@@ -300,6 +300,13 @@ function renderHub() {
       ${!signedIn ? `<p class="battle-note">Sign in to play rated duels and lobbies. Practice is open to everyone.</p>` : ""}
 
 
+      <section class="home-stats" aria-label="Your status">
+        <div><span class="battle-eyebrow">Rating</span><strong>${rating}</strong></div>
+        <div><span class="battle-eyebrow">IQ</span>${iq
+          ? `<strong>${Math.round(iq)}</strong>`
+          : `<strong class="is-empty">—</strong><button class="battle-link" data-battle-take-test type="button">Take the test</button>`}</div>
+      </section>
+
       ${yourTurn.length ? `<section class="battle-list"><h3>Your turn</h3><ul>${yourTurn.map((b) => rowHtml(b, "turn")).join("")}</ul></section>` : ""}
       ${waiting.length ? `<section class="battle-list"><h3>Waiting</h3><ul>${waiting.map((b) => rowHtml(b, "wait")).join("")}</ul></section>` : ""}
       ${finished.length ? `<section class="battle-list"><h3>Recent</h3><ul>${finished.map((b) => rowHtml(b, "done")).join("")}</ul></section>` : ""}
