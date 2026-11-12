@@ -868,3 +868,168 @@ html.mode-pro .hero { width: auto !important; }
 html.mode-pro .measure-picker.is-selling { border: 0 !important; border-radius: 0 !important; background: transparent !important; padding-top: 8px !important; }
 html.mode-pro .sales-title { font-size: clamp(28px, 2.8vw, 36px) !important; }
 html.mode-pro .sales-lede { font-size: 15px !important; }
+
+/* ---------- exercise setup controls (2026-11-12) ----------
+   Preset chips are quiet: hairline border, soft fill when active, no white
+   blocks and no glow. Sliders get a visible track. */
+html.mode-pro .preset-button {
+  border-radius: var(--radius-s) !important;
+  border: 1px solid var(--line) !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+html.mode-pro .preset-button:hover { border-color: var(--line-strong) !important; color: var(--text) !important; }
+html.mode-pro .preset-button.active {
+  background: var(--surface-2) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .preset-button:focus-visible { outline: 1px solid var(--text-2) !important; outline-offset: 1px; }
+
+html.mode-pro .custom-duration,
+html.mode-pro .nback-custom-duration {
+  gap: 3px;
+  border-radius: var(--radius-s) !important;
+  border: 1px solid var(--line) !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .custom-duration:focus-within,
+html.mode-pro .nback-custom-duration:focus-within {
+  background: var(--surface-2) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .custom-duration input,
+html.mode-pro .nback-custom-duration input {
+  width: 3ch !important;
+  flex: 0 1 3ch;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: inherit !important;
+  text-align: right;
+  font-weight: 500 !important;
+  -moz-appearance: textfield;
+}
+html.mode-pro .custom-duration input:focus-visible,
+html.mode-pro .nback-custom-duration input:focus-visible { outline: none !important; }
+html.mode-pro .custom-duration input::-webkit-outer-spin-button,
+html.mode-pro .custom-duration input::-webkit-inner-spin-button,
+html.mode-pro .nback-custom-duration input::-webkit-outer-spin-button,
+html.mode-pro .nback-custom-duration input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+html.mode-pro .custom-duration span,
+html.mode-pro .nback-custom-duration span { font-weight: 500; font-size: 13px; }
+
+html.mode-pro input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html.mode-pro input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px !important;
+  border-radius: 3px;
+  background: var(--line-strong) !important;
+}
+html.mode-pro input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px !important;
+  height: 16px !important;
+  margin-top: -6.5px !important;
+  border-radius: 50%;
+  background: var(--text) !important;
+  border: 3px solid var(--surface) !important;
+  box-shadow: 0 0 0 1px var(--line-strong) !important;
+}
+html.mode-pro input[type="range"]::-moz-range-track { height: 3px; border-radius: 3px; background: var(--line-strong); }
+html.mode-pro input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--text); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+/* Response buttons sit in one row whatever their number; the key hint hangs below. */
+html.mode-pro .game-active .response-grid {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: auto !important;
+  max-width: 100%;
+  padding-bottom: 34px;
+}
+html.mode-pro .response-grid button {
+  flex: 0 0 auto;
+  width: 104px;
+  height: 104px;
+  aspect-ratio: auto;
+  font-size: 17px;
+  font-weight: 500;
+  border: 1px solid var(--line-strong) !important;
+  background: var(--surface) !important;
+}
+html.mode-pro .response-grid button kbd {
+  top: auto !important;
+  bottom: -32px;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+/* Round summary: the header gets room under it, stats share one row. */
+html.mode-pro .session-summary-header { padding: 2px 0 14px !important; margin-bottom: 6px; }
+html.mode-pro .session-summary-header button { min-height: 34px !important; padding: 0 16px !important; font-size: 13.5px !important; }
+html.mode-pro .session-summary-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; }
+/* Inside the exercise sheet the rows are tracks: dark track, soft chip, no glow. */
+html.mode-pro .exercise-sheet .time-preset-row,
+html.mode-pro .exercise-sheet .nback-preset-row,
+html.mode-pro .exercise-sheet .rrt-preset-row,
+html.mode-pro .exercise-sheet .interval-presets,
+html.mode-pro .exercise-sheet .segmented-control,
+html.mode-pro .exercise-sheet .compact-segmented {
+  background: var(--frame) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+html.mode-pro .exercise-sheet .preset-button,
+html.mode-pro .exercise-sheet .segmented-control button,
+html.mode-pro .exercise-sheet .custom-duration,
+html.mode-pro .exercise-sheet .nback-custom-duration {
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .exercise-sheet .preset-button:hover,
+html.mode-pro .exercise-sheet .segmented-control button:hover { color: var(--text) !important; }
+html.mode-pro .exercise-sheet .preset-button.active,
+html.mode-pro .exercise-sheet .segmented-control button.active,
+html.mode-pro .exercise-sheet .seg-sliding > .preset-button.active,
+html.mode-pro .exercise-sheet .seg-sliding > button.active,
+html.mode-pro .exercise-sheet .custom-duration:focus-within,
+html.mode-pro .exercise-sheet .nback-custom-duration:focus-within {
+  background: var(--surface-2) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .exercise-sheet .controls input[type="range"],
+html.mode-pro .exercise-sheet .control-row > input[type="range"] { background: transparent !important; }
+html.mode-pro .exercise-sheet .controls input[type="range"]::-webkit-slider-runnable-track,
+html.mode-pro .exercise-sheet .control-row > input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px !important; background: var(--line-strong) !important;
+}
+html.mode-pro .exercise-sheet .controls input[type="range"]::-webkit-slider-thumb,
+html.mode-pro .exercise-sheet .control-row > input[type="range"]::-webkit-slider-thumb {
+  width: 16px !important; height: 16px !important; margin-top: -6.5px !important;
+  background: var(--text) !important; border: 3px solid var(--surface) !important; box-shadow: 0 0 0 1px var(--line-strong) !important;
+}
