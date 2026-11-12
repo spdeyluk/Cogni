@@ -283,7 +283,6 @@ function renderHub() {
     <div class="battle-hub is-home">
       <header class="home-head">
         <h1 class="home-brand">Cogni<span>.</span></h1>
-        <p class="home-sub">IQ duels. Eight questions, the same set for both, fastest right answers win.</p>
       </header>
 
       <div class="home-actions">
