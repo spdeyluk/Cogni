@@ -28,6 +28,40 @@ const TEXT_LIMIT_MS = 20000;
 const VISUAL_LIMIT_MS = 30000;
 const MAX_B = 1.3;
 const BOT_NAME = "Cogni";
+const BOT_NAMES = ["nora_k","Dmitri","elias.b","Yuki","Mateo","Ingrid","Kwame","sofia.r","Arjun","Lena","tomasz","Priya","Jonas","maya_v","Rafael","Aoife","Hugo","Zara","niklas","Chloe"];
+const LIVE_WINDOW_MS = 6000;   // how long a quick search waits for a human
+let searchSeatId = null;       // open seat while searching, cancelled on leave
+
+const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
+
+// The bot's answers, derived from the seed exactly as the server derives them
+// (supabase/bots.sql battle_bot_score): sha256(seed:i), byte0 < 153 is a hit,
+// bonus 10 + byte1 % 36. Scores therefore match what the server settles.
+async function botPlan(seed, n) {
+  const plan = [];
+  const enc = new TextEncoder();
+  for (let i = 0; i < n; i += 1) {
+    let b0, b1;
+    try {
+      const buf = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(`${seed}:${i}`)));
+      b0 = buf[0]; b1 = buf[1];
+    } catch {
+      const rng = rngFrom(`${seed}:${i}`); b0 = Math.floor(rng() * 256); b1 = Math.floor(rng() * 256);
+    }
+    const correct = b0 < 153;
+    plan.push({ correct, points: correct ? 110 + (b1 % 36) : 0 });
+  }
+  return plan;
+}
+function botTotals(plan) {
+  return (plan ?? []).reduce((t, p) => ({ score: t.score + p.points, correct: t.correct + (p.correct ? 1 : 0) }), { score: 0, correct: 0 });
+}
+function opponentName(row) {
+  if (!row) return "Player";
+  if (row.bot_name) return row.bot_name;
+  if (row.local) return BOT_NAME;
+  return nameOf(otherId(row));
+}
 
 export function initBattle(deps) {
   d = deps;
@@ -119,7 +153,6 @@ function onHostClick(event) {
   const t = event.target;
   const act = (sel) => t.closest(sel);
   if (act("[data-battle-quick]")) { startQuickMatch(); return; }
-  if (act("[data-battle-practice]")) { startPractice(); return; }
   if (act("[data-battle-friends]")) { toggleFriendsPanel(); return; }
   const mk = act("[data-lobby-create]");
   if (mk) { createLobby(mk.dataset.lobbyCreate); return; }
@@ -148,6 +181,7 @@ function leaveToHub() {
   unwatchRound();
   unwatchPublicLobbies();
   stopLoading();
+  if (searchSeatId) { cancelSeat(searchSeatId); searchSeatId = null; }
   arena = null;
   result = null;
   view = "hub";
@@ -252,12 +286,12 @@ function renderHub() {
   const rating = my?.battle_rating ?? 1000;
   const w = my?.battle_wins ?? 0, l = my?.battle_losses ?? 0, dr = my?.battle_draws ?? 0;
 
-  const yourTurn = hub.battles.filter((b) => (b.status === "active" || b.status === "open") && !myDone(b));
-  const waiting = hub.battles.filter((b) => (b.status === "active" || b.status === "open") && myDone(b));
+  const yourTurn = hub.battles.filter((b) => b.status === "active" && !myDone(b));
+  const waiting = hub.battles.filter((b) => b.status === "active" && myDone(b));
   const finished = hub.battles.filter((b) => b.status === "finished").slice(0, 6);
 
   const rowHtml = (b, kind) => {
-    const who = nameOf(otherId(b));
+    const who = opponentName(b);
     const side = mySide(b);
     const mine = b[`${side}_score`];
     const theirs = b[`${side === "challenger" ? "opponent" : "challenger"}_score`];
@@ -275,7 +309,8 @@ function renderHub() {
         ${open ? `<button class="battle-pill is-ghost" data-battle-cancel="${esc(b.id)}" type="button">Cancel</button>` : ""}
       </li>`;
     }
-    const won = b.winner === me?.id, draw = !b.winner;
+    const won = b.mode === "bot" ? mine > theirs : b.winner === me?.id;
+    const draw = b.mode === "bot" ? mine === theirs : !b.winner;
     return `<li class="battle-row">
       <div><strong>${esc(who)}</strong><span>${mine} – ${theirs} · ${timeAgo(b.finished_at ?? b.created_at)}</span></div>
       <b class="battle-outcome ${won ? "is-win" : draw ? "is-draw" : "is-loss"}">${won ? "Win" : draw ? "Draw" : "Loss"}${delta != null ? ` <i>${delta > 0 ? "+" : ""}${delta}</i>` : ""}</b>
@@ -292,11 +327,11 @@ function renderHub() {
         <button class="battle-primary home-cta" data-battle-quick type="button">Quick 1v1</button>
         <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">Play with friends</button>
       </div>
-      <button class="battle-link home-practice" data-battle-practice type="button">Practice against ${BOT_NAME}</button>
+      <button class="home-cta is-special" data-battle-take-test type="button"><i aria-hidden="true">✦</i>Take the IQ test</button>
 
       ${friendPickerOpen ? renderLobbyPanel() : ""}
       ${hub.error ? `<p class="battle-error">${esc(hub.error)}</p>` : ""}
-      ${!signedIn ? `<p class="battle-note">Sign in to play rated duels and lobbies. Practice is open to everyone.</p>` : ""}
+      ${!signedIn ? `<p class="battle-note">Sign in to play rated duels and lobbies.</p>` : ""}
 
 
       <section class="home-stats" aria-label="Your status">
@@ -597,23 +632,98 @@ function limitFor(item) { return (item.matrix || item.figure || item.weights) ? 
 // ---------------------------------------------------------------------------
 async function startQuickMatch() {
   if (!d.requireAuth("Sign in to play rated battles.")) return;
-  if (!d.supabaseEnabled) return;
-  const seed = newSeed();
-  const ids = pickItemIds(seed);
+  const me = d.getAuthUser();
+  const online = d.supabaseEnabled && me && !d.isGuest();
   hub.error = "";
   showLoading({ eyebrow: "Quick 1v1", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true });
+  if (!online) {
+    await wait(1800);
+    if (view !== "loading") return;
+    startLocalBot();
+    return;
+  }
+  const seed = newSeed();
+  const ids = pickItemIds(seed);
   try {
     const { data, error } = await d.supabase.rpc("battle_quick_match", { p_seed: seed, p_item_ids: ids });
     if (error) throw new Error(error.message);
-    if (view !== "loading") return; // cancelled while searching
-    if (myDone(data)) { stopLoading(); view = "hub"; hub.error = "You already have a round waiting for an opponent."; renderHub(); return; }
-    await loadNames([data.challenger, data.opponent]);
-    prepareRound(data, "Quick 1v1");
+    if (view !== "loading") { if (!data.opponent) cancelSeat(data.id); return; }
+    if (data.opponent) {
+      // Joined a live seat someone opened moments ago.
+      await loadNames([data.challenger, data.opponent]);
+      prepareRound(data, "Quick 1v1");
+      return;
+    }
+    searchSeatId = data.id;
+    const joined = await waitForOpponent(data.id, LIVE_WINDOW_MS);
+    if (view !== "loading") { cancelSeat(data.id); searchSeatId = null; return; }
+    searchSeatId = null;
+    if (joined) {
+      await loadNames([joined.challenger, joined.opponent]);
+      prepareRound(joined, "Quick 1v1");
+      return;
+    }
+    // Nobody showed up: drop the seat and play a bot on a fresh set.
+    cancelSeat(data.id);
+    const bseed = newSeed();
+    const bids = pickItemIds(bseed);
+    const { data: bot, error: berr } = await d.supabase.rpc("battle_bot_match", { p_seed: bseed, p_item_ids: bids });
+    if (berr) {
+      if (/function|schema cache/i.test(berr.message)) { startLocalBot(); return; } // bots.sql not run yet
+      throw new Error(berr.message);
+    }
+    prepareRound(bot, "Quick 1v1");
   } catch (error) {
     stopLoading(); view = "hub";
     hub.error = friendlyError(error);
     renderHub();
   }
+}
+
+// Watch my open seat for an opponent for a short while (realtime plus a poll).
+function waitForOpponent(id, ms) {
+  return new Promise((resolve) => {
+    let done = false;
+    let channel = null;
+    const finish = (row) => {
+      if (done) return;
+      done = true;
+      if (channel) { try { d.supabase.removeChannel(channel); } catch { /* ignore */ } }
+      resolve(row && row.opponent ? row : null);
+    };
+    try {
+      channel = d.supabase.channel(`seat:${id}`)
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "battles", filter: `id=eq.${id}` }, (payload) => {
+          if (payload?.new?.opponent) finish(payload.new);
+        })
+        .subscribe();
+    } catch { /* realtime unavailable; the poll covers it */ }
+    const poll = async () => {
+      if (done) return;
+      const { data } = await d.supabase.from("battles").select("*").eq("id", id).maybeSingle();
+      if (data?.opponent) { finish(data); return; }
+      if (!done) window.setTimeout(poll, 2000);
+    };
+    window.setTimeout(poll, 2000);
+    window.setTimeout(() => finish(null), ms);
+  });
+}
+
+function cancelSeat(id) {
+  if (!id || !d.supabaseEnabled) return;
+  d.supabase.rpc("battle_cancel", { p_battle: id }).then(() => loadBattles().catch(() => {})).catch(() => {});
+}
+
+// Unrated bot duel for guests, or when the server has no bot support yet.
+function startLocalBot() {
+  const seed = newSeed();
+  const rng = rngFrom(`${seed}-name`);
+  const row = {
+    id: `local-${seed}`, local: true, status: "active", mode: "bot",
+    bot_name: BOT_NAMES[Math.floor(rng() * BOT_NAMES.length)],
+    challenger: d.getAuthUser()?.id ?? "me", opponent: null, seed, item_ids: pickItemIds(seed), created_at: new Date().toISOString()
+  };
+  prepareRound(row, "Quick 1v1");
 }
 
 export async function challengeUser(opponentId) {
@@ -640,18 +750,9 @@ async function cancelOpen(id) {
   renderHub();
 }
 
-function startPractice() {
-  const seed = newSeed();
-  const row = {
-    id: `local-${seed}`, local: true, status: "active", mode: "practice",
-    challenger: d.getAuthUser()?.id ?? "me", opponent: "bot", seed, item_ids: pickItemIds(seed), created_at: new Date().toISOString()
-  };
-  prepareRound(row, "Practice");
-}
-
 function friendlyError(error) {
   const m = error?.message || "";
-  if (/function .*does not exist|battle_quick_match|schema cache/i.test(m)) return "Battles are not switched on for this server yet.";
+  if (/function .*does not exist|battle_quick_match|battle_bot_match|schema cache/i.test(m)) return "Battles are not switched on for this server yet.";
   if (/not signed in|JWT/i.test(m)) return "Sign in to play rated battles.";
   return m || "Something went wrong.";
 }
@@ -691,10 +792,11 @@ function renderLoading() {
 }
 
 // Hold the match card for three seconds, then drop into the arena.
-function prepareRound(row, eyebrow) {
-  const me = d.getAuthUser();
-  const who = row.local ? BOT_NAME : nameOf(otherId(row));
-  const seatOpen = !row.local && !row.opponent;
+async function prepareRound(row, eyebrow) {
+  const who = opponentName(row);
+  const isBot = row.local || row.mode === "bot";
+  if (isBot && !row.botPlan) row.botPlan = await botPlan(row.seed, (row.item_ids ?? []).length);
+  const seatOpen = !isBot && !row.opponent;
   showLoading(seatOpen
     ? { eyebrow, title: "No one is searching right now", sub: "Your round still counts. The next player to search plays this same set against your score.", count: 3 }
     : { eyebrow, vs: who, sub: "Same eight questions. Fastest right answers win.", count: 3 });
@@ -730,10 +832,13 @@ function renderArena() {
   const { row, items, index } = arena;
   const item = items[index];
   const me = d.getAuthUser();
-  const them = row.local ? BOT_NAME : nameOf(otherId(row));
+  const them = opponentName(row);
+  const isBot = row.local || row.mode === "bot";
   const side = row.local ? null : mySide(row);
-  const theirScoreKnown = !row.local && theirDone(row) && myDone(row);
-  const theirScore = theirScoreKnown ? row[`${side === "challenger" ? "opponent" : "challenger"}_score`] : null;
+  const theirScoreKnown = !isBot && theirDone(row) && myDone(row);
+  const theirScore = isBot
+    ? botTotals((row.botPlan ?? []).slice(0, index)).score
+    : theirScoreKnown ? row[`${side === "challenger" ? "opponent" : "challenger"}_score`] : null;
   const order = d.catOptionOrder(item);
   const visual = item.matrix || item.figure || item.weights;
 
@@ -830,13 +935,13 @@ async function finishRound() {
   arena = null;
   if (!a) return;
   if (a.row.local) {
-    const bot = simulateBot(a);
-    result = { row: a.row, local: true, mine: a.score, theirs: bot.score, correct: a.correct, theirCorrect: bot.correct, them: BOT_NAME, settled: true, delta: null };
+    const bot = a.row.botPlan ? botTotals(a.row.botPlan) : simulateBot(a);
+    result = { row: a.row, local: true, mine: a.score, theirs: bot.score, correct: a.correct, theirCorrect: bot.correct, them: opponentName(a.row), settled: true, delta: null };
     view = "result";
     if (isOpen()) renderResult();
     return;
   }
-  result = { row: a.row, mine: a.score, correct: a.correct, them: nameOf(otherId(a.row)), settled: false, theirs: null, delta: null };
+  result = { row: a.row, mine: a.score, correct: a.correct, them: opponentName(a.row), settled: false, theirs: null, delta: null };
   view = "result";
   if (isOpen()) renderResult();
   try {
@@ -859,11 +964,11 @@ function applyServerRow(row) {
     result.theirs = row[`${other}_score`];
     result.theirCorrect = row[`${other}_correct`];
     result.delta = row[`${side}_delta`];
-    result.them = nameOf(row[other]);
+    result.them = row.bot_name ?? nameOf(row[other]);
     unwatchRound();
     loadMyStatus().then(() => { if (isOpen() && view === "result") renderResult(); d.onStatusChange?.(); });
   } else {
-    loadNames([row.challenger, row.opponent]).then(() => { result.them = nameOf(row[other]); if (isOpen() && view === "result") renderResult(); });
+    loadNames([row.challenger, row.opponent]).then(() => { result.them = row.bot_name ?? nameOf(row[other]); if (isOpen() && view === "result") renderResult(); });
     watchRound(row.id);
   }
   if (isOpen() && view === "result") renderResult();
@@ -908,7 +1013,7 @@ function renderResult() {
   const open = r.row.status === "open";
   host.innerHTML = `
     <div class="battle-result ${cls}">
-      <p class="battle-eyebrow">${r.local ? "Practice round · unrated" : r.row.mode === "friend" ? "Friend challenge" : "Quick match"}</p>
+      <p class="battle-eyebrow">${r.local ? "Quick 1v1 · unrated" : r.row.mode === "friend" ? "Friend duel" : "Quick 1v1"}</p>
       <h2 class="battle-outcome-title">${outcome}${r.settled && r.delta != null ? `<span class="battle-delta">${r.delta > 0 ? "+" : ""}${r.delta}</span>` : ""}</h2>
       <div class="battle-scoreboard">
         <div class="battle-side is-you"><span>You</span><strong>${r.mine}</strong><em>${r.correct} of ${ROUNDS} right</em></div>
@@ -918,8 +1023,8 @@ function renderResult() {
       ${!r.settled && !r.error ? `<p class="battle-note">${open ? "Your score is locked in. The next player to search gets matched against it and you'll see the result here and in Recent." : `We'll settle it the moment ${esc(r.them)} finishes. You can leave; the result lands in Recent.`}</p>` : ""}
       ${r.error ? `<p class="battle-error">${esc(r.error)}</p>` : ""}
       <div class="battle-result-actions">
-        ${r.local ? `<button class="battle-primary" data-battle-practice type="button"><span>Play again</span></button>` : r.settled && r.row.mode === "friend" ? `<button class="battle-primary" data-battle-rematch type="button"><span>Rematch</span></button>` : r.settled ? `<button class="battle-primary" data-battle-quick type="button"><span>Quick match</span></button>` : ""}
-        <button class="battle-secondary" data-battle-back type="button"><span>Back to Battle</span></button>
+        ${r.settled && r.row.mode === "friend" && !r.local ? `<button class="battle-primary" data-battle-rematch type="button"><span>Rematch</span></button>` : r.settled ? `<button class="battle-primary" data-battle-quick type="button"><span>Quick 1v1</span></button>` : ""}
+        <button class="battle-secondary" data-battle-back type="button"><span>Back to Home</span></button>
       </div>
     </div>`;
 }
@@ -1073,7 +1178,7 @@ export function resetBattleState() {
   stopTimer(); unwatchRound();
   if (hubChannel) { try { d.supabase.removeChannel(hubChannel); } catch { /* ignore */ } hubChannel = null; }
   my = null; arena = null; result = null; view = "hub";
-  lobby = null; unwatchLobby(); unwatchPublicLobbies(); friendPickerOpen = false; publicLobbies = []; lobbyBusy = false; stopLoading();
+  lobby = null; unwatchLobby(); unwatchPublicLobbies(); friendPickerOpen = false; publicLobbies = []; lobbyBusy = false; stopLoading(); searchSeatId = null;
   hub = { battles: [], names: new Map(), friends: [], loading: false, error: "" };
   ranksData = { iq: null, battle: null, incoming: [], outgoing: [], status: "", statusState: "" };
 }
