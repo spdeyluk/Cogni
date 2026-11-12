@@ -1033,3 +1033,27 @@ html.mode-pro .exercise-sheet .control-row > input[type="range"]::-webkit-slider
   width: 16px !important; height: 16px !important; margin-top: -6.5px !important;
   background: var(--text) !important; border: 3px solid var(--surface) !important; box-shadow: 0 0 0 1px var(--line-strong) !important;
 }
+
+/* IQ page: the panel is the only frame. The picker is a layout wrapper, not a
+   box, and the report's tab bar sits on the panel's top edge rather than
+   stretching across the window under the theme toggle. */
+html.mode-pro .measure-picker { border: 0 !important; background: transparent !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; }
+html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar {
+  left: 258px; right: 10px; top: 10px;
+  padding: 0 72px 0 24px;
+  border: 1px solid var(--line); border-bottom-color: var(--line);
+  border-radius: 12px 12px 0 0;
+  background: var(--bg);
+}
+html.rail-collapsed.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar { left: 86px; }
+html.mode-pro .mdash-topbar:not(:has(.mdash-tab)) { display: none !important; }
+html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open:not(:has(.mdash-tab)) .app-content { padding-top: 22px !important; }
+@media (max-width: 900px) {
+  html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar { left: 0; right: 0; top: 0; border-radius: 0; border-left: 0; border-right: 0; border-top: 0; padding-left: 16px; }
+}
+/* Report: drop the decorative connector strip between the pillars and the
+   overall card, and let the pillar buttons wrap instead of clipping. */
+html.mode-pro .mdash-connect { display: none !important; }
+html.mode-pro .mdash-connect + .mdash-overall { margin-top: 16px !important; }
+html.mode-pro .mdash-pillar-view { white-space: normal !important; line-height: 1.25; text-align: left; }
+html.mode-pro .measure-dashboard:not(:has(*)) { display: none !important; }
