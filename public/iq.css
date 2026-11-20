@@ -521,3 +521,149 @@ html.mode-pro .mdash-connect + .mdash-overall { margin-top: 16px !important; }
 html.mode-pro .site-rail-pass[hidden],
 html.mode-pro .site-rail-login[hidden],
 html.mode-pro .site-rail-link[hidden] { display: none !important; }
+
+/* ===================================================================
+   One card system (2026-11-20). Three tiers, nothing else:
+   cards 20px (surface, hairline, soft lift) · inner groups 12px
+   (subtle fill, hairline) · small controls 8px · CTAs are pills.
+   Wrappers that only group cards lose their own box.
+   =================================================================== */
+html.mode-pro { --radius: 16px; --radius-s: 10px; }
+
+/* wrappers: no box of their own */
+html.mode-pro .profile-simple-panel {
+  display: grid; gap: 16px;
+  padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+  background: transparent !important; box-shadow: none !important;
+}
+
+/* tier 1: cards */
+html.mode-pro .profile-identity-card,
+html.mode-pro .profile-calendar-card,
+html.mode-pro .profile-graph-card,
+html.mode-pro .profile-hexagon-card,
+html.mode-pro .profile-board,
+html.mode-pro .profile-exercise-section,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-detail-section,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-board,
+html.mode-pro .controls,
+html.mode-pro .exercise-card,
+html.mode-pro .routines-tile,
+html.mode-pro .battle-me-card,
+html.mode-pro .battle-list,
+html.mode-pro .battle-how,
+html.mode-pro .battle-friends,
+html.mode-pro .ranks-board,
+html.mode-pro .ranks-friends,
+html.mode-pro .lobby-panel,
+html.mode-pro .referral-panel,
+html.mode-pro .stats-card,
+html.mode-pro .friends-card,
+html.mode-pro .friends-add-card,
+html.mode-pro .home-streak-card,
+html.mode-pro .page-paywall-card,
+html.mode-pro .assessment-result {
+  border: 1px solid var(--line) !important;
+  border-radius: 20px !important;
+  background: var(--surface) !important;
+  box-shadow: var(--shadow) !important;
+}
+html.mode-pro .profile-identity-card { padding: 24px !important; }
+html.mode-pro .profile-calendar-card,
+html.mode-pro .profile-graph-card,
+html.mode-pro .profile-hexagon-card,
+html.mode-pro .profile-board,
+html.mode-pro .profile-exercise-section,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-detail-section,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-board { padding: 22px 24px !important; }
+html.mode-pro .exercise-card:hover,
+html.mode-pro .routines-tile:hover { border-color: var(--line-strong) !important; box-shadow: var(--iq-lift) !important; transform: translateY(-1px) !important; }
+
+/* tier 2: groups inside a card */
+html.mode-pro .profile-board article,
+html.mode-pro .profile-detail-section article,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-exercise-card,
+html.mode-pro .profile-trend-empty,
+html.mode-pro .profile-weight-breakdown,
+html.mode-pro .advanced-settings,
+html.mode-pro .difficulty-button,
+html.mode-pro .routine-empty,
+html.mode-pro .exercise-intro-dialog li,
+html.mode-pro .exercise-intro-steps li,
+html.mode-pro .battle-row,
+html.mode-pro .mdash-fact,
+html.mode-pro .mdash-focusrow {
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: var(--fill-subtle) !important;
+  box-shadow: none !important;
+}
+html.mode-pro .profile-board article,
+html.mode-pro .profile-detail-section article { padding: 14px 16px !important; }
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-exercise-card:hover,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-exercise-card.active { border-color: var(--text) !important; background: var(--surface) !important; }
+html.mode-pro .difficulty-button.active { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: var(--btn-fill) !important; }
+html.mode-pro .advanced-settings summary { border-radius: 8px !important; }
+html.mode-pro .mdash-fact { background: var(--surface) !important; }
+
+/* tier 3: small controls */
+html.mode-pro .profile-edit-button,
+html.mode-pro .cal-day,
+html.mode-pro .profile-calendar-nav button,
+html.mode-pro .measure-reports-more { border-radius: 8px !important; }
+html.mode-pro .profile-edit-button { border: 1px solid var(--line-strong) !important; background: var(--surface) !important; color: var(--text) !important; font-size: 12px !important; font-weight: 600 !important; min-height: 30px !important; padding: 0 12px !important; box-shadow: none !important; }
+html.mode-pro .profile-edit-button:hover { background: var(--fill-subtle) !important; }
+
+/* dialogs share the card tier */
+html.mode-pro dialog,
+html.mode-pro .exercise-intro-dialog,
+html.mode-pro .routine-dialog,
+html.mode-pro .routine-load-dialog,
+html.mode-pro .session-summary-dialog,
+html.mode-pro .measure-start-dialog,
+html.mode-pro .measure-quit-dialog { border-radius: 20px !important; border: 1px solid var(--line) !important; }
+/* data view: the page's own data-view rules outrank the tier selectors, so repeat them at that weight */
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-exercise-section { border-radius: 20px !important; }
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-board article,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-detail-section article,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-trend-empty,
+html.mode-pro .profile-page[data-selected-profile-view="data"] .profile-weight-breakdown {
+  border: 1px solid var(--line) !important; border-radius: 12px !important; background: var(--fill-subtle) !important; box-shadow: none !important;
+}
+html.mode-pro .profile-exercise-section .profile-cadence,
+html.mode-pro .profile-exercise-section > div > span,
+html.mode-pro .profile-exercise-section > header span { border-radius: 999px !important; }
+/* advanced settings: one 12px group, the summary is its first row */
+html.mode-pro .advanced-settings { padding: 0 !important; overflow: hidden; }
+html.mode-pro .advanced-settings > summary { border-radius: 0 !important; background: transparent !important; padding: 13px 18px !important; margin: 0 !important; }
+html.mode-pro .advanced-settings[open] > summary { border-bottom: 1px solid var(--line); }
+html.mode-pro .advanced-settings > :not(summary) { padding: 14px 18px 16px; }
+html.mode-pro .workbench, html.mode-pro .exercise-page, html.mode-pro .primary-panel { background: transparent !important; }
+html.mode-pro .advanced-settings > :not(summary) { padding: 6px 18px; }
+html.mode-pro .advanced-settings[open] { padding-bottom: 10px !important; }
+html.mode-pro .advanced-settings:not([open]) { display: block !important; }
+html.mode-pro .advanced-settings[open] { padding: 0 0 14px !important; }
+html.mode-pro .advanced-settings[open] > summary { border: 0 !important; border-bottom: 1px solid var(--line) !important; color: var(--text) !important; background: transparent !important; }
+html.mode-pro .advanced-settings > summary { color: var(--text) !important; }
+html.mode-pro .nback-preset-row { background: var(--surface) !important; border: 1px solid var(--line) !important; border-radius: 12px !important; box-shadow: none !important; }
+html.mode-pro .nback-preset-row button { background: transparent !important; color: var(--text-2) !important; border: 1px solid transparent !important; border-radius: 10px !important; box-shadow: none !important; }
+html.mode-pro .nback-preset-row button.active,
+html.mode-pro .nback-preset-row button.is-active,
+html.mode-pro .nback-preset-row button[aria-pressed="true"],
+html.mode-pro .nback-preset-row button[aria-checked="true"] { background: var(--btn-fill) !important; color: var(--btn-text) !important; }
+/* sliding segmented controls everywhere: white track, hairline, dark active segment, no sliding thumb */
+html.mode-pro .seg-sliding { position: relative; background: var(--surface) !important; border: 1px solid var(--line) !important; border-radius: 12px !important; box-shadow: none !important; }
+html.mode-pro .seg-sliding::before,
+html.mode-pro .seg-sliding::after,
+html.mode-pro .seg-sliding .seg-thumb,
+html.mode-pro .seg-sliding .seg-sliding-thumb { display: none !important; }
+html.mode-pro .seg-sliding > button { background: transparent !important; color: var(--text-2) !important; border: 1px solid transparent !important; border-radius: 10px !important; box-shadow: none !important; }
+html.mode-pro .seg-sliding > button:hover { color: var(--text) !important; }
+html.mode-pro .seg-sliding > button.active,
+html.mode-pro .seg-sliding > button[aria-pressed="true"],
+html.mode-pro .seg-sliding > button[aria-selected="true"] { background: var(--btn-fill) !important; color: var(--btn-text) !important; }
+html.mode-pro .profile-timeframe-control.seg-sliding { border-radius: 999px !important; }
+html.mode-pro .profile-timeframe-control.seg-sliding > button { border-radius: 999px !important; }
+html.mode-pro .seg-sliding > .preset-button.active,
+html.mode-pro .controls .seg-sliding > button.active,
+html.mode-pro .profile-page .seg-sliding > button.active { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: transparent !important; }
