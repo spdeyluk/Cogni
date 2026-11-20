@@ -680,3 +680,205 @@ html.mode-pro .home-cta.is-special {
 }
 html.mode-pro .home-cta.is-special i { font-style: normal; font-size: 12px; color: #fff !important; opacity: 0.95; }
 html.mode-pro .home-cta.is-special:hover { transform: translateY(-1px); filter: brightness(1.05); color: #fff !important; box-shadow: 0 14px 30px -10px rgba(15, 118, 110, 0.55) !important; }
+
+/* ===================================================================
+   Softer glow (2026-11-20): a faint wash top-left, not a blue sky.
+   =================================================================== */
+html.mode-pro[data-theme="light"] { --iq-glow-a: #eef3fb; --iq-glow-b: #f6f8fd; }
+html.mode-pro { --iq-glow-a-dark: rgba(96, 128, 210, 0.07); }
+html.mode-pro[data-theme="dark"] { --iq-glow-a: rgba(96, 128, 210, 0.07); --iq-glow-b: rgba(96, 128, 210, 0.03); }
+html.mode-pro:not(.landing-active) .app-content {
+  background:
+    radial-gradient(55% 40% at 10% -8%, var(--iq-glow-a) 0%, transparent 60%),
+    var(--bg) !important;
+}
+
+/* ===================================================================
+   Key strengths / areas of improvement: ability tabs, one joined list,
+   tinted tags, signed scores, rows that open.
+   =================================================================== */
+html.mode-pro .mdash-ktabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 24px 14px; }
+html.mode-pro .mdash-ktab { padding: 6px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+html.mode-pro .mdash-ktab:hover { color: var(--text); background: var(--fill-subtle); }
+html.mode-pro .mdash-ktab.is-active { background: var(--btn-fill); color: var(--btn-text); font-weight: 600; }
+html.mode-pro .mdash-klist { margin: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+html.mode-pro .mdash-ksection .mdash-klist:last-child { margin-bottom: 16px; }
+html.mode-pro .mdash-krow { display: block; min-height: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; }
+html.mode-pro .mdash-krow + .mdash-krow { border-top: 1px solid var(--line) !important; }
+html.mode-pro .mdash-krow.is-open { background: var(--fill-subtle) !important; }
+html.mode-pro .mdash-krow-main { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 0 16px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+html.mode-pro .mdash-krow-main:hover { background: var(--fill-subtle); }
+html.mode-pro .mdash-ktag { flex: none; padding: 5px 9px; border-radius: 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: var(--surface-2); color: var(--text-2); }
+html.mode-pro .mdash-krow.is-strong .mdash-ktag { background: rgba(15, 155, 142, 0.1); color: var(--iq-teal); }
+html.mode-pro .mdash-krow.is-room .mdash-ktag { background: rgba(192, 128, 144, 0.14); color: var(--iq-rose); }
+html.mode-pro .mdash-kname { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+html.mode-pro .mdash-kname em { font-style: normal; font-size: 11px; font-weight: 500; color: var(--muted); }
+html.mode-pro .mdash-kscore { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+html.mode-pro .mdash-krow.is-strong .mdash-kscore { color: var(--iq-green); }
+html.mode-pro .mdash-krow.is-room .mdash-kscore { color: var(--iq-rose); }
+html.mode-pro .mdash-kchev { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 180ms ease; }
+html.mode-pro .mdash-krow.is-open .mdash-kchev { transform: rotate(180deg); }
+html.mode-pro .mdash-kdetail { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0 16px 16px 16px; font-size: 12.5px; color: var(--muted); }
+html.mode-pro .mdash-kdetail b { color: var(--text); font-weight: 600; }
+html.mode-pro .mdash-kdetail p { flex-basis: 100%; margin: 6px 0 0; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+html.mode-pro .mdash-kmore { width: calc(100% - 32px); margin: 12px 16px 16px; }
+html.mode-pro .mdash-kmore.is-strong { background: rgba(74, 124, 89, 0.08); color: var(--iq-green); }
+html.mode-pro .mdash-kmore.is-room { background: rgba(192, 128, 144, 0.12); color: var(--iq-rose); }
+
+/* ===================================================================
+   Landing (signed-out visitors). Always light, whatever the theme.
+   =================================================================== */
+html.mode-pro .site-header,
+html.mode-pro .landing {
+  color-scheme: light;
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f3f4f6; --fill-subtle: #f9fafb;
+  --text: #0a0a0a; --text-2: #4b5563; --muted: #9ca3af; --line: #f1f2f4; --line-strong: #e5e7eb;
+  --btn-fill: #141416; --btn-fill-hover: #2e2e33; --btn-text: #ffffff;
+  --iq-good: #15a05a; --iq-low: #c2700a; --iq-glow-a: #eef3fb; --iq-glow-b: #f6f8fd;
+  --iq-track: linear-gradient(90deg, #f5cf9b 0%, #e9eaee 42%, #e9eaee 58%, #9fdcb9 100%);
+  --shadow: 0 1px 2px rgba(15, 17, 21, 0.04), 0 10px 30px -18px rgba(15, 17, 21, 0.18);
+  color: var(--text);
+}
+html.mode-pro.landing-active, html.mode-pro.landing-active body { background: #ffffff !important; }
+html.mode-pro .landing {
+  background:
+    radial-gradient(60% 46% at 8% 0%, var(--iq-glow-a) 0%, transparent 62%),
+    radial-gradient(40% 36% at 96% 4%, var(--iq-glow-b) 0%, transparent 60%),
+    #ffffff !important;
+  padding: 0 !important;
+}
+html.mode-pro .landing section, html.mode-pro .landing .landing-hero { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+html.mode-pro.landing-active .site-header {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(255, 255, 255, 0.86) !important;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent !important; box-shadow: none !important;
+}
+html.mode-pro.landing-active .site-header.is-scrolled { border-bottom-color: var(--line) !important; }
+html.mode-pro .site-header-inner { display: flex !important; align-items: center; gap: 24px; max-width: 1180px; margin: 0 auto; padding: 14px 24px !important; }
+html.mode-pro .site-brand { display: flex !important; align-items: center; gap: 8px; padding: 0 !important; border: 0 !important; background: transparent !important; color: var(--text) !important; font-size: 15px !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+html.mode-pro .site-brand img { width: 22px; height: 22px; border-radius: 6px; }
+html.mode-pro .site-header-nav { display: flex; gap: 28px; margin-left: auto; }
+html.mode-pro .site-header-nav a { font-size: 14px; color: var(--muted); text-decoration: none; }
+html.mode-pro .site-header-nav a:hover { color: var(--text); }
+html.mode-pro .site-header-actions { display: flex; align-items: center; gap: 6px; }
+html.mode-pro .site-login { padding: 8px 12px !important; border: 0 !important; background: transparent !important; color: var(--text-2) !important; font-size: 14px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro .site-login:hover { color: var(--text) !important; }
+html.mode-pro .site-google { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--btn-fill); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+html.mode-pro .site-google:hover { background: var(--btn-fill-hover); }
+html.mode-pro .site-google svg { width: 15px; height: 15px; }
+
+html.mode-pro .landing-hero { min-height: 0 !important; padding: clamp(56px, 11vh, 120px) 24px 40px !important; text-align: center; }
+html.mode-pro .landing-hero-main { max-width: 860px; margin: 0 auto; }
+html.mode-pro .landing-stats { margin-bottom: 30px; }
+html.mode-pro .landing-display {
+  margin: 0 0 24px !important;
+  font-family: var(--font-iq-serif) !important; font-weight: 400 !important;
+  font-size: clamp(44px, 6.6vw, 86px) !important; line-height: 1.03 !important; letter-spacing: -0.015em !important;
+  color: var(--text) !important; text-shadow: none !important;
+}
+html.mode-pro .landing-display em { font-style: normal; }
+html.mode-pro .landing-hero-lede { max-width: 620px; margin: 0 auto 36px !important; font-size: clamp(17px, 1.6vw, 21px) !important; line-height: 1.5 !important; color: var(--text-2) !important; }
+html.mode-pro .landing-cta-row { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin: 0 !important; }
+html.mode-pro .landing-cta {
+  display: inline-flex; align-items: center; gap: 12px;
+  min-height: 56px; padding: 0 26px 0 24px !important;
+  border: 0 !important; border-radius: 999px !important;
+  background: var(--btn-fill) !important; color: #fff !important;
+  font-size: 17px !important; font-weight: 500 !important; letter-spacing: 0 !important;
+  box-shadow: 0 14px 34px -14px rgba(15, 17, 21, 0.55) !important;
+  transition: transform 140ms ease, background 140ms ease !important; animation: none !important;
+}
+html.mode-pro .landing-cta:hover { transform: translateY(-1px); background: var(--btn-fill-hover) !important; }
+html.mode-pro .landing-cta .landing-g { width: 18px; height: 18px; }
+html.mode-pro .landing-cta .landing-arrow { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html.mode-pro .landing-cta-arrow { display: none; }
+html.mode-pro .landing-hero-fine { max-width: 420px; margin: 22px auto 0 !important; font-size: 13px !important; line-height: 1.55; color: var(--muted) !important; }
+html.mode-pro .landing-hero-fine a { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
+html.mode-pro .landing-preview { max-width: 1060px; margin: 12px auto 0; padding: 0 24px; }
+html.mode-pro .landing-preview .iq-preview-window { box-shadow: 0 50px 110px -56px rgba(15, 17, 21, 0.45), 0 1px 2px rgba(15, 17, 21, 0.04); }
+
+html.mode-pro .landing-section { max-width: 1060px !important; margin: 0 auto !important; padding: clamp(56px, 8vw, 96px) 24px 0 !important; }
+html.mode-pro .landing-section-eyebrow { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+html.mode-pro .landing-h2 { margin: 0 0 24px !important; font-size: clamp(26px, 3vw, 34px) !important; font-weight: 600 !important; letter-spacing: -0.02em !important; line-height: 1.15; text-align: left !important; color: var(--text) !important; }
+html.mode-pro .landing-trio, html.mode-pro .landing-offers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+html.mode-pro .landing-offer, html.mode-pro .landing-approach-card, html.mode-pro .landing-faq-item {
+  padding: 24px !important; border: 1px solid var(--line) !important; border-radius: 20px !important; background: var(--surface) !important; box-shadow: var(--shadow) !important;
+}
+html.mode-pro .landing-offer h3, html.mode-pro .landing-approach-card h3 { margin: 0 0 8px !important; font-size: 17px !important; font-weight: 600 !important; letter-spacing: -0.01em; color: var(--text) !important; }
+html.mode-pro .landing-offer p, html.mode-pro .landing-approach-card p { margin: 0 !important; font-size: 14px !important; line-height: 1.6 !important; color: var(--text-2) !important; }
+html.mode-pro .landing-offer-icon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 14px; border-radius: 12px; background: var(--surface-2) !important; color: var(--text) !important; border: 0 !important; }
+html.mode-pro .landing-offer-icon svg { width: 20px; height: 20px; }
+html.mode-pro .landing-approach-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+html.mode-pro .landing-disclaimer { margin: 20px 0 0 !important; font-size: 13px !important; color: var(--muted) !important; text-align: left !important; }
+html.mode-pro .landing-faq { display: grid; gap: 10px; }
+html.mode-pro .landing-faq-item { padding: 0 !important; }
+html.mode-pro .landing-faq-item summary { padding: 18px 22px; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; list-style: none; }
+html.mode-pro .landing-faq-item summary::-webkit-details-marker { display: none; }
+html.mode-pro .landing-faq-item p { margin: 0 !important; padding: 0 22px 18px; font-size: 14px !important; line-height: 1.6; color: var(--text-2) !important; }
+html.mode-pro .landing-final { max-width: 760px; margin: 0 auto; padding: clamp(72px, 10vw, 120px) 24px 64px !important; text-align: center; }
+html.mode-pro .landing-final h2 { margin: 0 0 14px !important; font-family: var(--font-iq-serif) !important; font-weight: 400 !important; font-size: clamp(34px, 4.4vw, 54px) !important; letter-spacing: -0.015em; line-height: 1.05; color: var(--text) !important; }
+html.mode-pro .landing-final p { margin: 0 0 28px; font-size: 16px; color: var(--text-2); }
+html.mode-pro .landing-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1180px; margin: 0 auto; padding: 22px 24px 36px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+html.mode-pro .landing-footer nav { display: flex; gap: 20px; }
+html.mode-pro .landing-footer a { color: var(--text-2); text-decoration: none; }
+html.mode-pro .landing-footer a:hover { color: var(--text); }
+@media (max-width: 860px) {
+  html.mode-pro .site-header-nav { display: none; }
+  html.mode-pro .landing-trio, html.mode-pro .landing-offers, html.mode-pro .landing-approach-grid { grid-template-columns: minmax(0, 1fr); }
+  html.mode-pro .site-google span { display: none; }
+}
+/* landing header: the same look at the top and when scrolled */
+html.mode-pro .site-header .site-brand span,
+html.mode-pro .site-header.is-scrolled .site-brand span { color: var(--text) !important; opacity: 1 !important; font-size: 15px !important; font-weight: 700 !important; }
+html.mode-pro .site-header .site-login,
+html.mode-pro .site-header.is-scrolled .site-login { padding: 8px 12px !important; border: 0 !important; border-radius: 999px !important; background: transparent !important; color: var(--text-2) !important; font-size: 14px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro .site-header .site-login:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .site-header .site-google,
+html.mode-pro .site-header.is-scrolled .site-google { height: 36px !important; padding: 0 16px !important; border: 0 !important; border-radius: 999px !important; background: var(--btn-fill) !important; color: #fff !important; font-size: 13px !important; font-weight: 600 !important; box-shadow: none !important; }
+html.mode-pro .site-header .site-google:hover { background: var(--btn-fill-hover) !important; }
+html.mode-pro .landing .iq-step h3, html.mode-pro .landing h3 { color: var(--text) !important; opacity: 1 !important; }
+html.mode-pro .landing .iq-step p { color: var(--text-2) !important; }
+html.mode-pro .landing-skip { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline dotted; }
+/* the report's generic button rules outrank the section controls; pin them */
+html.mode-pro .mdash-ksection .mdash-ktab { padding: 6px 12px !important; border: 0 !important; border-radius: 6px !important; background: transparent !important; color: var(--muted) !important; font-size: 13px !important; font-weight: 500 !important; box-shadow: none !important; min-height: 0 !important; }
+html.mode-pro .mdash-ksection .mdash-ktab:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .mdash-ksection .mdash-ktab.is-active { background: var(--btn-fill) !important; color: var(--btn-text) !important; font-weight: 600 !important; }
+html.mode-pro .mdash-ksection .mdash-kmore { display: flex !important; align-items: center; justify-content: center; gap: 8px; height: 40px !important; border: 0 !important; border-radius: 12px !important; font-size: 13px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro .mdash-ksection .mdash-kmore.is-strong { background: rgba(74, 124, 89, 0.08) !important; color: var(--iq-green) !important; }
+html.mode-pro .mdash-ksection .mdash-kmore.is-room { background: rgba(192, 128, 144, 0.12) !important; color: var(--iq-rose) !important; }
+html.mode-pro .mdash-ksection .mdash-dark-pill { padding: 10px 20px !important; border: 0 !important; border-radius: 999px !important; background: var(--iq-dark) !important; color: #fff !important; font-size: 13px !important; font-weight: 600 !important; box-shadow: none !important; min-height: 0 !important; }
+html.mode-pro .mdash-ksection .mdash-krow-main { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 58px !important; padding: 0 16px !important; }
+html.mode-pro .mdash-ksection .mdash-krow-main:hover { background: var(--fill-subtle) !important; }
+/* landing header: scrolled state must not restyle the buttons */
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-login,
+html.mode-pro.landing-active .site-header .site-header-actions .site-login { padding: 8px 12px !important; border: 0 !important; background: transparent !important; color: var(--text-2) !important; font-size: 14px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-login:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-google,
+html.mode-pro.landing-active .site-header .site-header-actions .site-google { background: var(--btn-fill) !important; color: #fff !important; border: 0 !important; }
+/* rail buttons: charcoal, not black */
+html.mode-pro { --rail-btn: #262c33; --rail-btn-hover: #323941; }
+html.mode-pro[data-theme="dark"] { --rail-btn: var(--btn-fill); --rail-btn-hover: var(--btn-fill-hover); }
+html.mode-pro .site-rail-pass,
+html.mode-pro .site-rail-login { background: var(--rail-btn) !important; color: #fff !important; }
+html.mode-pro .site-rail-pass:hover,
+html.mode-pro .site-rail-login:hover { background: var(--rail-btn-hover) !important; }
+/* the report's generic button rules outrank the section controls; pin them */
+html.mode-pro .mdash-ksection .mdash-ktab { padding: 6px 12px !important; border: 0 !important; border-radius: 6px !important; background: transparent !important; color: var(--muted) !important; font-size: 13px !important; font-weight: 500 !important; box-shadow: none !important; min-height: 0 !important; }
+html.mode-pro .mdash-ksection .mdash-ktab:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .mdash-ksection .mdash-ktab.is-active { background: var(--btn-fill) !important; color: var(--btn-text) !important; font-weight: 600 !important; }
+html.mode-pro .mdash-ksection .mdash-kmore { display: flex !important; align-items: center; justify-content: center; gap: 8px; height: 40px !important; border: 0 !important; border-radius: 12px !important; font-size: 13px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro .mdash-ksection .mdash-kmore.is-strong { background: rgba(74, 124, 89, 0.08) !important; color: var(--iq-green) !important; }
+html.mode-pro .mdash-ksection .mdash-kmore.is-room { background: rgba(192, 128, 144, 0.12) !important; color: var(--iq-rose) !important; }
+html.mode-pro .mdash-ksection .mdash-dark-pill { padding: 10px 20px !important; border: 0 !important; border-radius: 999px !important; background: var(--iq-dark) !important; color: #fff !important; font-size: 13px !important; font-weight: 600 !important; box-shadow: none !important; min-height: 0 !important; }
+html.mode-pro .mdash-ksection .mdash-krow-main { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 58px !important; padding: 0 16px !important; }
+html.mode-pro .mdash-ksection .mdash-krow-main:hover { background: var(--fill-subtle) !important; }
+/* landing header: scrolled state must not restyle the buttons */
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-login,
+html.mode-pro.landing-active .site-header .site-header-actions .site-login { padding: 8px 12px !important; border: 0 !important; background: transparent !important; color: var(--text-2) !important; font-size: 14px !important; font-weight: 500 !important; box-shadow: none !important; }
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-login:hover { color: var(--text) !important; background: var(--fill-subtle) !important; }
+html.mode-pro.landing-active .site-header.is-scrolled .site-header-actions .site-google,
+html.mode-pro.landing-active .site-header .site-header-actions .site-google { background: var(--btn-fill) !important; color: #fff !important; border: 0 !important; }
+html.mode-pro[data-theme="dark"] { --rail-btn: #1e2228; --rail-btn-hover: #272c33; }
+html.mode-pro[data-theme="dark"] .site-rail-pass,
+html.mode-pro[data-theme="dark"] .site-rail-login { border: 1px solid rgba(255, 255, 255, 0.1) !important; }

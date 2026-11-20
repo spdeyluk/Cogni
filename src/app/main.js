@@ -1053,7 +1053,7 @@ if (cogniUiMode === "play") {
   // flashes behind it; initAuth() hides it the moment a real session resolves.
   let likelySignedIn = false;
   try { likelySignedIn = !!localStorage.getItem("cogni.supabaseAuth.v1"); } catch { /* private mode */ }
-  if (!likelySignedIn) showSignInFirst();
+  if (!likelySignedIn) showLanding();
 }
 // Deferred so the auth/sign-in module-level bindings below are initialized.
 window.setTimeout(initAuth, 0);
@@ -5744,8 +5744,7 @@ function wireSettings() {
 
   document.querySelector("#settings-upgrade")?.addEventListener("click", () => {
     closeDrawer();
-    showLanding();
-    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    openPricingModal();
   });
 
   document.querySelector("#settings-signout")?.addEventListener("click", async () => {
@@ -5912,9 +5911,30 @@ function wireLanding() {
     enterApp();
     showAssessments();
   };
-  document.querySelector("#landing-start")?.addEventListener("click", startMeasurement);
-  document.querySelector("#landing-start-2")?.addEventListener("click", start);
+  // Every landing CTA is "Continue with Google". A visitor who is already signed
+  // in goes straight to the test; everyone else starts the OAuth round trip.
+  const continueWithGoogle = () => {
+    pendingLandingDestination = "assessments";
+    if (authUser && !guestMode && authUser.provider !== "guest") { startMeasurement(); return; }
+    if (!supabaseEnabled) { startMeasurement(); return; }
+    startWebGoogleSignIn();
+  };
+  document.querySelector("#landing-start")?.addEventListener("click", continueWithGoogle);
+  document.querySelector("#landing-start-2")?.addEventListener("click", continueWithGoogle);
+  document.querySelector("#site-google")?.addEventListener("click", continueWithGoogle);
   document.querySelector("#landing-start-top")?.addEventListener("click", start);
+  document.querySelector("#landing-how")?.addEventListener("click", () => {
+    document.querySelector("#landing-how-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  const preview = document.querySelector("#landing-preview");
+  if (preview && !preview.childElementCount) preview.innerHTML = iqPreviewHtml();
+  // Local development only: a way into the app without an account, the same
+  // guest path the sign-in wall offers on localhost. Never rendered in production.
+  const skipHost = document.querySelector("#landing-skip-host");
+  if (skipHost && skipSignInAllowed()) {
+    skipHost.innerHTML = `<button class="landing-skip" id="landing-skip" type="button">Skip for now (test mode)</button>`;
+    skipHost.querySelector("#landing-skip")?.addEventListener("click", enterAsGuest);
+  }
   wirePricing();
   // The marquee loops by translating one full copy of its items off-screen,
   // so the track needs exactly two copies.
@@ -6080,9 +6100,7 @@ function wireAccountMenu() {
   });
   document.querySelector("#account-upgrade")?.addEventListener("click", () => {
     close();
-    // Pricing lives on the marketing landing; hand off there and jump to it.
-    showLanding();
-    document.querySelector("#landing-pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    openPricingModal();
   });
 
   renderAccountMenu();
@@ -6292,8 +6310,11 @@ function bootWebIntoApp() {
 // Nothing behind it renders until Google (or email) sign-in succeeds — a new
 // visitor has no way into the app without an account.
 function bootWebIntoSignIn() {
-  showSignInFirst();
-  routerReady = true;
+  // The marketing landing is the front door for a signed-out visitor; Google
+  // sign-in starts from its buttons, and "Log in" opens the email gate.
+  hideSignInFirst();
+  showLanding();
+  finalizeBootAsLanding();
 }
 
 // The web onboarding funnel: a signed-in visitor who has answered the onboarding
@@ -8000,6 +8021,25 @@ function renderMeasurementDashboard() {
       renderMeasurementDashboard();
     });
   });
+  host.querySelectorAll("[data-kfocus]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const [kind, key] = button.dataset.kfocus.split(":");
+      if (kind === "strong") mdashStrongFocus = key; else mdashRoomFocus = key;
+      renderMeasurementDashboard();
+    });
+  });
+  host.querySelectorAll("[data-krow]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.krow;
+      const row = button.closest(".mdash-krow");
+      const open = !mdashOpenRows.has(key);
+      if (open) mdashOpenRows.add(key); else mdashOpenRows.delete(key);
+      row?.classList.toggle("is-open", open);
+      button.setAttribute("aria-expanded", String(open));
+      const detail = row?.querySelector(".mdash-kdetail");
+      if (detail) detail.hidden = !open;
+    });
+  });
   renderRailHistory();
   // Keep the fake scores rolling under the blur (locked only).
   if (unlocked) stopMdashRoll(); else startMdashRoll(host);
@@ -8178,45 +8218,75 @@ function measureOverview(record, ranked, shape, margin, percentile, rarity, unlo
   `;
 }
 
-// Under the overall panel: the subtests that carried the sitting and the ones
-// with the most room, three each with the rest behind "Show more". Every row is
-// a measured subtest score; nothing here is projected.
+// Under the overall panel: the subtests above the sitting's own median and the
+// ones below it, filterable by ability, each row opening to its details. Every
+// number is a measured subtest score; nothing here is projected.
 let mdashStrengthsOpen = false;
 let mdashRoomOpen = false;
+let mdashStrongFocus = "all";
+let mdashRoomFocus = "all";
+const mdashOpenRows = new Set();
 function measureHighlights(record, unlocked) {
   if (!unlocked) return "";
   const parts = MEASUREMENT_SUBTESTS.map((subtest) => {
     const result = record.subtests?.[subtest.id];
-    return result && Number.isFinite(result.score)
-      ? { name: subtest.name, short: MEASUREMENT_INDICES[subtest.index].short, score: result.score }
-      : null;
+    if (!result || !Number.isFinite(result.score)) return null;
+    return {
+      id: subtest.id, name: subtest.name, index: subtest.index,
+      short: MEASUREMENT_INDICES[subtest.index].short,
+      score: result.score, answered: result.answered ?? result.count ?? null, summary: subtest.summary
+    };
   }).filter(Boolean);
   if (parts.length < 2) return "";
-  const strong = [...parts].sort((a, b) => b.score - a.score).filter((p) => p.score >= 100);
-  const room = [...parts].sort((a, b) => a.score - b.score).filter((p) => p.score < 110);
-  const tag = (score, kind) => kind === "strong"
-    ? (score >= 120 ? "Exceptional" : score >= 110 ? "Strong" : "Solid")
-    : (score < 85 ? "Low" : score < 95 ? "Below average" : "Room");
-  const list = (items, kind, open) => {
-    const shown = open ? items : items.slice(0, 3);
-    const more = items.length - 3;
-    return `<div class="mdash-krows">${shown.map((p) => `
-      <div class="mdash-krow is-${kind}">
-        <span class="mdash-ktag">${tag(p.score, kind)}</span>
-        <span class="mdash-kname">${escapeHtml(p.name)}<em>${escapeHtml(p.short)}</em></span>
-        <span class="mdash-kscore">${p.score}</span>
-      </div>`).join("")}</div>
-      ${more > 0 ? `<button class="mdash-kmore is-${kind}" type="button" data-mdash-more="${kind}">${open ? "Show fewer" : `Show ${more} more`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ""}`;
+  const sorted = [...parts].sort((a, b) => b.score - a.score);
+  const split = Math.ceil(sorted.length / 2);
+  const strong = sorted.slice(0, split);
+  const room = sorted.slice(split).reverse();
+
+  const section = (kind, title, items, focus, open, action) => {
+    const indices = MEASUREMENT_INDEX_ORDER.filter((key) => items.some((p) => p.index === key));
+    const visible = focus === "all" ? items : items.filter((p) => p.index === focus);
+    const shown = open ? visible : visible.slice(0, 3);
+    const more = visible.length - 3;
+    const tag = (score) => kind === "strong"
+      ? (score >= 120 ? "Exceptional" : score >= 110 ? "Strong" : "Solid")
+      : (score < 85 ? "Low" : score < 95 ? "Below avg" : "Room");
+    const rows = shown.map((p) => {
+      const delta = p.score - 100;
+      const key = `${kind}:${p.id}`;
+      const isOpen = mdashOpenRows.has(key);
+      return `
+        <div class="mdash-krow is-${kind}${isOpen ? " is-open" : ""}">
+          <button class="mdash-krow-main" type="button" data-krow="${key}" aria-expanded="${isOpen}">
+            <span class="mdash-ktag">${tag(p.score)}</span>
+            <span class="mdash-kname">${escapeHtml(p.name)}<em>${escapeHtml(p.short)}</em></span>
+            <span class="mdash-kscore">${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${Math.abs(delta)}</span>
+            <svg class="mdash-kchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="mdash-kdetail"${isOpen ? "" : " hidden"}>
+            <span><b>${p.score}</b> score</span>
+            <span><b>${standingLabel(scoreToPercentile(p.score))}</b></span>
+            <span><b>${escapeHtml(interpretationBand(p.score).label)}</b></span>
+            ${p.answered != null ? `<span><b>${p.answered}</b> answered</span>` : ""}
+            <p>${escapeHtml(p.summary)}</p>
+          </div>
+        </div>`;
+    }).join("");
+    return `
+      <section class="mdash-card mdash-ksection is-${kind}">
+        <header class="mdash-khead"><h3>${title}</h3>${action}</header>
+        <div class="mdash-ktabs" role="tablist" aria-label="Filter by ability">
+          <button class="mdash-ktab${focus === "all" ? " is-active" : ""}" type="button" data-kfocus="${kind}:all">All</button>
+          ${indices.map((key) => `<button class="mdash-ktab${focus === key ? " is-active" : ""}" type="button" data-kfocus="${kind}:${key}">${MEASUREMENT_INDICES[key].short}</button>`).join("")}
+        </div>
+        ${visible.length ? `<div class="mdash-klist">${rows}</div>` : `<p class="mdash-body mdash-kempty">Nothing from this ability on this side of your median.</p>`}
+        ${more > 0 ? `<button class="mdash-kmore is-${kind}" type="button" data-mdash-more="${kind}">${open ? "Show fewer" : `Show ${more} more`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ""}
+      </section>`;
   };
-  return `
-    <section class="mdash-card mdash-ksection">
-      <header class="mdash-khead"><h3>Key strengths</h3><button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button></header>
-      ${strong.length ? list(strong, "strong", mdashStrengthsOpen) : `<p class="mdash-body mdash-kempty">No subtest reached the mean this sitting.</p>`}
-    </section>
-    <section class="mdash-card mdash-ksection">
-      <header class="mdash-khead"><h3>Areas of improvement</h3><button class="mdash-dark-pill" type="button" data-measure-tab="insights">What to train</button></header>
-      ${room.length ? list(room, "room", mdashRoomOpen) : `<p class="mdash-body mdash-kempty">Every subtest sits above average. Nothing stands out as a gap.</p>`}
-    </section>`;
+  return section("strong", "Key strengths", strong, mdashStrongFocus, mdashStrengthsOpen,
+      `<button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button>`)
+    + section("room", "Areas of improvement", room, mdashRoomFocus, mdashRoomOpen,
+      `<button class="mdash-dark-pill" type="button" data-measure-tab="insights">What to train</button>`);
 }
 
 // The panel every card funnels into. It reads either the composite or a single

@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261120-iq2">
-    <link rel="stylesheet" href="luxe.css?v=20261120-iq2">
-    <link rel="stylesheet" href="battle.css?v=20261120-iq2">
-    <link rel="stylesheet" href="iq.css?v=20261120-iq2">
+    <link rel="stylesheet" href="styles.css?v=20261120-iq3">
+    <link rel="stylesheet" href="luxe.css?v=20261120-iq3">
+    <link rel="stylesheet" href="battle.css?v=20261120-iq3">
+    <link rel="stylesheet" href="iq.css?v=20261120-iq3">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -45,18 +45,17 @@
               if (k && /^sb-.*auth-token/.test(k) && localStorage.getItem(k)) { hasSession = true; break; }
             }
           } catch (e) {}
-          // The web app opens straight on the dashboard — no marketing landing —
-          // so the app shell paints from the first frame (never landing-active).
-          // hasSession is kept only so main.js can tell fresh vs returning.
-          void hasSession;
+          // A signed-out web visitor gets the marketing landing from the first
+          // frame; a stored session paints the app shell straight away.
+          if (mode === "pro" && !hasSession) document.documentElement.classList.add("landing-active");
 
           // Paint in the right skin from the very first frame. Both of these are
           // also set by main.js, but that runs after the first paint, so the page
           // used to flash the dark base palette before the light theme landed.
           document.documentElement.classList.add(mode === "pro" ? "mode-pro" : "mode-play");
-          var theme = "dark";
+          var theme = "light";
           try {
-            var saved = localStorage.getItem("cogni.theme.v1");
+            var saved = localStorage.getItem("cogni.theme.v2");
             if (saved === "dark" || saved === "light") theme = saved;
           } catch (e) {}
           document.documentElement.dataset.theme = mode === "play" ? "dark" : theme;
@@ -510,8 +509,17 @@
         </button>
         <!-- No theme switch out here: the landing carries its own colours
              regardless of theme, so the control had nothing to do. -->
+        <nav class="site-header-nav" aria-label="Landing sections">
+          <a href="#landing-how-section">How it works</a>
+          <a href="#landing-train">Training</a>
+          <a href="#landing-faq">FAQ</a>
+        </nav>
         <div class="site-header-actions">
           <button class="site-login" id="site-login" type="button">Log in</button>
+          <button class="site-google" id="site-google" type="button">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Continue with Google
+          </button>
         </div>
       </div>
     </header>
@@ -597,39 +605,38 @@
     </header>
     <div class="landing" id="landing">
       <section class="landing-hero landing-hero-centered">
-        <div class="landing-stars" aria-hidden="true"></div>
         <div class="landing-hero-main">
-          <!-- Slot kept for a real figure. It stays hidden until there is one:
-               an invented "X people" line is the easiest thing on this page to
-               fake and the fastest way to lose the benefit of the doubt. -->
-          <p class="landing-proof" id="landing-proof" hidden></p>
-
-          <h1 class="landing-display">
-            Measure your mind.<br>
-            <em>Then train it.</em>
-          </h1>
-          <p class="landing-hero-lede">
-            Nine subtests. Six abilities. A score that shows its margin of error.
-          </p>
-
+          <p class="iq-hero-stats landing-stats"><span><b>9</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>45</b> minutes</span></p>
+          <h1 class="landing-display">Your mind.<br>Measured. Tracked. Improved.</h1>
+          <p class="landing-hero-lede">Take a nine-part IQ test across six abilities, train what is weak for free, and watch the number move over time.</p>
           <div class="landing-cta-row">
-            <button class="landing-cta landing-cta-wiggle" id="landing-start" type="button">
-              Take the measurement <span class="landing-cta-arrow" aria-hidden="true">→</span>
-            </button>
+            <button class="landing-cta" id="landing-start" type="button"><svg class="landing-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google<svg class="landing-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+            <button class="iq-link" id="landing-how" type="button">See how it works</button>
           </div>
-
-          <p class="landing-hero-fine">
-            Free to take. The full six-index report is a subscription — and the score itself is always yours.
-          </p>
+          <p class="landing-hero-fine">By continuing, you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
         </div>
       </section>
 
-      <!-- Research-institution logo marquee. The training paradigms Cogni uses
-           were developed and validated in published research from these
-           institutions; the caption frames that accurately (methods grounded in
-           their research) rather than claiming any endorsement or partnership. -->
-      <section class="landing-research-note" aria-label="Research basis">
-        <p class="landing-marquee-title">Our methods are grounded in decades of peer-reviewed cognitive-science research</p>
+      <section class="landing-preview" id="landing-preview" aria-label="Example report"></section>
+
+      <section class="landing-section" id="landing-how-section">
+        <p class="landing-section-eyebrow">How it works</p>
+        <h2 class="landing-h2">From first question to a report you can act on</h2>
+        <ol class="iq-steps">
+          <li class="iq-step"><span class="iq-step-n">1</span><h3>Take nine short subtests</h3><p>Verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.</p></li>
+          <li class="iq-step"><span class="iq-step-n">2</span><h3>Every ability is scored</h3><p>Each subtest feeds one of six ability indices on the standard IQ scale, with its margin of error shown beside it.</p></li>
+          <li class="iq-step"><span class="iq-step-n">3</span><h3>Get your IQ and the report</h3><p>A composite score, where it sits on the curve, your strongest and weakest abilities, and every retest kept so you can track change.</p></li>
+        </ol>
+      </section>
+
+      <section class="landing-section" id="landing-train">
+        <p class="landing-section-eyebrow">What you get</p>
+        <h2 class="landing-h2">One place to measure, train and compete</h2>
+        <div class="landing-trio">
+          <article class="landing-offer"><h3>The IQ test</h3><p>Nine subtests, six abilities, one score with its margin of error. Retake it whenever you want to see what changed.</p></article>
+          <article class="landing-offer"><h3>Training, free</h3><p>N-Back, relational reasoning, cognitive control, memory and speed drills. Every exercise is open, at every difficulty, as often as you like.</p></article>
+          <article class="landing-offer"><h3>1v1 battles</h3><p>Quick matches and private lobbies on the same kinds of tasks. A rating that moves, and your IQ on your profile when you take the test.</p></article>
+        </div>
       </section>
 
       <section class="landing-section landing-offers-section" aria-label="What Cogni trains">
@@ -681,25 +688,6 @@
         </div>
       </section>
 
-      <section class="landing-section" id="landing-skills">
-        <h2 class="landing-h2">Train the skills behind better cognition</h2>
-        <div class="landing-steps">
-          <article class="landing-step">
-            <p class="landing-step-eyebrow">Step one</p>
-            <h3>Hold the cue</h3>
-            <p>Keep the target in mind while distractions compete for your attention.</p>
-          </article>
-          <article class="landing-step">
-            <p class="landing-step-eyebrow">Step two</p>
-            <h3>Decide under pressure</h3>
-            <p>Make quick, accurate judgments when the task pushes on your control.</p>
-          </article>
-          <article class="landing-step">
-            <p class="landing-step-eyebrow">Step three</p>
-            <h3>Adapt as you improve</h3>
-            <p>Difficulty adjusts to your performance so the challenge stays effective.</p>
-          </article>
-        </div>
       </section>
 
       <section class="landing-section" id="landing-approach">
@@ -717,81 +705,6 @@
         <p class="landing-disclaimer">Cogni is a training and self-tracking tool, not a medical or diagnostic service. It isn't a replacement for therapy or professional care.</p>
       </section>
 
-      <section class="landing-section landing-pricing" id="landing-pricing" data-billing="annual">
-        <p class="landing-eyebrow">Membership</p>
-        <h2 class="landing-h2">Train like it matters</h2>
-        <p class="landing-pricing-sub">Start free. Upgrade when a few minutes a day becomes the part of your day you protect.</p>
-
-        <div class="landing-billing" role="tablist" aria-label="Billing period">
-          <button class="landing-billing-option is-active" data-billing-set="annual" role="tab" type="button">Annual</button>
-          <button class="landing-billing-option" data-billing-set="monthly" role="tab" type="button">Monthly</button>
-          <span class="landing-billing-save">Save up to 45%</span>
-        </div>
-
-        <div class="landing-plans">
-          <article class="landing-plan">
-            <div class="landing-plan-head">
-              <h3>Free</h3>
-              <p class="landing-plan-tag">For building the habit.</p>
-            </div>
-            <div class="landing-plan-price">
-              <span class="landing-plan-amount">$0</span>
-              <span class="landing-plan-per">forever</span>
-            </div>
-            <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="free" type="button">Start free</button>
-            <ul class="landing-plan-features">
-              <li>Try the training exercises</li>
-              <li>One session per day</li>
-              <li>Community access</li>
-            </ul>
-          </article>
-
-          <article class="landing-plan landing-plan-featured">
-            <span class="landing-plan-badge">Most popular</span>
-            <div class="landing-plan-head">
-              <h3>Basic</h3>
-              <p class="landing-plan-tag">All the training, all your data.</p>
-            </div>
-            <div class="landing-plan-price"
-                 data-price-annual="$4.92" data-per-annual="/mo · billed $59/yr"
-                 data-price-monthly="$9" data-per-monthly="/mo">
-              <span class="landing-plan-amount">$4.92</span>
-              <span class="landing-plan-per">/mo · billed $59/yr</span>
-            </div>
-            <button class="landing-plan-cta" data-plan-cta="basic" type="button">Start 3-day free trial</button>
-            <ul class="landing-plan-features">
-              <li>Everything in Free</li>
-              <li>All training exercises, unlimited</li>
-              <li>Full progress &amp; data</li>
-              <li>Trend analytics</li>
-              <li>Screen Time budgeting</li>
-            </ul>
-          </article>
-
-          <article class="landing-plan">
-            <div class="landing-plan-head">
-              <h3>Pro</h3>
-              <p class="landing-plan-tag">Coaching, routines and your IQ.</p>
-            </div>
-            <div class="landing-plan-price"
-                 data-price-annual="$12.42" data-per-annual="/mo · billed $149/yr"
-                 data-price-monthly="$19" data-per-monthly="/mo">
-              <span class="landing-plan-amount">$12.42</span>
-              <span class="landing-plan-per">/mo · billed $149/yr</span>
-            </div>
-            <button class="landing-plan-cta landing-plan-cta-ghost" data-plan-cta="pro" type="button">Start 3-day free trial</button>
-            <ul class="landing-plan-features">
-              <li>Everything in Basic</li>
-              <li>Custom training routines</li>
-              <li>Personal AI training coach</li>
-              <li>Cogni Measurement — full report</li>
-            </ul>
-          </article>
-        </div>
-
-        <p class="landing-pricing-note">Prefer to pay once? <strong>Lifetime access — $99.</strong> &nbsp;·&nbsp; Cancel anytime. No claims about medical outcomes.</p>
-      </section>
-
       <section class="landing-section" id="landing-faq">
         <h2 class="landing-h2">Questions</h2>
         <div class="landing-faq">
@@ -803,13 +716,18 @@
       </section>
 
       <section class="landing-final">
-        <h2>Start building better cognition today</h2>
-        <button class="landing-cta" id="landing-start-2" type="button">Get sharper — it's free</button>
-        <a class="landing-discord" href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">
-          <svg viewBox="0 0 127.14 96.36" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
-          Join the community
-        </a>
+        <h2>Find out where you stand.</h2>
+        <p>Free to take. Your score goes on your profile, and training is open to everyone.</p>
+        <button class="landing-cta" id="landing-start-2" type="button"><svg class="landing-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google<svg class="landing-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
       </section>
+      <footer class="landing-footer">
+        <span>© Cogni <span id="landing-skip-host"></span></span>
+        <nav aria-label="Legal">
+          <a href="terms.html" target="_blank" rel="noopener">Terms</a>
+          <a href="privacy.html" target="_blank" rel="noopener">Privacy</a>
+          <a href="https://discord.gg/gfaG74mgU8" target="_blank" rel="noopener">Discord</a>
+        </nav>
+      </footer>
     </div>
 
     <dialog class="feedback-dialog" id="feedback-dialog">
@@ -2759,6 +2677,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261120-iq2"></script>
+    <script type="module" src="src/app/main.js?v=20261120-iq3"></script>
   </body>
 </html>
