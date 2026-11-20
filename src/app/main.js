@@ -7398,14 +7398,14 @@ function trainingMinutesForDate(progress, exerciseIds, dateKey) {
 // visitor controls. Light is the default — the app was dark-only, which reads
 // as a tool rather than as something you'd hand a stranger to take a test on.
 // ---------------------------------------------------------------------------
-const THEME_KEY = "cogni.theme.v1";
+const THEME_KEY = "cogni.theme.v2";
 
 function currentTheme() {
   try {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "dark" || saved === "light") return saved;
   } catch { /* private mode */ }
-  return "dark";
+  return "light";
 }
 
 function applyTheme(theme) {
@@ -8061,7 +8061,7 @@ function measurePillars(ranked, unlocked) {
           ${unlocked ? `<svg class="mdash-pillar-go" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 12h13M13 6l6 6-6 6"/></svg>` : ""}
         </span>
-        <span class="mdash-pillar-score">${lockedValue(entry.score, unlocked)}</span>
+        <span class="mdash-pillar-score"${unlocked ? ` data-tone="${scoreTone(entry.score)}"` : ""}>${lockedValue(entry.score, unlocked)}</span>
         <span class="mdash-pillar-title">${escapeHtml(meta.name)}</span>`;
       // Unlocked, each pillar is a control that focuses the panel below. Locked,
       // it's a static box with its own unlock button — nothing to focus yet, and
@@ -8142,7 +8142,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
       </header>
 
       <div class="mdash-overall-lead">
-        <p class="mdash-overall-score">${lockedValue(score, unlocked)}${
+        <p class="mdash-overall-score"${unlocked ? ` data-tone="${scoreTone(score)}"` : ""}>${lockedValue(score, unlocked)}${
           spread != null ? `<span>±${spread}</span>` : ""}${unlocked ? "" : mdashUnlockButton("mdash-overall-unlock")}</p>
         ${unlocked ? `<p class="mdash-overall-band">${escapeHtml(interpretationBand(score).label)}</p>` : ""}
         <p class="mdash-overall-sub">${unlocked
@@ -8369,9 +8369,13 @@ function renderMeasurementSales() {
   if (!host) return;
   const total = MEASUREMENT_SUBTESTS.length;
   const minutes = MEASUREMENT_SUBTESTS.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+  const available = iqTestAvailable();
+  const locked = cogniUiMode === "pro" && available && !iqTestUnlocked();
 
   const insight = (title, body) =>
     `<article class="sales-card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></article>`;
+  const step = (n, title, body) =>
+    `<li class="iq-step"><span class="iq-step-n">${n}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></li>`;
 
   // In the onboarding funnel the hero is the "you're all set, now take it" screen
   // (no rail, no nav). Personalise it with the name from the onboarding questions.
@@ -8380,29 +8384,48 @@ function renderMeasurementSales() {
   if (!firstName) {
     try { firstName = (JSON.parse(localStorage.getItem(onboardingAnswersKey))?.name || "").trim().split(/\s+/)[0]; } catch { /* ignore */ }
   }
-  const eyebrow = funnel ? "You're all set" : "Cogni Measurement";
   const title = funnel
     ? (firstName ? `You're all set, ${escapeHtml(firstName)}.` : "You're all set.")
-    : "Find out how your mind actually works";
+    : "Your mind.<br>Measured. Tracked. Improved.";
   const lede = funnel
     ? `One sitting sets your baseline — ${total} short subtests across the six core abilities. Take them now; you'll get a composite score and a full breakdown at the end.`
-    : `${total} subtests across the six abilities in the Cattell-Horn-Carroll model. You'll get a composite score, every index behind it, and a plain reading of where you're strong and where you're not.`;
+    : "Nine short subtests across six abilities. Get your IQ, the score behind every ability, and see how it changes over time.";
+  const ctaLabel = !available ? "Not open yet" : locked ? "Unlock the IQ test" : "Start the test";
+  const note = !available
+    ? "The IQ test is being calibrated and opens to everyone soon."
+    : cogniUiMode === "pro"
+      ? "Free to take. Your score goes on your profile and the leaderboard, and it is what you bring into a battle."
+      : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready.";
 
   host.innerHTML = `
-    <div class="sales-hero">
-      <p class="sales-eyebrow">${eyebrow}</p>
-      <h2 class="sales-title">${title}</h2>
+    <div class="sales-hero iq-hero">
+      <p class="iq-hero-stats"><span><b>${total}</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>${minutes}</b> minutes</span></p>
+      <h2 class="sales-title iq-title">${title}</h2>
       <p class="sales-lede">${lede}</p>
-
-      <button class="sales-cta" id="sales-start" type="button" ${!iqTestAvailable() ? "disabled" : ""}>${!iqTestAvailable() ? "Not open yet" : cogniUiMode === "pro" && !iqTestUnlocked() ? "Unlock the IQ test" : "Start test"}</button>
-
-      <p class="sales-meta">${total} subtests · about ${minutes} minutes · take them in any order</p>
-      <p class="sales-note">${!iqTestAvailable() ? "The IQ test is being calibrated and opens to everyone soon." : cogniUiMode === "pro" ? "Your score goes on your profile and the IQ leaderboard, and it is what you bring into a battle." : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready."}</p>
-      ${cogniUiMode === "pro" && iqTestAvailable() && !iqTestUnlocked() ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
+      <div class="iq-hero-actions">
+        <button class="sales-cta" id="sales-start" type="button" ${available ? "" : "disabled"}>${ctaLabel}${available ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>' : ""}</button>
+        ${funnel ? "" : `<button class="iq-link" id="sales-how" type="button">See how it works</button>`}
+      </div>
+      <p class="sales-note">${note}</p>
+      ${locked ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
     </div>
 
+    ${funnel ? "" : iqPreviewHtml()}
+
+    <section class="sales-section" id="sales-how-section">
+      <h3 class="sales-section-title">How it works</h3>
+      <ol class="iq-steps">
+        ${step(1, "Take nine short subtests",
+          "Verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.")}
+        ${step(2, "Every ability is scored",
+          "Each subtest feeds one of six ability indices on the standard IQ scale, with its margin of error shown beside it.")}
+        ${step(3, "Get your IQ and the report",
+          "A composite score, where it sits on the curve, your strongest and weakest abilities, and every retest kept so you can track change.")}
+      </ol>
+    </section>
+
     <section class="sales-section">
-      <h3 class="sales-section-title">What your dashboard shows</h3>
+      <h3 class="sales-section-title">What your report shows</h3>
       <div class="sales-grid">
         ${insight("Your strongest ability, named",
           "Not a single number but a ranking: which of the six abilities you lead with, how far ahead it is, and which subtests carried it.")}
@@ -8437,6 +8460,46 @@ function renderMeasurementSales() {
       ?? MEASUREMENT_SUBTESTS[0];
     startSubtest(next.id);
   });
+  host.querySelector("#sales-how")?.addEventListener("click", () => {
+    host.querySelector("#sales-how-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+// Scores read by tone: clearly above the mean, clearly below, or in the middle.
+function scoreTone(score) {
+  return score >= 115 ? "high" : score < 85 ? "low" : "mid";
+}
+
+// The hero's product shot: a browser window with an example report, so a
+// visitor sees what they are getting before the first question. The numbers are
+// a fixed example and the caption says so.
+function iqPreviewHtml() {
+  const sample = [["Verbal", 112], ["Reasoning", 127], ["Spatial", 119], ["Numerical", 108], ["Memory", 115], ["Speed", 104]];
+  const pos = (v) => Math.max(4, Math.min(96, ((v - 55) / 90) * 100)); // the 55–145 track
+  return `
+    <figure class="iq-preview" aria-label="Example of the report">
+      <div class="iq-preview-window">
+        <div class="iq-preview-bar"><i></i><i></i><i></i><span>getcogni.app · example report</span></div>
+        <div class="iq-preview-body">
+          <nav class="iq-preview-nav" aria-hidden="true"><b>Overview</b><span>Score</span><span>Abilities</span><span>Insights</span></nav>
+          <div class="iq-preview-top">
+            <div class="iq-preview-overall">
+              <small>Overall IQ</small>
+              <strong data-tone="high">118</strong>
+              <em>Above average · Top 12%</em>
+            </div>
+            <div class="iq-preview-cards">
+              ${sample.map(([name, v]) => `<div class="iq-preview-card"><small>${name}</small><strong data-tone="${scoreTone(v)}">${v}</strong></div>`).join("")}
+            </div>
+          </div>
+          <div class="iq-preview-rows">
+            <p class="iq-preview-rows-title">Your abilities</p>
+            ${sample.map(([name, v]) => `<div class="iq-preview-row"><span>${name}</span><span class="iq-track" aria-hidden="true"><i style="left:${pos(v).toFixed(1)}%"></i></span><b>${v}</b></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <figcaption>Example numbers. Your report is built from your own sitting.</figcaption>
+    </figure>`;
 }
 
 // Short, friendly names for the six abilities — the full CHC titles are too long
@@ -9875,6 +9938,7 @@ function iqTestAvailable() {
 function applyIqAvailability() {
   const off = !iqTestAvailable();
   document.documentElement.classList.toggle("iq-off", off);
+  document.documentElement.classList.toggle("iq-owner", iqOwner);
   const tab = document.querySelector('.site-tab[data-site-tab="assessments"]');
   if (tab) tab.hidden = off;
   if (elements.appShell?.classList.contains("assessments-open")) renderMeasurePicker();
