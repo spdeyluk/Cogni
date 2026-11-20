@@ -7720,6 +7720,72 @@ document.querySelector("#site-rail-collapse")?.addEventListener("click", () => {
   applyRailCollapsed(!document.documentElement.classList.contains("rail-collapsed"));
 });
 
+// FaceIQ-style shell on the web: the section tabs live in a fixed top bar with
+// the theme switch beside them; the rail keeps the account card, the IQ history
+// and the explore links. Moving the nodes keeps every handler already bound.
+if (cogniUiMode === "pro") {
+  const topnav = document.querySelector("#site-topnav");
+  const nav = document.querySelector(".site-rail-nav");
+  if (topnav && nav) topnav.append(nav);
+  const right = document.querySelector("#site-topbar-right");
+  const toggle = document.querySelector("#theme-toggle-app");
+  if (right && toggle) right.append(toggle);
+  document.querySelector("#site-rail-new")?.addEventListener("click", () => {
+    if (!iqTestAvailable()) return;
+    enterApp();
+    showAssessments();
+    if (loadCatSessions().length || measureAttemptStarted()) openMeasureSubtests();
+  });
+  document.querySelector("[data-explore='community']")?.addEventListener("click", () => { enterApp(); showCommunity(); });
+  syncRailAccount();
+}
+
+// The rail's history: every IQ sitting, newest first. Picking one opens that
+// report. Rendered again whenever sessions or the open report change.
+function railTimeAgo(date) {
+  const diff = Math.max(0, Date.now() - date.getTime());
+  const day = 86400000;
+  if (diff < day) return "today";
+  if (diff < 30 * day) return `${Math.max(1, Math.round(diff / day))}d`;
+  if (diff < 365 * day) return `${Math.max(1, Math.round(diff / (30 * day)))}mo`;
+  return `${Math.max(1, Math.round(diff / (365 * day)))}y`;
+}
+function renderRailHistory() {
+  const host = document.querySelector("#site-rail-history");
+  if (!host) return;
+  const sessions = loadCatSessions();
+  if (!sessions.length) {
+    host.innerHTML = `<p class="site-rail-empty">Your IQ sittings will show up here.</p>`;
+    return;
+  }
+  const reportOpen = measurementReportOpen && elements.appShell?.classList.contains("assessments-open");
+  host.innerHTML = sessions.slice(0, 6).map((record, index) => {
+    const when = new Date(record.completedAt ?? Date.now());
+    const score = Number.isFinite(record.score) ? Math.round(record.score) : null;
+    const measured = record.indices ? Object.keys(record.indices).length : 0;
+    const active = reportOpen && index === Math.min(measurementSessionIndex, sessions.length - 1);
+    return `<button class="site-rail-hist${active ? " is-active" : ""}" type="button" data-rail-session="${index}">
+      <span class="site-rail-hist-tile">${score ?? "·"}</span>
+      <span class="site-rail-hist-body">
+        <span class="site-rail-hist-name">IQ ${score ?? "—"}</span>
+        <span class="site-rail-hist-sub">${measured ? `${measured} of ${MEASUREMENT_INDEX_ORDER.length} abilities` : "Sitting"}</span>
+      </span>
+      <span class="site-rail-hist-when">${railTimeAgo(when)}</span>
+    </button>`;
+  }).join("");
+  host.querySelectorAll("[data-rail-session]").forEach((button) => {
+    button.addEventListener("click", () => {
+      enterApp();
+      showAssessments();
+      measurementSessionIndex = Number(button.dataset.railSession) || 0;
+      measurementReportOpen = true;
+      measurementTab = "overview";
+      renderMeasurePicker();
+    });
+  });
+}
+renderRailHistory();
+
 // The landing starfield. Painted as individual stars rather than three tiling
 // gradient layers, because a layer can only fade as one — every star in it
 // blinks on the same beat, which reads as the page flickering. Each star here
@@ -7844,8 +7910,9 @@ function syncRailAccount() {
   if (plan) { plan.textContent = unlocked ? "PASS" : "FREE"; plan.classList.toggle("is-pass", unlocked); }
   // Guests get a Log in button and no upgrade CTA (sign in first); signed-in
   // free users get the upgrade CTA.
-  if (login) { login.hidden = Boolean(authUser); login.textContent = "Log in"; }
-  if (upgrade) upgrade.hidden = unlocked || !authUser;
+  const guest = guestMode || authUser?.provider === "guest";
+  if (login) { login.hidden = Boolean(authUser) && !guest; login.textContent = "Log in"; }
+  if (upgrade) upgrade.hidden = unlocked || !authUser || guest;
 }
 
 function renderMeasurementDashboard() {
@@ -7926,6 +7993,14 @@ function renderMeasurementDashboard() {
   host.querySelectorAll("[data-mdash-unlock]").forEach((btn) => {
     btn.addEventListener("click", openPricingModal);
   });
+  host.querySelectorAll("[data-mdash-more]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.mdashMore === "strong") mdashStrengthsOpen = !mdashStrengthsOpen;
+      else mdashRoomOpen = !mdashRoomOpen;
+      renderMeasurementDashboard();
+    });
+  });
+  renderRailHistory();
   // Keep the fake scores rolling under the blur (locked only).
   if (unlocked) stopMdashRoll(); else startMdashRoll(host);
 }
@@ -8030,10 +8105,15 @@ function standingLabel(percentile) {
 // Six ticks, one lit: which of the six indices this card is. Purely a marker,
 // it encodes position rather than value so it can never misreport a score.
 function indexGlyph(position) {
-  return `<svg class="mdash-glyph" viewBox="0 0 34 14" aria-hidden="true">
-    ${MEASUREMENT_INDEX_ORDER.map((_, slot) => `<rect x="${slot * 6}" y="${slot === position ? 0 : 3}"
-      width="3" height="${slot === position ? 14 : 8}" rx="1.5"
-      class="${slot === position ? "is-on" : ""}"></rect>`).join("")}
+  // Six little pillars; the card's own one is lit. A negative position lights
+  // them all (the overall panel).
+  const n = MEASUREMENT_INDEX_ORDER.length;
+  return `<svg class="mdash-glyph" viewBox="0 0 ${n * 13 - 5} 24" aria-hidden="true">
+    ${MEASUREMENT_INDEX_ORDER.map((_, slot) => {
+      const x = slot * 13;
+      const on = position < 0 || slot === position;
+      return `<g class="${on ? "is-on" : ""}"><rect x="${x}" y="2" width="8" height="1.5" rx="0.5"/><rect x="${x + 1}" y="4" width="6" height="16" rx="0.5"/><rect x="${x}" y="20" width="8" height="1.5" rx="0.5"/></g>`;
+    }).join("")}
   </svg>`;
 }
 
@@ -8094,7 +8174,49 @@ function measureOverview(record, ranked, shape, margin, percentile, rarity, unlo
       ${MEASUREMENT_INDEX_ORDER.map(() => "<i></i>").join("")}
     </div>
     ${measureOverallPanel(record, ranked, margin, percentile, rarity, unlocked)}
+    ${measureHighlights(record, unlocked)}
   `;
+}
+
+// Under the overall panel: the subtests that carried the sitting and the ones
+// with the most room, three each with the rest behind "Show more". Every row is
+// a measured subtest score; nothing here is projected.
+let mdashStrengthsOpen = false;
+let mdashRoomOpen = false;
+function measureHighlights(record, unlocked) {
+  if (!unlocked) return "";
+  const parts = MEASUREMENT_SUBTESTS.map((subtest) => {
+    const result = record.subtests?.[subtest.id];
+    return result && Number.isFinite(result.score)
+      ? { name: subtest.name, short: MEASUREMENT_INDICES[subtest.index].short, score: result.score }
+      : null;
+  }).filter(Boolean);
+  if (parts.length < 2) return "";
+  const strong = [...parts].sort((a, b) => b.score - a.score).filter((p) => p.score >= 100);
+  const room = [...parts].sort((a, b) => a.score - b.score).filter((p) => p.score < 110);
+  const tag = (score, kind) => kind === "strong"
+    ? (score >= 120 ? "Exceptional" : score >= 110 ? "Strong" : "Solid")
+    : (score < 85 ? "Low" : score < 95 ? "Below average" : "Room");
+  const list = (items, kind, open) => {
+    const shown = open ? items : items.slice(0, 3);
+    const more = items.length - 3;
+    return `<div class="mdash-krows">${shown.map((p) => `
+      <div class="mdash-krow is-${kind}">
+        <span class="mdash-ktag">${tag(p.score, kind)}</span>
+        <span class="mdash-kname">${escapeHtml(p.name)}<em>${escapeHtml(p.short)}</em></span>
+        <span class="mdash-kscore">${p.score}</span>
+      </div>`).join("")}</div>
+      ${more > 0 ? `<button class="mdash-kmore is-${kind}" type="button" data-mdash-more="${kind}">${open ? "Show fewer" : `Show ${more} more`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ""}`;
+  };
+  return `
+    <section class="mdash-card mdash-ksection">
+      <header class="mdash-khead"><h3>Key strengths</h3><button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button></header>
+      ${strong.length ? list(strong, "strong", mdashStrengthsOpen) : `<p class="mdash-body mdash-kempty">No subtest reached the mean this sitting.</p>`}
+    </section>
+    <section class="mdash-card mdash-ksection">
+      <header class="mdash-khead"><h3>Areas of improvement</h3><button class="mdash-dark-pill" type="button" data-measure-tab="insights">What to train</button></header>
+      ${room.length ? list(room, "room", mdashRoomOpen) : `<p class="mdash-body mdash-kempty">Every subtest sits above average. Nothing stands out as a gap.</p>`}
+    </section>`;
 }
 
 // The panel every card funnels into. It reads either the composite or a single
@@ -8772,6 +8894,7 @@ const MEASURE_REPORTS_VISIBLE = 5;
 
 // Reports already earned. Picking one points the dashboard above at it.
 function renderMeasureReports(total) {
+  renderRailHistory();
   const sessions = loadCatSessions();
   const reports = document.querySelector("#measure-hub-reports");
   const list = document.querySelector("#measure-history");
