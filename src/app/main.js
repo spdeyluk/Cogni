@@ -6291,12 +6291,12 @@ function bootWebIntoApp() {
   enterApp();
   const bootTab = routePathToTab[routeBootPath];
   applyingRoute = true;
-  let landedPath = routeTabToPath.battle;
+  let landedPath = routeTabToPath.assessments;
   if (bootTab && routeTabHandler(bootTab)) {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab] ?? landedPath;
   } else {
-    showBattle();
+    showAssessments();
   }
   applyingRoute = false;
   if (window.location.pathname !== landedPath) {
@@ -6394,14 +6394,14 @@ function onAuthenticated() {
   // applyingRoute suppresses the automatic pushState so we can replaceState the
   // final URL (no phantom history entry).
   applyingRoute = true;
-  let landedPath = cogniUiMode === "pro" ? routeTabToPath.battle : routeTabToPath.exercises;
+  let landedPath = cogniUiMode === "pro" ? routeTabToPath.assessments : routeTabToPath.exercises;
   if (justSignedIn && cogniUiMode === "pro") {
     // A brand-new sign-in / sign-up always lands on Home, which surfaces the
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
-    showBattle();
-    // Never let the intro blank the app: Battle is already rendered underneath.
+    showAssessments();
+    // Never let the intro blank the app: the IQ page is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -6411,7 +6411,7 @@ function onAuthenticated() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
-    showBattle(); // web default: the 1v1 is the front door
+    showAssessments(); // web default: the IQ test is the front door
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
@@ -10179,6 +10179,12 @@ function applyIqAvailability() {
   const off = !iqTestAvailable();
   document.documentElement.classList.toggle("iq-off", off);
   document.documentElement.classList.toggle("iq-owner", iqOwner);
+  // While the test is owner-only, the IQ page cannot be anyone else's front
+  // door: a non-owner who landed there is moved to Train.
+  if (off && cogniUiMode === "pro" && elements.appShell?.classList.contains("assessments-open")
+      && !elements.appShell.classList.contains("cat-immersive") && typeof showExerciseHub === "function") {
+    showExerciseHub();
+  }
   const tab = document.querySelector('.site-tab[data-site-tab="assessments"]');
   if (tab) tab.hidden = off;
   if (elements.appShell?.classList.contains("assessments-open")) renderMeasurePicker();

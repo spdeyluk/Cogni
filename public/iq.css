@@ -909,3 +909,8 @@ html.mode-pro .mdash-krow-unlock svg, html.mode-pro .mdash-klock svg, html.mode-
 html.mode-pro .mdash-klock { display: grid; place-items: center; flex: none; margin-left: auto; width: 26px; height: 26px; border-radius: 50%; background: var(--iq-dark); color: #fff; }
 html.mode-pro .mdash-krow.is-locked .mdash-kscore { margin-left: 0; }
 html.mode-pro .mdash-ksection .mdash-dark-pill { display: inline-flex; align-items: center; gap: 8px; }
+/* battle page header */
+html.mode-pro .home-sub { margin: 0; font-size: 15px; color: var(--text-2); }
+html.mode-pro .home-head { display: grid; gap: 6px; justify-items: center; }
+html.mode-pro .site-topnav .site-rail-nav .site-tab[hidden] { display: none !important; }
+html.mode-pro .home-sub { max-width: 46ch; text-align: center; }

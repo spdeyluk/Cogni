@@ -151,7 +151,7 @@ export function showBattle() {
   d.appShell.classList.remove(...d.sectionResetClasses);
   d.appShell.classList.add("battle-open");
   d.setActiveTab("battle");
-  d.setPageHeader("Cogni", "IQ duels. Same questions, fastest right answers win.");
+  d.setPageHeader("Battle", "IQ duels. Same questions, fastest right answers win.");
   if (view === "arena" && arena) { renderArena(); return; }
   if (view === "result" && result) { renderResult(); return; }
   if (view === "loading" && loading) { renderLoading(); return; }
@@ -336,14 +336,15 @@ function renderHub() {
   host.innerHTML = `
     <div class="battle-hub is-home">
       <header class="home-head">
-        <h1 class="home-brand">Cogni<span>.</span></h1>
+        <h1 class="home-brand">Battle</h1>
+        <p class="home-sub">IQ duels. Same eight questions, fastest right answers win.</p>
       </header>
 
       <div class="home-actions">
         <button class="battle-primary home-cta" data-battle-quick type="button">Quick 1v1</button>
         <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">Play with friends</button>
       </div>
-      <button class="home-cta is-special" data-battle-take-test type="button"><i aria-hidden="true">✦</i>Take the IQ test</button>
+      ${iq ? "" : `<button class="home-cta is-special" data-battle-take-test type="button"><i aria-hidden="true">✦</i>Take the IQ test</button>`}
 
       ${friendPickerOpen ? renderLobbyPanel() : ""}
       ${hub.error ? `<p class="battle-error">${esc(hub.error)}</p>` : ""}
