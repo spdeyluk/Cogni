@@ -6296,7 +6296,8 @@ function bootWebIntoApp() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab] ?? landedPath;
   } else {
-    showAssessments();
+    landFrontDoor();
+    landedPath = iqTestAvailable() ? routeTabToPath.assessments : routeTabToPath.exercises;
   }
   applyingRoute = false;
   if (window.location.pathname !== landedPath) {
@@ -6369,7 +6370,7 @@ function onAuthenticated() {
     routerReady = true;
     showWebOnboarding(() => {
       syncWebFunnel();
-      showAssessments();
+      landFrontDoor();
     });
     handleCheckoutReturn();
     return;
@@ -6400,8 +6401,8 @@ function onAuthenticated() {
     // big "take the IQ test" nudge, rather than dropping into a deep-linked tab.
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
-    showAssessments();
-    // Never let the intro blank the app: the IQ page is already rendered underneath.
+    landFrontDoor();
+    // Never let the intro blank the app: the front door is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -6411,7 +6412,7 @@ function onAuthenticated() {
     routeTabHandler(bootTab)();
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
-    showAssessments(); // web default: the IQ test is the front door
+    landFrontDoor(); // web default: the IQ test is the front door
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
@@ -10159,18 +10160,35 @@ const IQ_OWNER_HASHES = new Set([
   "9916f43945dcf9810c646f77a7f3becc2a62a6cb5402f7907a0cf17478a875e1"
 ]);
 let iqOwner = false;
+let iqOwnerResolving = false;
+let frontDoorPending = false;
+// The default page after sign-in: the IQ test, or Train while the test is still
+// owner-only. If the owner check is still running, the choice is revisited the
+// moment it lands (see resolveIqOwner).
+function landFrontDoor() {
+  frontDoorPending = iqOwnerResolving;
+  if (iqTestAvailable()) showAssessments(); else showExerciseHub();
+}
 async function sha256Hex(text) {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 async function resolveIqOwner() {
+  iqOwnerResolving = true;
   const email = String(authUser?.email ?? "").trim().toLowerCase();
   let next = false;
   if (email && authUser?.provider !== "guest" && globalThis.crypto?.subtle) {
     try { next = IQ_OWNER_HASHES.has(await sha256Hex(email)); } catch { next = false; }
   }
   iqOwner = next;
+  iqOwnerResolving = false;
   applyIqAvailability();
+  if (frontDoorPending) {
+    frontDoorPending = false;
+    const shell = elements.appShell;
+    if (iqTestAvailable() && shell?.classList.contains("exercises-open")) showAssessments();
+    else if (!iqTestAvailable() && shell?.classList.contains("assessments-open")) showExerciseHub();
+  }
 }
 function iqTestAvailable() {
   return cogniUiMode !== "pro" || iqOwner;
