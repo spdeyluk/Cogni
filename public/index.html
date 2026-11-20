@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261120-iq3">
-    <link rel="stylesheet" href="luxe.css?v=20261120-iq3">
-    <link rel="stylesheet" href="battle.css?v=20261120-iq3">
-    <link rel="stylesheet" href="iq.css?v=20261120-iq3">
+    <link rel="stylesheet" href="styles.css?v=20261120-iq4">
+    <link rel="stylesheet" href="luxe.css?v=20261120-iq4">
+    <link rel="stylesheet" href="battle.css?v=20261120-iq4">
+    <link rel="stylesheet" href="iq.css?v=20261120-iq4">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -583,7 +583,10 @@
       <div class="site-rail-section" id="site-rail-history-section">
         <div class="site-rail-label-row">
           <span class="site-rail-label">History</span>
-          <button class="site-rail-mini" id="site-rail-new" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New</button>
+          <span class="site-rail-label-actions">
+            <button class="site-rail-mini" id="site-rail-reset" type="button" title="Owner: wipe every IQ sitting"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>Reset</button>
+            <button class="site-rail-mini" id="site-rail-new" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New</button>
+          </span>
         </div>
         <div class="site-rail-history" id="site-rail-history"></div>
       </div>
@@ -2681,6 +2684,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261120-iq3"></script>
+    <script type="module" src="src/app/main.js?v=20261120-iq4"></script>
   </body>
 </html>

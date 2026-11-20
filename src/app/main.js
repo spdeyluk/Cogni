@@ -7758,6 +7758,10 @@ if (cogniUiMode === "pro") {
     if (loadCatSessions().length || measureAttemptStarted()) openMeasureSubtests();
   });
   document.querySelector("[data-explore='community']")?.addEventListener("click", () => { enterApp(); showCommunity(); });
+  document.querySelector("#site-rail-reset")?.addEventListener("click", () => {
+    if (!window.confirm("Delete all your IQ sittings and the attempt in progress? This also clears the IQ on your profile.")) return;
+    resetIqData();
+  });
   syncRailAccount();
 }
 
@@ -7892,6 +7896,7 @@ initReferral({
 });
 captureReferralCode();
 captureLobbyCode();
+capturePreviewFlag();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
@@ -8227,7 +8232,6 @@ let mdashStrongFocus = "all";
 let mdashRoomFocus = "all";
 const mdashOpenRows = new Set();
 function measureHighlights(record, unlocked) {
-  if (!unlocked) return "";
   const parts = MEASUREMENT_SUBTESTS.map((subtest) => {
     const result = record.subtests?.[subtest.id];
     if (!result || !Number.isFinite(result.score)) return null;
@@ -8251,17 +8255,28 @@ function measureHighlights(record, unlocked) {
     const tag = (score) => kind === "strong"
       ? (score >= 120 ? "Exceptional" : score >= 110 ? "Strong" : "Solid")
       : (score < 85 ? "Low" : score < 95 ? "Below avg" : "Room");
-    const rows = shown.map((p) => {
+    const rows = shown.map((p, i) => {
       const delta = p.score - 100;
       const key = `${kind}:${p.id}`;
-      const isOpen = mdashOpenRows.has(key);
+      const isOpen = unlocked && mdashOpenRows.has(key);
+      // Locked: every row but the last shown is a blurred decoy (a different
+      // subtest's name, a made-up delta) so nothing about the sitting leaks; the
+      // last one is real, as the taste of what the report holds.
+      const locked = !unlocked && i < shown.length - 1;
+      const decoyName = MEASUREMENT_SUBTESTS[(i * 4 + 1) % MEASUREMENT_SUBTESTS.length].name;
+      const decoyDelta = kind === "strong" ? 9 + ((i * 7) % 15) : -(4 + ((i * 5) % 13));
+      const shownDelta = locked ? decoyDelta : delta;
+      const sign = shownDelta > 0 ? "+" : shownDelta < 0 ? "−" : "±";
       return `
-        <div class="mdash-krow is-${kind}${isOpen ? " is-open" : ""}">
-          <button class="mdash-krow-main" type="button" data-krow="${key}" aria-expanded="${isOpen}">
-            <span class="mdash-ktag">${tag(p.score)}</span>
-            <span class="mdash-kname">${escapeHtml(p.name)}<em>${escapeHtml(p.short)}</em></span>
-            <span class="mdash-kscore">${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${Math.abs(delta)}</span>
-            <svg class="mdash-kchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <div class="mdash-krow is-${kind}${isOpen ? " is-open" : ""}${locked ? " is-locked" : ""}">
+          <button class="mdash-krow-main" type="button" ${locked ? "data-mdash-unlock" : `data-krow="${key}"`} aria-expanded="${isOpen}">
+            <span class="mdash-ktag">${tag(locked ? 100 + decoyDelta : p.score)}</span>
+            <span class="mdash-kname"${locked ? ' aria-hidden="true"' : ""}>${escapeHtml(locked ? decoyName : p.name)}<em>${escapeHtml(locked ? "···" : p.short)}</em></span>
+            ${locked ? (i === 0
+              ? `<span class="mdash-krow-unlock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>Unlock</span>`
+              : `<span class="mdash-klock" aria-label="Locked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg></span>`) : ""}
+            <span class="mdash-kscore"${locked ? ' aria-hidden="true"' : ""}>${sign}${Math.abs(shownDelta)}</span>
+            ${locked ? "" : `<svg class="mdash-kchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`}
           </button>
           <div class="mdash-kdetail"${isOpen ? "" : " hidden"}>
             <span><b>${p.score}</b> score</span>
@@ -8283,10 +8298,11 @@ function measureHighlights(record, unlocked) {
         ${more > 0 ? `<button class="mdash-kmore is-${kind}" type="button" data-mdash-more="${kind}">${open ? "Show fewer" : `Show ${more} more`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ""}
       </section>`;
   };
+  const unlockPill = (label) => `<button class="mdash-dark-pill" type="button" data-mdash-unlock><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>${label}</button>`;
   return section("strong", "Key strengths", strong, mdashStrongFocus, mdashStrengthsOpen,
-      `<button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button>`)
+      unlocked ? `<button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button>` : unlockPill(`See your ${strong.length} best subtests`))
     + section("room", "Areas of improvement", room, mdashRoomFocus, mdashRoomOpen,
-      `<button class="mdash-dark-pill" type="button" data-measure-tab="insights">What to train</button>`);
+      unlocked ? `<button class="mdash-dark-pill" type="button" data-measure-tab="insights">What to train</button>` : unlockPill(`See ${room.length} areas to improve`));
 }
 
 // The panel every card funnels into. It reads either the composite or a single
@@ -10092,9 +10108,39 @@ function webPlanUnlocked() {
 // On web the IQ test and its full report are free: the score is the status
 // symbol the social layer runs on. Pass buys the training record. Native keeps
 // its own Pro tier.
+// ?preview=locked shows the report the way a member without Pass would see it
+// (blurred scores, unlock pills). ?preview=unlocked clears it. Per tab.
+function capturePreviewFlag() {
+  const want = new URLSearchParams(window.location.search).get("preview");
+  if (!want) return;
+  try {
+    if (want === "locked") sessionStorage.setItem("cogni.previewLocked", "1");
+    if (want === "unlocked") sessionStorage.removeItem("cogni.previewLocked");
+  } catch { /* no sessionStorage */ }
+}
+function previewLocked() {
+  try { return sessionStorage.getItem("cogni.previewLocked") === "1"; } catch { return false; }
+}
 function measurementReportUnlocked() {
-  if (cogniUiMode === "pro") return true;
+  if (cogniUiMode === "pro") return !previewLocked();
   return isProUser();
+}
+
+// Owner tool: wipe every IQ sitting and the attempt underway, clear the IQ from
+// the public profile, and push the clean snapshot so no device restores it.
+async function resetIqData() {
+  for (const key of [catSessionsStorageKey, catStateStorageKey, MEASURE_ATTEMPT_KEY]) {
+    try { localStorage.removeItem(key); } catch { /* private mode */ }
+  }
+  catActive = null;
+  if (supabaseEnabled && authUser && !guestMode && authUser.provider !== "guest") {
+    try {
+      await supabase.from("profiles").update({ iq_score: null, iq_percentile: null, iq_taken_at: null }).eq("id", authUser.id);
+    } catch { /* best effort */ }
+    authSyncDirty = true;
+    await pushSyncState();
+  }
+  window.location.reload();
 }
 
 // Sitting the test is the one gated thing on web: three referred sign-ups or

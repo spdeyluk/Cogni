@@ -897,3 +897,15 @@ html.mode-pro .battle-outcome { font-size: 13px; }
 html.mode-pro .battle-outcome.is-win { color: var(--iq-green) !important; }
 html.mode-pro .battle-outcome.is-loss { color: var(--iq-rose) !important; }
 html.mode-pro .battle-outcome i { color: var(--muted) !important; }
+/* owner reset next to New; locked rows in the strengths lists */
+html.mode-pro .site-rail-label-actions { display: inline-flex; gap: 6px; }
+html.mode-pro #site-rail-reset { display: none; }
+html.iq-owner #site-rail-reset { display: inline-flex; }
+html.mode-pro .mdash-krow.is-locked .mdash-kname,
+html.mode-pro .mdash-krow.is-locked .mdash-kscore { filter: blur(6px); opacity: 0.7; user-select: none; }
+html.mode-pro .mdash-krow.is-locked .mdash-krow-main { cursor: pointer; }
+html.mode-pro .mdash-krow-unlock { display: inline-flex; align-items: center; gap: 6px; flex: none; margin-left: auto; padding: 6px 12px; border-radius: 999px; background: var(--iq-dark); color: #fff; font-size: 12px; font-weight: 600; }
+html.mode-pro .mdash-krow-unlock svg, html.mode-pro .mdash-klock svg, html.mode-pro .mdash-dark-pill svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html.mode-pro .mdash-klock { display: grid; place-items: center; flex: none; margin-left: auto; width: 26px; height: 26px; border-radius: 50%; background: var(--iq-dark); color: #fff; }
+html.mode-pro .mdash-krow.is-locked .mdash-kscore { margin-left: 0; }
+html.mode-pro .mdash-ksection .mdash-dark-pill { display: inline-flex; align-items: center; gap: 8px; }
