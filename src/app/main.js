@@ -8598,7 +8598,7 @@ function renderMeasurementSales() {
   const lede = funnel
     ? `One sitting sets your baseline — ${total} short subtests across the six core abilities. Take them now; you'll get a composite score and a full breakdown at the end.`
     : "Nine short subtests across six abilities. Get your IQ, the score behind every ability, and see how it changes over time.";
-  const ctaLabel = !available ? "Not open yet" : locked ? "Unlock the IQ test" : "Start the test";
+  const ctaLabel = !available ? "Not open yet" : locked ? "Unlock the IQ test" : "Take the IQ test";
   const note = !available
     ? "The IQ test is being calibrated and opens to everyone soon."
     : cogniUiMode === "pro"
@@ -8933,7 +8933,7 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
       // Opens the picker screen rather than any one subtest, so it doesn't name
       // one.
       cta.hidden = !next;
-      cta.textContent = done === 0 ? "Start test" : "Continue test";
+      cta.textContent = done === 0 ? "Take the IQ test" : "Continue test";
       cta.dataset.subtest = next?.id ?? "";
       cta.dataset.action = "";
     }
@@ -10147,7 +10147,8 @@ async function resetIqData() {
 // Cogni Pass. Reports already earned stay readable either way.
 function iqTestUnlocked() {
   if (cogniUiMode !== "pro") return isProUser();
-  return webPlanUnlocked() || referralUnlocked();
+  // Web: taking the test is free. Referrals and Pass no longer gate it.
+  return true;
 }
 
 // While the test is calibrated it is open to the owner only. The bundle holds
