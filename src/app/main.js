@@ -6402,6 +6402,7 @@ function onAuthenticated() {
     // First-timers see a short "why cognition matters" intro over Home first.
     pendingLandingDestination = null;
     landFrontDoor();
+    landedPath = iqTestAvailable() ? routeTabToPath.assessments : routeTabToPath.exercises;
     // Never let the intro blank the app: the front door is already rendered underneath.
     try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
@@ -6413,6 +6414,7 @@ function onAuthenticated() {
     landedPath = routeTabToPath[bootTab];
   } else if (cogniUiMode === "pro") {
     landFrontDoor(); // web default: the IQ test is the front door
+    landedPath = iqTestAvailable() ? routeTabToPath.assessments : routeTabToPath.exercises;
   } else {
     showExerciseHub(); // native keeps its Exercises default
   }
