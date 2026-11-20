@@ -38,9 +38,13 @@
             try { mode = localStorage.getItem("cogni.uiMode.v1"); } catch (e) {}
             if (mode !== "play" && mode !== "pro") mode = "pro";
           }
+          // The Supabase client keeps its session under the app's own key
+          // (see supabase.js), so that is the signal; the default sb- key is
+          // kept as a fallback.
           var hasSession = false;
           try {
-            for (var i = 0; i < localStorage.length; i++) {
+            if (localStorage.getItem("cogni.supabaseAuth.v1")) hasSession = true;
+            for (var i = 0; !hasSession && i < localStorage.length; i++) {
               var k = localStorage.key(i);
               if (k && /^sb-.*auth-token/.test(k) && localStorage.getItem(k)) { hasSession = true; break; }
             }
