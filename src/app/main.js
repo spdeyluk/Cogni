@@ -6508,7 +6508,8 @@ function onAuthenticated() {
   }
   // First launch on web: Google sign-in is done, so now the onboarding questions,
   // then the test funnel. Nothing else is reachable until the first test is taken.
-  if (cogniUiMode === "pro" && !guestMode && !hasSeenWebOnboarding()) {
+  const replayOnboarding = takeOnboardingReplay();
+  if (cogniUiMode === "pro" && !guestMode && (!hasSeenWebOnboarding() || replayOnboarding)) {
     renderAccountMenu();
     enterApp();
     applyingRoute = true;
@@ -8091,6 +8092,7 @@ initReferral({
 captureReferralCode();
 captureLobbyCode();
 capturePreviewFlag();
+captureOnboardingFlag();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
@@ -10405,6 +10407,20 @@ function webPlanUnlocked() {
 // its own Pro tier.
 // ?preview=locked shows the report the way a member without Pass would see it
 // (blurred scores, unlock pills). ?preview=unlocked clears it. Per tab.
+// Preview hook: ?onboarding=1 replays the post-sign-in walk once on the next
+// authenticated boot, without touching the seen flag — for checking copy and
+// visuals on a real account.
+function captureOnboardingFlag() {
+  if (new URLSearchParams(window.location.search).get("onboarding") !== "1") return;
+  try { sessionStorage.setItem("cogni.replayOnboarding", "1"); } catch { /* no sessionStorage */ }
+}
+function takeOnboardingReplay() {
+  try {
+    const want = sessionStorage.getItem("cogni.replayOnboarding") === "1";
+    if (want) sessionStorage.removeItem("cogni.replayOnboarding");
+    return want;
+  } catch { return false; }
+}
 function capturePreviewFlag() {
   const want = new URLSearchParams(window.location.search).get("preview");
   if (!want) return;
