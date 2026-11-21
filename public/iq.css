@@ -1218,3 +1218,4 @@ html.mode-pro .routines-tile-copy strong { display: inline-flex; align-items: ce
 html.mode-pro .routines-tile-copy strong .cogni-tag { margin-top: 1px; }
 html.mode-pro .profile-view-switch > button { display: inline-flex; align-items: center; gap: 7px; }
 html.mode-pro .profile-view-switch > button.active .cogni-tag.is-pro { background: rgba(196, 181, 253, 0.22); color: #ddd6fe; }
+html.mode-pro .tester-badge button + button { margin-left: -2px; }

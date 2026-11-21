@@ -10436,8 +10436,25 @@ function syncTesterBadge() {
   badge = document.createElement("div");
   badge.id = "tester-badge";
   badge.className = "tester-badge";
-  badge.innerHTML = `<span>Tester mode: sign-in buttons skip Google</span><button type="button">Turn off</button>`;
-  badge.querySelector("button").addEventListener("click", () => {
+  badge.innerHTML = `<span>Tester mode</span><button type="button" data-tester-restart title="Back to the landing as a brand-new visitor">Restart</button><button type="button" data-tester-off>Turn off</button>`;
+  // Restart: forget this tester (local data included, unless a real account has
+  // synced on this browser) and return to the landing, so the next sign-in
+  // click runs the intro again from the top.
+  badge.querySelector("[data-tester-restart]").addEventListener("click", () => {
+    clearTesterSession();
+    let synced = false;
+    try { synced = Boolean(localStorage.getItem(authSyncedAtKey)); } catch { /* private mode */ }
+    if (!synced) {
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+          const key = localStorage.key(i);
+          if (isSyncKey(key) && key !== "cogni.supabaseAuth.v1") localStorage.removeItem(key);
+        }
+      } catch { /* private mode */ }
+    }
+    window.location.replace("/");
+  });
+  badge.querySelector("[data-tester-off]").addEventListener("click", () => {
     const inSession = testerSessionActive();
     setTesterFlag(false);
     if (inSession) window.location.replace("/");
