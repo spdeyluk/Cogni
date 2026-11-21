@@ -287,7 +287,7 @@ export const MEASUREMENT_BATTERIES = {
     blurb: "One subtest per ability. The same report, with wider margins."
   }
 };
-export const MEASUREMENT_BATTERY_ORDER = ["full", "mini"];
+export const MEASUREMENT_BATTERY_ORDER = ["mini", "full"];
 
 export function batteryById(id) {
   return MEASUREMENT_BATTERIES[id] ?? MEASUREMENT_BATTERIES.full;
