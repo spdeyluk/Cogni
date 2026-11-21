@@ -277,6 +277,10 @@ let guestMode = false;
 // Hoisted for the same reason: needsOnboarding() runs during boot.
 const onboardingSeenKey = "cogni.onboardingSeen.v1";
 const onboardingAnswersKey = "cogni.onboardingAnswers.v1";
+// Tester mode (?tester=1): per-tab flags, declared early because the capture
+// runs at module top level, before the helpers further down.
+const TESTER_FLAG_KEY = "cogni.tester";
+const TESTER_SESSION_KEY = "cogni.testerSession";
 
 // Auth, cloud sync, social and feedback all run through Supabase now, which
 // manages its own tokens and refresh — the app no longer talks to server.js.
@@ -1590,6 +1594,24 @@ function saveWebOnboardingAnswers() {
   try { localStorage.setItem(onboardingAnswersKey, JSON.stringify(onboardingAnswers)); } catch { /* best effort */ }
 }
 
+// The walk's first answer. Adopted as the display name unless the person already
+// chose one (anything other than empty, the "Cogni" placeholder, or the name
+// guessed from their email), so the rail and leaderboard match what they typed.
+function adoptOnboardingName() {
+  const typed = String(onboardingAnswers.name || "").trim().slice(0, 30);
+  if (!typed) return;
+  const existing = loadUserProfile();
+  const guessed = displayNameFromEmail(authUser?.email);
+  const current = String(existing.name || "").trim();
+  if (current && current !== "Cogni" && current !== guessed) return;
+  if (current === typed) return;
+  const handle = existing.handle || "@cogni";
+  saveUserProfile({ ...existing, handle, name: typed, avatarInitial: normalizeProfileAvatar(typed, handle) });
+  syncSocialProfileQuietly();
+  renderAccountMenu();
+  syncRailAccount();
+}
+
 function webOnboardingFirstName() {
   return String(onboardingAnswers.name || "").trim().split(/\s+/)[0] || "";
 }
@@ -1737,6 +1759,7 @@ function showWebOnboarding(onDone = () => {}) {
   const finish = (result = {}) => {
     saveWebOnboardingAnswers();
     markWebOnboardingSeen();
+    adoptOnboardingName();
     document.documentElement.classList.remove("web-onboarding-open");
     document.removeEventListener("keydown", onKey);
     onDone(result);
@@ -5899,6 +5922,7 @@ function wireSettings() {
 
   document.querySelector("#settings-signout")?.addEventListener("click", async () => {
     if (authSyncDirty) await pushSyncState();
+    clearTesterSession();
     try { await supabase.auth.signOut(); } catch { /* reload clears session regardless */ }
     window.location.reload();
   });
@@ -6245,6 +6269,7 @@ function wireAccountMenu() {
   document.querySelector("#account-logout")?.addEventListener("click", async () => {
     close();
     if (authSyncDirty) await pushSyncState();
+    clearTesterSession();
     try { await supabase.auth.signOut(); } catch { /* reload clears session regardless */ }
     window.location.reload();
   });
@@ -6414,6 +6439,7 @@ async function initAuth() {
     // there is no guest dashboard any more.
     const authError = new URLSearchParams(window.location.search).get("autherror");
     if (authError) setSignInError("Sign-in didn't complete. Please try again.");
+    if (testerSessionActive()) { enterAsTester({ resume: true }); return; }
     if (cogniUiMode === "pro") { bootWebIntoSignIn(); return; }
     showLanding();
     finalizeBootAsLanding();
@@ -6474,7 +6500,7 @@ function bootWebIntoSignIn() {
 // result the funnel lifts and the full dashboard (rail included) appears.
 function webFunnelActive() {
   return cogniUiMode === "pro"
-    && !!authUser && !guestMode
+    && !!authUser && (!guestMode || testerMode())
     && hasSeenWebOnboarding()
     && loadCatSessions().length === 0;
 }
@@ -6509,7 +6535,7 @@ function onAuthenticated() {
   // First launch on web: Google sign-in is done, so now the onboarding questions,
   // then the test funnel. Nothing else is reachable until the first test is taken.
   const replayOnboarding = takeOnboardingReplay();
-  if (cogniUiMode === "pro" && !guestMode && (!hasSeenWebOnboarding() || replayOnboarding)) {
+  if (cogniUiMode === "pro" && (!guestMode || testerMode()) && (!hasSeenWebOnboarding() || replayOnboarding)) {
     renderAccountMenu();
     enterApp();
     applyingRoute = true;
@@ -6677,6 +6703,7 @@ function markEnterAfterAuth() {
 }
 
 function startWebGoogleSignIn() {
+  if (testerMode()) { enterAsTester(); return Promise.resolve(); }
   markEnterAfterAuth();
   return supabase.auth.signInWithOAuth({
     provider: "google",
@@ -6875,6 +6902,7 @@ function wireAuthGate() {
 
   document.querySelector("#auth-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (testerMode()) { enterAsTester(); return; }
     const form = event.target;
     const email = form.email.value.trim();
     const password = form.password.value;
@@ -8093,6 +8121,7 @@ captureReferralCode();
 captureLobbyCode();
 capturePreviewFlag();
 captureOnboardingFlag();
+captureTesterFlag();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
@@ -8133,7 +8162,7 @@ function syncRailAccount() {
   if (plan) { plan.textContent = unlocked ? "PASS" : "FREE"; plan.classList.toggle("is-pass", unlocked); }
   // Guests get a Log in button and no upgrade CTA (sign in first); signed-in
   // free users get the upgrade CTA.
-  const guest = guestMode || authUser?.provider === "guest";
+  const guest = (guestMode || authUser?.provider === "guest") && !testerMode();
   if (login) { login.hidden = Boolean(authUser) && !guest; login.textContent = "Log in"; }
   if (upgrade) upgrade.hidden = unlocked || !authUser || guest;
 }
@@ -10421,6 +10450,53 @@ function takeOnboardingReplay() {
     return want;
   } catch { return false; }
 }
+// Tester hook: ?tester=1 (per tab) makes the sign-in buttons work without an
+// account. "Continue with Google" and the email form enter as a local guest who
+// is treated as a brand-new member — the walk runs, the test is open, nothing
+// syncs — so the new-user path can be walked in a private window without
+// creating accounts. ?tester=0 switches it off again.
+function captureTesterFlag() {
+  const want = new URLSearchParams(window.location.search).get("tester");
+  if (want === null) return;
+  try {
+    if (want === "1") sessionStorage.setItem(TESTER_FLAG_KEY, "1");
+    else { sessionStorage.removeItem(TESTER_FLAG_KEY); sessionStorage.removeItem(TESTER_SESSION_KEY); }
+  } catch { /* no sessionStorage */ }
+}
+function testerMode() {
+  try { return cogniUiMode === "pro" && sessionStorage.getItem(TESTER_FLAG_KEY) === "1"; } catch { return false; }
+}
+function testerSessionActive() {
+  try { return testerMode() && sessionStorage.getItem(TESTER_SESSION_KEY) === "1"; } catch { return false; }
+}
+function clearTesterSession() {
+  try { sessionStorage.removeItem(TESTER_SESSION_KEY); } catch { /* no sessionStorage */ }
+}
+// A click on a sign-in button is a brand-new member: local app state starts
+// clean and the page reloads (the OAuth round trip, minus Google), then the boot
+// resumes the tester as a guest. A browser profile where a real account has
+// synced keeps its local copy; the walk is replayed there instead.
+function enterAsTester({ resume = false } = {}) {
+  try { sessionStorage.setItem(TESTER_SESSION_KEY, "1"); } catch { /* no sessionStorage */ }
+  if (resume) { enterAsGuest(); return; }
+  let synced = false;
+  try { synced = Boolean(localStorage.getItem(authSyncedAtKey)); } catch { /* private mode */ }
+  if (synced) {
+    try { sessionStorage.setItem("cogni.replayOnboarding", "1"); } catch { /* no sessionStorage */ }
+  } else {
+    try {
+      // Only the account-synced keys: the one-time reset marker and the other
+      // device-local tokens stay, or reset-local-data.js would clear the tab
+      // (sessionStorage included, tester flags with it) on the reload.
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i);
+        if (isSyncKey(key) && key !== "cogni.supabaseAuth.v1") localStorage.removeItem(key);
+      }
+    } catch { /* private mode */ }
+  }
+  markEnterAfterAuth();
+  window.location.reload();
+}
 function capturePreviewFlag() {
   const want = new URLSearchParams(window.location.search).get("preview");
   if (!want) return;
@@ -10501,7 +10577,7 @@ async function resolveIqOwner() {
   }
 }
 function iqTestAvailable() {
-  return cogniUiMode !== "pro" || iqOwner;
+  return cogniUiMode !== "pro" || iqOwner || testerMode();
 }
 function applyIqAvailability() {
   const off = !iqTestAvailable();
