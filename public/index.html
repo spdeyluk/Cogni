@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261121-iq16">
-    <link rel="stylesheet" href="luxe.css?v=20261121-iq16">
-    <link rel="stylesheet" href="battle.css?v=20261121-iq16">
-    <link rel="stylesheet" href="iq.css?v=20261121-iq16">
+    <link rel="stylesheet" href="styles.css?v=20261121-iq19">
+    <link rel="stylesheet" href="luxe.css?v=20261121-iq19">
+    <link rel="stylesheet" href="battle.css?v=20261121-iq19">
+    <link rel="stylesheet" href="iq.css?v=20261121-iq19">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -564,7 +564,7 @@
 
       <nav class="site-rail-nav" aria-label="Sections">
         <button class="site-tab" data-site-tab="assessments" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>
           <span>IQ Test</span>
         </button>
         <button class="site-tab" data-site-tab="exercises" type="button">
@@ -574,6 +574,10 @@
         <button class="site-tab" data-site-tab="battle" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5 21 3v3L9.5 17.5"/><path d="M11 19l-6-6"/><path d="M8 16l-4 4"/><path d="M5 21l-2-2"/></svg>
           <span>Battle</span>
+        </button>
+        <button class="site-tab" data-site-tab="statistics" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span>Profile</span>
         </button>
       </nav>
 
@@ -602,8 +606,9 @@
 
     </aside>
     <header class="site-topbar" id="site-topbar" aria-label="Sections">
-      <button class="site-rail-expand" id="site-rail-expand" type="button" aria-label="Show sidebar">
+      <button class="site-rail-expand" id="site-rail-expand" type="button" aria-label="Show sidebar" title="Show sidebar">
         <img src="assets/brand/logo-brain.png" alt="">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/><path d="m14 10 2 2-2 2"/></svg>
       </button>
       <div class="site-topbar-inner">
         <div class="site-topnav" id="site-topnav"></div>
@@ -2697,6 +2702,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261121-iq16"></script>
+    <script type="module" src="src/app/main.js?v=20261121-iq19"></script>
   </body>
 </html>

@@ -24,7 +24,7 @@ const LOBBY_KEY = "cogni.lobby.v1";
 
 const ROUNDS = 8;
 const PLAN = ["fluid", "verbal", "quant", "fluid", "weights", "verbal", "spatial", "quant"];
-// Round length. Quick 1v1 is always two minutes; a lobby host picks one of
+// Round length. Quick battle is always two minutes; a lobby host picks one of
 // ROUND_LENGTHS. The budget is split across the eight tasks by weight, so a
 // visual puzzle (matrix, figure, scale) gets 1.5x the time of a text item.
 const QUICK_ROUND_MS = 120000;
@@ -181,7 +181,7 @@ function onHostClick(event) {
   const ch = act("[data-battle-challenge]");
   if (ch) { challengeUser(ch.dataset.battleChallenge); return; }
   const play = act("[data-battle-play]");
-  if (play) { const row = hub.battles.find((b) => b.id === play.dataset.battlePlay); if (row) prepareRound(row, row.mode === "friend" ? "Friend duel" : "Quick 1v1"); return; }
+  if (play) { const row = hub.battles.find((b) => b.id === play.dataset.battlePlay); if (row) prepareRound(row, row.mode === "friend" ? "Friend duel" : "Quick battle"); return; }
   const cancel = act("[data-battle-cancel]");
   if (cancel) { cancelOpen(cancel.dataset.battleCancel); return; }
   const ans = act("[data-battle-answer]");
@@ -314,7 +314,7 @@ function renderHub() {
     const delta = b[`${side}_delta`];
     if (kind === "turn") {
       return `<li class="battle-row">
-        <div><strong>${esc(who)}</strong><span>${b.mode === "friend" ? "Friend duel" : "Quick 1v1"} · ${timeAgo(b.created_at)}</span></div>
+        <div><strong>${esc(who)}</strong><span>${b.mode === "friend" ? "Friend duel" : "Quick battle"} · ${timeAgo(b.created_at)}</span></div>
         <button class="battle-pill" data-battle-play="${esc(b.id)}" type="button">Play</button>
       </li>`;
     }
@@ -341,10 +341,9 @@ function renderHub() {
       </header>
 
       <div class="home-actions">
-        <button class="battle-primary home-cta" data-battle-quick type="button">Quick 1v1</button>
+        <button class="battle-primary home-cta" data-battle-quick type="button">Quick battle</button>
         <button class="battle-secondary home-cta${friendPickerOpen ? " is-open" : ""}" data-battle-friends type="button" aria-expanded="${friendPickerOpen ? "true" : "false"}">Play with friends</button>
       </div>
-      ${iq ? "" : `<button class="home-cta is-special" data-battle-take-test type="button"><i aria-hidden="true">✦</i>Take the IQ test</button>`}
 
       ${friendPickerOpen ? renderLobbyPanel() : ""}
       ${hub.error ? `<p class="battle-error">${esc(hub.error)}</p>` : ""}
@@ -352,7 +351,7 @@ function renderHub() {
 
 
       <section class="home-stats" aria-label="Your status">
-        <div><span class="battle-eyebrow">Rating</span><strong>${rating}</strong></div>
+        <div><span class="battle-eyebrow">Battle rating</span><strong>${rating}</strong></div>
         <div><span class="battle-eyebrow">IQ</span>${iq
           ? `<strong>${Math.round(iq)}</strong>`
           : `<strong class="is-empty">—</strong><button class="battle-link" data-battle-take-test type="button">Take the test</button>`}</div>
@@ -369,7 +368,7 @@ function renderHub() {
           <ol>
             <li>Eight items: pattern, verbal, number, spatial and weights. Both players get the same set.</li>
             <li>Right answer is 100. Up to 50 more for speed. Nothing for a miss.</li>
-            <li>Rating moves like chess Elo. Beat someone above you and it moves more.</li>
+            <li>Battle rating moves like chess Elo. Beat someone above you and it moves more.</li>
           </ol>
         </details>
       </footer>
@@ -681,7 +680,7 @@ async function startQuickMatch() {
   const me = d.getAuthUser();
   const online = d.supabaseEnabled && me && !d.isGuest();
   hub.error = "";
-  showLoading({ eyebrow: "Quick 1v1", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true, botNow: true });
+  showLoading({ eyebrow: "Quick battle", title: "Finding an opponent", sub: "Looking for someone searching right now.", spinner: true, cancel: true, botNow: true });
   const token = ++quickToken;
   if (!online) {
     await wait(1800);
@@ -698,7 +697,7 @@ async function startQuickMatch() {
     if (data.opponent) {
       // Joined a live seat someone opened moments ago.
       await loadNames([data.challenger, data.opponent]);
-      prepareRound(data, "Quick 1v1");
+      prepareRound(data, "Quick battle");
       return;
     }
     searchSeatId = data.id;
@@ -707,7 +706,7 @@ async function startQuickMatch() {
     searchSeatId = null;
     if (joined) {
       await loadNames([joined.challenger, joined.opponent]);
-      prepareRound(joined, "Quick 1v1");
+      prepareRound(joined, "Quick battle");
       return;
     }
     // Nobody showed up: drop the seat and play a bot on a fresh set.
@@ -719,7 +718,7 @@ async function startQuickMatch() {
       if (/function|schema cache/i.test(berr.message)) { startLocalBot(); return; } // bots.sql not run yet
       throw new Error(berr.message);
     }
-    prepareRound(bot, "Quick 1v1");
+    prepareRound(bot, "Quick battle");
   } catch (error) {
     stopLoading(); view = "hub";
     hub.error = friendlyError(error);
@@ -780,7 +779,7 @@ function startLocalBot() {
     bot_name: BOT_NAMES[Math.floor(rng() * BOT_NAMES.length)],
     challenger: d.getAuthUser()?.id ?? "me", opponent: null, seed, item_ids: pickItemIds(seed), round_ms: QUICK_ROUND_MS, created_at: new Date().toISOString()
   };
-  prepareRound(row, "Quick 1v1");
+  prepareRound(row, "Quick battle");
 }
 
 export async function challengeUser(opponentId) {
@@ -1074,7 +1073,7 @@ function renderResult() {
   const open = r.row.status === "open";
   host.innerHTML = `
     <div class="battle-result ${cls}">
-      <p class="battle-eyebrow">${r.local ? "Quick 1v1 · unrated" : r.row.mode === "friend" ? "Friend duel" : "Quick 1v1"}</p>
+      <p class="battle-eyebrow">${r.local ? "Quick battle · unrated" : r.row.mode === "friend" ? "Friend duel" : "Quick battle"}</p>
       <h2 class="battle-outcome-title">${outcome}${r.settled && r.delta != null ? `<span class="battle-delta">${r.delta > 0 ? "+" : ""}${r.delta}</span>` : ""}</h2>
       <div class="battle-scoreboard">
         <div class="battle-side is-you"><span>You</span><strong>${r.mine}</strong><em>${r.correct} of ${ROUNDS} right</em></div>
@@ -1084,7 +1083,7 @@ function renderResult() {
       ${!r.settled && !r.error ? `<p class="battle-note">${open ? "Your score is locked in. The next player to search gets matched against it and you'll see the result here and in Recent." : `We'll settle it the moment ${esc(r.them)} finishes. You can leave; the result lands in Recent.`}</p>` : ""}
       ${r.error ? `<p class="battle-error">${esc(r.error)}</p>` : ""}
       <div class="battle-result-actions">
-        ${r.settled && r.row.mode === "friend" && !r.local ? `<button class="battle-primary" data-battle-rematch type="button"><span>Rematch</span></button>` : r.settled ? `<button class="battle-primary" data-battle-quick type="button"><span>Quick 1v1</span></button>` : ""}
+        ${r.settled && r.row.mode === "friend" && !r.local ? `<button class="battle-primary" data-battle-rematch type="button"><span>Rematch</span></button>` : r.settled ? `<button class="battle-primary" data-battle-quick type="button"><span>Quick battle</span></button>` : ""}
         <button class="battle-secondary" data-battle-back type="button"><span>Back to Home</span></button>
       </div>
     </div>`;

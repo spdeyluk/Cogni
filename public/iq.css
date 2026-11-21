@@ -1016,12 +1016,15 @@ html.mode-pro .app-content.is-entering .routines-tile,
 html.mode-pro .app-content.is-entering .profile-identity-card,
 html.mode-pro .app-content.is-entering .profile-exercise-section,
 html.mode-pro .app-content.is-entering .battle-list,
+html.mode-pro .app-content.is-entering .battle-hub.is-home > *,
+html.mode-pro .app-content.is-entering .community-page > *,
+html.mode-pro .app-content.is-entering .page-header,
 html.mode-pro .app-content.is-entering .lobby-section { animation: iq-fade-up 420ms var(--ease-out) both; }
-html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(2) { animation-delay: 40ms; }
-html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(3) { animation-delay: 80ms; }
-html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(4) { animation-delay: 120ms; }
-html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(5) { animation-delay: 160ms; }
-html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(n + 6) { animation-delay: 200ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section, .battle-hub.is-home > *, .community-page > *):nth-child(2) { animation-delay: 40ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section, .battle-hub.is-home > *, .community-page > *):nth-child(3) { animation-delay: 80ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section, .battle-hub.is-home > *, .community-page > *):nth-child(4) { animation-delay: 120ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section, .battle-hub.is-home > *, .community-page > *):nth-child(5) { animation-delay: 160ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section, .battle-hub.is-home > *, .community-page > *):nth-child(n + 6) { animation-delay: 200ms; }
 html.mode-pro .app-content.is-entering .mdash-overall { animation-delay: 140ms; }
 html.mode-pro .app-content.is-entering .mdash-ksection.is-strong { animation-delay: 200ms; }
 html.mode-pro .app-content.is-entering .mdash-ksection.is-room { animation-delay: 260ms; }
@@ -1045,10 +1048,13 @@ html.mode-pro:not(.landing-active) .app-content,
 html.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { transition: margin-left 240ms var(--ease-out), padding-left 240ms var(--ease-out); }
 html.mode-pro:not(.landing-active) .site-topbar, html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar { transition: left 240ms var(--ease-out); }
 html.mode-pro .site-rail-expand { display: none; position: absolute; left: 14px; top: 6px; z-index: 2; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: pointer; place-items: center; transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out); }
-html.mode-pro .site-rail-expand img { width: 22px; height: 22px; object-fit: contain; }
+html.mode-pro .site-rail-expand img, html.mode-pro .site-rail-expand svg { grid-area: 1 / 1; width: 22px; height: 22px; object-fit: contain; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out); }
+html.mode-pro .site-rail-expand svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; color: var(--text-2); opacity: 0; transform: scale(0.85); }
+html.mode-pro .site-rail-expand:hover img { opacity: 0; transform: scale(0.85); }
+html.mode-pro .site-rail-expand:hover svg { opacity: 1; transform: none; color: var(--text); }
 html.mode-pro .site-rail-expand:hover { background: var(--surface-2); }
 html.rail-collapsed.mode-pro:not(.landing-active) .site-rail-expand { display: grid; }
-html.rail-collapsed.mode-pro:not(.landing-active) .site-topbar-inner { padding-left: 48px; width: calc(96% - 48px); margin-left: 2%; }
+html.rail-collapsed.mode-pro:not(.landing-active) .site-topbar-inner { padding-left: 66px; width: calc(96% - 66px); margin-left: 2%; }
 html.rail-collapsed.mode-pro:not(.landing-active) .site-topbar-inner { width: auto; margin: 0 2% 0 0; }
 
 /* Full / Mini: a two-up segmented choice on the card and in the hero */
@@ -1088,8 +1094,7 @@ html.mode-pro .web-onboarding-top { display: flex; align-items: center; justify-
 html.mode-pro .web-onboarding-brand { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text); }
 html.mode-pro .web-onboarding-brand img { height: 20px; width: auto; }
 html.mode-pro .web-onboarding-count { font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
-html.mode-pro .web-onboarding-progress { height: 3px; margin-top: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
-html.mode-pro .web-onboarding-progress i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--text); transition: width 360ms var(--ease-out); }
+html.mode-pro .web-onboarding-top { padding-bottom: 14px; }
 html.mode-pro .web-onboarding-stage { flex: 1 1 auto; display: flex; flex-direction: column; }
 html.mode-pro .web-onboarding-slide { gap: 14px; text-align: center; animation: iq-fade-up 380ms var(--ease-out) both; }
 html.mode-pro .web-onboarding-eyebrow { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -1152,17 +1157,19 @@ html.mode-pro .tester-badge button:hover { background: color-mix(in srgb, curren
 html.mode-pro .web-onboarding-skip { align-self: auto; padding: 8px 12px; border: 0; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
 html.mode-pro .web-onboarding-skip:hover { color: var(--text); background: var(--fill-subtle) !important; }
 html.mode-pro .web-onboarding-skip[hidden] { display: none; }
-html.mode-pro .ob-beat { flex: 1 1 auto; display: grid; place-items: center; margin-inline: -64px; padding: 0 0 10vh; text-align: center; cursor: default; user-select: none; }
+html.mode-pro .web-onboarding-stage { position: relative; }
+html.mode-pro .ob-beat { position: absolute; inset: 0; display: grid; place-items: center; margin-inline: -64px; padding: 0 0 10vh; text-align: center; cursor: default; user-select: none; }
 @media (max-width: 760px) { html.mode-pro .ob-beat { margin-inline: 0; } }
 html.mode-pro .ob-beat p { margin: 0 auto; max-width: 100%; text-wrap: balance; font-family: var(--font-iq-serif); font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.25rem); line-height: 1.1; letter-spacing: -0.015em; color: var(--text); font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0; }
 html.mode-pro .ob-beat em { font-style: italic; font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 1; }
 html.mode-pro .ob-line { display: block; }
-html.mode-pro .ob-w { display: inline-block; opacity: 0; transform: translateY(0.3em); filter: blur(3px); animation: ob-word 520ms var(--ease-out) forwards; animation-delay: calc(var(--i) * 70ms); }
-@keyframes ob-word { to { opacity: 1; transform: none; filter: none; } }
+/* Words rise in on a long, soft ease; no blur, so nothing shimmers. */
+html.mode-pro .ob-w { display: inline-block; opacity: 0; transform: translateY(0.22em); animation: ob-word 900ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(140ms + var(--i) * 55ms); will-change: transform, opacity; }
+@keyframes ob-word { to { opacity: 1; transform: none; } }
 /* A plain fade out with a short drift: no blur, so the leaving text never
    smears into a dark band. */
-html.mode-pro .ob-beat.is-out { animation: ob-beat-out 260ms ease-in forwards; }
-@keyframes ob-beat-out { to { opacity: 0; transform: translateY(-8px); } }
+html.mode-pro .ob-beat.is-out { animation: ob-beat-out 600ms cubic-bezier(0.4, 0, 0.6, 1) forwards; pointer-events: none; }
+@keyframes ob-beat-out { to { opacity: 0; transform: translateY(-10px); } }
 html.mode-pro .ob-cta .web-onboarding-title { font-family: var(--font-iq-serif) !important; font-weight: 400 !important; font-size: clamp(2rem, 4.6vw, 3rem) !important; letter-spacing: -0.015em !important; line-height: 1.08 !important; font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0; }
 html.mode-pro.reduce-motion .ob-w { animation-duration: 1ms; animation-delay: 0ms; }
 @media (prefers-reduced-motion: reduce) {
@@ -1180,3 +1187,20 @@ html.mode-pro .web-onboarding .ob-battery > button span { font-size: 12.5px; }
 html.mode-pro .web-onboarding .ob-battery > button:not(.active):hover { background: var(--fill-subtle) !important; }
 html.mode-pro .web-onboarding-next { color: var(--btn-text) !important; }
 html.mode-pro .web-onboarding-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Picker: the black selection box slides between the two tests; the buttons
+   themselves stay put and only change colour. */
+html.mode-pro .web-onboarding .ob-battery { position: relative; }
+html.mode-pro .web-onboarding .ob-battery .ob-thumb { position: absolute; top: 5px; bottom: 5px; left: var(--x, 5px); width: var(--w, 0px); border-radius: 12px; background: var(--btn-fill); opacity: 0; transform: scale(0.96); transition: left 300ms cubic-bezier(0.4, 0, 0.2, 1), width 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms var(--ease-out), transform 220ms var(--ease-out); pointer-events: none; }
+html.mode-pro .web-onboarding .ob-battery.has-pick .ob-thumb { opacity: 1; transform: none; }
+html.mode-pro .web-onboarding .ob-battery > button { position: relative; z-index: 1; background: transparent !important; transition: color 220ms var(--ease-out), background 150ms var(--ease-out); }
+html.mode-pro .web-onboarding .ob-battery > button.active { color: var(--btn-text) !important; }
+
+/* IQ tab while the month has no sitting (html.iq-due): a soft light sweep and
+   a teal glow on the brain, only when the IQ page is not the one open. */
+html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) { position: relative; overflow: hidden; color: var(--text) !important; }
+html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after { content: ""; position: absolute; inset: -2px; background: linear-gradient(105deg, transparent 32%, color-mix(in srgb, var(--iq-teal) 26%, transparent) 50%, transparent 68%); transform: translateX(-130%); animation: iq-sweep 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; pointer-events: none; }
+html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { color: var(--iq-teal); animation: iq-glow 3.2s ease-in-out infinite; }
+@keyframes iq-sweep { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
+@keyframes iq-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(15, 155, 142, 0)); } 50% { filter: drop-shadow(0 0 6px rgba(15, 155, 142, 0.75)); } }
+@media (prefers-reduced-motion: reduce) { html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after, html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { animation: none; } }

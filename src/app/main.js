@@ -312,15 +312,12 @@ const routeTabToPath = {
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
-  // The web has no Profile page: account things live in Settings, opened from
-  // the rail's account card. The native app keeps its Profile tab.
-  ...(cogniUiMode === "pro" ? {} : { statistics: "/profile" })
+  statistics: "/profile"
 };
 // Paths that used to exist, kept so old links and bookmarks still land somewhere.
 const legacyRoutePaths = {
   "/assessments": "assessments",
-  "/screen-time": "exercises",
-  ...(cogniUiMode === "pro" ? { "/profile": "assessments" } : {})
+  "/screen-time": "exercises"
 };
 const routePathToTab = {
   ...legacyRoutePaths,
@@ -331,7 +328,7 @@ function routeTabHandler(tab) {
     battle: showBattle,
     exercises: showExerciseHub,
     assessments: showAssessments,
-    statistics: cogniUiMode === "pro" ? showAssessments : showStatistics,
+    statistics: showStatistics,
     community: showCommunity,
     home: showHome,
     friends: showFriendsPage
@@ -1559,7 +1556,8 @@ const WEB_ONBOARDING_BEATS = [
   { lines: ["Now AI is taking over our *thinking*."], hold: 1600 },
   { lines: ["So we built *Cogni*."], hold: 2000, brand: true }
 ];
-const WEB_ONBOARDING_WORD_MS = 70;
+const WEB_ONBOARDING_WORD_MS = 55;  // stagger between words
+const WEB_ONBOARDING_LEAD_MS = 140;  // before the first word, while the last thought fades
 const WEB_ONBOARDING_LINE_GAP = 5; // word-slots of pause between lines
 
 function webOnboardingFirstName() {
@@ -1600,11 +1598,9 @@ function showWebOnboarding(onDone = () => {}) {
         <span class="web-onboarding-brand"><img src="assets/brand/logo-brain.png" alt="">Cogni</span>
         <button type="button" class="web-onboarding-skip" data-onboard-skip>Skip</button>
       </header>
-      <div class="web-onboarding-progress" aria-hidden="true"><i id="web-onboarding-bar"></i></div>
       <div class="web-onboarding-stage" id="web-onboarding-stage"></div>
     </div>`;
   const stage = overlay.querySelector("#web-onboarding-stage");
-  const bar = overlay.querySelector("#web-onboarding-bar");
   const skip = overlay.querySelector("[data-onboard-skip]");
   const beats = WEB_ONBOARDING_BEATS;
   const total = beats.length + 1; // + the picker
@@ -1616,21 +1612,37 @@ function showWebOnboarding(onDone = () => {}) {
   const clearTimer = () => { window.clearTimeout(timer); timer = null; };
   const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 
+  const startLabelFor = (choice) => choice === "mini" ? "Start the Mini test" : choice === "full" ? "Start the IQ test" : "Start the test";
+  // The black selection box is the one thing that moves when the pick changes.
+  // It is placed from the active button's box; the first pick fades it in in
+  // place, later picks slide it.
+  const placeThumb = (animate = true) => {
+    const group = stage.querySelector(".ob-battery");
+    const thumb = group?.querySelector(".ob-thumb");
+    if (!group || !thumb) return;
+    const active = group.querySelector("[data-battery].active");
+    if (!active) { group.classList.remove("has-pick"); return; }
+    const settle = !animate || !group.classList.contains("has-pick");
+    if (settle) thumb.style.transition = "none";
+    thumb.style.setProperty("--x", `${active.offsetLeft}px`);
+    thumb.style.setProperty("--w", `${active.offsetWidth}px`);
+    if (settle) { void thumb.offsetWidth; thumb.style.transition = ""; }
+    group.classList.add("has-pick");
+  };
+  const thumbWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => placeThumb(false));
   const pickerHtml = () => {
     if (iqTestAvailable()) {
-      const startLabel = picked === "mini" ? "Start the Mini test" : picked === "full" ? "Start the IQ test" : "Start the test";
       return `
         <div class="web-onboarding-slide ob-cta">
           <p class="web-onboarding-eyebrow">Your baseline</p>
           <h2 class="web-onboarding-title">Measure your mind.</h2>
           <p class="web-onboarding-body">Pick a test. One sitting gives you an IQ score, and a report that shows what to train.</p>
-          <div class="seg-sliding iq-battery ob-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(picked ?? "")}</div>
+          <div class="seg-sliding iq-battery ob-battery${picked ? " has-pick" : ""}" role="radiogroup" aria-label="Which test"><i class="ob-thumb" aria-hidden="true"></i>${measureBatteryChoiceHtml(picked ?? "")}</div>
         </div>
         <div class="web-onboarding-footer">
           <div class="web-onboarding-actions">
-            <button type="button" class="web-onboarding-back" data-onboard-back>Back</button>
             <button type="button" class="web-onboarding-later" data-onboard-finish>Look around first</button>
-            <button type="button" class="web-onboarding-next" data-onboard-start ${picked ? "" : "disabled"}>${startLabel}${arrow}</button>
+            <button type="button" class="web-onboarding-next" data-onboard-start ${picked ? "" : "disabled"}><span data-onboard-start-label>${startLabelFor(picked)}</span>${arrow}</button>
           </div>
         </div>`;
     }
@@ -1642,34 +1654,47 @@ function showWebOnboarding(onDone = () => {}) {
       </div>
       <div class="web-onboarding-footer">
         <div class="web-onboarding-actions">
-          <button type="button" class="web-onboarding-back" data-onboard-back>Back</button>
           <button type="button" class="web-onboarding-next" data-onboard-finish>Open Exercises${arrow}</button>
         </div>
       </div>`;
   };
 
+  let shownAt = 0;
   const render = () => {
     clearTimer();
     const onPicker = index >= beats.length;
-    if (bar) bar.style.width = `${((index + 1) / total * 100).toFixed(1)}%`;
     if (skip) skip.hidden = onPicker;
-    if (onPicker) { stage.innerHTML = pickerHtml(); return; }
+    if (onPicker) {
+      stage.innerHTML = pickerHtml();
+      placeThumb(false);
+      const group = stage.querySelector(".ob-battery");
+      if (group && thumbWatcher) thumbWatcher.observe(group);
+      return;
+    }
     const beat = beats[index];
     const { html, slots } = webOnboardingBeatHtml(beat);
-    stage.innerHTML = `<div class="ob-beat${beat.brand ? " is-brand" : ""}"><p>${html}</p></div>`;
-    const enterMs = slots * WEB_ONBOARDING_WORD_MS + 560;
-    timer = window.setTimeout(() => leave(index + 1), enterMs + (beat.hold ?? 1600));
+    // The thought on screen fades out while the new one rises in: a crossfade,
+    // not a cut. Anything that is not a thought (the picker) is cleared.
+    for (const node of [...stage.children]) {
+      if (!node.classList.contains("ob-beat")) { node.remove(); continue; }
+      if (node.classList.contains("is-out")) continue;
+      node.classList.add("is-out");
+      window.setTimeout(() => node.remove(), 700);
+    }
+    const next = document.createElement("div");
+    next.className = `ob-beat${beat.brand ? " is-brand" : ""}`;
+    next.innerHTML = `<p>${html}</p>`;
+    stage.appendChild(next);
+    shownAt = Date.now();
+    const enterMs = WEB_ONBOARDING_LEAD_MS + slots * WEB_ONBOARDING_WORD_MS + 900;
+    timer = window.setTimeout(() => go(index + 1), enterMs + (beat.hold ?? 1600));
   };
   const go = (next) => { index = Math.max(0, Math.min(total - 1, next)); render(); };
-  // The thought leaves before the next one renders; a second request while it
-  // is already leaving is ignored.
+  // A tap in the first moments of a thought is ignored, so a double click
+  // cannot skip two at once.
   const leave = (next) => {
-    const current = stage.querySelector(".ob-beat");
-    if (current?.classList.contains("is-out")) return;
-    clearTimer();
-    if (!current || webOnboardingReduceMotion()) { go(next); return; }
-    current.classList.add("is-out");
-    timer = window.setTimeout(() => go(next), 260);
+    if (Date.now() - shownAt < 350) return;
+    go(next);
   };
   // Timers stop while the tab is hidden, so nothing plays to an empty room.
   const onVisibility = () => {
@@ -1678,6 +1703,7 @@ function showWebOnboarding(onDone = () => {}) {
   };
   const finish = (result = {}) => {
     clearTimer();
+    thumbWatcher?.disconnect();
     markWebOnboardingSeen();
     document.documentElement.classList.remove("web-onboarding-open");
     document.removeEventListener("keydown", onKey);
@@ -1693,12 +1719,24 @@ function showWebOnboarding(onDone = () => {}) {
     if (battery) {
       picked = battery.dataset.battery;
       setMeasureBatteryChoice(picked);
-      render();
+      // Switched in place: nothing re-renders, only the selection box moves.
+      for (const button of stage.querySelectorAll("[data-battery]")) {
+        const on = button === battery;
+        button.classList.toggle("active", on);
+        button.setAttribute("aria-pressed", String(on));
+      }
+      const start = stage.querySelector("[data-onboard-start]");
+      if (start) {
+        start.disabled = false;
+        const label = start.querySelector("[data-onboard-start-label]");
+        if (label) label.textContent = startLabelFor(picked);
+      }
+      placeThumb(true);
       return;
     }
-    if (event.target.closest("[data-onboard-back]")) { go(index - 1); return; }
     if (event.target.closest("[data-onboard-start]")) { if (picked) finish({ start: true }); return; }
-    if (event.target.closest("[data-onboard-finish]")) { finish({ start: false }); }
+    // "Look around first" opens Exercises: somewhere to be useful right away.
+    if (event.target.closest("[data-onboard-finish]")) { finish({ start: false, explore: true }); }
   });
   // Keys work wherever focus is. Enter on a focused button is left to the
   // button's own click.
@@ -4694,9 +4732,6 @@ function showExerciseHub() {
 }
 
 function showStatistics() {
-  // No Profile page on the web any more: anything still pointing here lands on
-  // the IQ page, and the account lives in Settings.
-  if (cogniUiMode === "pro") { showAssessments(); return; }
   if (!requireAuth("Sign in to see your stats and progress.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   elements.appShell.classList.remove(...sectionResetClasses);
@@ -6459,9 +6494,9 @@ function onAuthenticated() {
       history.replaceState({ tab: "assessments" }, "", routeTabToPath.assessments);
     }
     routerReady = true;
-    showWebOnboarding(({ start } = {}) => {
+    showWebOnboarding(({ start, explore } = {}) => {
       syncWebFunnel();
-      landFrontDoor();
+      if (explore) showExerciseHub(); else landFrontDoor();
       if (start) window.setTimeout(beginFirstMeasurement, 80);
     });
     handleCheckoutReturn();
@@ -6497,7 +6532,7 @@ function onAuthenticated() {
     landedPath = iqTestAvailable() ? routeTabToPath.assessments : routeTabToPath.exercises;
     // Never let the intro blank the app: the front door is already rendered underneath.
     try {
-      if (!hasSeenWebOnboarding()) showWebOnboarding(({ start } = {}) => { syncWebFunnel(); if (start) window.setTimeout(beginFirstMeasurement, 80); });
+      if (!hasSeenWebOnboarding()) showWebOnboarding(({ start, explore } = {}) => { syncWebFunnel(); if (explore) showExerciseHub(); if (start) window.setTimeout(beginFirstMeasurement, 80); });
     } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
@@ -10513,6 +10548,20 @@ async function resolveIqOwner() {
     else if (!iqTestAvailable() && shell?.classList.contains("assessments-open")) showExerciseHub();
   }
 }
+// A sitting completed in the current calendar month.
+function iqSittingThisMonth() {
+  const now = new Date();
+  return loadCatSessions().some((session) => {
+    const when = new Date(session.completedAt);
+    return when.getFullYear() === now.getFullYear() && when.getMonth() === now.getMonth();
+  });
+}
+// The IQ tab carries a light sweep while the month has no sitting yet; CSS hides
+// it on the IQ page itself.
+function syncIqDue() {
+  const due = cogniUiMode === "pro" && !!authUser && iqTestAvailable() && !iqSittingThisMonth();
+  document.documentElement.classList.toggle("iq-due", due);
+}
 function iqTestAvailable() {
   return cogniUiMode !== "pro" || iqOwner || testerMode();
 }
@@ -10528,6 +10577,7 @@ function applyIqAvailability() {
   }
   const tab = document.querySelector('.site-tab[data-site-tab="assessments"]');
   if (tab) tab.hidden = off;
+  syncIqDue();
   if (elements.appShell?.classList.contains("assessments-open")) renderMeasurePicker();
 }
 
@@ -11195,6 +11245,7 @@ function setActiveTab(tab) {
   document.querySelectorAll("[data-site-tab]").forEach((siteTab) => {
     siteTab.classList.toggle("active", siteTab.dataset.siteTab === railTab);
   });
+  syncIqDue();
   const loginButton = document.querySelector("#site-login");
   if (loginButton) loginButton.textContent = authUser ? "Account" : "Log in";
   syncRailAccount();
@@ -11219,7 +11270,7 @@ function installNativeNavigationBridge() {
         home: showHome,
         assessments: showAssessments,
         exercises: showExerciseHub,
-        statistics: cogniUiMode === "pro" ? showAssessments : showStatistics
+        statistics: showStatistics
       };
       handlers[tab]?.();
     }
