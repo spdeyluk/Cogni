@@ -2319,6 +2319,7 @@ elements.profileTestsToggle?.addEventListener("click", () => toggleProfileDataPa
 elements.profileExercisesToggle?.addEventListener("click", () => toggleProfileDataPanel("exercises"));
 elements.profilePage?.addEventListener("click", handleProfilePageClick);
 elements.profilePage?.addEventListener("submit", handleProfilePageSubmit);
+elements.profilePage?.addEventListener("change", handleProfilePageChange);
 elements.homePage?.addEventListener("click", handleHomePageClick);
 elements.friendRequestForm?.addEventListener("submit", handleFriendRequestSubmit);
 elements.closeFriendDialog?.addEventListener("click", closeFriendDialog);
@@ -4841,6 +4842,15 @@ function handleProfilePageClick(event) {
   const editButton = event.target.closest("[data-profile-edit]");
   const cancelEditButton = event.target.closest("[data-profile-edit-cancel]");
   if (event.target.closest("[data-profile-take-test]")) { showAssessments(); return; }
+  if (event.target.closest("[data-profile-avatar-pick]")) { elements.profilePage.querySelector("[data-profile-avatar-file]")?.click(); return; }
+  if (event.target.closest("[data-profile-avatar-remove]")) {
+    const existing = loadUserProfile();
+    saveUserProfile({ ...existing, avatarImage: "", avatarCleared: true });
+    syncSocialProfileQuietly();
+    syncRailAccount();
+    renderProfile();
+    return;
+  }
   if (editButton) {
     profileEditorOpen = true;
     renderProfile();
@@ -4891,9 +4901,10 @@ function handleProfilePageSubmit(event) {
   // Keep the social handle stable; only the display name is user-editable.
   const handle = normalizeProfileHandle(existing.handle);
   const avatarInitial = normalizeProfileAvatar(name, handle);
-  saveUserProfile({ handle, name, avatarInitial });
+  saveUserProfile({ ...existing, handle, name, avatarInitial });
   syncSocialProfileQuietly();
   renderAccountMenu();
+  syncRailAccount();
   profileEditorOpen = false;
   renderProfile();
 }
@@ -4940,15 +4951,27 @@ function renderProfile() {
   const latestWeight = latestSession ? sessionDifficultyWeight(latestSession) : { overall: 0, factors: [] };
   const timeframeTitle = "Review";
 
-  elements.profilePage.dataset.selectedProfileView = selectedProfileView;
+  // Web: one page — identity, then activity beside training shape, then the
+  // record. The data-view styles apply to the whole page. Native keeps its switch.
+  const combined = cogniUiMode === "pro";
+  elements.profilePage.dataset.selectedProfileView = combined ? "data" : selectedProfileView;
+  elements.profilePage.classList.toggle("is-combined", combined);
   elements.profilePage.innerHTML = `
-    <div class="profile-view-switch" aria-label="Profile pages">
+    ${combined ? `
+      <section class="profile-simple-panel" aria-label="Profile overview">
+        ${renderProfileIdentity(userProfile, profileStats)}
+        <div class="profile-two-up">
+          ${renderProfileCompletionCalendar(progress, exerciseIds)}
+          ${renderProfileHexagon(allSessions)}
+        </div>
+      </section>
+    ` : `<div class="profile-view-switch" aria-label="Profile pages">
       ${["profile", "data"].map((view) => `
         <button class="${view === selectedProfileView ? "active" : ""}" data-profile-view="${view}" type="button" aria-pressed="${view === selectedProfileView ? "true" : "false"}">${view === "profile" ? "Profile" : `Data <span class="cogni-tag is-pro">Pro</span>`}</button>
       `).join("")}
-    </div>
+    </div>`}
 
-    ${selectedProfileView === "profile" ? `
+    ${!combined && selectedProfileView === "profile" ? `
       <section class="profile-simple-panel" aria-label="Profile overview">
         ${renderProfileIdentity(userProfile, profileStats)}
         ${cogniUiMode === "pro" ? "" : renderProfileHexagon(allSessions)}
@@ -4956,12 +4979,11 @@ function renderProfile() {
         ${renderProfileImprovementSection(allSessions)}
       </section>
     ` : `
-      ${cogniUiMode === "pro" ? `<section class="profile-simple-panel" aria-label="Training shape">${renderProfileHexagon(allSessions)}</section>` : ""}
       <section class="profile-board" aria-label="${escapeHtml(timeframeTitle)} stats">
         <div class="profile-board-header">
           <div>
-            <p class="exercise-type">Training overview</p>
-            <h2>${escapeHtml(timeframeTitle)}</h2>
+            <p class="exercise-type">${combined ? "Exercises" : "Training overview"}</p>
+            <h2>${combined ? "Training record" : escapeHtml(timeframeTitle)}</h2>
           </div>
           <div class="profile-timeframe-control" aria-label="Profile timeframe">
             ${["daily", "weekly", "monthly", "all"].map((timeframe) => `
@@ -5043,10 +5065,11 @@ function renderProfileIdentity(userProfile, stats = { currentStreak: 0, cogniXp:
     return `
       <form class="profile-identity-card profile-identity-edit-card" data-profile-edit-form>
         <div class="profile-edit-actions">
+          ${cogniUiMode === "pro" && normalizeProfileAvatarImage(userProfile.avatarImage) ? `<button class="secondary-button" data-profile-avatar-remove type="button">Remove photo</button>` : ""}
           <button class="secondary-button" data-profile-edit-cancel type="button">Cancel</button>
           <button type="submit">Save</button>
         </div>
-        <div class="profile-avatar" aria-hidden="true">${renderProfileAvatarContent({ initial })}</div>
+        ${profileAvatarHtml(userProfile, initial)}
         <div class="profile-identity-main">
           <label class="profile-handle-edit">
             <span>Display name</span>
@@ -5060,9 +5083,10 @@ function renderProfileIdentity(userProfile, stats = { currentStreak: 0, cogniXp:
   return `
     <article class="profile-identity-card">
       <button class="profile-edit-button" data-profile-edit type="button">Edit</button>
-      <div class="profile-avatar" aria-hidden="true">${renderProfileAvatarContent({ initial })}</div>
+      ${profileAvatarHtml(userProfile, initial)}
       <div class="profile-identity-main">
         <strong>${escapeHtml(profileDisplayName(userProfile))}</strong>
+        ${cogniUiMode === "pro" ? `<span class="profile-handle">${escapeHtml(handle)}</span>` : ""}
         ${renderProfileIdentityStats(stats)}
       </div>
     </article>
@@ -5070,7 +5094,79 @@ function renderProfileIdentity(userProfile, stats = { currentStreak: 0, cogniXp:
 }
 
 function renderProfileAvatarContent({ avatarImage, initial }) {
+  const image = normalizeProfileAvatarImage(avatarImage);
+  if (image) return `<img class="profile-avatar-img" src="${escapeHtml(image)}" alt="" referrerpolicy="no-referrer" draggable="false">`;
   return `<span class="profile-avatar-initial">${escapeHtml(initial)}</span>`;
+}
+
+// Web: the avatar is a button that opens the file picker; a camera glyph shows
+// on hover. Native keeps the plain circle.
+function profileAvatarHtml(userProfile, initial) {
+  const avatarImage = normalizeProfileAvatarImage(userProfile.avatarImage);
+  if (cogniUiMode !== "pro") return `<div class="profile-avatar" aria-hidden="true">${renderProfileAvatarContent({ avatarImage, initial })}</div>`;
+  return `
+    <button class="profile-avatar profile-avatar-pick" data-profile-avatar-pick type="button" aria-label="Change photo" title="Change photo">
+      ${renderProfileAvatarContent({ avatarImage, initial })}
+      <span class="profile-avatar-cam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg></span>
+    </button>
+    <input class="profile-avatar-file" data-profile-avatar-file type="file" accept="image/*" hidden>`;
+}
+
+// Square-crop and shrink a chosen image so it stays small enough to store and
+// sync. Returns both a JPEG blob (for storage) and a data URL (local fallback).
+function squareAvatar(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const side = Math.min(img.naturalWidth, img.naturalHeight);
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
+        canvas.toBlob((blob) => (blob ? resolve({ blob, dataUrl }) : reject(new Error("blob"))), "image/jpeg", 0.86);
+      } catch (error) { reject(error); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+    img.src = url;
+  });
+}
+
+// A new photo: uploaded to the account's folder in the avatars bucket when
+// signed in (public URL saved), kept as a data URL for guests or if the upload
+// fails. Either way the profile, rail and social profile pick it up.
+async function handleProfileAvatarFile(file) {
+  if (!file || !String(file.type).startsWith("image/")) return;
+  let picked;
+  try { picked = await squareAvatar(file, 256); } catch { showToast("That image couldn't be read."); return; }
+  let avatarImage = picked.dataUrl;
+  if (supabaseEnabled && authUser && !guestMode && authUser.provider !== "guest") {
+    try {
+      const path = `${authUser.id}/avatar.jpg`;
+      const { error } = await supabase.storage.from("avatars").upload(path, picked.blob, { upsert: true, contentType: "image/jpeg", cacheControl: "3600" });
+      if (!error) {
+        const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+        if (data?.publicUrl) avatarImage = `${data.publicUrl}?v=${Date.now()}`;
+      }
+    } catch { /* the local copy stands */ }
+  }
+  const existing = loadUserProfile();
+  saveUserProfile({ ...existing, avatarImage, avatarCleared: false });
+  syncSocialProfileQuietly();
+  syncRailAccount();
+  renderProfile();
+  showToast("Photo updated.");
+}
+
+function handleProfilePageChange(event) {
+  const input = event.target.closest("[data-profile-avatar-file]");
+  if (!input) return;
+  const file = input.files?.[0];
+  input.value = "";
+  handleProfileAvatarFile(file);
 }
 
 function renderProfileIdentityStats(stats) {
@@ -5361,11 +5457,13 @@ function repairPlaceholderProfile() {
   const profile = loadUserProfile();
   const placeholder = normalizeProfileHandle(profile.handle) === "@cogni" || !profile.handle;
   const unnamed = !profile.name || profile.name === "Cogni";
-  if (!placeholder && !unnamed) return;
+  const wantsPhoto = !profile.avatarCleared && !normalizeProfileAvatarImage(profile.avatarImage) && !!authUser.avatarUrl;
+  if (!placeholder && !unnamed && !wantsPhoto) return;
   const base = String(authUser.email).split("@")[0];
   const next = { ...profile };
   if (placeholder) next.handle = normalizeProfileHandle(base || "cogni");
   if (unnamed) next.name = displayNameFromEmail(authUser.email);
+  if (wantsPhoto) next.avatarImage = authUser.avatarUrl;
   next.avatarInitial = normalizeProfileAvatar(next.name, next.handle);
   saveUserProfile(next);
   syncSocialProfileQuietly();
@@ -5397,8 +5495,8 @@ function normalizeProfileAvatar(value, handle = "@cogni") {
 }
 
 function normalizeProfileAvatarImage(value) {
-  const image = String(value ?? "");
-  return image.startsWith("data:image/") ? image : "";
+  const image = String(value ?? "").trim();
+  return image.startsWith("data:image/") || /^https:\/\//.test(image) ? image : "";
 }
 
 function animateBrainHealthScore() {
@@ -6344,7 +6442,8 @@ function startSyncLoop() {
 function supabaseAuthUser(user) {
   if (!user) return null;
   const provider = user.app_metadata?.provider ?? "email";
-  return { id: user.id, email: user.email ?? "", provider };
+  const avatarUrl = String(user.user_metadata?.avatar_url || user.user_metadata?.picture || "");
+  return { id: user.id, email: user.email ?? "", provider, avatarUrl: /^https:\/\//.test(avatarUrl) ? avatarUrl : "" };
 }
 
 // "google" -> "Google", "email" -> "Email & password".
@@ -7215,7 +7314,7 @@ async function socialApiRequest(path, options = {}) {
     const handle = normalizeProfileHandle(body.handle);
     const { data, error } = await supabase
       .from("profiles")
-      .update({ handle, avatar_initial: body.avatarInitial ?? null, updated_at: new Date().toISOString() })
+      .update({ handle, avatar_initial: body.avatarInitial ?? null, avatar_url: /^https:\/\//.test(String(body.avatarImage ?? "")) ? String(body.avatarImage) : null, updated_at: new Date().toISOString() })
       .eq("id", authUser.id)
       .select("id, handle, avatar_initial")
       .maybeSingle();
@@ -8108,7 +8207,11 @@ function syncRailAccount() {
   const profile = loadUserProfile();
   const label = !authUser ? "Guest" : (profile.name || displayNameFromEmail(authUser.email));
   if (name) name.textContent = label;
-  if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
+  if (avatar) {
+    const image = authUser ? normalizeProfileAvatarImage(profile.avatarImage) : "";
+    if (image) avatar.innerHTML = `<img src="${escapeHtml(image)}" alt="" referrerpolicy="no-referrer" draggable="false">`;
+    else avatar.textContent = label.slice(0, 1).toUpperCase();
+  }
   if (plan) { plan.textContent = unlocked ? "PASS" : "FREE"; plan.classList.toggle("is-pass", unlocked); }
   // Guests get a Log in button and no upgrade CTA (sign in first); signed-in
   // free users get the upgrade CTA.
