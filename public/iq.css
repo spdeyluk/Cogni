@@ -1152,18 +1152,19 @@ html.mode-pro .tester-badge button:hover { background: color-mix(in srgb, curren
 html.mode-pro .web-onboarding-skip { align-self: auto; padding: 8px 12px; border: 0; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
 html.mode-pro .web-onboarding-skip:hover { color: var(--text); background: var(--fill-subtle) !important; }
 html.mode-pro .web-onboarding-skip[hidden] { display: none; }
-html.mode-pro .ob-beat { flex: 1 1 auto; display: grid; place-items: center; padding: 0 0 10vh; text-align: center; cursor: default; user-select: none; }
-html.mode-pro .ob-beat p { margin: 0 auto; max-width: 16ch; font-family: var(--font-iq-serif); font-weight: 400; font-size: clamp(2.1rem, 5vw, 3.6rem); line-height: 1.1; letter-spacing: -0.015em; color: var(--text); font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0; }
+html.mode-pro .ob-beat { flex: 1 1 auto; display: grid; place-items: center; margin-inline: -64px; padding: 0 0 10vh; text-align: center; cursor: default; user-select: none; }
+@media (max-width: 760px) { html.mode-pro .ob-beat { margin-inline: 0; } }
+html.mode-pro .ob-beat p { margin: 0 auto; max-width: 100%; text-wrap: balance; font-family: var(--font-iq-serif); font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.25rem); line-height: 1.1; letter-spacing: -0.015em; color: var(--text); font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0; }
 html.mode-pro .ob-beat em { font-style: italic; font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 1; }
 html.mode-pro .ob-line { display: block; }
 html.mode-pro .ob-w { display: inline-block; opacity: 0; transform: translateY(0.35em); filter: blur(6px); animation: ob-word 560ms var(--ease-out) forwards; animation-delay: calc(var(--i) * 70ms); will-change: transform, opacity, filter; }
 @keyframes ob-word { to { opacity: 1; transform: none; filter: none; } }
 html.mode-pro .ob-beat.is-out { animation: ob-beat-out 340ms var(--ease-out) forwards; }
 @keyframes ob-beat-out { to { opacity: 0; transform: translateY(-18px); filter: blur(6px); } }
-html.mode-pro .ob-cta .web-onboarding-title { font-family: var(--font-iq-serif); font-weight: 400; font-size: clamp(2rem, 4.6vw, 3rem); letter-spacing: -0.015em; line-height: 1.08; }
+html.mode-pro .ob-cta .web-onboarding-title { font-family: var(--font-iq-serif) !important; font-weight: 400 !important; font-size: clamp(2rem, 4.6vw, 3rem) !important; letter-spacing: -0.015em !important; line-height: 1.08 !important; font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0; }
 html.mode-pro.reduce-motion .ob-w { animation-duration: 1ms; animation-delay: 0ms; }
 @media (prefers-reduced-motion: reduce) {
   html.mode-pro .ob-w { animation-duration: 1ms; animation-delay: 0ms; }
   html.mode-pro .ob-beat.is-out { animation-duration: 1ms; }
 }
-@media (max-width: 560px) { html.mode-pro .ob-beat p { max-width: 14ch; font-size: clamp(1.9rem, 8.4vw, 2.6rem); } }
+@media (max-width: 560px) { html.mode-pro .ob-beat p { font-size: clamp(1.9rem, 8.4vw, 2.6rem); } }
