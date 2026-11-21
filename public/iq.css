@@ -1181,3 +1181,10 @@ html.mode-pro .web-onboarding-back:active,
 html.mode-pro .web-onboarding-later:active { transform: scale(0.98); }
 /* Settings modal on the web: the native drawer's safe-area top padding does not apply. */
 html.mode-pro .settings-drawer .settings-drawer-header { padding: 18px 24px !important; }
+
+/* Tester mode chip (?tester=1): fixed bottom-left, clear of the walk's centred
+   buttons and the IQ page's hero. Above the onboarding overlay on purpose. */
+html.mode-pro .tester-badge { position: fixed; left: 16px; bottom: 16px; z-index: 2147483000; display: inline-flex; align-items: center; gap: 8px; padding: 7px 7px 7px 13px; border-radius: 999px; background: var(--btn-fill); color: var(--btn-text); font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; letter-spacing: -0.01em; box-shadow: var(--shadow); animation: iq-fade-up 380ms var(--ease-out) both; }
+html.mode-pro .tester-badge button { appearance: none; border: 0; border-radius: 999px; padding: 6px 10px; background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; font: inherit; cursor: pointer; transition: background 150ms var(--ease-out); }
+html.mode-pro .tester-badge button:hover { background: color-mix(in srgb, currentColor 24%, transparent); }
+@media (max-width: 560px) { html.mode-pro .tester-badge { left: 12px; bottom: 12px; font-size: 11px; } }

@@ -5993,6 +5993,8 @@ let authSyncDirty = false;
 let authSyncing = false;
 const authSyncedAtKey = "cogni.__syncedAt";
 const authSyncExclude = new Set([
+  "cogni.tester",
+  "cogni.testerSession",
   "cogni.localDataResetToken",
   "cogni.demoDataSeedToken",
   "cogni.uiMode.v1",
@@ -8122,6 +8124,7 @@ captureLobbyCode();
 capturePreviewFlag();
 captureOnboardingFlag();
 captureTesterFlag();
+syncTesterBadge();
 
 // Dashboard top switch: Performance (exercise stats) ↔ Test results (IQ test).
 document.querySelectorAll("[data-dashboard-view]").forEach((button) => {
@@ -8848,7 +8851,6 @@ function renderMeasurementSales() {
 
   host.innerHTML = `
     <div class="sales-hero iq-hero">
-      <p class="iq-hero-stats"><span><b>${total}</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>${minutes}</b> minutes</span></p>
       <h2 class="sales-title iq-title">${title}</h2>
       <p class="sales-lede">${lede}</p>
       <div class="seg-sliding iq-battery" id="sales-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(battery.id)}</div>
@@ -10450,34 +10452,57 @@ function takeOnboardingReplay() {
     return want;
   } catch { return false; }
 }
-// Tester hook: ?tester=1 (per tab) makes the sign-in buttons work without an
-// account. "Continue with Google" and the email form enter as a local guest who
+// Tester hook: ?tester=1 makes the sign-in buttons work without an account.
+// Kept in localStorage, so it holds for every tab of the window (a private
+// window forgets it when it closes); a chip shows while it is on. "Continue with Google" and the email form enter as a local guest who
 // is treated as a brand-new member — the walk runs, the test is open, nothing
 // syncs — so the new-user path can be walked in a private window without
 // creating accounts. ?tester=0 switches it off again.
 function captureTesterFlag() {
   const want = new URLSearchParams(window.location.search).get("tester");
   if (want === null) return;
+  setTesterFlag(want === "1");
+}
+function setTesterFlag(on) {
   try {
-    if (want === "1") sessionStorage.setItem(TESTER_FLAG_KEY, "1");
-    else { sessionStorage.removeItem(TESTER_FLAG_KEY); sessionStorage.removeItem(TESTER_SESSION_KEY); }
-  } catch { /* no sessionStorage */ }
+    if (on) localStorage.setItem(TESTER_FLAG_KEY, "1");
+    else { localStorage.removeItem(TESTER_FLAG_KEY); localStorage.removeItem(TESTER_SESSION_KEY); }
+  } catch { /* private mode */ }
+  syncTesterBadge();
 }
 function testerMode() {
-  try { return cogniUiMode === "pro" && sessionStorage.getItem(TESTER_FLAG_KEY) === "1"; } catch { return false; }
+  try { return cogniUiMode === "pro" && localStorage.getItem(TESTER_FLAG_KEY) === "1"; } catch { return false; }
 }
 function testerSessionActive() {
-  try { return testerMode() && sessionStorage.getItem(TESTER_SESSION_KEY) === "1"; } catch { return false; }
+  try { return testerMode() && localStorage.getItem(TESTER_SESSION_KEY) === "1"; } catch { return false; }
 }
 function clearTesterSession() {
-  try { sessionStorage.removeItem(TESTER_SESSION_KEY); } catch { /* no sessionStorage */ }
+  try { localStorage.removeItem(TESTER_SESSION_KEY); } catch { /* private mode */ }
+}
+// A small fixed chip while tester mode is on, so it is obvious which window has
+// it and how to leave it. Turning it off mid-session returns to the landing.
+function syncTesterBadge() {
+  const on = testerMode();
+  let badge = document.querySelector("#tester-badge");
+  if (!on) { badge?.remove(); return; }
+  if (badge) return;
+  badge = document.createElement("div");
+  badge.id = "tester-badge";
+  badge.className = "tester-badge";
+  badge.innerHTML = `<span>Tester mode: sign-in buttons skip Google</span><button type="button">Turn off</button>`;
+  badge.querySelector("button").addEventListener("click", () => {
+    const inSession = testerSessionActive();
+    setTesterFlag(false);
+    if (inSession) window.location.replace("/");
+  });
+  document.body.appendChild(badge);
 }
 // A click on a sign-in button is a brand-new member: local app state starts
 // clean and the page reloads (the OAuth round trip, minus Google), then the boot
 // resumes the tester as a guest. A browser profile where a real account has
 // synced keeps its local copy; the walk is replayed there instead.
 function enterAsTester({ resume = false } = {}) {
-  try { sessionStorage.setItem(TESTER_SESSION_KEY, "1"); } catch { /* no sessionStorage */ }
+  try { localStorage.setItem(TESTER_SESSION_KEY, "1"); } catch { /* private mode */ }
   if (resume) { enterAsGuest(); return; }
   let synced = false;
   try { synced = Boolean(localStorage.getItem(authSyncedAtKey)); } catch { /* private mode */ }
