@@ -4944,7 +4944,7 @@ function renderProfile() {
   elements.profilePage.innerHTML = `
     <div class="profile-view-switch" aria-label="Profile pages">
       ${["profile", "data"].map((view) => `
-        <button class="${view === selectedProfileView ? "active" : ""}" data-profile-view="${view}" type="button" aria-pressed="${view === selectedProfileView ? "true" : "false"}">${view === "profile" ? "Profile" : "Data"}</button>
+        <button class="${view === selectedProfileView ? "active" : ""}" data-profile-view="${view}" type="button" aria-pressed="${view === selectedProfileView ? "true" : "false"}">${view === "profile" ? "Profile" : `Data <span class="cogni-tag is-pro">Pro</span>`}</button>
       `).join("")}
     </div>
 

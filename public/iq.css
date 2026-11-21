@@ -1204,3 +1204,17 @@ html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { c
 @keyframes iq-sweep { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
 @keyframes iq-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(15, 155, 142, 0)); } 50% { filter: drop-shadow(0 0 6px rgba(15, 155, 142, 0.75)); } }
 @media (prefers-reduced-motion: reduce) { html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after, html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { animation: none; } }
+
+/* Tags (after FaceIQ's "PRO" chip): tiny, bold, lavender for anything that needs
+   a paid plan; the same chip in teal for "Most popular". */
+html.mode-pro .cogni-tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 6px; font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; vertical-align: middle; white-space: nowrap; }
+html.mode-pro .cogni-tag.is-pro { background: #ede9fe; color: #6d28d9; }
+html.mode-pro .cogni-tag.is-popular { background: rgba(15, 155, 142, 0.12); color: var(--iq-teal); }
+html.mode-pro:not([data-theme="light"]) .cogni-tag.is-pro, html.mode-pro[data-theme="dark"] .cogni-tag.is-pro { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+html.mode-pro[data-theme="light"] .cogni-tag.is-pro { background: #ede9fe; color: #6d28d9; }
+html.mode-pro .exercise-card { position: relative; }
+html.mode-pro .exercise-card > .cogni-tag { position: absolute; top: 18px; right: 18px; }
+html.mode-pro .routines-tile-copy strong { display: inline-flex; align-items: center; gap: 8px; }
+html.mode-pro .routines-tile-copy strong .cogni-tag { margin-top: 1px; }
+html.mode-pro .profile-view-switch > button { display: inline-flex; align-items: center; gap: 7px; }
+html.mode-pro .profile-view-switch > button.active .cogni-tag.is-pro { background: rgba(196, 181, 253, 0.22); color: #ddd6fe; }

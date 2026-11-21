@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261121-iq19">
-    <link rel="stylesheet" href="luxe.css?v=20261121-iq19">
-    <link rel="stylesheet" href="battle.css?v=20261121-iq19">
-    <link rel="stylesheet" href="iq.css?v=20261121-iq19">
+    <link rel="stylesheet" href="styles.css?v=20261121-iq20">
+    <link rel="stylesheet" href="luxe.css?v=20261121-iq20">
+    <link rel="stylesheet" href="battle.css?v=20261121-iq20">
+    <link rel="stylesheet" href="iq.css?v=20261121-iq20">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -901,7 +901,7 @@
       <section class="exercise-page" aria-label="Exercise selection">
         <button class="routines-tile" id="open-routines" type="button">
           <span class="routines-tile-copy">
-            <strong>Routines</strong>
+            <strong>Routines <span class="cogni-tag is-pro">Pro</span></strong>
             <span>Create or load your own training stacks</span>
           </span>
           <span class="routines-tile-chevron" aria-hidden="true"></span>
@@ -915,6 +915,7 @@
         </div>
 
           <article class="exercise-card exercise-card-active" data-open-exercise="nback" tabindex="0">
+          <span class="cogni-tag is-popular">Most popular</span>
           <div>
             <p class="exercise-type">Memory</p>
             <h2>N-Back</h2>
@@ -923,6 +924,7 @@
         </article>
 
           <article class="exercise-card exercise-card-active" data-open-exercise="rrt" tabindex="0">
+          <span class="cogni-tag is-popular">Most popular</span>
           <div>
             <p class="exercise-type">Focus</p>
             <h2>Relational Reasoning (RRT)</h2>
@@ -2702,6 +2704,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261121-iq19"></script>
+    <script type="module" src="src/app/main.js?v=20261121-iq20"></script>
   </body>
 </html>
