@@ -1,3 +1,4 @@
+import { createRelationalReasoningConfig, generateRrtTrial } from "../exercises/relationalReasoning.js";
 // Procedural item generator for the visual reasoning formats.
 //
 // Every item is built from a seed string, so an id like
@@ -419,8 +420,30 @@ function buildWeights(seed, level) {
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
-const BUILDERS = { mx: buildMatrix, rot: buildRotation, fw: buildWeights };
-const KIND_TO_FORMAT = { matrix: "mx", "mental-rotation": "rot", "figure-weights": "fw" };
+// Relational reasoning (the RRT exercise's engine, seeded): a few premises and a
+// conclusion to judge. Level sets the premise count and which relation kinds
+// appear; the words are real so the duel is about the logic, not the reading.
+function buildRelational(seed, level) {
+  const rng = rngFrom(`rrt:${seed}:${level}`);
+  const premiseCount = level <= 3 ? 2 : level <= 6 ? 3 : 4;
+  const mode = level <= 2 ? "linear" : level <= 5 ? (rng() < 0.5 ? "linear" : "distinction") : (rng() < 0.6 ? "space2d" : "linear");
+  const config = createRelationalReasoningConfig({ mode, premiseCount, vocabulary: "meaningful", autoProgression: false, timerEnabled: false });
+  const trial = generateRrtTrial(config, rng);
+  if (!trial?.premises?.length) return null;
+  return {
+    kind: "relational",
+    domain: "relational",
+    dRank: level,
+    prompt: "Given the statements, is the conclusion true?",
+    premises: trial.premises,
+    conclusion: trial.conclusion,
+    options: ["True", "False"],
+    answerIndex: trial.isTrue ? 0 : 1
+  };
+}
+
+const BUILDERS = { mx: buildMatrix, rot: buildRotation, fw: buildWeights, rrt: buildRelational };
+const KIND_TO_FORMAT = { matrix: "mx", "mental-rotation": "rot", "figure-weights": "fw", relational: "rrt" };
 const LEVEL_MIN = 1;
 const LEVEL_MAX = 9;
 
@@ -432,7 +455,7 @@ export function bToLevel(b) {
   return Math.max(LEVEL_MIN, Math.min(LEVEL_MAX, Math.round(1 + ((b + 2.5) / 5) * (LEVEL_MAX - 1))));
 }
 
-const DISCRIMINATION = { mx: 1.4, rot: 1.2, fw: 1.5 };
+const DISCRIMINATION = { mx: 1.4, rot: 1.2, fw: 1.5, rrt: 1.2 };
 
 export function generatedItemId(format, seed, slot, level) {
   return `gen-${format}-${String(seed).replace(/[^A-Za-z0-9]/g, "")}-${slot}-${level}`;
@@ -449,7 +472,7 @@ const cache = new Map();
 export function resolveGeneratedItem(id) {
   if (!isGeneratedId(id)) return null;
   if (cache.has(id)) return cache.get(id);
-  const m = /^gen-(mx|rot|fw)-([A-Za-z0-9]+)-(\d+)-(\d)$/.exec(id);
+  const m = /^gen-(mx|rot|fw|rrt)-([A-Za-z0-9]+)-(\d+)-(\d)$/.exec(id);
   if (!m) return null;
   const [, format, seed, slot, levelText] = m;
   const level = Number(levelText);

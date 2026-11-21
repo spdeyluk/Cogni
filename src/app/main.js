@@ -60,6 +60,7 @@ import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRota
 import {
   MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER,
   MEASUREMENT_BATTERIES, MEASUREMENT_BATTERY_ORDER, batteryById, batterySubtests, batteryMinutes,
+  scoreComposites, reliabilityFromStandardError, INDEX_REFERENCE_RELIABILITY,
   subtestById, subtestsForIndex, subtestMinutes, indexForItem, thetaToIndexScore,
   rarityFromPercentile, INTERPRETATION_BANDS, interpretationBand, rankedIndices,
   profileShape, scoreTrackOffset,
@@ -8639,6 +8640,15 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
              Higher than about ${pct}% of a typical population — roughly 1 in
              ${rarityFromPercentile(pct).one_in} people.`
           : "Unlock to see your percentile, index scores and the breakdown behind them."}</p>
+        ${unlocked && !focus && record.composites?.fsiq ? `
+          <dl class="mdash-method" aria-label="How the score was built">
+            <div><dt>g-loading</dt><dd>${record.composites.fsiq.gLoading.toFixed(2)}</dd></div>
+            <div><dt>Reliability</dt><dd>${record.composites.fsiq.reliability.toFixed(2)}</dd></div>
+            <div><dt>SEM</dt><dd>${record.composites.fsiq.sem.toFixed(1)}</dd></div>
+            <div><dt>95% CI</dt><dd>${record.composites.fsiq.ci.low}–${record.composites.fsiq.ci.high}</dd></div>
+            ${record.composites.gai ? `<div><dt>GAI</dt><dd>${record.composites.gai.score}</dd></div>` : ""}
+            ${record.composites.cpi ? `<div><dt>CPI</dt><dd>${record.composites.cpi.score}</dd></div>` : ""}
+          </dl>` : ""}
       </div>
 
       <div class="mdash-subtabs" role="tablist" aria-label="Which score to read">
@@ -9756,7 +9766,8 @@ function finishSubtest({ abandoned = false } = {}) {
       ci: indexConfidenceInterval(estimate.theta, estimate.se),
       answered: catActive.responses.length,
       count: catActive.responses.length,
-      itemIds: catActive.responses.map((response) => response.itemId)
+      itemIds: catActive.responses.map((response) => response.itemId),
+      responses: catActive.responses.map(({ itemId, answerIndex, correct, ms }) => ({ itemId, answerIndex, correct, ms }))
     });
   } else {
     Object.assign(result, { theta: undefined, score: null, answered: 0, count: 0, itemIds: [] });
@@ -10202,6 +10213,8 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
       score,
       percentile: scoreToPercentile(score),
       ci: Number.isFinite(se) ? indexConfidenceInterval(theta, se) : null,
+      se: Number.isFinite(se) ? Math.round(se * 1000) / 1000 : null,
+      reliability: reliabilityFromStandardError(se) ?? INDEX_REFERENCE_RELIABILITY[key],
       count: parts.reduce((sum, part) => sum + (part.count ?? 0), 0) || undefined,
       detail: parts.find((part) => part.detail)?.detail,
       subtests: parts.map((part) => part.subtestId),
@@ -10212,12 +10225,19 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
     };
   }
 
-  const composite = scoreComposite(thetas);
+  // FSIQ (and GAI / CPI when their indices are all present) the Compositator
+  // way: g-weighted, with the composite's own g-loading, reliability, SEM and a
+  // true-score 95% interval. See scoreWeightedComposite.
+  const composites = scoreComposites(indices);
+  const fsiq = composites.fsiq;
   const compositeSe = compositeStandardError(errors) ?? 0.3;
-  const score = composite ? composite.score : 100;
-  const compositeTheta = composite ? composite.theta : 0;
+  const score = fsiq ? fsiq.score : 100;
+  const compositeTheta = fsiq ? fsiq.theta : 0;
+  // Every answer, with its timing: the record a later calibration pass needs.
   const responses = Object.values(attempt.subtests)
-    .flatMap((result) => (result.itemIds ?? []).map((itemId) => ({ itemId })));
+    .flatMap((result) => result.responses?.length
+      ? result.responses.map((response) => ({ subtestId: result.subtestId, ...response }))
+      : (result.itemIds ?? []).map((itemId) => ({ subtestId: result.subtestId, itemId })));
 
   const sessionRecord = {
     id: `cat-${Date.now()}`,
@@ -10229,7 +10249,9 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
     score,
     percentile: scoreToPercentile(score),
     descriptor: scoreDescriptor(score),
-    ci: indexConfidenceInterval(compositeTheta, compositeSe),
+    ci: fsiq ? fsiq.ci : indexConfidenceInterval(compositeTheta, compositeSe),
+    composites,
+    method: "g-weighted composite; r_ij = g_i·g_j; true-score 95% CI",
     indices,
     // The archetype is derived once and stored, so past sittings can show their
     // word without recomputing (nullable when too little was measured).

@@ -25,7 +25,8 @@ export const CAT_DOMAIN_LABELS = {
   verbal: "Verbal comprehension",
   quant: "Quantitative reasoning",
   spatial: "Visual spatial",
-  weights: "Figure weights"
+  weights: "Figure weights",
+  relational: "Relational reasoning"
 };
 
 function g(s, { x = 0.5, y = 0.5, sz = 0.55, r = 0, f = 1 } = {}) {

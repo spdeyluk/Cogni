@@ -23,7 +23,7 @@ let lobbyBusy = false;
 const LOBBY_KEY = "cogni.lobby.v1";
 
 const ROUNDS = 8;
-const PLAN = ["fluid", "verbal", "quant", "fluid", "weights", "verbal", "spatial", "quant"];
+const PLAN = ["fluid", "verbal", "quant", "relational", "weights", "verbal", "spatial", "fluid"];
 // Round length. Quick battle is always two minutes; a lobby host picks one of
 // ROUND_LENGTHS. The budget is split across the eight tasks by weight, so a
 // visual puzzle (matrix, figure, scale) gets 1.5x the time of a text item.
@@ -366,7 +366,7 @@ function renderHub() {
         <details class="home-how">
           <summary>How it works</summary>
           <ol>
-            <li>Eight items: pattern, verbal, number, spatial and weights. Both players get the same set.</li>
+            <li>Eight items: pattern, verbal, number, relational, spatial and weights. Both players get the same set.</li>
             <li>Right answer is 100. Up to 50 more for speed. Nothing for a miss.</li>
             <li>Battle rating moves like chess Elo. Beat someone above you and it moves more.</li>
           </ol>
@@ -630,7 +630,7 @@ function rngFrom(seed) {
   };
 }
 
-const GENERATED_DOMAIN = { fluid: "mx", spatial: "rot", weights: "fw" };
+const GENERATED_DOMAIN = { fluid: "mx", spatial: "rot", weights: "fw", relational: "rrt" };
 
 function pickItemIds(seed) {
   const rng = rngFrom(seed);
@@ -651,7 +651,7 @@ function pickItemIds(seed) {
 
 function newSeed() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`; }
 
-function itemWeight(item) { return (item.matrix || item.figure || item.weights) ? VISUAL_WEIGHT : TEXT_WEIGHT; }
+function itemWeight(item) { return (item.matrix || item.figure || item.weights || item.premises) ? VISUAL_WEIGHT : TEXT_WEIGHT; }
 function roundMsOf(row) {
   const ms = Number(row?.round_ms);
   return Number.isFinite(ms) && ms >= 30000 ? ms : QUICK_ROUND_MS;
@@ -902,7 +902,9 @@ function renderArena() {
 
   const stage = item.matrix ? d.catMatrixSvg(item.matrix)
     : item.figure ? `<div class="cat-figure-target">${d.catCellSvg(item.figure.target)}</div>`
-    : item.weights ? d.catWeightsSvg(item.weights) : "";
+    : item.weights ? d.catWeightsSvg(item.weights)
+    : item.premises ? `<div class="battle-premises"><ol>${item.premises.map((p) => `<li>${esc(p)}</li>`).join("")}</ol><p class="battle-conclusion"><span>Conclusion</span>${esc(item.conclusion)}</p></div>`
+    : "";
 
   const options = item.weights ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.weights.optionCells[src])}</button>`)
     : item.figure ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.figure.optionCells[src])}</button>`)

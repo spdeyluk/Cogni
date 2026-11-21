@@ -1361,3 +1361,16 @@ html.mode-pro .qb-options button.is-correct { border-color: var(--iq-teal) !impo
 html.mode-pro .qb-options button i { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; color: var(--iq-teal); font-weight: 700; }
 html.mode-pro .measure-board-browse { justify-self: center; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
 html.mode-pro .measure-board-browse:hover { color: var(--text); background: var(--fill-subtle); }
+
+/* Report: how the composite was built (g-loading, reliability, SEM, CI, GAI, CPI). */
+html.mode-pro .mdash-method { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+html.mode-pro .mdash-method div { display: grid; gap: 2px; }
+html.mode-pro .mdash-method dt { color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+html.mode-pro .mdash-method dd { margin: 0; color: var(--text); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Battle: relational items read as a short list of premises and a conclusion. */
+html.mode-pro .battle-premises { width: min(520px, 100%); margin: 0 auto; text-align: left; }
+html.mode-pro .battle-premises ol { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; counter-reset: premise; }
+html.mode-pro .battle-premises li { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 17px; line-height: 1.35; color: var(--text); }
+html.mode-pro .battle-conclusion { margin: 0; padding: 10px 14px; border-left: 2px solid var(--text); font-size: 17px; font-weight: 600; line-height: 1.35; color: var(--text); }
+html.mode-pro .battle-conclusion span { display: block; margin-bottom: 2px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }

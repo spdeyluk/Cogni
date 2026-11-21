@@ -412,6 +412,96 @@ export function scoreComposite(indexThetas = {}) {
   return { theta, score: thetaToIndexScore(theta), indexCount: values.length, provisional: true };
 }
 
+// --- Composites, the way CognitiveMetrics' Compositator builds them --------
+// Each index enters with its g-loading as weight. Indices are assumed to
+// correlate through g alone (r_ij = g_i·g_j). From those terms alone come the
+// composite score, its g-loading, its reliability (Mosier) and a 95% interval
+// around the estimated true score, which regresses toward the mean the way a
+// published test report does. Checked against the Compositator's own output
+// (indices 130/120/110/100/90/80 → FSIQ 108, g .95, α .98, CI 103–113).
+//
+// The g-loadings and fallback reliabilities are the WAIS-IV-era reference
+// values that tool ships as defaults. An index measured here carries its own
+// reliability, implied by the standard error of its ability estimate; the
+// reference value only fills in when no error is known.
+export const INDEX_G_LOADINGS = { vci: 0.91, fri: 0.81, vsi: 0.64, qri: 0.84, wmi: 0.72, psi: 0.68 };
+export const INDEX_REFERENCE_RELIABILITY = { vci: 0.91, fri: 0.89, vsi: 0.88, qri: 0.93, wmi: 0.92, psi: 0.87 };
+export const COMPOSITE_DEFINITIONS = {
+  fsiq: { key: "fsiq", short: "FSIQ", name: "Full Scale IQ", indices: ["vci", "fri", "vsi", "qri", "wmi", "psi"] },
+  gai: { key: "gai", short: "GAI", name: "General Ability Index", indices: ["vci", "fri", "vsi", "qri"] },
+  cpi: { key: "cpi", short: "CPI", name: "Cognitive Proficiency Index", indices: ["wmi", "psi"] }
+};
+
+/** Reliability implied by an ability estimate's standard error (true-score variance 1). */
+export function reliabilityFromStandardError(se) {
+  if (!Number.isFinite(se) || se <= 0) return null;
+  return Math.round(clamp(1 / (1 + se * se), 0.5, 0.97) * 1000) / 1000;
+}
+
+/**
+ * A g-weighted composite of index scores.
+ * parts: [{ key, score, reliability? }] on the mean-100 / SD-15 scale.
+ */
+export function scoreWeightedComposite(parts, { z = 1.96 } = {}) {
+  const rows = (parts ?? [])
+    .filter((part) => Number.isFinite(part?.score) && INDEX_G_LOADINGS[part.key])
+    .map((part) => ({
+      key: part.key,
+      g: INDEX_G_LOADINGS[part.key],
+      z: (part.score - MEASUREMENT_SCALE.mean) / MEASUREMENT_SCALE.sd,
+      rel: Number.isFinite(part.reliability) ? part.reliability : INDEX_REFERENCE_RELIABILITY[part.key]
+    }));
+  if (!rows.length) return null;
+  let numerator = 0;
+  let variance = 0;
+  let gNumerator = 0;
+  let relNumerator = 0;
+  rows.forEach((row, i) => {
+    numerator += row.g * row.z;
+    variance += row.g * row.g;
+    gNumerator += row.g * row.g;
+    relNumerator += row.g * row.g * row.rel;
+    for (let j = i + 1; j < rows.length; j += 1) {
+      const cov = 2 * row.g * rows[j].g * (row.g * rows[j].g);
+      variance += cov;
+      relNumerator += cov;
+    }
+  });
+  const sd = Math.sqrt(variance);
+  const theta = numerator / sd;
+  const raw = MEASUREMENT_SCALE.mean + MEASUREMENT_SCALE.sd * theta;
+  const score = Math.round(raw);
+  const reliability = clamp(relNumerator / variance, 0, 0.999);
+  const gLoading = gNumerator / sd;
+  const sem = MEASUREMENT_SCALE.sd * Math.sqrt(Math.max(0, 1 - reliability));
+  // The interval sits around the estimated true score of the unrounded
+  // composite and is reported conservatively: floor below, ceiling above.
+  const trueScore = MEASUREMENT_SCALE.mean + reliability * (raw - MEASUREMENT_SCALE.mean);
+  const half = z * MEASUREMENT_SCALE.sd * Math.sqrt(Math.max(0, reliability * (1 - reliability)));
+  return {
+    score,
+    theta: Math.round(theta * 1000) / 1000,
+    gLoading: Math.round(gLoading * 100) / 100,
+    reliability: Math.round(reliability * 1000) / 1000,
+    sem: Math.round(sem * 10) / 10,
+    ci: { low: Math.floor(trueScore - half), high: Math.ceil(trueScore + half) },
+    percentile: scoreToPercentile(score),
+    indices: rows.map((row) => row.key)
+  };
+}
+
+/** FSIQ, GAI and CPI from the index records of a sitting ({ key: { score, reliability } }). */
+export function scoreComposites(indices = {}) {
+  const out = {};
+  for (const def of Object.values(COMPOSITE_DEFINITIONS)) {
+    const parts = def.indices.map((key) => ({ key, score: indices[key]?.score, reliability: indices[key]?.reliability }));
+    const composite = scoreWeightedComposite(parts);
+    // A secondary composite only means something with every index it is made of.
+    out[def.key] = composite && (def.key === "fsiq" || composite.indices.length === def.indices.length) ? { ...composite, key: def.key, short: def.short, name: def.name } : null;
+  }
+  return out;
+}
+
 /**
  * Standard error of a composite of independent index estimates, used for the
  * confidence band. Averaging k estimates divides the variance by k.
