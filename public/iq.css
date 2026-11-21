@@ -1199,10 +1199,12 @@ html.mode-pro .web-onboarding .ob-battery > button.active { color: var(--btn-tex
 /* IQ tab while the month has no sitting (html.iq-due): a soft light sweep and
    a teal glow on the brain, only when the IQ page is not the one open. */
 html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) { position: relative; overflow: hidden; color: var(--text) !important; }
-html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after { content: ""; position: absolute; inset: -2px; background: linear-gradient(105deg, transparent 32%, color-mix(in srgb, var(--iq-teal) 26%, transparent) 50%, transparent 68%); transform: translateX(-130%); animation: iq-sweep 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; pointer-events: none; }
-html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { color: var(--iq-teal); animation: iq-glow 3.2s ease-in-out infinite; }
+html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after { content: ""; position: absolute; inset: -2px; background: linear-gradient(105deg, transparent 32%, color-mix(in srgb, var(--iq-teal) 26%, transparent) 50%, transparent 68%); transform: translateX(-130%); animation: iq-sweep 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; pointer-events: none; }
+/* The brain stays ink-black and flashes teal as the band crosses it (the band
+   reaches the icon about a third of the way into each cycle). */
+html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { color: var(--text); animation: iq-glow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 @keyframes iq-sweep { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
-@keyframes iq-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(15, 155, 142, 0)); } 50% { filter: drop-shadow(0 0 6px rgba(15, 155, 142, 0.75)); } }
+@keyframes iq-glow { 0%, 20%, 46%, 100% { color: var(--text); filter: drop-shadow(0 0 0 rgba(15, 155, 142, 0)); } 31% { color: var(--iq-teal); filter: drop-shadow(0 0 6px rgba(15, 155, 142, 0.7)); } }
 @media (prefers-reduced-motion: reduce) { html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after, html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { animation: none; } }
 
 /* Tags, measured from FaceIQ (2026-11-21). PRO is a superscript badge pinned to
@@ -1244,3 +1246,48 @@ html.mode-pro .mdash-pillar-view:active, html.mode-pro .mdash-pillar:active .mda
 
 /* Vocabulary items: the instruction sits under the word, every time. */
 html.mode-pro .cat-instruction { margin: 0 0 6px; color: var(--text-2); font-size: 15px; font-weight: 500; letter-spacing: -0.005em; }
+
+/* ===================================================================
+   Mid-test board (2026-11-21): the attempt underway is a clean list of
+   subtests on the left and one detail panel on the right. Monochrome:
+   no ability dots, no chips, no teaser copy. "Start a new test" is now
+   "End test" under the panel.
+   =================================================================== */
+html.mode-pro .measure-subtests-back, html.mode-pro .measure-subtests-head { display: none !important; }
+html.mode-pro .measure-subtests-bar { padding: 0 !important; margin: 0 !important; min-height: 0 !important; border: 0 !important; }
+html.mode-pro .measure-section-dot, html.mode-pro .measure-section-chc, html.mode-pro .measure-detail-eyebrow i { display: none !important; }
+html.mode-pro #measure-hub-cats, html.mode-pro #results-teaser, html.mode-pro #measure-restart { display: none !important; }
+html.mode-pro .measure-picker.is-subtests .measure-picker-body { grid-template-columns: minmax(0, 1fr) 360px !important; gap: 40px !important; padding-top: 6px; }
+html.mode-pro .measure-board-head { margin: 0 0 6px; }
+html.mode-pro .measure-board-eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+html.mode-pro #measure-sections .measure-board-title { margin: 0 0 10px !important; font-family: var(--font-iq-serif) !important; font-weight: 400 !important; font-size: clamp(30px, 3.4vw, 42px); line-height: 1.05; letter-spacing: -0.01em; color: var(--text); }
+html.mode-pro .measure-board-sub { margin: 0; max-width: 52ch; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
+html.mode-pro .measure-section-title { color: var(--muted) !important; }
+html.mode-pro .measure-subtest { border-top-color: var(--line) !important; }
+html.mode-pro .measure-subtest.is-selected { background: var(--fill-subtle) !important; }
+html.mode-pro .measure-detail { top: 20px; display: grid; gap: 14px; }
+html.mode-pro .measure-board-progress { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+html.mode-pro .measure-board-progress-text { display: grid; gap: 4px; }
+html.mode-pro .measure-board-progress-text span { color: var(--muted); font-size: 12px; font-weight: 500; }
+html.mode-pro .measure-board-progress-text strong { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+html.mode-pro .measure-board-ring { width: 56px; height: 56px; flex: none; transform: rotate(-90deg); }
+html.mode-pro .measure-board-ring circle { fill: none; stroke: var(--line); stroke-width: 4; }
+html.mode-pro .measure-board-ring circle + circle { stroke: var(--text); stroke-linecap: round; transition: stroke-dashoffset 600ms var(--ease-out); }
+html.mode-pro .measure-board-ring text { transform: rotate(90deg); transform-origin: 24px 24px; fill: var(--text); font-size: 11px; font-weight: 600; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+html.mode-pro .measure-board-progress.is-done circle + circle { stroke: var(--iq-teal); }
+html.mode-pro .measure-board-results { width: 100%; min-height: 48px; border: 0; border-radius: 999px; background: var(--btn-fill); color: var(--btn-text); font-size: 15px; font-weight: 500; cursor: pointer; box-shadow: 0 12px 30px -14px rgba(15, 17, 21, 0.5); transition: transform 140ms var(--ease-out), background 140ms var(--ease-out); }
+html.mode-pro .measure-board-results:hover { background: var(--btn-fill-hover); transform: translateY(-1px); }
+html.mode-pro .measure-board-results:active { transform: scale(0.98); }
+html.mode-pro .measure-detail-card { padding: 22px 22px 24px !important; border-radius: 16px !important; gap: 0 !important; }
+html.mode-pro .measure-detail-eyebrow { color: var(--muted) !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 0.14em !important; text-transform: uppercase !important; }
+html.mode-pro .measure-detail-title { margin: 6px 0 14px !important; color: var(--text) !important; font-family: var(--font-iq-serif) !important; font-weight: 400 !important; font-size: 30px !important; line-height: 1.08 !important; letter-spacing: -0.01em !important; }
+html.mode-pro .measure-detail-body { color: var(--text-2) !important; font-size: 14px !important; line-height: 1.55 !important; }
+html.mode-pro .measure-detail-card .measure-terms, html.mode-pro .measure-detail-card .measure-aids { color: var(--muted) !important; font-size: 12.5px !important; line-height: 1.5 !important; }
+html.mode-pro .measure-detail-card .measure-start { width: 100%; min-height: 48px; margin-top: 16px; border: 0 !important; border-radius: 999px !important; background: var(--btn-fill) !important; color: var(--btn-text) !important; font-size: 15px !important; font-weight: 500 !important; box-shadow: 0 12px 30px -14px rgba(15, 17, 21, 0.5) !important; transition: transform 140ms var(--ease-out), background 140ms var(--ease-out) !important; }
+html.mode-pro .measure-detail-card .measure-start:hover { background: var(--btn-fill-hover) !important; transform: translateY(-1px); }
+html.mode-pro .measure-detail-card .measure-start:active { transform: scale(0.98); }
+html.mode-pro .measure-detail-done { margin-top: 16px; color: var(--text-2) !important; }
+html.mode-pro .measure-detail-done-tick { color: var(--iq-teal) !important; }
+html.mode-pro .measure-board-end { justify-self: center; padding: 8px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
+html.mode-pro .measure-board-end:hover { color: var(--text); background: var(--fill-subtle); }
+@media (max-width: 960px) { html.mode-pro .measure-picker.is-subtests .measure-picker-body { grid-template-columns: minmax(0, 1fr) !important; gap: 28px !important; } html.mode-pro .measure-detail { position: static; } }

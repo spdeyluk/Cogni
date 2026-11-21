@@ -8936,6 +8936,7 @@ let resultsTeaserTimer = null;
 // slowly through every archetype. Calm (3s a word), and static under
 // prefers-reduced-motion.
 function renderResultsTeaser() {
+  if (cogniUiMode === "pro") { const host = document.querySelector("#results-teaser"); if (host) { host.hidden = true; host.innerHTML = ""; } return; }
   const host = document.querySelector("#results-teaser");
   if (!host) return;
   if (resultsTeaserTimer) { clearInterval(resultsTeaserTimer); resultsTeaserTimer = null; }
@@ -8991,6 +8992,7 @@ function sessionArchetype(record) {
 // carrying that index's accent so the card has colour and says what the test
 // touches at a glance.
 function renderMeasureCats() {
+  if (cogniUiMode === "pro") { const host = document.querySelector("#measure-hub-cats"); if (host) host.innerHTML = ""; return; }
   const host = document.querySelector("#measure-hub-cats");
   if (!host) return;
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
@@ -9015,6 +9017,9 @@ function renderMeasurePicker(selectedId) {
     // be undone here as well as in the dashboard, because the sales page
     // returns before the dashboard ever runs.
     document.documentElement.classList.remove("mdash-on");
+    measureSubtestsOpen = false;
+    measureBoardSelection = null;
+    document.querySelector("#cat-intro")?.classList.remove("is-subtests");
     const topbar = document.querySelector("#mdash-topbar");
     if (topbar) topbar.innerHTML = "";
     renderMeasurementSales();
@@ -9052,13 +9057,23 @@ function renderMeasurePicker(selectedId) {
   document.querySelector("#cat-intro")?.classList.toggle("is-report-only", !takingTest);
   // The subtest picker is a distinct screen the card's CTA opens; the two never
   // show at once.
+  // On the web an attempt underway is always shown as the board (subtest list
+  // plus a detail panel), never as the overview card.
+  if (cogniUiMode === "pro" && takingTest && measureAttemptStarted()) measureSubtestsOpen = true;
   document.querySelector("#cat-intro")?.classList.toggle("is-subtests", measureSubtestsOpen);
   // Reading a report is its own area — the card, side list and subtest grid all
   // step aside so the dashboard stands alone.
   document.querySelector("#cat-intro")?.classList.toggle("is-report-open", measurementReportOpen);
   renderMeasureHub(attempt, done, total, takingTest);
 
-  host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
+  const nextUndone = attemptSubtests(attempt).find((subtest) => !attempt.subtests[subtest.id]) ?? null;
+  const boardHead = cogniUiMode !== "pro" ? "" : `
+    <header class="measure-board-head">
+      <p class="measure-board-eyebrow">Cogni IQ test · ${escapeHtml(battery.name)}</p>
+      <h2 class="measure-board-title">${done === 0 ? "Pick your first subtest." : done >= total ? "Every subtest done." : `${done} of ${total} subtests done.`}</h2>
+      <p class="measure-board-sub">${done >= total ? "Your score is ready on the right." : "Take them in any order. Each is one sitting: you can stop early, but you can't come back to it."}</p>
+    </header>`;
+  host.innerHTML = boardHead + MEASUREMENT_INDEX_ORDER.map((key) => {
     const meta = MEASUREMENT_INDICES[key];
     const rows = subtestsForIndex(key, battery.id).map((subtest) => {
       const result = attempt.subtests[subtest.id];
@@ -9082,11 +9097,21 @@ function renderMeasurePicker(selectedId) {
       </section>`;
   }).join("");
 
-  // Pick any subtest, in any order — each opens its brief, then the sitting.
+  // Pick any subtest, in any order. On the web a row selects it and the detail
+  // panel explains it (Start lives there); native opens the brief directly.
   host.querySelectorAll("[data-subtest]").forEach((button) => {
-    button.addEventListener("click", () => openMeasureStartDialog(button.dataset.subtest));
+    button.addEventListener("click", () => {
+      if (cogniUiMode === "pro") { measureBoardSelection = button.dataset.subtest; renderSubtestDetail(button.dataset.subtest); return; }
+      openMeasureStartDialog(button.dataset.subtest);
+    });
   });
+  if (cogniUiMode === "pro" && measureSubtestsOpen) {
+    // A row the person clicked wins; otherwise the next subtest still to take.
+    const clicked = measureBoardSelection && attemptSubtests(attempt).some((subtest) => subtest.id === measureBoardSelection) ? measureBoardSelection : null;
+    renderSubtestDetail(clicked ?? nextUndone?.id ?? selectedId ?? attemptSubtests(attempt)[0]?.id);
+  }
 }
+let measureBoardSelection = null;
 
 // The test hub — now the whole page. It always presents as one card: what the
 // test measures, the state of your current attempt, the way in, and the scores
@@ -9400,6 +9425,8 @@ document.querySelector("#measure-restart-cancel")?.addEventListener("click", () 
 document.querySelector("#measure-restart-confirm")?.addEventListener("click", () => {
   document.querySelector("#measure-restart-dialog")?.close();
   clearMeasureAttempt();
+  measureSubtestsOpen = false;
+  measureBoardSelection = null;
   renderMeasurePicker();
   document.querySelector("#measure-hub")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
@@ -9420,7 +9447,7 @@ function renderSubtestDetail(subtestId) {
   const length = subtest.engine === "span"
     ? "Adaptive length — it grows until you miss twice."
     : `This subtest contains ${subtest.questions} questions.`;
-  panel.innerHTML = `
+  const cardHtml = `
     <div class="measure-detail-card" style="--index-accent:${indexAccent(subtest.index)}">
       <span class="measure-detail-eyebrow"><i aria-hidden="true"></i>${escapeHtml(meta.name)}</span>
       <h3 class="measure-detail-title">${escapeHtml(subtest.name)}</h3>
@@ -9441,10 +9468,58 @@ function renderSubtestDetail(subtestId) {
                ? `Stopped early — scored on ${result.answered ?? 0} answer${(result.answered ?? 0) === 1 ? "" : "s"}`
                : "Completed"}${unlocked && Number.isFinite(result.score) ? ` · ${meta.short} ${result.score}` : ""}</span>
            </div>`
-        : `<button class="measure-start" data-start-subtest="${escapeHtml(subtest.id)}" type="button">Start <span aria-hidden="true">→</span></button>`}
+        : `<button class="measure-start" data-start-subtest="${escapeHtml(subtest.id)}" type="button">${cogniUiMode === "pro" ? "Start this subtest" : 'Start <span aria-hidden="true">→</span>'}</button>`}
     </div>`;
 
+  if (cogniUiMode !== "pro") {
+    panel.innerHTML = cardHtml;
+    panel.querySelector("[data-start-subtest]")?.addEventListener("click", () => startSubtest(subtest.id));
+    return;
+  }
+  // Web: the panel is the right column of the board. Progress on top, the
+  // explanation and Start in the middle, End test underneath. Once every
+  // subtest is done, Get results takes the primary spot.
+  panel.hidden = false;
+  const done = measureCompletedCount(attempt);
+  const total = attemptSubtests(attempt).length;
+  const allDone = total > 0 && done >= total;
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  panel.innerHTML = `
+    <div class="measure-board-progress${allDone ? " is-done" : ""}">
+      <div class="measure-board-progress-text">
+        <span>Total progress</span>
+        <strong>${done} / ${total} subtests</strong>
+      </div>
+      <svg class="measure-board-ring" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="${radius}"/>
+        <circle cx="24" cy="24" r="${radius}" style="stroke-dasharray:${circumference.toFixed(2)};stroke-dashoffset:${(circumference * (1 - (total ? done / total : 0))).toFixed(2)}"/>
+        <text x="24" y="24">${Math.round(total ? done / total * 100 : 0)}%</text>
+      </svg>
+    </div>
+    ${allDone ? `<button class="measure-board-results" data-board-results type="button">Get results</button>` : ""}
+    ${cardHtml}
+    ${allDone ? "" : `<button class="measure-board-end" data-board-end type="button">End test</button>`}`;
   panel.querySelector("[data-start-subtest]")?.addEventListener("click", () => startSubtest(subtest.id));
+  panel.querySelector("[data-board-results]")?.addEventListener("click", () => {
+    const current = loadMeasureAttempt();
+    if (measureCompletedCount(current) < attemptSubtests(current).length) return;
+    finishMeasurement(current, { destination: "dashboard" });
+  });
+  panel.querySelector("[data-board-end]")?.addEventListener("click", () => {
+    const dialog = document.querySelector("#measure-restart-dialog");
+    if (!dialog) return;
+    const finished = measureCompletedCount(loadMeasureAttempt());
+    const title = dialog.querySelector("h3");
+    if (title) title.textContent = "End this test?";
+    const copy = dialog.querySelector("#measure-restart-copy");
+    if (copy) copy.textContent = finished === 0
+      ? "Nothing has been answered yet, so nothing is lost. You can start again whenever you like."
+      : `The ${finished} subtest${finished === 1 ? "" : "s"} you finished in this attempt ${finished === 1 ? "is" : "are"} discarded. Reports you already earned are kept.`;
+    const confirm = dialog.querySelector("#measure-restart-confirm");
+    if (confirm) confirm.textContent = "End test";
+    dialog.showModal();
+  });
 }
 
 // Building the fixed-length item run for a subtest: drawn from that subtest's
