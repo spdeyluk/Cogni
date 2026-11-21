@@ -308,10 +308,16 @@ const routeTabToPath = {
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
-  statistics: "/profile"
+  // The web has no Profile page: account things live in Settings, opened from
+  // the rail's account card. The native app keeps its Profile tab.
+  ...(cogniUiMode === "pro" ? {} : { statistics: "/profile" })
 };
 // Paths that used to exist, kept so old links and bookmarks still land somewhere.
-const legacyRoutePaths = { "/assessments": "assessments", "/screen-time": "exercises" };
+const legacyRoutePaths = {
+  "/assessments": "assessments",
+  "/screen-time": "exercises",
+  ...(cogniUiMode === "pro" ? { "/profile": "assessments" } : {})
+};
 const routePathToTab = {
   ...legacyRoutePaths,
   ...Object.fromEntries(Object.entries(routeTabToPath).map(([tab, path]) => [path, tab]))
@@ -321,7 +327,7 @@ function routeTabHandler(tab) {
     battle: showBattle,
     exercises: showExerciseHub,
     assessments: showAssessments,
-    statistics: showStatistics,
+    statistics: cogniUiMode === "pro" ? showAssessments : showStatistics,
     community: showCommunity,
     home: showHome,
     friends: showFriendsPage
@@ -365,6 +371,10 @@ if (cogniUiMode === "pro") {
       // since the section handlers assume the app is already visible.
       enterApp();
       routeTabHandler(tab)();
+      // A legacy path (e.g. /profile on the web) shows its new home; the URL
+      // follows so the bar never names a page that no longer exists.
+      const canonical = routeTabToPath[tab];
+      if (canonical && canonical !== path) history.replaceState({ tab }, "", canonical);
     } else {
       showLanding();
       if (path !== "/") history.replaceState({ landing: true }, "", "/");
@@ -1533,9 +1543,10 @@ function markWebOnboardingSeen() {
   try { localStorage.setItem(WEB_ONBOARDING_KEY, "1"); } catch { /* private mode */ }
 }
 
-// A few quick questions after sign-in, before the first test. Answers land on
-// onboardingAnswers (the same object the native story uses) and persist.
-const WEB_ONBOARDING_QUESTIONS = [
+// The post-sign-in walk: who you are, then what Cogni is — the test, Exercises,
+// Battle — then straight into the first test. Answers land on onboardingAnswers
+// (the same object the native story uses) and persist.
+const WEB_ONBOARDING_STEPS = [
   {
     key: "name", type: "text",
     eyebrow: "Welcome to Cogni",
@@ -1549,27 +1560,85 @@ const WEB_ONBOARDING_QUESTIONS = [
     options: [["u18", "Under 18"], ["18-24", "18–24"], ["25-34", "25–34"], ["35-44", "35–44"], ["45-54", "45–54"], ["55+", "55 or older"]]
   },
   {
-    key: "education", type: "choice",
-    eyebrow: "A little about you",
-    title: "Your highest level of education?",
-    options: [["hs", "High school"], ["some-college", "Some college"], ["bachelors", "Bachelor's"], ["masters", "Master's"], ["doctorate", "Doctorate"], ["other", "Other"]]
-  },
-  {
     key: "reason", type: "choice",
     eyebrow: "What brings you here",
     title: "What do you most want to improve?",
     options: [["iq", "My cognitive score"], ["focus", "Focus & attention"], ["memory", "Memory"], ["academic", "Academic performance"], ["career", "Career & work"], ["general", "General sharpness"]]
-  }
+  },
+  {
+    key: "tour-test", type: "tour", visual: "test",
+    eyebrow: "What Cogni is",
+    title: "An IQ test built from six abilities.",
+    body: "Short subtests in verbal, reasoning, spatial, numerical, memory and speed give you one IQ score with its margin of error, and a report that names your strongest and weakest ability."
+  },
+  {
+    key: "tour-exercises", type: "tour", visual: "exercises",
+    eyebrow: "Exercises",
+    title: "Train whatever the report finds weak.",
+    body: "N-Back, relational reasoning, cognitive control and speed drills. Every exercise is free, at every difficulty, as often as you like."
+  },
+  {
+    key: "tour-battle", type: "tour", visual: "battle",
+    eyebrow: "Battle",
+    title: "Go head to head on the same tasks.",
+    body: "Quick 1v1 matches and private lobbies with friends. A rating that moves, and your IQ next to your name on the leaderboard."
+  },
+  { key: "start", type: "start", eyebrow: "Your baseline" }
 ];
 
 function saveWebOnboardingAnswers() {
   try { localStorage.setItem(onboardingAnswersKey, JSON.stringify(onboardingAnswers)); } catch { /* best effort */ }
 }
 
+function webOnboardingFirstName() {
+  return String(onboardingAnswers.name || "").trim().split(/\s+/)[0] || "";
+}
+
+// Small, static illustrations for the tour — built from the same pieces the
+// product uses (report cards, exercise tiles, a battle scoreline), so the walk
+// shows what the pages actually look like.
+function webOnboardingVisual(kind) {
+  if (kind === "test") {
+    const sample = [["Verbal", 112], ["Reasoning", 127], ["Spatial", 119], ["Numerical", 108], ["Memory", 115], ["Speed", 104]];
+    return `
+      <div class="ob-visual ob-visual-test" aria-hidden="true">
+        <div class="iq-preview-overall"><small>Overall IQ</small><strong data-tone="high">118</strong><em>Above average · Top 12%</em></div>
+        <div class="iq-preview-cards">${sample.map(([name, v]) => `<div class="iq-preview-card"><small>${name}</small><strong data-tone="${scoreTone(v)}">${v}</strong></div>`).join("")}</div>
+      </div>`;
+  }
+  if (kind === "exercises") {
+    const tiles = [["N-Back", "Working memory", 72], ["Relational Reasoning", "Fluid reasoning", 48], ["Cognitive Control", "Focus", 61]];
+    return `
+      <div class="ob-visual ob-visual-exercises" aria-hidden="true">
+        ${tiles.map(([name, ability, pct]) => `
+          <div class="ob-tile">
+            <span class="ob-tile-chip">Free</span>
+            <b>${name}</b><small>${ability}</small>
+            <i class="ob-tile-bar"><em style="width:${pct}%"></em></i>
+          </div>`).join("")}
+      </div>`;
+  }
+  if (kind === "battle") {
+    const you = (webOnboardingFirstName() || "You").slice(0, 1).toUpperCase();
+    const rounds = "YTYYTYYTTYYT".split("");
+    return `
+      <div class="ob-visual ob-visual-battle" aria-hidden="true">
+        <div class="ob-duel">
+          <div class="ob-duelist"><span class="ob-duel-avatar">${you}</span><b>You</b><small>1240</small></div>
+          <div class="ob-duel-score"><b>7</b><span>–</span><b>5</b><small>Best of 12 · 2:00</small></div>
+          <div class="ob-duelist"><span class="ob-duel-avatar is-them">N</span><b>Noa</b><small>1215</small></div>
+        </div>
+        <div class="ob-duel-strip">${rounds.map((r) => `<i class="${r === "Y" ? "is-you" : "is-them"}"></i>`).join("")}</div>
+      </div>`;
+  }
+  return "";
+}
+
 // A plain fixed-position overlay (not a <dialog>) so it works identically on
 // every browser — no showModal()/::backdrop/dvh, which vary across iOS Safari
 // versions and were the likeliest cause of a blank screen after sign-in. There
-// is no Skip and no Escape — onboarding is required before the test.
+// is no Skip and no Escape — the walk is short and it ends at the test.
+// onDone receives { start: true } when the last step's button was "Start".
 function showWebOnboarding(onDone = () => {}) {
   if (document.querySelector("#web-onboarding")) return;
   const overlay = document.createElement("div");
@@ -1577,83 +1646,141 @@ function showWebOnboarding(onDone = () => {}) {
   overlay.id = "web-onboarding";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
+  overlay.innerHTML = `
+    <div class="web-onboarding-inner">
+      <header class="web-onboarding-top">
+        <span class="web-onboarding-brand"><img src="assets/brand/logo-brain.png" alt="">Cogni</span>
+        <span class="web-onboarding-count" id="web-onboarding-count"></span>
+      </header>
+      <div class="web-onboarding-progress" aria-hidden="true"><i id="web-onboarding-bar"></i></div>
+      <div class="web-onboarding-stage" id="web-onboarding-stage"></div>
+    </div>`;
+  const stage = overlay.querySelector("#web-onboarding-stage");
+  const bar = overlay.querySelector("#web-onboarding-bar");
+  const count = overlay.querySelector("#web-onboarding-count");
   let index = 0;
-  const total = WEB_ONBOARDING_QUESTIONS.length;
-  const answered = (q) => {
-    const value = onboardingAnswers[q.key];
-    return q.type === "text" ? !!(value && String(value).trim()) : !!value;
+  const total = WEB_ONBOARDING_STEPS.length;
+  const answered = (step) => {
+    if (step.type === "tour" || step.type === "start") return true;
+    const value = onboardingAnswers[step.key];
+    return step.type === "text" ? !!(value && String(value).trim()) : !!value;
   };
+  const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
   const render = () => {
-    const q = WEB_ONBOARDING_QUESTIONS[index];
+    const step = WEB_ONBOARDING_STEPS[index];
     const isLast = index === total - 1;
-    const field = q.type === "text"
-      ? `<input type="text" class="web-onboarding-input" id="web-onboarding-input"
-                placeholder="${escapeHtml(q.placeholder || "")}"
-                value="${escapeHtml(onboardingAnswers[q.key] || "")}"
-                autocomplete="off" autocapitalize="words" maxlength="40" />`
-      : `<div class="web-onboarding-options" role="listbox">
-          ${q.options.map(([value, label]) => `
-            <button type="button" class="web-onboarding-option${onboardingAnswers[q.key] === value ? " is-selected" : ""}"
+    if (bar) bar.style.width = `${((index + 1) / total * 100).toFixed(1)}%`;
+    if (count) count.textContent = `${index + 1} / ${total}`;
+    const eyebrow = step.eyebrow;
+    let title = step.title;
+    let body = step.body ? `<p class="web-onboarding-body">${escapeHtml(step.body)}</p>` : "";
+    let field = "";
+    let actions = "";
+    if (step.type === "text") {
+      field = `<input type="text" class="web-onboarding-input" id="web-onboarding-input"
+                placeholder="${escapeHtml(step.placeholder || "")}"
+                value="${escapeHtml(onboardingAnswers[step.key] || "")}"
+                autocomplete="off" autocapitalize="words" maxlength="40" />`;
+    } else if (step.type === "choice") {
+      field = `<div class="web-onboarding-options" role="listbox">
+          ${step.options.map(([value, label]) => `
+            <button type="button" class="web-onboarding-option${onboardingAnswers[step.key] === value ? " is-selected" : ""}"
                     data-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`).join("")}
          </div>`;
-    overlay.innerHTML = `
-      <div class="web-onboarding-inner">
-        <div class="web-onboarding-slide web-onboarding-slide-q">
-          <p class="web-onboarding-eyebrow">${escapeHtml(q.eyebrow)}</p>
-          <h2 class="web-onboarding-title">${escapeHtml(q.title)}</h2>
-          ${field}
-        </div>
-        <div class="web-onboarding-footer">
-          <div class="web-onboarding-dots" aria-hidden="true">
-            ${WEB_ONBOARDING_QUESTIONS.map((_, i) => `<span class="${i === index ? "is-active" : ""}"></span>`).join("")}
-          </div>
-          <div class="web-onboarding-actions">
-            ${index > 0 ? `<button type="button" class="web-onboarding-back" data-onboard-back>Back</button>` : ""}
-            <button type="button" class="web-onboarding-next" data-onboard-next ${answered(q) ? "" : "disabled"}>${isLast ? "Done" : "Continue"}</button>
-          </div>
+    } else if (step.type === "tour") {
+      field = webOnboardingVisual(step.visual);
+    } else if (step.type === "start") {
+      const name = webOnboardingFirstName();
+      if (iqTestAvailable()) {
+        const battery = batteryById(measureBatteryChoice);
+        title = name ? `${name}, pick your first test.` : "Pick your first test.";
+        body = `<p class="web-onboarding-body">One sitting sets your baseline. The full test is the most precise; the Mini covers the same six abilities in about ${batteryMinutes("mini")} minutes.</p>`;
+        field = `<div class="seg-sliding iq-battery ob-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(battery.id)}</div>`;
+        actions = `<button type="button" class="web-onboarding-later" data-onboard-finish>Look around first</button>
+          <button type="button" class="web-onboarding-next" data-onboard-start>Start the ${battery.id === "mini" ? "Mini" : "IQ"} test${arrow}</button>`;
+      } else {
+        title = name ? `You're in, ${name}.` : "You're in.";
+        body = `<p class="web-onboarding-body">The IQ test is being calibrated and opens soon. Until then every exercise is open — free, at every difficulty.</p>`;
+        actions = `<button type="button" class="web-onboarding-next" data-onboard-finish>Open Exercises${arrow}</button>`;
+      }
+    }
+    if (!actions) {
+      actions = `<button type="button" class="web-onboarding-next" data-onboard-next ${answered(step) ? "" : "disabled"}>${isLast ? "Done" : "Continue"}${arrow}</button>`;
+    }
+    stage.innerHTML = `
+      <div class="web-onboarding-slide web-onboarding-slide-q web-onboarding-slide-${step.type}">
+        <p class="web-onboarding-eyebrow">${escapeHtml(eyebrow)}</p>
+        <h2 class="web-onboarding-title">${escapeHtml(title)}</h2>
+        ${body}
+        ${field}
+      </div>
+      <div class="web-onboarding-footer">
+        <div class="web-onboarding-actions">
+          ${index > 0 ? `<button type="button" class="web-onboarding-back" data-onboard-back>Back</button>` : ""}
+          ${actions}
         </div>
       </div>`;
-    const input = overlay.querySelector("#web-onboarding-input");
+    const input = stage.querySelector("#web-onboarding-input");
     if (input) {
       window.setTimeout(() => input.focus(), 120);
       input.addEventListener("input", () => {
-        onboardingAnswers[q.key] = input.value;
-        const next = overlay.querySelector("[data-onboard-next]");
-        if (next) next.disabled = !answered(q);
+        onboardingAnswers[step.key] = input.value;
+        const next = stage.querySelector("[data-onboard-next]");
+        if (next) next.disabled = !answered(step);
       });
       input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && answered(q)) overlay.querySelector("[data-onboard-next]")?.click();
+        if (event.key === "Enter" && answered(step)) stage.querySelector("[data-onboard-next]")?.click();
       });
     }
   };
-  const finish = () => {
+  const go = (next) => { index = Math.max(0, Math.min(total - 1, next)); render(); };
+  const finish = (result = {}) => {
     saveWebOnboardingAnswers();
     markWebOnboardingSeen();
-    overlay.remove();
     document.documentElement.classList.remove("web-onboarding-open");
-    onDone();
+    document.removeEventListener("keydown", onKey);
+    onDone(result);
+    overlay.classList.add("is-leaving");
+    window.setTimeout(() => overlay.remove(), 220);
   };
   overlay.addEventListener("click", (event) => {
     const option = event.target.closest(".web-onboarding-option");
     if (option) {
-      const q = WEB_ONBOARDING_QUESTIONS[index];
-      onboardingAnswers[q.key] = option.dataset.value;
-      // Single-select auto-advances; the last question waits on Done.
-      if (index < total - 1) {
-        option.classList.add("is-selected");
-        window.setTimeout(() => { index += 1; render(); }, 160);
-      } else {
-        render();
-      }
+      const step = WEB_ONBOARDING_STEPS[index];
+      onboardingAnswers[step.key] = option.dataset.value;
+      // Single-select auto-advances.
+      option.classList.add("is-selected");
+      window.setTimeout(() => go(index + 1), 160);
       return;
     }
-    if (event.target.closest("[data-onboard-back]")) { index = Math.max(0, index - 1); render(); return; }
+    const battery = event.target.closest("[data-battery]");
+    if (battery) {
+      if (battery.dataset.battery !== measureBatteryChoice) { setMeasureBatteryChoice(battery.dataset.battery); render(); }
+      return;
+    }
+    if (event.target.closest("[data-onboard-back]")) { go(index - 1); return; }
+    if (event.target.closest("[data-onboard-start]")) { finish({ start: true }); return; }
+    if (event.target.closest("[data-onboard-finish]")) { finish({ start: false }); return; }
     if (event.target.closest("[data-onboard-next]")) {
-      if (!answered(WEB_ONBOARDING_QUESTIONS[index])) return;
-      if (index >= total - 1) finish();
-      else { index += 1; render(); }
+      if (!answered(WEB_ONBOARDING_STEPS[index])) return;
+      if (index >= total - 1) finish({ start: false });
+      else go(index + 1);
     }
   });
+  // Keys work wherever focus is (a tapped option re-renders away from under the
+  // pointer, so focus is usually on <body>). Enter on a focused button is left
+  // to the button's own click.
+  const onKey = (event) => {
+    if (!overlay.isConnected || !document.querySelector("#web-onboarding")) { document.removeEventListener("keydown", onKey); return; }
+    if (event.target.closest?.("input, textarea")) return;
+    if (event.key === "ArrowLeft" && index > 0) { event.preventDefault(); go(index - 1); return; }
+    if (event.key === "Enter" && event.target.closest?.("button")) return;
+    if (event.key === "ArrowRight" || event.key === "Enter") {
+      const next = stage.querySelector("[data-onboard-next], [data-onboard-start]");
+      if (next && !next.disabled) { event.preventDefault(); next.click(); }
+    }
+  };
+  document.addEventListener("keydown", onKey);
   render();
   document.documentElement.classList.add("web-onboarding-open");
   document.body.appendChild(overlay);
@@ -4614,7 +4741,7 @@ function showExerciseHub() {
   // Keep whichever hub this build uses populated.
   if (cogniUiMode === "play") renderTrainSections(); else initExerciseTagFilter();
   setActiveTab("exercises");
-  elements.pageTitle.textContent = "Train";
+  elements.pageTitle.textContent = "Exercises";
   elements.pageLede.textContent = "Every exercise is open, at every difficulty, as often as you like.";
   elements.start.disabled = false;
   elements.quit.disabled = true;
@@ -4632,6 +4759,9 @@ function showExerciseHub() {
 }
 
 function showStatistics() {
+  // No Profile page on the web any more: anything still pointing here lands on
+  // the IQ page, and the account lives in Settings.
+  if (cogniUiMode === "pro") { showAssessments(); return; }
   if (!requireAuth("Sign in to see your stats and progress.")) return;
   if (session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running) return;
   elements.appShell.classList.remove(...sectionResetClasses);
@@ -5720,6 +5850,8 @@ function renderSettings() {
   const methodNode = document.querySelector("#settings-account-method");
   if (emailNode) emailNode.textContent = authUser?.email || "—";
   if (methodNode) methodNode.textContent = signInMethodLabel(authUser?.provider);
+  const nameInput = document.querySelector("#settings-name-input");
+  if (nameInput && document.activeElement !== nameInput) nameInput.value = profileDisplayName(loadUserProfile());
 }
 
 let settingsWired = false;
@@ -5742,6 +5874,23 @@ function wireSettings() {
   }
 
   const closeDrawer = () => document.querySelector("#settings-drawer")?.close();
+
+  // Display name: what the leaderboard and battles show. The social handle
+  // stays stable underneath; only the name is user-editable.
+  document.querySelector("#settings-name-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = document.querySelector("#settings-name-input");
+    const existing = loadUserProfile();
+    const name = String(input?.value ?? "").trim().slice(0, 30);
+    if (!name) { if (input) input.value = profileDisplayName(existing); return; }
+    const handle = normalizeProfileHandle(existing.handle);
+    saveUserProfile({ ...existing, handle, name, avatarInitial: normalizeProfileAvatar(name, handle) });
+    syncSocialProfileQuietly();
+    renderAccountMenu();
+    syncRailAccount();
+    input?.blur();
+    showToast("Display name saved.");
+  });
 
   document.querySelector("#settings-upgrade")?.addEventListener("click", () => {
     closeDrawer();
@@ -6369,9 +6518,10 @@ function onAuthenticated() {
       history.replaceState({ tab: "assessments" }, "", routeTabToPath.assessments);
     }
     routerReady = true;
-    showWebOnboarding(() => {
+    showWebOnboarding(({ start } = {}) => {
       syncWebFunnel();
       landFrontDoor();
+      if (start) window.setTimeout(beginFirstMeasurement, 80);
     });
     handleCheckoutReturn();
     return;
@@ -6405,7 +6555,9 @@ function onAuthenticated() {
     landFrontDoor();
     landedPath = iqTestAvailable() ? routeTabToPath.assessments : routeTabToPath.exercises;
     // Never let the intro blank the app: the front door is already rendered underneath.
-    try { if (!hasSeenWebOnboarding()) showWebOnboarding(); } catch { markWebOnboardingSeen(); }
+    try {
+      if (!hasSeenWebOnboarding()) showWebOnboarding(({ start } = {}) => { syncWebFunnel(); if (start) window.setTimeout(beginFirstMeasurement, 80); });
+    } catch { markWebOnboardingSeen(); }
   } else if (pendingLandingDestination === "assessments") {
     pendingLandingDestination = null;
     showAssessments();
@@ -7750,7 +7902,7 @@ document.querySelector("#site-rail-upgrade")?.addEventListener("click", openPric
 
 document.querySelectorAll("#site-login, #site-login-rail").forEach((button) => {
   button.addEventListener("click", () => {
-    if (authUser) { showStatistics(); return; }
+    if (authUser) { openSettingsDrawer(); return; }
     wireAuthGate();
     showAuthGate("login");
   });
@@ -7775,6 +7927,13 @@ document.querySelector("#site-rail-collapse")?.addEventListener("click", () => {
 // Collapsed, the rail is gone entirely (FaceIQ-style); the brand mark that
 // stays top-left is the way back.
 document.querySelector("#site-rail-expand")?.addEventListener("click", () => applyRailCollapsed(false));
+// The rail's account card opens Settings (display name, plan, sign out) — the
+// web has no Profile page.
+document.querySelector("#site-rail-user")?.addEventListener("click", () => {
+  if (authUser) { openSettingsDrawer(); return; }
+  wireAuthGate();
+  showAuthGate("login");
+});
 
 // FaceIQ-style shell on the web: the section tabs live in a fixed top bar with
 // the theme switch beside them; the rail keeps the account card, the IQ history
@@ -7965,7 +8124,8 @@ function syncRailAccount() {
   const login = document.querySelector("#site-login-rail");
   // The rail badge reflects the subscription, not the (now free) IQ report.
   const unlocked = cogniUiMode === "pro" ? webPlanUnlocked() : measurementReportUnlocked();
-  const label = authUser ? (authUser.email?.split("@")[0] ?? "You") : "Guest";
+  const profile = loadUserProfile();
+  const label = !authUser ? "Guest" : (profile.name || displayNameFromEmail(authUser.email));
   if (name) name.textContent = label;
   if (avatar) avatar.textContent = label.slice(0, 1).toUpperCase();
   if (plan) { plan.textContent = unlocked ? "PASS" : "FREE"; plan.classList.toggle("is-pass", unlocked); }
@@ -8609,6 +8769,17 @@ function measureInsightsTab(record, ranked, shape, unlocked) {
 // line is the difference between a surprise and an ambush: nobody should spend
 // three quarters of an hour and only then discover money is involved, and in the
 // EU withholding that entirely is the kind of drip pricing regulators act on.
+// Hands straight into the test: the brief for the next unsat subtest of the
+// chosen battery opens over the IQ page — what it asks, how long, the
+// one-sitting rule — and Begin starts it.
+function beginFirstMeasurement() {
+  if (!iqTestAvailable()) return;
+  const attempt = loadMeasureAttempt();
+  const next = attemptSubtests(attempt).find((subtest) => !attempt.subtests[subtest.id])
+    ?? attemptSubtests(attempt)[0];
+  if (next) openMeasureStartDialog(next.id);
+}
+
 function renderMeasurementSales() {
   const host = document.querySelector("#measure-offers");
   if (!host) return;
@@ -8705,13 +8876,7 @@ function renderMeasurementSales() {
 
   host.querySelector("#sales-start")?.addEventListener("click", () => {
     if (!requireAuth("Sign in to take the IQ test.")) return;
-    if (!iqTestAvailable()) return;
-    const attempt = loadMeasureAttempt();
-    const next = attemptSubtests(attempt).find((subtest) => !attempt.subtests[subtest.id])
-      ?? attemptSubtests(attempt)[0];
-    // The brief first — what the subtest asks, how long, the one-sitting rule —
-    // then Begin starts it.
-    openMeasureStartDialog(next.id);
+    beginFirstMeasurement();
   });
   host.querySelectorAll("#sales-battery [data-battery]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -11002,7 +11167,7 @@ function setActiveTab(tab) {
     siteTab.classList.toggle("active", siteTab.dataset.siteTab === railTab);
   });
   const loginButton = document.querySelector("#site-login");
-  if (loginButton) loginButton.textContent = authUser ? "Profile" : "Log in";
+  if (loginButton) loginButton.textContent = authUser ? "Account" : "Log in";
   syncRailAccount();
   syncDashboardSwitch();
   const mobileTabOrder = ["home", "exercises", "assessments", "statistics"];
@@ -11025,7 +11190,7 @@ function installNativeNavigationBridge() {
         home: showHome,
         assessments: showAssessments,
         exercises: showExerciseHub,
-        statistics: showStatistics
+        statistics: cogniUiMode === "pro" ? showAssessments : showStatistics
       };
       handlers[tab]?.();
     }

@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261121-iq7">
-    <link rel="stylesheet" href="luxe.css?v=20261121-iq7">
-    <link rel="stylesheet" href="battle.css?v=20261121-iq7">
-    <link rel="stylesheet" href="iq.css?v=20261121-iq7">
+    <link rel="stylesheet" href="styles.css?v=20261121-iq8">
+    <link rel="stylesheet" href="luxe.css?v=20261121-iq8">
+    <link rel="stylesheet" href="battle.css?v=20261121-iq8">
+    <link rel="stylesheet" href="iq.css?v=20261121-iq8">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -550,13 +550,14 @@
       </div>
 
       <div class="site-rail-account" id="site-rail-account">
-        <div class="site-rail-user">
+        <button class="site-rail-user" id="site-rail-user" type="button" aria-label="Account and settings" title="Account and settings">
           <span class="site-rail-avatar" id="site-rail-avatar">C</span>
-          <div>
-            <p class="site-rail-name" id="site-rail-name">Guest</p>
+          <span class="site-rail-user-text">
+            <span class="site-rail-name" id="site-rail-name">Guest</span>
             <span class="site-rail-plan" id="site-rail-plan">FREE</span>
-          </div>
-        </div>
+          </span>
+          <svg class="site-rail-user-gear" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
         <button class="site-rail-login" id="site-login-rail" type="button" hidden>Log in</button>
         <button class="site-rail-pass" id="site-rail-upgrade" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Upgrade Plan</span></button>
       </div>
@@ -568,15 +569,11 @@
         </button>
         <button class="site-tab" data-site-tab="exercises" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          <span>Train</span>
+          <span>Exercises</span>
         </button>
         <button class="site-tab" data-site-tab="battle" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 6.5 21 3v3L9.5 17.5"/><path d="M11 19l-6-6"/><path d="M8 16l-4 4"/><path d="M5 21l-2-2"/></svg>
           <span>Battle</span>
-        </button>
-        <button class="site-tab" data-site-tab="statistics" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile</span>
         </button>
       </nav>
 
@@ -618,7 +615,7 @@
         <div class="landing-hero-main">
           <p class="iq-hero-stats landing-stats"><span><b>9</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>47</b> minutes</span></p>
           <h1 class="landing-display">Your mind.<br>Measured. Tracked. Improved.</h1>
-          <p class="landing-hero-lede">Take the nine-part IQ test across six abilities, or the 14-minute Mini. Train what is weak for free, and watch the number move over time.</p>
+          <p class="landing-hero-lede">Take the nine-part IQ test across six abilities, or the 14-minute Mini. Free exercises for whatever is weak, and the number tracked over time.</p>
           <div class="landing-cta-row">
             <button class="landing-cta" id="landing-start" type="button"><svg class="landing-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google<svg class="landing-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
             <button class="iq-link" id="landing-how" type="button">See how it works</button>
@@ -644,7 +641,7 @@
         <h2 class="landing-h2">One place to measure, train and compete</h2>
         <div class="landing-trio">
           <article class="landing-offer"><h3>The IQ test</h3><p>Nine subtests, six abilities, one score with its margin of error — or the Mini when you have a quarter of an hour. Retake either whenever you want to see what changed.</p></article>
-          <article class="landing-offer"><h3>Training, free</h3><p>N-Back, relational reasoning, cognitive control, memory and speed drills. Every exercise is open, at every difficulty, as often as you like.</p></article>
+          <article class="landing-offer"><h3>Exercises, free</h3><p>N-Back, relational reasoning, cognitive control, memory and speed drills. Every exercise is open, at every difficulty, as often as you like.</p></article>
           <article class="landing-offer"><h3>1v1 battles</h3><p>Quick matches and private lobbies on the same kinds of tasks. A rating that moves, and your IQ on your profile when you take the test.</p></article>
         </div>
       </section>
@@ -2538,6 +2535,20 @@
 
               <div class="settings-divider"></div>
 
+              <p class="settings-section-label">Public profile</p>
+              <form class="settings-row settings-row-form" id="settings-name-form">
+                <div>
+                  <strong>Display name</strong>
+                  <p>Shown on the leaderboard and in battles.</p>
+                </div>
+                <div class="settings-name-field">
+                  <input id="settings-name-input" name="profileName" type="text" maxlength="30" autocomplete="nickname" spellcheck="false" aria-label="Display name">
+                  <button class="settings-outline-button" type="submit">Save</button>
+                </div>
+              </form>
+
+              <div class="settings-divider"></div>
+
               <p class="settings-section-label">Subscription</p>
               <div class="settings-row">
                 <div>
@@ -2687,6 +2698,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261121-iq7"></script>
+    <script type="module" src="src/app/main.js?v=20261121-iq8"></script>
   </body>
 </html>

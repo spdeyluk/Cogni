@@ -1082,3 +1082,102 @@ html.mode-pro .measure-battery-lock + .measure-hub-actions { margin-top: 14px; }
 /* collapsed rail: the top tabs keep their labels (the old icon-rail rule hid them) */
 html.rail-collapsed.mode-pro .site-topnav .site-rail-nav .site-tab span { display: inline !important; }
 html.rail-collapsed.mode-pro .site-topnav .site-rail-nav .site-tab { justify-content: flex-start; padding: 0 2px !important; }
+
+/* =====================================================================
+   Onboarding walk, rail account card → Settings, no Profile page
+   (2026-11-21)
+   ===================================================================== */
+html.mode-pro .web-onboarding { background: var(--bg); transition: opacity 200ms var(--ease-out); }
+html.mode-pro .web-onboarding.is-leaving { opacity: 0; pointer-events: none; }
+html.mode-pro .web-onboarding-inner { width: min(640px, 100%); padding: 22px 24px 36px; }
+html.mode-pro .web-onboarding-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+html.mode-pro .web-onboarding-brand { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text); }
+html.mode-pro .web-onboarding-brand img { height: 20px; width: auto; }
+html.mode-pro .web-onboarding-count { font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+html.mode-pro .web-onboarding-progress { height: 3px; margin-top: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+html.mode-pro .web-onboarding-progress i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--text); transition: width 360ms var(--ease-out); }
+html.mode-pro .web-onboarding-stage { flex: 1 1 auto; display: flex; flex-direction: column; }
+html.mode-pro .web-onboarding-slide { gap: 14px; text-align: center; animation: iq-fade-up 380ms var(--ease-out) both; }
+html.mode-pro .web-onboarding-eyebrow { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+html.mode-pro .web-onboarding-title { font-family: var(--font-display); font-size: clamp(1.7rem, 4.4vw, 2.4rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; color: var(--text); }
+html.mode-pro .web-onboarding-body { margin: 0 auto; max-width: 50ch; color: var(--text-2); font-size: 15.5px; line-height: 1.6; }
+html.mode-pro .web-onboarding-input { width: min(400px, 100%); padding: 14px 18px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); color: var(--text); font-size: 17px; font-weight: 500; transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+html.mode-pro .web-onboarding-input:focus { border-color: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent); }
+html.mode-pro .web-onboarding-options { width: min(480px, 100%); gap: 8px; }
+html.mode-pro .web-onboarding-option { padding: 14px 16px; border: 1px solid var(--line-strong) !important; border-radius: 12px !important; background: var(--surface) !important; color: var(--text) !important; font-size: 14.5px; font-weight: 500; box-shadow: var(--shadow); transition: border-color 150ms var(--ease-out), background 150ms var(--ease-out), color 150ms var(--ease-out), transform 150ms var(--ease-out); }
+html.mode-pro .web-onboarding-option:hover { border-color: color-mix(in srgb, var(--text) 35%, var(--line-strong)) !important; background: var(--fill-subtle) !important; }
+html.mode-pro .web-onboarding-option:active { transform: scale(0.98); }
+html.mode-pro .web-onboarding-option.is-selected { border-color: var(--btn-fill) !important; background: var(--btn-fill) !important; color: var(--btn-text) !important; }
+html.mode-pro .web-onboarding-footer { padding-top: 22px; }
+html.mode-pro .web-onboarding-dots { display: none; }
+html.mode-pro .web-onboarding-actions { width: 100%; justify-content: flex-end; gap: 6px; }
+html.mode-pro .web-onboarding-back,
+html.mode-pro .web-onboarding-later { padding: 10px 14px; border: 0; border-radius: 999px; background: transparent !important; color: var(--text-2); font-size: 14px; font-weight: 500; cursor: pointer; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
+html.mode-pro .web-onboarding-back:hover,
+html.mode-pro .web-onboarding-later:hover { color: var(--text); background: var(--fill-subtle) !important; }
+html.mode-pro .web-onboarding-back { margin-right: auto; }
+html.mode-pro .web-onboarding-next { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px 0 26px; border: 0; border-radius: 999px; background: var(--btn-fill) !important; color: var(--btn-text); font-size: 15px; font-weight: 500; box-shadow: 0 12px 30px -14px rgba(15, 17, 21, 0.5); transition: transform 140ms var(--ease-out), background 140ms var(--ease-out), box-shadow 140ms var(--ease-out), opacity 140ms var(--ease-out); }
+html.mode-pro .web-onboarding-next svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html.mode-pro .web-onboarding-next:hover { filter: none; transform: translateY(-1px); background: var(--btn-fill-hover) !important; box-shadow: 0 16px 34px -14px rgba(15, 17, 21, 0.55); }
+html.mode-pro .web-onboarding-next:active { transform: scale(0.98); }
+html.mode-pro .web-onboarding-next:disabled { opacity: 0.35; transform: none; box-shadow: none; }
+
+/* Tour illustrations */
+html.mode-pro .ob-visual { width: 100%; margin: 8px auto 2px; padding: 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--fill-subtle); text-align: left; }
+html.mode-pro .ob-visual-test { display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: stretch; }
+html.mode-pro .ob-visual-test .iq-preview-overall { display: grid; align-content: center; }
+html.mode-pro .ob-visual-test .iq-preview-overall strong { font-size: 40px; }
+html.mode-pro .ob-visual-test .iq-preview-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+html.mode-pro .ob-visual-test .iq-preview-card { padding: 10px 12px; }
+html.mode-pro .ob-visual-test .iq-preview-card strong { font-size: 20px; }
+html.mode-pro .ob-visual-exercises { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+html.mode-pro .ob-tile { position: relative; padding: 14px 14px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+html.mode-pro .ob-tile b { display: block; padding-right: 44px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+html.mode-pro .ob-tile small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+html.mode-pro .ob-tile-chip { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(15, 155, 142, 0.12); color: var(--iq-teal); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+html.mode-pro .ob-tile-bar { display: block; height: 4px; margin-top: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+html.mode-pro .ob-tile-bar em { display: block; height: 100%; border-radius: inherit; background: var(--text); }
+html.mode-pro .ob-duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; }
+html.mode-pro .ob-duelist { display: grid; justify-items: center; gap: 2px; }
+html.mode-pro .ob-duelist b { font-size: 14px; font-weight: 600; }
+html.mode-pro .ob-duelist small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+html.mode-pro .ob-duel-avatar { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 6px; border-radius: 50%; background: var(--text); color: var(--bg); font-size: 16px; font-weight: 700; }
+html.mode-pro .ob-duel-avatar.is-them { border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); }
+html.mode-pro .ob-duel-score { display: grid; grid-template-columns: auto auto auto; align-items: baseline; justify-content: center; column-gap: 8px; }
+html.mode-pro .ob-duel-score b { font-size: 34px; font-weight: 600; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+html.mode-pro .ob-duel-score span { font-size: 22px; color: var(--muted); }
+html.mode-pro .ob-duel-score small { grid-column: 1 / -1; margin-top: 2px; text-align: center; font-size: 11.5px; color: var(--muted); }
+html.mode-pro .ob-duel-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-top: 16px; }
+html.mode-pro .ob-duel-strip i { height: 6px; border-radius: 999px; background: var(--surface-2); }
+html.mode-pro .ob-duel-strip i.is-you { background: var(--iq-teal); }
+html.mode-pro .ob-duel-strip i.is-them { background: var(--line-strong); }
+html.mode-pro .web-onboarding .ob-battery { margin: 10px auto 0; }
+@media (max-width: 560px) {
+  html.mode-pro .ob-visual-test, html.mode-pro .ob-visual-exercises { grid-template-columns: 1fr; }
+  html.mode-pro .web-onboarding-actions { flex-wrap: wrap; }
+}
+
+/* The rail's account card is a button: it opens Settings (name, plan, sign out). */
+html.mode-pro .site-rail-user { width: 100%; min-height: 0 !important; margin: 0; padding: 4px !important; border: 0 !important; border-radius: 10px !important; background: transparent !important; color: var(--text) !important; box-shadow: none !important; font: inherit; text-align: left; cursor: pointer; transition: background 150ms var(--ease-out); }
+html.mode-pro .site-rail-user:hover { background: color-mix(in srgb, var(--text) 6%, transparent) !important; }
+html.mode-pro .site-rail-user:active { background: color-mix(in srgb, var(--text) 10%, transparent) !important; }
+html.mode-pro .site-rail-user-text { display: grid; justify-items: start; min-width: 0; flex: 1 1 auto; }
+html.mode-pro .site-rail-name { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.mode-pro .site-rail-user-gear { flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: translateX(-2px); transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out); }
+html.mode-pro .site-rail-user:hover .site-rail-user-gear { opacity: 1; transform: none; }
+
+/* Settings: display-name row */
+html.mode-pro .settings-row-form { display: grid; gap: 10px; }
+html.mode-pro .settings-name-field { display: flex; gap: 8px; }
+html.mode-pro .settings-name-field input { flex: 1 1 auto; min-width: 0; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+html.mode-pro .settings-name-field input:focus { outline: 0; border-color: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent); }
+/* Secondary onboarding buttons are deliberate white hairline pills (FaceIQ's
+   secondary button), not an accident of the global button rule. */
+html.mode-pro .web-onboarding-back,
+html.mode-pro .web-onboarding-later { border: 1px solid var(--line) !important; background: var(--surface) !important; box-shadow: var(--shadow) !important; color: var(--text-2) !important; min-height: 40px; padding: 0 16px; }
+html.mode-pro .web-onboarding-back:hover,
+html.mode-pro .web-onboarding-later:hover { border-color: var(--line-strong) !important; background: var(--fill-subtle) !important; color: var(--text) !important; }
+html.mode-pro .web-onboarding-back:active,
+html.mode-pro .web-onboarding-later:active { transform: scale(0.98); }
+/* Settings modal on the web: the native drawer's safe-area top padding does not apply. */
+html.mode-pro .settings-drawer .settings-drawer-header { padding: 18px 24px !important; }
