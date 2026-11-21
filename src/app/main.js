@@ -58,7 +58,8 @@ import {
 import { calculateExerciseWeight } from "../core/exerciseWeight.js";
 import { pickFreshRound, rememberServed, shuffleIndices } from "../core/itemRotation.js";
 import {
-  MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, MEASUREMENT_SUBTESTS,
+  MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER,
+  MEASUREMENT_BATTERIES, MEASUREMENT_BATTERY_ORDER, batteryById, batterySubtests, batteryMinutes,
   subtestById, subtestsForIndex, subtestMinutes, indexForItem, thetaToIndexScore,
   rarityFromPercentile, INTERPRETATION_BANDS, interpretationBand, rankedIndices,
   profileShape, scoreTrackOffset,
@@ -7483,7 +7484,7 @@ function showAssessments() {
   elements.appShell.classList.add("assessments-open");
   setActiveTab("assessments");
   elements.pageTitle.textContent = "IQ Test";
-  elements.pageLede.textContent = `Six abilities, ${MEASUREMENT_SUBTESTS.length} subtests, one score.`;
+  elements.pageLede.textContent = `Six abilities, one score. The full test, or the Mini in about ${batteryMinutes("mini")} minutes.`;
   showAssessmentList();
 }
 
@@ -7611,12 +7612,40 @@ function catResponsesWithItems() {
 // ---------------------------------------------------------------------------
 const MEASURE_ATTEMPT_KEY = "cogni.measurementAttempt.v1";
 
+// Which test the next attempt will be: the full battery or the Mini. Chosen on
+// the card (or the sales hero) before anything is answered; once a subtest has
+// been banked the attempt's own battery is fixed and the choice is moot.
+const MEASURE_BATTERY_KEY = "cogni.iqBattery.v1";
+let measureBatteryChoice = "full";
+try { measureBatteryChoice = MEASUREMENT_BATTERIES[localStorage.getItem(MEASURE_BATTERY_KEY)] ? localStorage.getItem(MEASURE_BATTERY_KEY) : "full"; } catch { /* default */ }
+function setMeasureBatteryChoice(id) {
+  measureBatteryChoice = batteryById(id).id;
+  try { localStorage.setItem(MEASURE_BATTERY_KEY, measureBatteryChoice); } catch { /* private mode */ }
+  // An attempt that exists but has nothing banked yet simply becomes the other test.
+  if (measureAttemptStarted()) {
+    const attempt = loadMeasureAttempt();
+    if (measureCompletedCount(attempt) === 0 && attempt.battery !== measureBatteryChoice) {
+      attempt.battery = measureBatteryChoice;
+      saveMeasureAttempt(attempt);
+    }
+  }
+}
+
 function loadMeasureAttempt() {
   try {
     const saved = JSON.parse(localStorage.getItem(MEASURE_ATTEMPT_KEY));
-    if (saved && typeof saved === "object" && saved.subtests) return saved;
+    // Attempts saved before the Mini existed are full-length ones.
+    if (saved && typeof saved === "object" && saved.subtests) return { battery: "full", ...saved };
   } catch { /* fall through */ }
-  return { startedAt: Date.now(), subtests: {} };
+  return { startedAt: Date.now(), battery: measureBatteryChoice, subtests: {} };
+}
+
+function attemptBattery(attempt = loadMeasureAttempt()) {
+  return batteryById(attempt?.battery);
+}
+
+function attemptSubtests(attempt = loadMeasureAttempt()) {
+  return attemptBattery(attempt).subtests;
 }
 
 function saveMeasureAttempt(attempt) {
@@ -7629,7 +7658,7 @@ function clearMeasureAttempt() {
 }
 
 function measureCompletedCount(attempt = loadMeasureAttempt()) {
-  return MEASUREMENT_SUBTESTS.filter((subtest) => attempt.subtests[subtest.id]).length;
+  return attemptSubtests(attempt).filter((subtest) => attempt.subtests[subtest.id]).length;
 }
 
 // An attempt is underway only if one was explicitly started or answered — the
@@ -7639,10 +7668,10 @@ function measureAttemptStarted() {
   try { return localStorage.getItem(MEASURE_ATTEMPT_KEY) !== null; } catch { return false; }
 }
 
-function startNewMeasureAttempt() {
-  saveMeasureAttempt({ startedAt: Date.now(), subtests: {} });
+function startNewMeasureAttempt(batteryId = measureBatteryChoice) {
+  saveMeasureAttempt({ startedAt: Date.now(), battery: batteryById(batteryId).id, subtests: {} });
   renderMeasurePicker();
-  document.querySelector("#measure-hub")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector("#cat-intro")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 document.querySelector("#cat-quit")?.addEventListener("click", requestQuitSubtest);
@@ -7743,6 +7772,9 @@ try { applyRailCollapsed(localStorage.getItem(RAIL_KEY) === "1"); } catch { appl
 document.querySelector("#site-rail-collapse")?.addEventListener("click", () => {
   applyRailCollapsed(!document.documentElement.classList.contains("rail-collapsed"));
 });
+// Collapsed, the rail is gone entirely (FaceIQ-style); the brand mark that
+// stays top-left is the way back.
+document.querySelector("#site-rail-expand")?.addEventListener("click", () => applyRailCollapsed(false));
 
 // FaceIQ-style shell on the web: the section tabs live in a fixed top bar with
 // the theme switch beside them; the rail keeps the account card, the IQ history
@@ -7795,7 +7827,7 @@ function renderRailHistory() {
     return `<button class="site-rail-hist${active ? " is-active" : ""}" type="button" data-rail-session="${index}">
       <span class="site-rail-hist-tile">${score ?? "·"}</span>
       <span class="site-rail-hist-body">
-        <span class="site-rail-hist-name">IQ ${score ?? "—"}</span>
+        <span class="site-rail-hist-name">IQ ${score ?? "—"}${record.battery === "mini" ? '<em class="site-rail-hist-tag">Mini</em>' : ""}</span>
         <span class="site-rail-hist-sub">${measured ? `${measured} of ${MEASUREMENT_INDEX_ORDER.length} abilities` : "Sitting"}</span>
       </span>
       <span class="site-rail-hist-when">${railTimeAgo(when)}</span>
@@ -8235,7 +8267,8 @@ let mdashStrongFocus = "all";
 let mdashRoomFocus = "all";
 const mdashOpenRows = new Set();
 function measureHighlights(record, unlocked) {
-  const parts = MEASUREMENT_SUBTESTS.map((subtest) => {
+  const subtests = batterySubtests(record.battery);
+  const parts = subtests.map((subtest) => {
     const result = record.subtests?.[subtest.id];
     if (!result || !Number.isFinite(result.score)) return null;
     return {
@@ -8266,7 +8299,7 @@ function measureHighlights(record, unlocked) {
       // subtest's name, a made-up delta) so nothing about the sitting leaks; the
       // last one is real, as the taste of what the report holds.
       const locked = !unlocked && i < shown.length - 1;
-      const decoyName = MEASUREMENT_SUBTESTS[(i * 4 + 1) % MEASUREMENT_SUBTESTS.length].name;
+      const decoyName = subtests[(i * 4 + 1) % subtests.length].name;
       const decoyDelta = kind === "strong" ? 9 + ((i * 7) % 15) : -(4 + ((i * 5) % 13));
       const shownDelta = locked ? decoyDelta : delta;
       const sign = shownDelta > 0 ? "+" : shownDelta < 0 ? "−" : "±";
@@ -8317,7 +8350,8 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
   const best = ranked[0];
   const worst = ranked.at(-1);
   const minutes = Math.max(1, Math.round(record.durationMs / 60000));
-  const taken = Object.keys(record.subtests ?? {}).length || MEASUREMENT_SUBTESTS.length;
+  const battery = batteryById(record.battery);
+  const taken = Object.keys(record.subtests ?? {}).length || battery.subtests.length;
 
   const score = focus ? focus.score : record.score;
   const pct = focus ? focus.percentile : percentile;
@@ -8328,7 +8362,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
   // single index it is the strongest subtest feeding it. Both are measured
   // numbers — nothing here is a projection of what training would do.
   const ceilingSource = focus
-    ? subtestsForIndex(focus.key)
+    ? subtestsForIndex(focus.key, battery.id)
         .map((subtest) => ({ name: subtest.name, ...(record.subtests?.[subtest.id] ?? {}) }))
         .filter((part) => Number.isFinite(part.score))
         .sort((a, b) => b.score - a.score)[0]
@@ -8348,8 +8382,8 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
       <header class="mdash-overall-head">
         ${indexGlyph(focus ? MEASUREMENT_INDEX_ORDER.indexOf(focus.key) : -1)}
         <h3>${focus ? escapeHtml(focus.name) : "Overall score"}</h3>
-        <span class="mdash-overall-meta">${ranked.length} of ${MEASUREMENT_INDEX_ORDER.length} indices
-          · ${taken} of ${MEASUREMENT_SUBTESTS.length} subtests · ${minutes} min</span>
+        <span class="mdash-overall-meta">${battery.id === "mini" ? "Mini test · " : ""}${ranked.length} of ${MEASUREMENT_INDEX_ORDER.length} indices
+          · ${taken} of ${battery.subtests.length} subtests · ${minutes} min</span>
       </header>
 
       <div class="mdash-overall-lead">
@@ -8411,7 +8445,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
 // the profile; for an index, the subtests that actually produced it.
 function measureFacts(record, focus, best, worst) {
   const cards = focus
-    ? subtestsForIndex(focus.key).map((subtest) => {
+    ? subtestsForIndex(focus.key, record.battery).map((subtest) => {
         const result = record.subtests?.[subtest.id];
         return {
           name: subtest.name,
@@ -8501,7 +8535,7 @@ function measureAbilitiesTab(record, ranked, unlocked) {
       <div class="mdash-rows">
         ${MEASUREMENT_INDEX_ORDER.flatMap((key) => {
           const meta = MEASUREMENT_INDICES[key];
-          return subtestsForIndex(key).map((subtest) => {
+          return subtestsForIndex(key, record.battery).map((subtest) => {
             const result = subtests[subtest.id];
             return `<div class="mdash-row mdash-row-sub">
               <span class="mdash-row-name">${escapeHtml(subtest.name)}<em>${escapeHtml(meta.short)}</em></span>
@@ -8578,8 +8612,10 @@ function measureInsightsTab(record, ranked, shape, unlocked) {
 function renderMeasurementSales() {
   const host = document.querySelector("#measure-offers");
   if (!host) return;
-  const total = MEASUREMENT_SUBTESTS.length;
-  const minutes = MEASUREMENT_SUBTESTS.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+  const battery = batteryById(measureBatteryChoice);
+  const total = battery.subtests.length;
+  const minutes = batteryMinutes(battery.id);
+  const miniMinutes = batteryMinutes("mini");
   const available = iqTestAvailable();
   const locked = cogniUiMode === "pro" && available && !iqTestUnlocked();
 
@@ -8600,7 +8636,7 @@ function renderMeasurementSales() {
     : "Your mind.<br>Measured. Tracked. Improved.";
   const lede = funnel
     ? `One sitting sets your baseline — ${total} short subtests across the six core abilities. Take them now; you'll get a composite score and a full breakdown at the end.`
-    : "Nine short subtests across six abilities. Get your IQ, the score behind every ability, and see how it changes over time.";
+    : `Nine short subtests across six abilities — or the Mini, the same six abilities in about ${miniMinutes} minutes. Get your IQ, the score behind every ability, and see how it changes over time.`;
   const ctaLabel = !available ? "Not open yet" : locked ? "Unlock the IQ test" : "Take the IQ test";
   const note = !available
     ? "The IQ test is being calibrated and opens to everyone soon."
@@ -8613,6 +8649,7 @@ function renderMeasurementSales() {
       <p class="iq-hero-stats"><span><b>${total}</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>${minutes}</b> minutes</span></p>
       <h2 class="sales-title iq-title">${title}</h2>
       <p class="sales-lede">${lede}</p>
+      <div class="seg-sliding iq-battery" id="sales-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(battery.id)}</div>
       <div class="iq-hero-actions">
         <button class="sales-cta" id="sales-start" type="button" ${available ? "" : "disabled"}>${ctaLabel}${available ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>' : ""}</button>
         ${funnel ? "" : `<button class="iq-link" id="sales-how" type="button">See how it works</button>`}
@@ -8626,8 +8663,8 @@ function renderMeasurementSales() {
     <section class="sales-section" id="sales-how-section">
       <h3 class="sales-section-title">How it works</h3>
       <ol class="iq-steps">
-        ${step(1, "Take nine short subtests",
-          "Verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.")}
+        ${step(1, "Take the test — full or Mini",
+          `Nine short subtests, or six in the Mini: verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.`)}
         ${step(2, "Every ability is scored",
           "Each subtest feeds one of six ability indices on the standard IQ scale, with its margin of error shown beside it.")}
         ${step(3, "Get your IQ and the report",
@@ -8667,9 +8704,21 @@ function renderMeasurementSales() {
     </section>`;
 
   host.querySelector("#sales-start")?.addEventListener("click", () => {
-    const next = MEASUREMENT_SUBTESTS.find((subtest) => !loadMeasureAttempt().subtests[subtest.id])
-      ?? MEASUREMENT_SUBTESTS[0];
-    startSubtest(next.id);
+    if (!requireAuth("Sign in to take the IQ test.")) return;
+    if (!iqTestAvailable()) return;
+    const attempt = loadMeasureAttempt();
+    const next = attemptSubtests(attempt).find((subtest) => !attempt.subtests[subtest.id])
+      ?? attemptSubtests(attempt)[0];
+    // The brief first — what the subtest asks, how long, the one-sitting rule —
+    // then Begin starts it.
+    openMeasureStartDialog(next.id);
+  });
+  host.querySelectorAll("#sales-battery [data-battery]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.battery === measureBatteryChoice) return;
+      setMeasureBatteryChoice(button.dataset.battery);
+      renderMeasurementSales();
+    });
   });
   host.querySelector("#sales-how")?.addEventListener("click", () => {
     host.querySelector("#sales-how-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -8844,7 +8893,8 @@ function renderMeasurePicker(selectedId) {
   if (!host) return;
 
   const done = measureCompletedCount(attempt);
-  const total = MEASUREMENT_SUBTESTS.length;
+  const battery = attemptBattery(attempt);
+  const total = battery.subtests.length;
   if (progress) {
     progress.innerHTML = `
       <span class="measure-progress-value"><strong>${done}</strong> of ${total} complete</span>
@@ -8865,7 +8915,7 @@ function renderMeasurePicker(selectedId) {
 
   host.innerHTML = MEASUREMENT_INDEX_ORDER.map((key) => {
     const meta = MEASUREMENT_INDICES[key];
-    const rows = subtestsForIndex(key).map((subtest) => {
+    const rows = subtestsForIndex(key, battery.id).map((subtest) => {
       const result = attempt.subtests[subtest.id];
       return `
         <button class="measure-subtest${result ? " is-done" : ""}${subtest.id === selectedId ? " is-selected" : ""}"
@@ -8897,6 +8947,45 @@ function renderMeasurePicker(selectedId) {
 // test measures, the state of your current attempt, the way in, and the scores
 // already earned down the side. The only real difference between "still taking
 // it" and "already finished a sitting" is what the button does.
+// The Full / Mini choice on the card. `locked` is the battery of an attempt
+// already underway, shown as a plain label instead of a control.
+function measureBatteryChoiceHtml(choice) {
+  return MEASUREMENT_BATTERY_ORDER.map((id) => {
+    const battery = MEASUREMENT_BATTERIES[id];
+    const active = id === choice;
+    return `<button type="button" data-battery="${id}" aria-pressed="${active}" class="${active ? "active" : ""}">
+      <b>${escapeHtml(battery.name)}</b>
+      <span>${battery.subtests.length} subtests · ~${batteryMinutes(id)} min</span>
+    </button>`;
+  }).join("");
+}
+
+function renderMeasureBatteryChoice(hub, locked) {
+  let host = hub.querySelector("#measure-battery");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "measure-battery";
+    hub.querySelector(".measure-hub-actions")?.before(host);
+  }
+  if (locked) {
+    host.className = "measure-battery-lock";
+    host.removeAttribute("role");
+    host.innerHTML = `<b>${escapeHtml(locked.name)}</b><span>${locked.subtests.length} subtests · ~${batteryMinutes(locked.id)} min</span>`;
+    return;
+  }
+  host.className = "measure-battery seg-sliding";
+  host.setAttribute("role", "radiogroup");
+  host.setAttribute("aria-label", "Which test");
+  host.innerHTML = measureBatteryChoiceHtml(measureBatteryChoice);
+  host.querySelectorAll("[data-battery]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.battery === measureBatteryChoice) return;
+      setMeasureBatteryChoice(button.dataset.battery);
+      renderMeasurePicker();
+    });
+  });
+}
+
 function renderMeasureHub(attempt, done, total, takingTest = true) {
   const hub = document.querySelector("#measure-hub");
   if (!hub) return;
@@ -8904,9 +8993,13 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   renderMeasureCats();
   renderResultsTeaser();
 
-  const remaining = MEASUREMENT_SUBTESTS.filter((subtest) => !attempt.subtests[subtest.id]);
+  const battery = attemptBattery(attempt);
+  const remaining = battery.subtests.filter((subtest) => !attempt.subtests[subtest.id]);
   const next = takingTest ? (remaining[0] ?? null) : null;
   const minutesLeft = remaining.reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+  // Full or Mini is an open choice until something has been banked in this
+  // attempt; after that the card just says which test is underway.
+  renderMeasureBatteryChoice(hub, takingTest && done > 0 ? battery : null);
 
   const title = document.querySelector("#measure-hub-title");
   if (title) {
@@ -8918,11 +9011,11 @@ function renderMeasureHub(attempt, done, total, takingTest = true) {
   const sub = hub.querySelector(".measure-hub-sub");
   if (sub) {
     sub.textContent = !takingTest
-      ? "Your score is built from all nine subtests. Start a fresh sitting whenever you want to measure again."
+      ? "Start a fresh sitting whenever you want to measure again — the full test, or the Mini when you have a quarter of an hour."
       : next
-        ? `${done === 0 ? "Nine short subtests across six abilities, taken" : "The rest can be taken"} in any order — about `
-          + `${minutesLeft} minutes left. Each is a single sitting: you can stop early, but you can't return to it.`
-        : "Your score is built from all nine. Start a new test whenever you want to measure again.";
+        ? `${done === 0 ? `${battery.countWord} short subtests across six abilities, taken` : "The rest can be taken"} in any order — about `
+          + `${minutesLeft} minutes${done === 0 ? "" : " left"}. Each is a single sitting: you can stop early, but you can't return to it.`
+        : `Your score is built from all ${battery.countWord.toLowerCase()}. Start a new test whenever you want to measure again.`;
   }
 
   const cta = document.querySelector("#measure-continue");
@@ -8999,14 +9092,15 @@ function renderMeasureReports(total) {
   const unlocked = measurementReportUnlocked();
   list.innerHTML = shown.map((session, index) => {
     const when = new Date(session.completedAt);
-    const taken = Object.keys(session.subtests ?? {}).length || total;
+    const battery = batteryById(session.battery);
+    const taken = Object.keys(session.subtests ?? {}).length || battery.subtests.length;
     return `
       <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
               data-measure-session="${index}" type="button">
         <span class="measure-report-score">${unlocked ? session.score : "•••"}</span>
         <span class="measure-report-meta">
           <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
-          ${taken} of ${total} subtests
+          ${battery.id === "mini" ? "Mini · " : ""}${taken} of ${battery.subtests.length} subtests
         </span>
       </button>`;
   }).join("");
@@ -9034,7 +9128,8 @@ document.querySelector("#measure-continue")?.addEventListener("click", (event) =
   if (!iqTestAvailable()) return;
   if (!iqTestUnlocked()) { openReferralDialog(); return; }
   measureSubtestsOpen = true;
-  if (event.currentTarget.dataset.action === "new-test") { startNewMeasureAttempt(); return; }
+  // A fresh sitting (or one not yet begun) is pinned to the chosen test first.
+  if (event.currentTarget.dataset.action === "new-test" || !measureAttemptStarted()) { startNewMeasureAttempt(measureBatteryChoice); return; }
   openMeasureSubtests();
 });
 
@@ -9065,7 +9160,7 @@ document.querySelector("#measure-subtests-back")?.addEventListener("click", clos
 // opens the report dashboard (blurred + unlockable), not the checkout.
 document.querySelector("#measure-results")?.addEventListener("click", () => {
   const attempt = loadMeasureAttempt();
-  if (measureCompletedCount(attempt) < MEASUREMENT_SUBTESTS.length) return;
+  if (measureCompletedCount(attempt) < attemptSubtests(attempt).length) return;
   finishMeasurement(attempt, { destination: "dashboard" });
 });
 
@@ -9076,7 +9171,7 @@ document.querySelector("#measure-dev-complete")?.addEventListener("click", () =>
   const attempt = loadMeasureAttempt();
   if (!attempt.startedAt) attempt.startedAt = Date.now();
   const thetas = [1.5, 1.2, 0.9, 0.6, 0.4, 0.2, 1.1, 0.8, 0.5];
-  MEASUREMENT_SUBTESTS.forEach((subtest, i) => {
+  attemptSubtests(attempt).forEach((subtest, i) => {
     if (attempt.subtests[subtest.id]) return; // keep anything real
     const theta = thetas[i % thetas.length];
     const answered = subtest.questions ?? 10;
@@ -9220,8 +9315,14 @@ function startSubtest(subtestId) {
   const subtest = subtestById(subtestId);
   if (!subtest) return;
   const attempt = loadMeasureAttempt();
+  // The subtest has to belong to the test being sat — a Mini can't borrow a
+  // full-length section, nor the other way round.
+  if (!attemptSubtests(attempt).some((entry) => entry.id === subtest.id)) return;
   // One go, once. A completed subtest is closed for this attempt.
   if (attempt.subtests[subtest.id]) return;
+  // Starting a subtest starts the attempt: pin which test this is before the
+  // first answer, so a reload mid-sitting still knows.
+  if (!measureAttemptStarted()) saveMeasureAttempt(attempt);
 
   clearCatSubtestTimers();
   catActive = {
@@ -9347,7 +9448,7 @@ function finishSubtest({ abandoned = false } = {}) {
   // Completing the last subtest no longer jumps straight to the score — it
   // returns to the card, where "Get results" is now live. Otherwise stay in the
   // picker to sit the next one.
-  if (measureCompletedCount(attempt) >= MEASUREMENT_SUBTESTS.length) {
+  if (measureCompletedCount(attempt) >= attemptSubtests(attempt).length) {
     measureSubtestsOpen = false;
   }
   renderMeasurePicker(subtest.id);
@@ -9386,7 +9487,23 @@ function pickNextCatItem() {
     theta,
     count: 12
   }));
-  const available = generated.length ? [...generated, ...banked] : banked;
+  const pool = generated.length ? [...generated, ...banked] : banked;
+  // A subtest that mixes kinds samples them evenly: the next item comes from
+  // whichever of its kinds has been served least so far, as long as that still
+  // leaves something to choose between. Otherwise a strongly informative kind
+  // (the generated visual formats) would crowd the others out of a short run.
+  let available = pool;
+  if ((subtest?.kinds?.length ?? 0) > 1) {
+    const served = {};
+    for (const response of catActive.responses) {
+      const kind = catItem(response.itemId)?.kind;
+      if (kind) served[kind] = (served[kind] ?? 0) + 1;
+    }
+    const fewest = Math.min(...subtest.kinds.map((kind) => served[kind] ?? 0));
+    const wanted = new Set(subtest.kinds.filter((kind) => (served[kind] ?? 0) === fewest));
+    const balanced = pool.filter((item) => wanted.has(item.kind));
+    if (balanced.length >= 3) available = balanced;
+  }
   // Randomesque exposure control: pick among the most informative items rather
   // than always the single best, so two people of the same ability — or one
   // person retaking — don't walk the same path through the bank.
@@ -9458,7 +9575,9 @@ function renderCatQuestion() {
 
 function startCatTimer(item) {
   stopCatTimer();
-  const limit = CAT_DOMAIN_TIME_LIMITS_MS[item.domain];
+  // Mixed-kind subtests (the Mini's) carry their own limit; the rest inherit
+  // the bank domain's.
+  const limit = activeSubtest()?.timeLimitMs ?? CAT_DOMAIN_TIME_LIMITS_MS[item.domain] ?? 60000;
   catItemStartedAt = Date.now();
   elements.catTimerBar.style.width = "100%";
   catTimerHandle = window.setInterval(() => {
@@ -9546,7 +9665,7 @@ function catSpanIntro() {
   saveCatActive();
   catSubtestChrome({
     label: "Working memory",
-    progress: "Subtest 2 of 3",
+    progress: activeSubtest()?.name ?? "Digit Span",
     prompt: "Remember the digits"
   });
   elements.catStage.innerHTML = `
@@ -9649,7 +9768,8 @@ function catSpanSubmit() {
   // Bank this condition's best and move to the next, if there is one.
   state.bests = state.bests ?? {};
   state.bests[state.condition] = state.best;
-  const nextCondition = CAT_SPAN_CONDITIONS[CAT_SPAN_CONDITIONS.indexOf(state.condition) + 1];
+  const conditions = activeSubtest()?.spanConditions ?? CAT_SPAN_CONDITIONS;
+  const nextCondition = conditions[conditions.indexOf(state.condition) + 1];
   if (nextCondition) {
     state.condition = nextCondition;
     state.best = 0;
@@ -9665,19 +9785,24 @@ function catSpanSubmit() {
 }
 
 // --- Symbol match (Processing Speed) --------------------------------------
+// The Mini runs the speed subtest for one minute, the full test for two.
+function catSpeedWindowMs() {
+  return activeSubtest()?.windowMs ?? CAT_SPEED_WINDOW_MS;
+}
+
 function startCatSpeedSubtest() {
   clearCatSubtestTimers();
   catActive.speed = { index: 0, correct: 0, incorrect: 0, startedAt: 0, accepting: false };
   saveCatActive();
   catSubtestChrome({
     label: "Processing speed",
-    progress: "Subtest 3 of 3",
+    progress: activeSubtest()?.name ?? "Symbol Match",
     prompt: "Same or different?"
   });
   elements.catStage.innerHTML = `
     <div class="cat-subtest-intro">
       <p>Two symbols appear. Say whether they are the same as fast as you can without making mistakes.</p>
-      <p class="cat-subtest-note">Two minutes. Get through as many as you can.</p>
+      <p class="cat-subtest-note">${catSpeedWindowMs() <= 60000 ? "One minute" : "Two minutes"}. Get through as many as you can.</p>
     </div>`;
   elements.catOptions.innerHTML = `<button type="button" id="cat-speed-begin">Begin</button>`;
   elements.catOptions.querySelector("#cat-speed-begin").addEventListener("click", () => catSpeedTrial());
@@ -9687,19 +9812,20 @@ function catSpeedTrial() {
   const state = catActive.speed;
   if (!state.startedAt) state.startedAt = Date.now();
   const elapsed = Date.now() - state.startedAt;
-  if (elapsed >= CAT_SPEED_WINDOW_MS) { finishSubtest(); return; }
+  const windowMs = catSpeedWindowMs();
+  if (elapsed >= windowMs) { finishSubtest(); return; }
   const same = Math.random() < 0.5;
   const left = CAT_SPEED_SYMBOLS[Math.floor(Math.random() * CAT_SPEED_SYMBOLS.length)];
   const others = CAT_SPEED_SYMBOLS.filter((symbol) => symbol !== left);
   const right = same ? left : others[Math.floor(Math.random() * others.length)];
   state.expected = same;
-  const remaining = Math.max(0, CAT_SPEED_WINDOW_MS - elapsed);
+  const remaining = Math.max(0, windowMs - elapsed);
   catSubtestChrome({
     label: "Processing speed",
     progress: `${Math.ceil(remaining / 1000)}s left · ${state.correct} correct`,
     prompt: "Same or different?"
   });
-  elements.catTimerBar.style.width = `${(remaining / CAT_SPEED_WINDOW_MS) * 100}%`;
+  elements.catTimerBar.style.width = `${(remaining / windowMs) * 100}%`;
   elements.catStage.innerHTML = `<div class="cat-speed-pair"><span>${left}</span><span>${right}</span></div>`;
   elements.catOptions.innerHTML = `
     <button type="button" data-same="1">Same</button>
@@ -9733,7 +9859,7 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
   for (const key of MEASUREMENT_INDEX_ORDER) {
     // An index can be fed by more than one subtest (Verbal has two, Fluid has
     // two), so average their thetas rather than letting the last one win.
-    const parts = subtestsForIndex(key)
+    const parts = subtestsForIndex(key, attempt.battery)
       .map((subtest) => attempt.subtests[subtest.id])
       .filter((result) => result && Number.isFinite(result.theta));
     if (!parts.length) { indices[key] = null; continue; }
@@ -9765,6 +9891,7 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
 
   const sessionRecord = {
     id: `cat-${Date.now()}`,
+    battery: attemptBattery(attempt).id,
     completedAt: new Date().toISOString(),
     durationMs: Date.now() - (attempt.startedAt ?? Date.now()),
     theta: Math.round(compositeTheta * 1000) / 1000,
@@ -10848,9 +10975,23 @@ function toggleProfileDataPanel(panel) {
   updateSegmentedControls();
 }
 
+let enterTimer = null;
+// Marks the content area as freshly entered for one beat, so its cards can
+// play their entrance once per page change — not on every re-render after.
+function markPageEnter() {
+  const content = document.querySelector(".app-content");
+  if (!content) return;
+  content.classList.remove("is-entering");
+  void content.offsetWidth;
+  content.classList.add("is-entering");
+  if (enterTimer) window.clearTimeout(enterTimer);
+  enterTimer = window.setTimeout(() => content.classList.remove("is-entering"), 900);
+}
+
 function setActiveTab(tab) {
   // Track the previous tab so a paywall bounce can return the user there.
   if (tab !== activeTabId) { previousTabId = activeTabId; activeTabId = tab; }
+  markPageEnter();
   elements.sideNavButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.section === tab);
   });

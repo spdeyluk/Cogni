@@ -188,18 +188,138 @@ export const MEASUREMENT_SUBTESTS = [
   }
 ];
 
-export function subtestById(id) {
-  return MEASUREMENT_SUBTESTS.find((subtest) => subtest.id === id) ?? null;
+// ---------------------------------------------------------------------------
+// The Mini. The same battery cut to about a quarter of an hour: one subtest per
+// ability, each drawing on every item kind its full-length counterparts use, so
+// it samples the same things — just fewer of them. Working memory drops the
+// sequencing round and speed runs for one minute instead of two. Scores land on
+// the same scale and the same report, with wider margins, which the report
+// shows rather than hides.
+//
+// Mini subtests carry their own per-item time limit (`timeLimitMs`) because a
+// mixed-kind subtest has no single bank domain to inherit one from.
+// ---------------------------------------------------------------------------
+export const MINI_SUBTESTS = [
+  {
+    id: "mini-verbal",
+    index: "vci",
+    name: "Verbal",
+    kinds: ["vocabulary", "verbal-analogy", "odd-one-out", "sentence-logic"],
+    questions: 7,
+    secondsPerQuestion: 40,
+    timeLimitMs: 40000,
+    summary: "Assesses word knowledge and reasoning about meaning in one short pass.",
+    instructions: "Choose the option closest in meaning to the word, or the one that best preserves the relationship, completes the argument, or does not belong."
+  },
+  {
+    id: "mini-fluid",
+    index: "fri",
+    name: "Fluid Reasoning",
+    kinds: ["matrix", "figure-weights", "series", "letter-analogy"],
+    questions: 8,
+    secondsPerQuestion: 60,
+    timeLimitMs: 60000,
+    summary: "Assesses inductive reasoning over patterns, balances and sequences you have never seen before.",
+    instructions: "Each question has one rule behind it — a grid to complete, a scale to balance, or a sequence to continue. Choose the option that fits."
+  },
+  {
+    id: "mini-rotation",
+    index: "vsi",
+    name: "Mental Rotation",
+    kinds: ["mental-rotation"],
+    questions: 5,
+    secondsPerQuestion: 50,
+    timeLimitMs: 50000,
+    summary: "Assesses spatial visualisation — rotating a figure in your head.",
+    instructions: "One option is the target figure rotated. The others are mirror images, which can never be produced by rotation alone."
+  },
+  {
+    id: "mini-quant",
+    index: "qri",
+    name: "Quantitative",
+    kinds: ["word-problem", "number-property", "proportion-rate"],
+    questions: 5,
+    secondsPerQuestion: 50,
+    timeLimitMs: 50000,
+    summary: "Assesses reasoning with number, proportion and quantitative relationships.",
+    instructions: "Choose the correct answer. Working it out on paper is fine; a calculator is not."
+  },
+  {
+    id: "mini-span",
+    index: "wmi",
+    name: "Digit Span",
+    engine: "span",
+    spanConditions: ["forward", "backward"],
+    questions: null,
+    summary: "Assesses how much you can hold in mind and manipulate at once.",
+    instructions: "Digits appear briefly, then you type them back — first forward, then in reverse. Each round grows until you miss twice."
+  },
+  {
+    id: "mini-speed",
+    index: "psi",
+    name: "Symbol Match",
+    engine: "speed",
+    windowMs: 60000,
+    questions: null,
+    summary: "Assesses decision speed on a task with no reasoning load.",
+    instructions: "Two symbols appear. Say whether they match. You have one minute to get through as many as you can — wrong answers cancel out right ones, so guessing gains nothing."
+  }
+];
+
+// The two tests a sitting can be. Everything downstream (attempt, picker,
+// report) asks the battery for its subtests rather than reaching for the full
+// list, so a Mini sitting is complete at six and a full one at nine.
+export const MEASUREMENT_BATTERIES = {
+  full: {
+    id: "full",
+    name: "Full test",
+    short: "Full",
+    countWord: "Nine",
+    subtests: MEASUREMENT_SUBTESTS,
+    blurb: "Every subtest. The most precise score and the fullest report."
+  },
+  mini: {
+    id: "mini",
+    name: "Mini test",
+    short: "Mini",
+    countWord: "Six",
+    subtests: MINI_SUBTESTS,
+    blurb: "One subtest per ability. The same report, with wider margins."
+  }
+};
+export const MEASUREMENT_BATTERY_ORDER = ["full", "mini"];
+
+export function batteryById(id) {
+  return MEASUREMENT_BATTERIES[id] ?? MEASUREMENT_BATTERIES.full;
 }
 
-export function subtestsForIndex(indexKey) {
-  return MEASUREMENT_SUBTESTS.filter((subtest) => subtest.index === indexKey);
+export function batterySubtests(id) {
+  return batteryById(id).subtests;
+}
+
+/** Rough minutes for a whole battery — the sum of its subtests' estimates. */
+export function batteryMinutes(id) {
+  return batterySubtests(id).reduce((sum, subtest) => sum + subtestMinutes(subtest), 0);
+}
+
+const ALL_SUBTESTS = [...MEASUREMENT_SUBTESTS, ...MINI_SUBTESTS];
+
+export function subtestById(id) {
+  return ALL_SUBTESTS.find((subtest) => subtest.id === id) ?? null;
+}
+
+export function subtestsForIndex(indexKey, batteryId = "full") {
+  return batterySubtests(batteryId).filter((subtest) => subtest.index === indexKey);
 }
 
 /** Rough minutes for a subtest, used for the "~N minutes" line on its card. */
 export function subtestMinutes(subtest) {
-  if (subtest.engine === "span") return 5;
-  if (subtest.engine === "speed") return 2;
+  if (subtest.engine === "span") {
+    // Three conditions is the full subtest; the Mini runs two.
+    const conditions = subtest.spanConditions?.length ?? 3;
+    return conditions >= 3 ? 5 : conditions === 2 ? 3 : 2;
+  }
+  if (subtest.engine === "speed") return Math.max(1, Math.round((subtest.windowMs ?? 120000) / 60000));
   const seconds = (subtest.questions ?? 0) * (subtest.secondsPerQuestion ?? 45);
   // People answer well inside the per-question limit, so halve it for the estimate.
   return Math.max(2, Math.round(seconds / 2 / 60));

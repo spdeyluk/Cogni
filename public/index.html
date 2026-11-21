@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261120-iq6">
-    <link rel="stylesheet" href="luxe.css?v=20261120-iq6">
-    <link rel="stylesheet" href="battle.css?v=20261120-iq6">
-    <link rel="stylesheet" href="iq.css?v=20261120-iq6">
+    <link rel="stylesheet" href="styles.css?v=20261121-iq7">
+    <link rel="stylesheet" href="luxe.css?v=20261121-iq7">
+    <link rel="stylesheet" href="battle.css?v=20261121-iq7">
+    <link rel="stylesheet" href="iq.css?v=20261121-iq7">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -605,6 +605,9 @@
 
     </aside>
     <header class="site-topbar" id="site-topbar" aria-label="Sections">
+      <button class="site-rail-expand" id="site-rail-expand" type="button" aria-label="Show sidebar">
+        <img src="assets/brand/logo-brain.png" alt="">
+      </button>
       <div class="site-topbar-inner">
         <div class="site-topnav" id="site-topnav"></div>
         <div class="site-topbar-right" id="site-topbar-right"></div>
@@ -613,9 +616,9 @@
     <div class="landing" id="landing">
       <section class="landing-hero landing-hero-centered">
         <div class="landing-hero-main">
-          <p class="iq-hero-stats landing-stats"><span><b>9</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>45</b> minutes</span></p>
+          <p class="iq-hero-stats landing-stats"><span><b>9</b> subtests</span><i></i><span><b>6</b> abilities</span><i></i><span><b>47</b> minutes</span></p>
           <h1 class="landing-display">Your mind.<br>Measured. Tracked. Improved.</h1>
-          <p class="landing-hero-lede">Take a nine-part IQ test across six abilities, train what is weak for free, and watch the number move over time.</p>
+          <p class="landing-hero-lede">Take the nine-part IQ test across six abilities, or the 14-minute Mini. Train what is weak for free, and watch the number move over time.</p>
           <div class="landing-cta-row">
             <button class="landing-cta" id="landing-start" type="button"><svg class="landing-g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google<svg class="landing-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
             <button class="iq-link" id="landing-how" type="button">See how it works</button>
@@ -630,7 +633,7 @@
         <p class="landing-section-eyebrow">How it works</p>
         <h2 class="landing-h2">From first question to a report you can act on</h2>
         <ol class="iq-steps">
-          <li class="iq-step"><span class="iq-step-n">1</span><h3>Take nine short subtests</h3><p>Verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.</p></li>
+          <li class="iq-step"><span class="iq-step-n">1</span><h3>Take the test — full or Mini</h3><p>Nine short subtests, or six in the Mini: verbal, reasoning, spatial, numerical, memory and speed. Each takes a few minutes, in any order, whenever you like.</p></li>
           <li class="iq-step"><span class="iq-step-n">2</span><h3>Every ability is scored</h3><p>Each subtest feeds one of six ability indices on the standard IQ scale, with its margin of error shown beside it.</p></li>
           <li class="iq-step"><span class="iq-step-n">3</span><h3>Get your IQ and the report</h3><p>A composite score, where it sits on the curve, your strongest and weakest abilities, and every retest kept so you can track change.</p></li>
         </ol>
@@ -640,7 +643,7 @@
         <p class="landing-section-eyebrow">What you get</p>
         <h2 class="landing-h2">One place to measure, train and compete</h2>
         <div class="landing-trio">
-          <article class="landing-offer"><h3>The IQ test</h3><p>Nine subtests, six abilities, one score with its margin of error. Retake it whenever you want to see what changed.</p></article>
+          <article class="landing-offer"><h3>The IQ test</h3><p>Nine subtests, six abilities, one score with its margin of error — or the Mini when you have a quarter of an hour. Retake either whenever you want to see what changed.</p></article>
           <article class="landing-offer"><h3>Training, free</h3><p>N-Back, relational reasoning, cognitive control, memory and speed drills. Every exercise is open, at every difficulty, as often as you like.</p></article>
           <article class="landing-offer"><h3>1v1 battles</h3><p>Quick matches and private lobbies on the same kinds of tasks. A rating that moves, and your IQ on your profile when you take the test.</p></article>
         </div>
@@ -1036,8 +1039,8 @@
             <div class="measure-hub-state">
               <p class="measure-hub-eyebrow">Cogni IQ Test</p>
               <h2 class="measure-hub-title" id="measure-hub-title">Take the test</h2>
-              <p class="measure-hub-sub">Nine short subtests across six abilities, taken in any order. Each is a
-                single sitting — you can stop early, but you can't return to it.</p>
+              <p class="measure-hub-sub">Nine short subtests across six abilities — or the Mini, six subtests in about a
+                quarter of an hour. Each is a single sitting — you can stop early, but you can't return to it.</p>
               <div class="measure-hub-cats" id="measure-hub-cats" aria-label="What it measures"></div>
               <div class="results-teaser" id="results-teaser" hidden></div>
               <div class="measure-progress" id="measure-progress"></div>
@@ -2684,6 +2687,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261120-iq6"></script>
+    <script type="module" src="src/app/main.js?v=20261121-iq7"></script>
   </body>
 </html>

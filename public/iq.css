@@ -914,3 +914,171 @@ html.mode-pro .home-sub { margin: 0; font-size: 15px; color: var(--text-2); }
 html.mode-pro .home-head { display: grid; gap: 6px; justify-items: center; }
 html.mode-pro .site-topnav .site-rail-nav .site-tab[hidden] { display: none !important; }
 html.mode-pro .home-sub { max-width: 46ch; text-align: center; }
+
+/* ===================================================================
+   FaceIQ interaction pass (2026-11-21): the little things. Measured on
+   the live dashboard — 150ms colour transitions on tabs and links, pills
+   that scale 1.03 on hover and 0.97 on press with a soft drop shadow and
+   a hairline highlight, cool-grey card hairlines with a 1px shadow,
+   history rows that dim rather than tint, colour-only tab hovers, a
+   sidebar that leaves entirely, cards that rise 16px into place.
+   =================================================================== */
+html.mode-pro { --ease-out: cubic-bezier(0.4, 0, 0.2, 1); --rail-btn-active: #1c2127; }
+html.mode-pro[data-theme="dark"] { --rail-btn-active: #15181d; }
+html.mode-pro[data-theme="light"] {
+  --line: rgba(114, 131, 140, 0.14);
+  --line-strong: rgba(114, 131, 140, 0.22);
+  --shadow: 0 1px 3px rgba(114, 131, 140, 0.08);
+  --fill-subtle: #f9fafb;
+  --surface-2: #f3f4f6;
+}
+
+/* colour transitions on everything you can point at */
+html.mode-pro .site-tab, html.mode-pro .site-rail-link, html.mode-pro .site-rail-foot a,
+html.mode-pro .site-rail-mini, html.mode-pro .mdash-tab, html.mode-pro .mdash-back,
+html.mode-pro .measure-subtest, html.mode-pro .iq-link, html.mode-pro .site-header-nav a,
+html.mode-pro .landing-footer a, html.mode-pro .site-login, html.mode-pro .seg-sliding > button,
+html.mode-pro .measure-subtests-back, html.mode-pro .site-rail-brand, html.mode-pro .site-rail-collapse,
+html.mode-pro .site-rail-expand, html.mode-pro .theme-toggle, html.mode-pro .measure-report,
+html.mode-pro .site-rail-pass, html.mode-pro .site-rail-login, html.mode-pro .measure-hub-reset,
+html.mode-pro .mdash-ksection .mdash-kmore, html.mode-pro .profile-edit-button {
+  transition: color 150ms var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), opacity 150ms var(--ease-out) !important;
+}
+html.mode-pro .mdash-subtab, html.mode-pro .mdash-ktab, html.mode-pro .mdash-ksection .mdash-ktab, html.mode-pro .mdash-krow-main, html.mode-pro .mdash-ksection .mdash-krow-main {
+  transition: color 200ms var(--ease-out), background-color 200ms var(--ease-out) !important;
+}
+/* tabs: colour only on hover, no tint */
+html.mode-pro .mdash-subtab:hover, html.mode-pro .mdash-ktab:hover, html.mode-pro .mdash-ksection .mdash-ktab:hover { background: transparent !important; color: var(--text) !important; }
+html.mode-pro .mdash-subtab.is-active:hover, html.mode-pro .mdash-ksection .mdash-ktab.is-active:hover { background: var(--btn-fill) !important; color: var(--btn-text) !important; }
+/* rail: explore links tint gray-100, history rows dim, the account button presses darker */
+html.mode-pro .site-rail-link:hover, html.mode-pro .site-rail-foot a:hover { background: var(--surface-2) !important; color: var(--text) !important; }
+html.mode-pro .site-rail-hist { transition: opacity 150ms var(--ease-out), background-color 150ms var(--ease-out); }
+html.mode-pro .site-rail-hist:hover { background: transparent; opacity: 0.8; }
+html.mode-pro .site-rail-hist.is-active, html.mode-pro .site-rail-hist.is-active:hover { background: color-mix(in srgb, var(--text) 8%, transparent); opacity: 1; }
+html.mode-pro .site-rail-mini:hover { background: var(--fill-subtle); color: var(--text); border-color: var(--line-strong); }
+html.mode-pro .site-rail-pass:active, html.mode-pro .site-rail-login:active { background: var(--rail-btn-active) !important; }
+html.mode-pro .site-rail-hist-tag { display: inline-block; margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: var(--surface-2); font-size: 9px; font-weight: 700; font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); vertical-align: 1px; }
+/* icon buttons */
+html.mode-pro .site-topbar-right .theme-toggle:hover, html.mode-pro .site-rail-collapse:hover { background: var(--line-strong) !important; color: var(--text) !important; }
+html.mode-pro .site-topbar-right .theme-toggle:active, html.mode-pro .site-rail-collapse:active, html.mode-pro .site-rail-expand:active { transform: scale(0.94); }
+html.mode-pro .site-topbar-right .theme-toggle, html.mode-pro .site-rail-collapse { transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), transform 120ms var(--ease-out) !important; }
+
+/* dark pills: scale on hover, press in, soft shadow, hairline highlight */
+html.mode-pro .mdash-dark-pill, html.mode-pro .mdash-ksection .mdash-dark-pill, html.mode-pro .mdash-unlock-chip,
+html.mode-pro .mdash-krow-unlock, html.mode-pro .mdash-chart-unlock, html.mode-pro .mdash-pillar-view, html.mode-pro .home-cta.is-special {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), background-color 200ms var(--ease-out), filter 200ms var(--ease-out) !important;
+  will-change: transform;
+}
+html.mode-pro .mdash-dark-pill:hover, html.mode-pro .mdash-ksection .mdash-dark-pill:hover, html.mode-pro .mdash-unlock-chip:hover,
+html.mode-pro .mdash-krow-unlock:hover, html.mode-pro .mdash-chart-unlock:hover, html.mode-pro .mdash-pillar-view:hover, html.mode-pro .home-cta.is-special:hover,
+html.mode-pro .mdash-krow.is-locked .mdash-krow-main:hover .mdash-krow-unlock { transform: scale(1.03) !important; filter: none !important; }
+html.mode-pro .mdash-dark-pill:active, html.mode-pro .mdash-ksection .mdash-dark-pill:active, html.mode-pro .mdash-unlock-chip:active,
+html.mode-pro .mdash-krow-unlock:active, html.mode-pro .mdash-chart-unlock:active, html.mode-pro .mdash-pillar-view:active, html.mode-pro .home-cta.is-special:active { transform: scale(0.97) !important; }
+/* teal pills: the same, in teal */
+html.mode-pro .mdash-pillar-view, html.mode-pro .home-cta.is-special {
+  border-color: rgba(20, 184, 166, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.28), 0 2px 8px rgba(15, 118, 110, 0.18) !important;
+}
+html.mode-pro .mdash-pillar:hover .mdash-pillar-view { color: #fff !important; filter: none !important; }
+html.mode-pro .home-cta.is-special:hover { box-shadow: 0 8px 32px rgba(15, 118, 110, 0.32), 0 2px 8px rgba(15, 118, 110, 0.2) !important; }
+/* black CTAs: colour on hover, press in */
+html.mode-pro .measure-hub-cta { transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out), opacity 150ms var(--ease-out) !important; }
+html.mode-pro .measure-hub-cta:hover { opacity: 1 !important; background: var(--btn-fill-hover) !important; }
+html.mode-pro .iq-hero .sales-cta:active, html.mode-pro .measure-hub-cta:active, html.mode-pro .landing-cta:active,
+html.mode-pro .site-google:active, html.mode-pro .measure-start:active, html.mode-pro .measure-hub-results:not(:disabled):active,
+html.mode-pro .site-header .site-google:active { transform: scale(0.98) !important; }
+html.mode-pro .measure-hub-results { transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out), transform 120ms var(--ease-out), opacity 150ms var(--ease-out) !important; }
+
+/* pillar cards sit still; the pill inside is what moves */
+html.mode-pro .mdash-pillar { cursor: pointer; transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out) !important; }
+html.mode-pro .mdash-pillar:hover { transform: none !important; border-color: var(--line) !important; box-shadow: var(--shadow) !important; }
+html.mode-pro .mdash-pillar.is-focused, html.mode-pro .mdash-pillar.is-focused:hover { border-color: var(--text) !important; box-shadow: 0 0 0 1px var(--text), var(--shadow) !important; }
+/* the Train cards keep a one-pixel lift, FaceIQ's hover:-translate-y-px */
+html.mode-pro .exercise-card, html.mode-pro .routines-tile { transition: transform 150ms var(--ease-out), border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out) !important; }
+
+/* keyboard focus: one ring, only when it came from the keyboard */
+html.mode-pro :is(button, a, [role="button"], [tabindex]):focus-visible { outline: 2px solid var(--text) !important; outline-offset: 2px !important; box-shadow: none; }
+html.mode-pro :is(button, a):focus:not(:focus-visible) { outline: none !important; }
+
+/* entrance: cards rise into place once per page change (.is-entering is set by
+   setActiveTab for one beat), staggered left to right, top to bottom */
+@keyframes iq-fade-up { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+html.mode-pro .app-content.is-entering .mdash-pillar,
+html.mode-pro .app-content.is-entering .mdash-overall,
+html.mode-pro .app-content.is-entering .mdash-ksection,
+html.mode-pro .app-content.is-entering .mdash-card,
+html.mode-pro .app-content.is-entering .measure-hub,
+html.mode-pro .app-content.is-entering .measure-hub-reports,
+html.mode-pro .app-content.is-entering .iq-hero,
+html.mode-pro .app-content.is-entering .iq-preview,
+html.mode-pro .app-content.is-entering .sales-section,
+html.mode-pro .app-content.is-entering .measure-section,
+html.mode-pro .app-content.is-entering .home-card,
+html.mode-pro .app-content.is-entering .home-head,
+html.mode-pro .app-content.is-entering .exercise-card,
+html.mode-pro .app-content.is-entering .routines-tile,
+html.mode-pro .app-content.is-entering .profile-identity-card,
+html.mode-pro .app-content.is-entering .profile-exercise-section,
+html.mode-pro .app-content.is-entering .battle-list,
+html.mode-pro .app-content.is-entering .lobby-section { animation: iq-fade-up 420ms var(--ease-out) both; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(2) { animation-delay: 40ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(3) { animation-delay: 80ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(4) { animation-delay: 120ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(5) { animation-delay: 160ms; }
+html.mode-pro .app-content.is-entering :is(.mdash-pillar, .exercise-card, .routines-tile, .home-card, .measure-section, .sales-section):nth-child(n + 6) { animation-delay: 200ms; }
+html.mode-pro .app-content.is-entering .mdash-overall { animation-delay: 140ms; }
+html.mode-pro .app-content.is-entering .mdash-ksection.is-strong { animation-delay: 200ms; }
+html.mode-pro .app-content.is-entering .mdash-ksection.is-room { animation-delay: 260ms; }
+html.mode-pro .app-content.is-entering .iq-preview, html.mode-pro .app-content.is-entering .measure-hub-reports { animation-delay: 120ms; }
+
+/* connectors: a faint pulse flows down from each pillar into the overall card */
+@keyframes iq-flow { from { transform: translateY(-100%); } to { transform: translateY(260%); } }
+html.mode-pro .mdash-connect i { position: relative; overflow: hidden; }
+html.mode-pro .mdash-connect i::after { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 40%; background: linear-gradient(to bottom, transparent, var(--text)); opacity: 0.45; animation: iq-flow 2.4s linear infinite; }
+html.mode-pro .mdash-connect i:nth-child(2)::after { animation-delay: 0.4s; }
+html.mode-pro .mdash-connect i:nth-child(3)::after { animation-delay: 0.8s; }
+html.mode-pro .mdash-connect i:nth-child(4)::after { animation-delay: 1.2s; }
+html.mode-pro .mdash-connect i:nth-child(5)::after { animation-delay: 1.6s; }
+html.mode-pro .mdash-connect i:nth-child(6)::after { animation-delay: 2s; }
+
+/* sidebar: collapsed means gone; the brand mark stays top-left as the way back */
+html.mode-pro { --rail-w-collapsed: 0px; }
+html.mode-pro .site-rail { transition: width 240ms var(--ease-out), transform 240ms var(--ease-out), opacity 180ms var(--ease-out); }
+html.rail-collapsed.mode-pro .site-rail { width: 0 !important; min-width: 0 !important; padding-left: 0 !important; padding-right: 0 !important; transform: translateX(-24px); opacity: 0; overflow: hidden; pointer-events: none; border-right: 0 !important; }
+html.mode-pro:not(.landing-active) .app-content,
+html.mode-pro:not(.landing-active) .app-shell.assessments-open .app-content { transition: margin-left 240ms var(--ease-out), padding-left 240ms var(--ease-out); }
+html.mode-pro:not(.landing-active) .site-topbar, html.mode-pro.mdash-on.report-chrome .app-shell.assessments-open .mdash-topbar { transition: left 240ms var(--ease-out); }
+html.mode-pro .site-rail-expand { display: none; position: absolute; left: 14px; top: 6px; z-index: 2; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: pointer; place-items: center; transition: background-color 150ms var(--ease-out), transform 120ms var(--ease-out); }
+html.mode-pro .site-rail-expand img { width: 22px; height: 22px; object-fit: contain; }
+html.mode-pro .site-rail-expand:hover { background: var(--surface-2); }
+html.rail-collapsed.mode-pro:not(.landing-active) .site-rail-expand { display: grid; }
+html.rail-collapsed.mode-pro:not(.landing-active) .site-topbar-inner { padding-left: 48px; width: calc(96% - 48px); margin-left: 2%; }
+html.rail-collapsed.mode-pro:not(.landing-active) .site-topbar-inner { width: auto; margin: 0 2% 0 0; }
+
+/* Full / Mini: a two-up segmented choice on the card and in the hero */
+html.mode-pro .measure-battery, html.mode-pro .iq-battery { display: inline-grid !important; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px !important; border-radius: 14px !important; }
+html.mode-pro .measure-battery { margin-top: 22px; }
+html.mode-pro .iq-battery { margin: 0 auto 26px; }
+html.mode-pro .measure-battery > button, html.mode-pro .iq-battery > button { display: grid !important; gap: 3px; justify-items: start; min-width: 172px; min-height: 0 !important; padding: 10px 16px !important; border-radius: 10px !important; text-align: left; line-height: 1.2; }
+html.mode-pro .measure-battery > button b, html.mode-pro .iq-battery > button b { font-size: 13px; font-weight: 600; letter-spacing: -0.005em; }
+html.mode-pro .measure-battery > button span, html.mode-pro .iq-battery > button span { font-size: 11px; font-weight: 500; opacity: 0.72; }
+html.mode-pro .measure-battery > button.active span, html.mode-pro .iq-battery > button.active span { opacity: 0.8; }
+html.mode-pro .measure-battery + .measure-hub-actions { margin-top: 14px; }
+html.mode-pro .measure-battery-lock { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--fill-subtle); font-size: 12px; font-weight: 600; color: var(--text); }
+html.mode-pro .measure-battery-lock span { font-weight: 500; color: var(--muted); }
+html.mode-pro .measure-battery-lock + .measure-hub-actions { margin-top: 14px; }
+@media (max-width: 520px) {
+  html.mode-pro .measure-battery, html.mode-pro .iq-battery { display: grid !important; width: 100%; }
+  html.mode-pro .measure-battery > button, html.mode-pro .iq-battery > button { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.mode-pro .app-content.is-entering * { animation: none !important; }
+  html.mode-pro .mdash-connect i::after { animation: none !important; opacity: 0; }
+  html.mode-pro .site-rail, html.mode-pro .app-content, html.mode-pro .site-topbar { transition: none !important; }
+}
+/* collapsed rail: the top tabs keep their labels (the old icon-rail rule hid them) */
+html.rail-collapsed.mode-pro .site-topnav .site-rail-nav .site-tab span { display: inline !important; }
+html.rail-collapsed.mode-pro .site-topnav .site-rail-nav .site-tab { justify-content: flex-start; padding: 0 2px !important; }
