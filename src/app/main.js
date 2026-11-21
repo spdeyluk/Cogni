@@ -9685,13 +9685,18 @@ function renderCatQuestion() {
     : `Question ${catActive.responses.length + 1}`;
   elements.catDomainLabel.textContent = subtest?.name ?? CAT_DOMAIN_LABELS[item.domain];
   elements.catPrompt.textContent = item.prompt;
+  // A lone word is a vocabulary item. The brief said what to do with it, but
+  // the question itself has to say it too.
+  const loneWord = item.domain === "verbal" && /^[A-Za-z][A-Za-z-]*$/.test(String(item.prompt ?? "").trim());
   elements.catStage.innerHTML = item.matrix
     ? catMatrixSvg(item.matrix)
     : item.figure
       ? `<div class="cat-figure-target">${catCellSvg(item.figure.target)}</div>`
       : item.weights
         ? catWeightsSvg(item.weights)
-        : "";
+        : loneWord
+          ? `<p class="cat-instruction">Which option is closest in meaning?</p>`
+          : "";
   const order = catOptionOrder(item);
   if (item.weights) {
     elements.catOptions.className = "cat-options cat-options-matrix";

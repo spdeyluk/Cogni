@@ -1205,17 +1205,42 @@ html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { c
 @keyframes iq-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(15, 155, 142, 0)); } 50% { filter: drop-shadow(0 0 6px rgba(15, 155, 142, 0.75)); } }
 @media (prefers-reduced-motion: reduce) { html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active)::after, html.mode-pro.iq-due .site-tab[data-site-tab="assessments"]:not(.active) svg { animation: none; } }
 
-/* Tags (after FaceIQ's "PRO" chip): tiny, bold, lavender for anything that needs
-   a paid plan; the same chip in teal for "Most popular". */
-html.mode-pro .cogni-tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 6px; font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; vertical-align: middle; white-space: nowrap; }
-html.mode-pro .cogni-tag.is-pro { background: #ede9fe; color: #6d28d9; }
-html.mode-pro .cogni-tag.is-popular { background: rgba(15, 155, 142, 0.12); color: var(--iq-teal); }
-html.mode-pro:not([data-theme="light"]) .cogni-tag.is-pro, html.mode-pro[data-theme="dark"] .cogni-tag.is-pro { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
-html.mode-pro[data-theme="light"] .cogni-tag.is-pro { background: #ede9fe; color: #6d28d9; }
+/* Tags, measured from FaceIQ (2026-11-21). PRO is a superscript badge pinned to
+   the top-right corner of its label: 10px tall, 6.5px/700 uppercase Manrope,
+   0.78px tracking, 0 3px padding, 3px radius, a 120° lavender gradient
+   (#f1e7ff → #b9a5ff) with near-black text, offset -5px / -9px from a
+   position:relative label. "Most popular" is the same chip in teal, a touch
+   larger, sitting in the card's corner. */
+html.mode-pro .cogni-tag { display: inline-flex; align-items: center; border-radius: 3px; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; white-space: nowrap; color: #0b0d11; pointer-events: none; }
+html.mode-pro .cogni-tag.is-pro { position: absolute; top: -5px; right: -9px; height: 10px; padding: 0 3px; font-size: 6.5px; line-height: 6.5px; letter-spacing: 0.78px; background: linear-gradient(120deg, #f1e7ff, #b9a5ff); }
+html.mode-pro .cogni-tag.is-popular { height: 14px; padding: 0 5px; font-size: 7.5px; line-height: 7.5px; letter-spacing: 0.9px; background: linear-gradient(120deg, #d9f6f1, #8fe3d6); }
 html.mode-pro .exercise-card { position: relative; }
 html.mode-pro .exercise-card > .cogni-tag { position: absolute; top: 18px; right: 18px; }
-html.mode-pro .routines-tile-copy strong { display: inline-flex; align-items: center; gap: 8px; }
-html.mode-pro .routines-tile-copy strong .cogni-tag { margin-top: 1px; }
-html.mode-pro .profile-view-switch > button { display: inline-flex; align-items: center; gap: 7px; }
-html.mode-pro .profile-view-switch > button.active .cogni-tag.is-pro { background: rgba(196, 181, 253, 0.22); color: #ddd6fe; }
+html.mode-pro .routines-tile-copy strong { position: relative; display: inline-flex; align-self: flex-start; width: max-content; }
+html.mode-pro .profile-view-switch { overflow: visible !important; }
+html.mode-pro .profile-view-switch > button { position: relative; overflow: visible !important; }
 html.mode-pro .tester-badge button + button { margin-left: -2px; }
+
+/* Accent pill, measured from FaceIQ (2026-11-21): 135° teal gradient at ~90%
+   alpha (teal-700 → teal-500), hairline teal border, layered shadow with an
+   inset top highlight, 600 12px/16px, 8px 16px padding, 14px leading arrow,
+   6px gap; scale 1.03 on hover, 0.97 on press, 200ms standard ease. */
+html.mode-pro .mdash-pillar-view, html.mode-pro .home-cta.is-special, html.mode-pro .iq-accent-pill {
+  display: inline-flex !important; align-items: center !important; gap: 6px !important;
+  min-height: 0 !important; height: auto !important; padding: 8px 16px !important;
+  border: 1px solid rgba(20, 184, 166, 0.35) !important; border-radius: 9999px !important;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(20, 184, 166, 0.88)) !important;
+  color: #fff !important; font-size: 12px !important; font-weight: 600 !important; line-height: 16px !important; letter-spacing: normal !important;
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.28), 0 2px 8px rgba(15, 118, 110, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  filter: none !important; cursor: pointer;
+}
+html.mode-pro .mdash-pillar-view svg, html.mode-pro .home-cta.is-special svg, html.mode-pro .iq-accent-pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html.mode-pro .mdash-pillar-view:hover, html.mode-pro .mdash-pillar:hover .mdash-pillar-view, html.mode-pro .home-cta.is-special:hover, html.mode-pro .iq-accent-pill:hover {
+  transform: scale(1.03) !important; filter: none !important; color: #fff !important;
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.28), 0 2px 8px rgba(15, 118, 110, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+html.mode-pro .mdash-pillar-view:active, html.mode-pro .mdash-pillar:active .mdash-pillar-view, html.mode-pro .home-cta.is-special:active, html.mode-pro .iq-accent-pill:active { transform: scale(0.97) !important; }
+
+/* Vocabulary items: the instruction sits under the word, every time. */
+html.mode-pro .cat-instruction { margin: 0 0 6px; color: var(--text-2); font-size: 15px; font-weight: 500; letter-spacing: -0.005em; }
