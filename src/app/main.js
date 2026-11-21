@@ -1554,14 +1554,10 @@ function markWebOnboardingSeen() {
 // taking the thinking), then ends on the test picker. A click, Space or → skips
 // ahead, ← goes back, Skip jumps to the end. *word* marks an italic emphasis.
 const WEB_ONBOARDING_BEATS = [
-  { lines: ["For most of history, work was *physical*."], hold: 1700 },
-  { lines: ["Then machines took it over."], hold: 1400 },
-  { lines: ["We sat down.", "We got *weaker*."], hold: 1800 },
-  { lines: ["So we built the gym."], hold: 1700 },
-  { lines: ["Now it is happening to the *mind*."], hold: 1900 },
-  { lines: ["AI writes for us.", "Remembers for us.", "Thinks for us."], hold: 2000 },
-  { lines: ["What you don't use,", "you lose."], hold: 1900 },
-  { lines: ["Your body has the gym.", "Your mind has *Cogni*."], hold: 2600, brand: true }
+  { lines: ["Machines took over our *physical* work."], hold: 1500 },
+  { lines: ["So we built gyms."], hold: 1500 },
+  { lines: ["Now AI is taking over our *thinking*."], hold: 1600 },
+  { lines: ["So we built *Cogni*."], hold: 2000, brand: true }
 ];
 const WEB_ONBOARDING_WORD_MS = 70;
 const WEB_ONBOARDING_LINE_GAP = 5; // word-slots of pause between lines
@@ -1614,24 +1610,27 @@ function showWebOnboarding(onDone = () => {}) {
   const total = beats.length + 1; // + the picker
   let index = 0;
   let timer = null;
+  // The test is a deliberate pick: neither battery is selected until the person
+  // chooses, and Start stays off until then.
+  let picked = null;
   const clearTimer = () => { window.clearTimeout(timer); timer = null; };
   const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 
   const pickerHtml = () => {
     if (iqTestAvailable()) {
-      const battery = batteryById(measureBatteryChoice);
+      const startLabel = picked === "mini" ? "Start the Mini test" : picked === "full" ? "Start the IQ test" : "Start the test";
       return `
         <div class="web-onboarding-slide ob-cta">
           <p class="web-onboarding-eyebrow">Your baseline</p>
-          <h2 class="web-onboarding-title">Start with one sitting.</h2>
-          <p class="web-onboarding-body">Nine short subtests give you one IQ score and a report that shows what to train. The Mini covers the same six abilities in about ${batteryMinutes("mini")} minutes.</p>
-          <div class="seg-sliding iq-battery ob-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(battery.id)}</div>
+          <h2 class="web-onboarding-title">Measure your mind.</h2>
+          <p class="web-onboarding-body">Pick a test. One sitting gives you an IQ score, and a report that shows what to train.</p>
+          <div class="seg-sliding iq-battery ob-battery" role="radiogroup" aria-label="Which test">${measureBatteryChoiceHtml(picked ?? "")}</div>
         </div>
         <div class="web-onboarding-footer">
           <div class="web-onboarding-actions">
             <button type="button" class="web-onboarding-back" data-onboard-back>Back</button>
             <button type="button" class="web-onboarding-later" data-onboard-finish>Look around first</button>
-            <button type="button" class="web-onboarding-next" data-onboard-start>Start the ${battery.id === "mini" ? "Mini" : "IQ"} test${arrow}</button>
+            <button type="button" class="web-onboarding-next" data-onboard-start ${picked ? "" : "disabled"}>${startLabel}${arrow}</button>
           </div>
         </div>`;
     }
@@ -1670,7 +1669,7 @@ function showWebOnboarding(onDone = () => {}) {
     clearTimer();
     if (!current || webOnboardingReduceMotion()) { go(next); return; }
     current.classList.add("is-out");
-    timer = window.setTimeout(() => go(next), 340);
+    timer = window.setTimeout(() => go(next), 260);
   };
   // Timers stop while the tab is hidden, so nothing plays to an empty room.
   const onVisibility = () => {
@@ -1692,11 +1691,13 @@ function showWebOnboarding(onDone = () => {}) {
     if (index < beats.length) { leave(index + 1); return; }
     const battery = event.target.closest("[data-battery]");
     if (battery) {
-      if (battery.dataset.battery !== measureBatteryChoice) { setMeasureBatteryChoice(battery.dataset.battery); render(); }
+      picked = battery.dataset.battery;
+      setMeasureBatteryChoice(picked);
+      render();
       return;
     }
     if (event.target.closest("[data-onboard-back]")) { go(index - 1); return; }
-    if (event.target.closest("[data-onboard-start]")) { finish({ start: true }); return; }
+    if (event.target.closest("[data-onboard-start]")) { if (picked) finish({ start: true }); return; }
     if (event.target.closest("[data-onboard-finish]")) { finish({ start: false }); }
   });
   // Keys work wherever focus is. Enter on a focused button is left to the
