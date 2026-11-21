@@ -9602,8 +9602,10 @@ function renderSubtestDetail(subtestId) {
     </div>
     ${allDone ? `<button class="measure-board-results" data-board-results type="button">Get results</button>` : ""}
     ${cardHtml}
+    ${testerMode() || iqOwner ? `<button class="measure-board-browse" data-board-browse type="button">Browse the questions</button>` : ""}
     ${allDone ? "" : `<button class="measure-board-end" data-board-end type="button">End test</button>`}`;
   panel.querySelector("[data-start-subtest]")?.addEventListener("click", () => startSubtest(subtest.id));
+  panel.querySelector("[data-board-browse]")?.addEventListener("click", () => openQuestionBrowser(subtest.id));
   panel.querySelector("[data-board-results]")?.addEventListener("click", () => {
     const current = loadMeasureAttempt();
     if (measureCompletedCount(current) < attemptSubtests(current).length) return;
@@ -10619,7 +10621,8 @@ function syncTesterBadge() {
   badge = document.createElement("div");
   badge.id = "tester-badge";
   badge.className = "tester-badge";
-  badge.innerHTML = `<span>Tester mode</span><button type="button" data-tester-restart title="Back to the landing as a brand-new visitor">Restart</button><button type="button" data-tester-off>Turn off</button>`;
+  badge.innerHTML = `<span>Tester mode</span><button type="button" data-tester-questions title="Every subtest's questions, answers marked">Questions</button><button type="button" data-tester-restart title="Back to the landing as a brand-new visitor">Restart</button><button type="button" data-tester-off>Turn off</button>`;
+  badge.querySelector("[data-tester-questions]").addEventListener("click", () => openQuestionBrowser());
   // Restart: forget this tester (local data included, unless a real account has
   // synced on this browser) and return to the landing, so the next sign-in
   // click runs the intro again from the top.
@@ -10648,6 +10651,86 @@ function syncTesterBadge() {
 // clean and the page reloads (the OAuth round trip, minus Google), then the boot
 // resumes the tester as a guest. A browser profile where a real account has
 // synced keeps its local copy; the walk is replayed there instead.
+// Tester tool: the question bank, subtest by subtest, rendered the way the
+// test shows it, with the correct option marked. Engines (span, speed) have no
+// fixed items, so they get their brief instead.
+let questionBrowserSubtest = null;
+function questionBrowserSubtests() {
+  const seen = new Set();
+  const list = [];
+  for (const id of MEASUREMENT_BATTERY_ORDER) {
+    for (const subtest of batteryById(id).subtests) {
+      if (seen.has(subtest.id)) continue;
+      seen.add(subtest.id);
+      list.push({ subtest, battery: id });
+    }
+  }
+  return list;
+}
+function questionBrowserItemHtml(item, number) {
+  const correct = item.answerIndex ?? 0;
+  const cells = item.weights?.optionCells ?? item.figure?.optionCells ?? item.matrix?.optionCells ?? null;
+  const stage = item.matrix ? catMatrixSvg(item.matrix)
+    : item.figure ? `<div class="cat-figure-target">${catCellSvg(item.figure.target)}</div>`
+    : item.weights ? catWeightsSvg(item.weights)
+    : "";
+  const options = cells
+    ? `<div class="cat-options cat-options-matrix qb-options">${cells.map((cell, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}" aria-label="Option ${index + 1}${index === correct ? ", correct" : ""}">${catCellSvg(cell)}</button>`).join("")}</div>`
+    : `<div class="cat-options qb-options">${(item.options ?? []).map((option, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}">${escapeHtml(String(option))}${index === correct ? '<i aria-hidden="true">✓</i>' : ""}</button>`).join("")}</div>`;
+  return `
+    <article class="qb-item">
+      <p class="qb-meta"><span>#${number}</span><span>${escapeHtml(item.kind)}</span><span>difficulty ${escapeHtml(String(item.dRank ?? "–"))}</span></p>
+      <p class="qb-prompt">${escapeHtml(String(item.prompt ?? ""))}</p>
+      ${stage ? `<div class="cat-stage qb-stage">${stage}</div>` : ""}
+      ${options}
+    </article>`;
+}
+function renderQuestionBrowser() {
+  const dialog = document.querySelector("#question-browser");
+  if (!dialog) return;
+  const entries = questionBrowserSubtests();
+  if (!entries.some((entry) => entry.subtest.id === questionBrowserSubtest)) questionBrowserSubtest = entries[0]?.subtest.id ?? null;
+  const current = entries.find((entry) => entry.subtest.id === questionBrowserSubtest);
+  const tabs = entries.map(({ subtest, battery }) => `<button type="button" class="qb-tab${subtest.id === questionBrowserSubtest ? " is-active" : ""}" data-qb-subtest="${escapeHtml(subtest.id)}">${escapeHtml(subtest.name)}<small>${battery === "mini" ? "Mini" : MEASUREMENT_INDICES[subtest.index]?.short ?? ""}</small></button>`).join("");
+  let body = "";
+  if (current) {
+    const { subtest } = current;
+    if (subtest.engine) {
+      body = `<div class="qb-engine"><p class="qb-prompt">${escapeHtml(subtest.name)} is an adaptive ${subtest.engine === "span" ? "span" : "speed"} engine, so it has no fixed question list.</p><p>${escapeHtml(subtest.summary ?? "")}</p><p>${escapeHtml(subtest.instructions ?? "")}</p></div>`;
+    } else {
+      const pool = subtestItemPool(subtest).slice().sort((a, b) => (a.dRank ?? 0) - (b.dRank ?? 0));
+      body = `<p class="qb-count">${pool.length} questions in the pool · ${subtest.questions ?? "?"} asked per sitting · ${escapeHtml(subtest.instructions ?? "")}</p>
+        <div class="qb-grid">${pool.map((item, index) => questionBrowserItemHtml(item, index + 1)).join("")}</div>`;
+    }
+  }
+  dialog.innerHTML = `
+    <header class="qb-head">
+      <div><p class="qb-eyebrow">Tester · question bank</p><h2>${escapeHtml(current?.subtest.name ?? "Questions")}</h2></div>
+      <button type="button" class="qb-close" data-qb-close aria-label="Close">✕</button>
+    </header>
+    <nav class="qb-tabs" aria-label="Subtests">${tabs}</nav>
+    <div class="qb-body">${body}</div>`;
+  dialog.querySelector(".qb-body").scrollTop = 0;
+}
+function openQuestionBrowser(subtestId) {
+  if (!testerMode() && !iqOwner) return;
+  let dialog = document.querySelector("#question-browser");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "question-browser";
+    dialog.className = "qb-dialog";
+    dialog.addEventListener("click", (event) => {
+      if (event.target.closest("[data-qb-close]")) { dialog.close(); return; }
+      const tab = event.target.closest("[data-qb-subtest]");
+      if (tab) { questionBrowserSubtest = tab.dataset.qbSubtest; renderQuestionBrowser(); }
+    });
+    document.body.appendChild(dialog);
+  }
+  if (subtestId) questionBrowserSubtest = subtestId;
+  renderQuestionBrowser();
+  if (!dialog.open) dialog.showModal();
+}
+
 function enterAsTester({ resume = false } = {}) {
   try { localStorage.setItem(TESTER_SESSION_KEY, "1"); } catch { /* private mode */ }
   if (resume) { enterAsGuest(); return; }
