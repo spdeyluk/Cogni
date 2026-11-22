@@ -1,4 +1,5 @@
 import { createRelationalReasoningConfig, generateRrtTrial } from "../exercises/relationalReasoning.js";
+import { buildLanrt, buildDomino } from "./lanrtGenerator.js";
 // Procedural item generator for the visual reasoning formats.
 //
 // Every item is built from a seed string, so an id like
@@ -442,8 +443,10 @@ function buildRelational(seed, level) {
   };
 }
 
-const BUILDERS = { mx: buildMatrix, rot: buildRotation, fw: buildWeights, rrt: buildRelational };
-const KIND_TO_FORMAT = { matrix: "mx", "mental-rotation": "rot", "figure-weights": "fw", relational: "rrt" };
+// lx and dm are the LANRT-style figural and domino series (lanrtGenerator.js);
+// battles draw on them, the IQ test does not.
+const BUILDERS = { mx: buildMatrix, rot: buildRotation, fw: buildWeights, rrt: buildRelational, lx: buildLanrt, dm: buildDomino };
+const KIND_TO_FORMAT = { matrix: "mx", "mental-rotation": "rot", "figure-weights": "fw", relational: "rrt", lanrt: "lx", domino: "dm" };
 const LEVEL_MIN = 1;
 const LEVEL_MAX = 9;
 
@@ -455,7 +458,7 @@ export function bToLevel(b) {
   return Math.max(LEVEL_MIN, Math.min(LEVEL_MAX, Math.round(1 + ((b + 2.5) / 5) * (LEVEL_MAX - 1))));
 }
 
-const DISCRIMINATION = { mx: 1.4, rot: 1.2, fw: 1.5, rrt: 1.2 };
+const DISCRIMINATION = { mx: 1.4, rot: 1.2, fw: 1.5, rrt: 1.2, lx: 1.3, dm: 1.3 };
 
 export function generatedItemId(format, seed, slot, level) {
   return `gen-${format}-${String(seed).replace(/[^A-Za-z0-9]/g, "")}-${slot}-${level}`;
@@ -472,7 +475,7 @@ const cache = new Map();
 export function resolveGeneratedItem(id) {
   if (!isGeneratedId(id)) return null;
   if (cache.has(id)) return cache.get(id);
-  const m = /^gen-(mx|rot|fw|rrt)-([A-Za-z0-9]+)-(\d+)-(\d)$/.exec(id);
+  const m = /^gen-(mx|rot|fw|rrt|lx|dm)-([A-Za-z0-9]+)-(\d+)-(\d)$/.exec(id);
   if (!m) return null;
   const [, format, seed, slot, levelText] = m;
   const level = Number(levelText);

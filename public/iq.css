@@ -1507,3 +1507,17 @@ html.mode-pro .qb-stage > * { max-width: 100%; }
 html.mode-pro .qb-stage .cat-weights { width: 100%; }
 html.mode-pro .qb-stage .cat-scale { box-sizing: border-box; width: 100%; max-width: 100%; }
 html.mode-pro .qb-stage .cat-figure-target { width: min(100%, 210px); }
+
+
+/* ---------- LANRT-style series and domino series (battles) ---------- */
+html.mode-pro .cat-lanrt { display: block; width: min(100%, 312px); height: auto; margin: 0 auto; }
+html.mode-pro .cat-lanrt[data-cols="4"] { width: min(100%, 360px); }
+html.mode-pro .cat-lanrt[data-cols="6"] { width: min(100%, 500px); }
+html.mode-pro .cat-domino { display: block; width: min(100%, 380px); max-height: 240px; height: auto; margin: 0 auto; }
+html.mode-pro .cat-domino[data-layout="column"] { width: auto; height: 220px; }
+html.mode-pro .cat-domino-tile { width: 40px; height: 80px; }
+html.mode-pro .cat-options-matrix button .cat-domino-tile { display: block; }
+html.mode-pro .qb-reseed { margin-left: 10px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; }
+html.mode-pro .qb-reseed:hover { border-color: var(--text); }
+html.mode-pro .qb-stage .cat-lanrt, html.mode-pro .qb-stage .cat-domino { max-width: 100%; }
+html.mode-pro .battle-arena .cat-lanrt[data-cols="6"] { width: min(100%, 560px); }

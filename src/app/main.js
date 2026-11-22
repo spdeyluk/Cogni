@@ -42,6 +42,7 @@ import {
 } from "../core/assessments/irt.js";
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
 import { resolveGeneratedItem, generatedItemId } from "../core/assessments/catGenerator.js";
+import { buildLanrt, buildDomino, LANRT_FAMILIES } from "../core/assessments/lanrtGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
@@ -8140,6 +8141,10 @@ initBattle({
   catCellSvg,
   catMatrixSvg,
   catWeightsSvg,
+  catFigureSvg,
+  catLanrtSvg,
+  catDominoSvg,
+  catDominoTileSvg,
   domainLabel: (domain) => CAT_DOMAIN_LABELS[domain] ?? domain,
   escapeHtml,
   appShell: elements.appShell,
@@ -10702,6 +10707,7 @@ function syncTesterBadge() {
 // test shows it, with the correct option marked. Engines (span, speed) have no
 // fixed items, so they get their brief instead.
 let questionBrowserSubtest = null;
+let questionBrowserSeed = 1;
 function questionBrowserSubtests() {
   const seen = new Set();
   const list = [];
@@ -10712,6 +10718,9 @@ function questionBrowserSubtests() {
       list.push({ subtest, battery: id });
     }
   }
+  // The battle generator is not a subtest, but it is the other place questions
+  // come from, so the browser shows a fresh sample of every family.
+  list.push({ battery: "battle", subtest: { id: "battle-gen", name: "Battle generator", generator: true, kinds: [], instructions: "LANRT-style figural series and domino series, generated fresh from a seed for every duel. Each card names its family and the level it was built at." } });
   return list;
 }
 function questionBrowserItemHtml(item, number) {
@@ -10720,9 +10729,15 @@ function questionBrowserItemHtml(item, number) {
   const stage = item.matrix ? catMatrixSvg(item.matrix)
     : item.figure ? `<div class="cat-figure-target">${catCellSvg(item.figure.target)}</div>`
     : item.weights ? catWeightsSvg(item.weights)
+    : item.lanrt ? catLanrtSvg(item.lanrt)
+    : item.domino ? catDominoSvg(item.domino)
     : "";
-  const options = cells
-    ? `<div class="cat-options cat-options-matrix qb-options">${cells.map((cell, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}" aria-label="Option ${index + 1}${index === correct ? ", correct" : ""}">${catCellSvg(cell)}</button>`).join("")}</div>`
+  const visualOption = (index) => item.lanrt ? catFigureSvg(item.lanrt.optionFigs[index])
+    : item.domino ? catDominoTileSvg(item.domino.optionTiles[index])
+    : catCellSvg(cells[index]);
+  const visualCount = item.lanrt ? item.lanrt.optionFigs.length : item.domino ? item.domino.optionTiles.length : cells ? cells.length : 0;
+  const options = visualCount
+    ? `<div class="cat-options cat-options-matrix qb-options">${Array.from({ length: visualCount }, (_, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}" aria-label="Option ${index + 1}${index === correct ? ", correct" : ""}">${visualOption(index)}</button>`).join("")}</div>`
     : `<div class="cat-options qb-options">${(item.options ?? []).map((option, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}">${escapeHtml(String(option))}${index === correct ? '<i aria-hidden="true">✓</i>' : ""}</button>`).join("")}</div>`;
   return `
     <article class="qb-item">
@@ -10742,7 +10757,22 @@ function renderQuestionBrowser() {
   let body = "";
   if (current) {
     const { subtest } = current;
-    if (subtest.engine) {
+    if (subtest.generator) {
+      const levels = [4, 6];
+      const samples = [];
+      for (const family of LANRT_FAMILIES) {
+        for (const level of levels) {
+          const item = buildLanrt(`qb-${questionBrowserSeed}-${family}`, level, { family });
+          if (item) samples.push({ ...item, b: level, tag: `${family} · level ${level}` });
+        }
+      }
+      for (const level of [3, 5, 6, 8]) {
+        const item = buildDomino(`qb-${questionBrowserSeed}-${level}`, level);
+        if (item) samples.push({ ...item, b: level, tag: `${item.tag} · level ${level}` });
+      }
+      body = `<p class="qb-count">${samples.length} fresh samples · ${escapeHtml(subtest.instructions ?? "")} <button type="button" class="qb-reseed" data-qb-reseed>New set</button></p>
+        <div class="qb-grid">${samples.map((item, index) => questionBrowserItemHtml(item, index + 1)).join("")}</div>`;
+    } else if (subtest.engine) {
       body = `<div class="qb-engine"><p class="qb-prompt">${escapeHtml(subtest.name)} is an adaptive ${subtest.engine === "span" ? "span" : "speed"} engine, so it has no fixed question list.</p><p>${escapeHtml(subtest.summary ?? "")}</p><p>${escapeHtml(subtest.instructions ?? "")}</p></div>`;
     } else {
       const pool = subtestItemPool(subtest).slice().sort((a, b) => (a.dRank ?? 0) - (b.dRank ?? 0));
@@ -10769,7 +10799,8 @@ function openQuestionBrowser(subtestId) {
     dialog.addEventListener("click", (event) => {
       if (event.target.closest("[data-qb-close]")) { dialog.close(); return; }
       const tab = event.target.closest("[data-qb-subtest]");
-      if (tab) { questionBrowserSubtest = tab.dataset.qbSubtest; renderQuestionBrowser(); }
+      if (tab) { questionBrowserSubtest = tab.dataset.qbSubtest; renderQuestionBrowser(); return; }
+      if (event.target.closest("[data-qb-reseed]")) { questionBrowserSeed += 1; renderQuestionBrowser(); }
     });
     document.body.appendChild(dialog);
   }
@@ -11141,6 +11172,125 @@ function catMatrixSvg(matrix, cellSize = 64, gap = 8) {
     return `<g transform="translate(${cx} ${cy})">${frame}${content}</g>`;
   }).join("");
   return `<svg class="cat-matrix" viewBox="0 0 ${total} ${total}" aria-hidden="true">${cells}</svg>`;
+}
+
+// ---------------------------------------------------------------------------
+// LANRT-style figures and domino series (lanrtGenerator.js). A figure is a
+// list of primitives in a unit square; everything draws in var(--text) on
+// whatever surface it sits on, so the same item reads on white and on the
+// charcoal panel.
+// ---------------------------------------------------------------------------
+function catFigureInner(fig, size, ox = 0, oy = 0) {
+  const S = (v) => (v * size).toFixed(2);
+  const X = (v) => (ox + v * size).toFixed(2);
+  const Y = (v) => (oy + v * size).toFixed(2);
+  const stroke = 'stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"';
+  const polar = (cx, cy, r, deg) => [ox + (cx + Math.cos((deg * Math.PI) / 180) * r) * size, oy + (cy + Math.sin((deg * Math.PI) / 180) * r) * size];
+  return (fig ?? []).map((p) => {
+    if (p.t === "line") return `<line x1="${X(p.x1)}" y1="${Y(p.y1)}" x2="${X(p.x2)}" y2="${Y(p.y2)}" ${stroke}></line>`;
+    if (p.t === "poly") return `<polygon points="${p.pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(" ")}" ${p.f ? 'fill="var(--text)" stroke="var(--text)" stroke-width="0.6" stroke-linejoin="round"' : `fill="none" ${stroke}`}></polygon>`;
+    if (p.t === "circle") return `<circle cx="${X(p.cx)}" cy="${Y(p.cy)}" r="${S(p.r)}" ${p.f ? 'fill="var(--text)"' : `fill="none" ${stroke}`}></circle>`;
+    if (p.t === "dot") return `<circle cx="${X(p.cx)}" cy="${Y(p.cy)}" r="${S(p.r)}" ${p.f ? 'fill="var(--text)"' : `fill="var(--surface)" ${stroke}`}></circle>`;
+    if (p.t === "sector") {
+      const [sx, sy] = polar(p.cx, p.cy, p.r, p.a0);
+      const [ex, ey] = polar(p.cx, p.cy, p.r, p.a1);
+      const large = Math.abs(p.a1 - p.a0) > 180 ? 1 : 0;
+      return `<path d="M ${X(p.cx)} ${Y(p.cy)} L ${sx.toFixed(2)} ${sy.toFixed(2)} A ${S(p.r)} ${S(p.r)} 0 ${large} 1 ${ex.toFixed(2)} ${ey.toFixed(2)} Z" fill="var(--text)"></path>`;
+    }
+    if (p.t === "arc") {
+      const [sx, sy] = polar(p.cx, p.cy, p.r, p.a0);
+      const [ex, ey] = polar(p.cx, p.cy, p.r, p.a1);
+      const large = Math.abs(p.a1 - p.a0) > 180 ? 1 : 0;
+      return `<path d="M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${S(p.r)} ${S(p.r)} 0 ${large} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}" fill="none" ${stroke}></path>`;
+    }
+    if (p.t === "hatch") {
+      const l = 0.08; const h = 0.92;
+      const lines = [];
+      for (let k = l * 2 + 0.1; k < h * 2; k += 0.11) {
+        const x0 = Math.max(l, k - h); const x1 = Math.min(h, k - l);
+        if (x1 > x0) lines.push(`<line x1="${X(x0)}" y1="${Y(k - x0)}" x2="${X(x1)}" y2="${Y(k - x1)}" stroke="var(--text)" stroke-width="0.9" opacity="0.7"></line>`);
+      }
+      return `<rect x="${X(l)}" y="${Y(l)}" width="${S(h - l)}" height="${S(h - l)}" fill="none" ${stroke}></rect>${lines.join("")}`;
+    }
+    if (p.t === "text") return `<text x="${X(p.x)}" y="${Y(p.y)}" text-anchor="middle" dominant-baseline="central" font-size="${S(p.s ?? 0.3)}" fill="var(--muted)">${escapeHtml(p.v ?? "?")}</text>`;
+    return "";
+  }).join("");
+}
+
+function catFigureSvg(fig, size = 64, className = "cat-cell cat-fig") {
+  return `<svg class="${className}" viewBox="0 0 ${size} ${size}" aria-hidden="true">${catFigureInner(fig, size)}</svg>`;
+}
+
+// The series or matrix: figures without frames, the missing one a dashed
+// square, an optional larger header figure above (the mosaic's picture).
+function catLanrtSvg(lanrt, cell = 64, gap = 12) {
+  const cols = Math.max(1, lanrt.cols ?? 3);
+  const rows = Math.ceil(lanrt.cells.length / cols);
+  const gridW = cols * cell + (cols - 1) * gap;
+  const headerSize = lanrt.header ? cell * (lanrt.header.scale ?? 2) : 0;
+  const headerGap = lanrt.header ? gap * 1.5 : 0;
+  const width = Math.max(gridW, headerSize);
+  const height = headerSize + headerGap + rows * cell + (rows - 1) * gap;
+  const parts = [];
+  if (lanrt.header) parts.push(catFigureInner(lanrt.header.fig, headerSize, (width - headerSize) / 2, 0));
+  const gridX = (width - gridW) / 2;
+  lanrt.cells.forEach((fig, index) => {
+    const x = gridX + (index % cols) * (cell + gap);
+    const y = headerSize + headerGap + Math.floor(index / cols) * (cell + gap);
+    if (fig === null) {
+      parts.push(`<rect x="${(x + 2).toFixed(1)}" y="${(y + 2).toFixed(1)}" width="${cell - 4}" height="${cell - 4}" rx="3" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 4"></rect>`);
+      parts.push(`<text x="${x + cell / 2}" y="${y + cell / 2 + 8}" text-anchor="middle" class="cat-matrix-question">?</text>`);
+    } else {
+      parts.push(catFigureInner(fig, cell, x, y));
+    }
+  });
+  return `<svg class="cat-lanrt" data-cols="${cols}" viewBox="0 0 ${width.toFixed(1)} ${height.toFixed(1)}" aria-hidden="true">${parts.join("")}</svg>`;
+}
+
+const DOMINO_PIPS = {
+  0: [], 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]],
+  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  6: [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 0], [1, 1]],
+  7: [[-1, -1], [-1, 0], [-1, 1], [0, 0], [1, -1], [1, 0], [1, 1]],
+  8: [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]],
+  9: [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
+};
+
+// One tile at (x, y) in units of U; o is "v" (a over b) or "h" (a left of b).
+function catDominoTile(tile, U, px, py) {
+  const vertical = tile.o !== "h";
+  const w = vertical ? U : 2 * U;
+  const h = vertical ? 2 * U : U;
+  const parts = [];
+  if (tile.blank) {
+    parts.push(`<rect x="${px + 0.6}" y="${py + 0.6}" width="${w - 1.2}" height="${h - 1.2}" rx="${U * 0.12}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3"></rect>`);
+    parts.push(`<text x="${px + w / 2}" y="${py + h / 2}" text-anchor="middle" dominant-baseline="central" font-size="${U * 0.7}" fill="var(--muted)">?</text>`);
+    return parts.join("");
+  }
+  parts.push(`<rect x="${px + 0.6}" y="${py + 0.6}" width="${w - 1.2}" height="${h - 1.2}" rx="${U * 0.12}" fill="none" stroke="var(--text)" stroke-width="1.3"></rect>`);
+  parts.push(vertical
+    ? `<line x1="${px + 0.6}" y1="${py + U}" x2="${px + w - 0.6}" y2="${py + U}" stroke="var(--text)" stroke-width="1.1"></line>`
+    : `<line x1="${px + U}" y1="${py + 0.6}" x2="${px + U}" y2="${py + h - 0.6}" stroke="var(--text)" stroke-width="1.1"></line>`);
+  const halves = vertical ? [[px + U / 2, py + U / 2, tile.a], [px + U / 2, py + 1.5 * U, tile.b]] : [[px + U / 2, py + U / 2, tile.a], [px + 1.5 * U, py + U / 2, tile.b]];
+  for (const [cx, cy, value] of halves) {
+    for (const [dx, dy] of DOMINO_PIPS[Math.max(0, Math.min(9, value))] ?? []) {
+      const [ux, uy] = vertical ? [dx, dy] : [dy, dx];
+      parts.push(`<circle cx="${(cx + ux * U * 0.27).toFixed(2)}" cy="${(cy + uy * U * 0.27).toFixed(2)}" r="${(U * 0.085).toFixed(2)}" fill="var(--text)"></circle>`);
+    }
+  }
+  return parts.join("");
+}
+
+function catDominoSvg(domino, U = 26) {
+  const ox = domino.ox ?? 0;
+  const width = domino.w * U;
+  const height = domino.h * U;
+  const parts = domino.tiles.map((tile) => catDominoTile(tile, U, (tile.x + ox) * U, tile.y * U));
+  return `<svg class="cat-domino" data-layout="${escapeHtml(domino.layout ?? "")}" viewBox="0 0 ${width} ${height}" aria-hidden="true">${parts.join("")}</svg>`;
+}
+
+function catDominoTileSvg(tile, U = 26) {
+  return `<svg class="cat-domino-tile" viewBox="0 0 ${U} ${2 * U}" aria-hidden="true">${catDominoTile({ ...tile, o: "v" }, U, 0, 0)}</svg>`;
 }
 
 // ---------------------------------------------------------------------------

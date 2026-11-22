@@ -23,7 +23,10 @@ let lobbyBusy = false;
 const LOBBY_KEY = "cogni.lobby.v1";
 
 const ROUNDS = 8;
-const PLAN = ["fluid", "verbal", "quant", "relational", "weights", "verbal", "spatial", "fluid"];
+// Eight slots: three LANRT-style figural series, two domino series, one
+// verbal, one relational and one quantitative. The figural and domino slots
+// are generated from the seed, so no two duels share a puzzle.
+const PLAN = ["lanrt", "domino", "verbal", "lanrt", "relational", "quant", "lanrt", "domino"];
 // Round length. Quick battle is always two minutes; a lobby host picks one of
 // ROUND_LENGTHS. The budget is split across the eight tasks by weight, so a
 // visual puzzle (matrix, figure, scale) gets 1.5x the time of a text item.
@@ -627,7 +630,7 @@ function rngFrom(seed) {
   };
 }
 
-const GENERATED_DOMAIN = { fluid: "mx", spatial: "rot", weights: "fw", relational: "rrt" };
+const GENERATED_DOMAIN = { fluid: "mx", spatial: "rot", weights: "fw", relational: "rrt", lanrt: "lx", domino: "dm" };
 
 function pickItemIds(seed) {
   const rng = rngFrom(seed);
@@ -648,7 +651,7 @@ function pickItemIds(seed) {
 
 function newSeed() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`; }
 
-function itemWeight(item) { return (item.matrix || item.figure || item.weights || item.premises) ? VISUAL_WEIGHT : TEXT_WEIGHT; }
+function itemWeight(item) { return (item.matrix || item.figure || item.weights || item.premises || item.lanrt || item.domino) ? VISUAL_WEIGHT : TEXT_WEIGHT; }
 function roundMsOf(row) {
   const ms = Number(row?.round_ms);
   return Number.isFinite(ms) && ms >= 30000 ? ms : QUICK_ROUND_MS;
@@ -895,15 +898,19 @@ function renderArena() {
     ? botTotals((row.botPlan ?? []).slice(0, index)).score
     : theirScoreKnown ? row[`${side === "challenger" ? "opponent" : "challenger"}_score`] : null;
   const order = d.catOptionOrder(item);
-  const visual = item.matrix || item.figure || item.weights;
+  const visual = item.matrix || item.figure || item.weights || item.lanrt || item.domino;
 
   const stage = item.matrix ? d.catMatrixSvg(item.matrix)
     : item.figure ? `<div class="cat-figure-target">${d.catCellSvg(item.figure.target)}</div>`
     : item.weights ? d.catWeightsSvg(item.weights)
+    : item.lanrt ? d.catLanrtSvg(item.lanrt)
+    : item.domino ? d.catDominoSvg(item.domino)
     : item.premises ? `<div class="battle-premises"><ol>${item.premises.map((p) => `<li>${esc(p)}</li>`).join("")}</ol><p class="battle-conclusion"><span>Conclusion</span>${esc(item.conclusion)}</p></div>`
     : "";
 
-  const options = item.weights ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.weights.optionCells[src])}</button>`)
+  const options = item.lanrt ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catFigureSvg(item.lanrt.optionFigs[src])}</button>`)
+    : item.domino ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catDominoTileSvg(item.domino.optionTiles[src])}</button>`)
+    : item.weights ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.weights.optionCells[src])}</button>`)
     : item.figure ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.figure.optionCells[src])}</button>`)
     : item.matrix ? order.map((src, i) => `<button type="button" data-battle-answer="${i}" aria-label="Option ${i + 1}">${d.catCellSvg(item.matrix.optionCells[src])}</button>`)
     : order.map((src, i) => `<button type="button" data-battle-answer="${i}">${esc(item.options[src])}</button>`);
