@@ -8933,7 +8933,7 @@ function renderMeasurementSales() {
   }
   const title = funnel
     ? (firstName ? `You're all set, ${escapeHtml(firstName)}.` : "You're all set.")
-    : "Your mind.<br>Measured. Tracked. Improved.";
+    : "Your mind.<br>Improved.";
   const lede = funnel
     ? `One sitting sets your baseline — ${total} short subtests across the six core abilities. Take them now; you'll get a composite score and a full breakdown at the end.`
     : `Nine short subtests across six abilities — or the Mini, the same six abilities in about ${miniMinutes} minutes. Get your IQ, the score behind every ability, and see how it changes over time.`;
