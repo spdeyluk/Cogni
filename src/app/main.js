@@ -8915,6 +8915,16 @@ function measureInsightsTab(record, ranked, shape, unlocked) {
 // one-sitting rule — and Begin starts it.
 function beginFirstMeasurement() {
   if (!iqTestAvailable()) return;
+  if (cogniUiMode === "pro") {
+    // Land on the board with the next subtest already selected (the first,
+    // on a fresh sitting), so the test is taken in order unless you choose
+    // otherwise. Starting is one more press, on the detail panel.
+    measureBoardSelection = null;
+    measureSubtestsOpen = true;
+    if (!measureAttemptStarted()) { startNewMeasureAttempt(measureBatteryChoice); return; }
+    openMeasureSubtests();
+    return;
+  }
   const attempt = loadMeasureAttempt();
   const next = attemptSubtests(attempt).find((subtest) => !attempt.subtests[subtest.id])
     ?? attemptSubtests(attempt)[0];
@@ -9170,7 +9180,9 @@ function renderMeasurePicker(selectedId) {
   syncWebFunnel();
   const attempt = loadMeasureAttempt();
   // A visitor with nothing measured and nothing started gets the sales page.
-  const isNewVisitor = !loadCatSessions().length && measureCompletedCount(attempt) === 0;
+  // Pressing "Take the IQ test" starts the attempt, and from then on the
+  // board shows, with the first subtest waiting on the detail panel.
+  const isNewVisitor = !loadCatSessions().length && measureCompletedCount(attempt) === 0 && !measureAttemptStarted();
   document.querySelector("#cat-intro")?.classList.toggle("is-selling", isNewVisitor);
   if (isNewVisitor) {
     // Nothing measured yet: no report, so no report chrome either. This has to
