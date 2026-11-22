@@ -188,7 +188,6 @@ function onHostClick(event) {
   if (ans) { answer(Number(ans.dataset.battleAnswer)); return; }
   if (act("[data-battle-back]")) { leaveToHub(); return; }
   if (act("[data-battle-rematch]")) { rematch(); return; }
-  if (act("[data-battle-take-test]")) { d.showAssessments(); return; }
   if (act("[data-battle-ranks]")) { d.showCommunity?.(); return; }
 }
 
@@ -352,9 +351,7 @@ function renderHub() {
 
       <section class="home-stats" aria-label="Your status">
         <div><span class="battle-eyebrow">Battle rating</span><strong>${rating}</strong></div>
-        <div><span class="battle-eyebrow">IQ</span>${iq
-          ? `<strong>${Math.round(iq)}</strong>`
-          : `<strong class="is-empty">—</strong><button class="battle-link" data-battle-take-test type="button">Take the test</button>`}</div>
+        <div><span class="battle-eyebrow">IQ</span><strong${iq ? "" : ' class="is-empty"'}>${iq ? Math.round(iq) : "—"}</strong></div>
       </section>
 
       ${yourTurn.length ? `<section class="battle-list"><h3>Your turn</h3><ul>${yourTurn.map((b) => rowHtml(b, "turn")).join("")}</ul></section>` : ""}

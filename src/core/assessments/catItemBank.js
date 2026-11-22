@@ -1,3 +1,4 @@
+import { curatedMatrixItems } from "./curatedMatrices.js";
 // Original item bank for the adaptive cognitive assessment.
 // All content is written for Cogni — no items are reproduced from any
 // published test. Difficulty (b) and discrimination (a) parameters are
@@ -813,19 +814,23 @@ function buildDomain(domain, rawItems) {
   return sorted.map((item, index) => {
     const b = -2.5 + (5 * index) / (sorted.length - 1);
     const withAnswer = rotateAnswer(item, index * 7 + 3);
+    // Curated items arrive with their own id and authored a/b; the rest are
+    // spread evenly over the scale by rank until they are calibrated.
     return {
       ...withAnswer,
-      id: `${domain}-${String(index + 1).padStart(3, "0")}`,
+      id: item.id ?? `${domain}-${String(index + 1).padStart(3, "0")}`,
       domain,
-      a: discriminationCycle[index % discriminationCycle.length],
-      b: Math.round(b * 100) / 100,
+      a: Number.isFinite(item.a) ? item.a : discriminationCycle[index % discriminationCycle.length],
+      b: Number.isFinite(item.b) ? item.b : Math.round(b * 100) / 100,
       provisional: true
     };
   });
 }
 
+// Matrix items come from the curated ladder (curatedMatrices.js). The template
+// families above are kept for reference and for the exercises, not served.
 const fluidRaw = [
-  ...matrixItems.map((item) => ({ ...item, domain: "fluid" })),
+  ...curatedMatrixItems,
   ...fromTable("series", "fluid", numberSeries),
   ...fromTable("letter-analogy", "fluid", letterAnalogies)
 ];

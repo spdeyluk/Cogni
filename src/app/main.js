@@ -41,7 +41,7 @@ import {
   thetaToScore
 } from "../core/assessments/irt.js";
 import { catItemBank, CAT_DOMAIN_LABELS, CAT_DOMAIN_TIME_LIMITS_MS } from "../core/assessments/catItemBank.js";
-import { resolveGeneratedItem, generateCandidates, generatedItemId, GENERATED_FORMATS } from "../core/assessments/catGenerator.js";
+import { resolveGeneratedItem, generatedItemId } from "../core/assessments/catGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
@@ -8429,6 +8429,33 @@ function standingLabel(percentile) {
 
 // Six ticks, one lit: which of the six indices this card is. Purely a marker,
 // it encodes position rather than value so it can never misreport a score.
+// The six-axis figure: one vertex per index, scores 55–145 mapped onto the
+// radius, thin monochrome rings and one accent polygon. The hexagon is the
+// brand's instrument, so the report wears it where the headline number is.
+function measureHexSvg(indices) {
+  const order = MEASUREMENT_INDEX_ORDER;
+  const n = order.length;
+  const size = 224;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = 72;
+  const angle = (i) => ((-90 + (360 / n) * i) * Math.PI) / 180;
+  const pt = (i, r) => [cx + Math.cos(angle(i)) * r, cy + Math.sin(angle(i)) * r];
+  const fmt = ([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+  const scale = (score) => Math.max(0, Math.min(1, (score - 55) / 90));
+  const values = order.map((key) => (Number.isFinite(indices?.[key]?.score) ? indices[key].score : null));
+  const rings = [70, 85, 100, 115, 130].map((s) => `<polygon class="mdash-hex-ring${s === 100 ? " is-mean" : ""}" points="${order.map((_, i) => fmt(pt(i, radius * scale(s)))).join(" ")}"></polygon>`).join("");
+  const spokes = order.map((_, i) => { const [x, y] = pt(i, radius); return `<line class="mdash-hex-spoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"></line>`; }).join("");
+  const area = values.map((score, i) => fmt(pt(i, radius * scale(score ?? 55)))).join(" ");
+  const dots = values.map((score, i) => (score == null ? "" : `<circle class="mdash-hex-dot" cx="${pt(i, radius * scale(score))[0].toFixed(1)}" cy="${pt(i, radius * scale(score))[1].toFixed(1)}" r="3"></circle>`)).join("");
+  const labels = order.map((key, i) => {
+    const [x, y] = pt(i, radius + 24);
+    const value = values[i];
+    return `<text class="mdash-hex-label${value == null ? " is-missing" : ""}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle"><tspan x="${x.toFixed(1)}" dy="-0.2em">${MEASUREMENT_INDICES[key].short}</tspan><tspan x="${x.toFixed(1)}" dy="1.25em">${value == null ? "–" : value}</tspan></text>`;
+  }).join("");
+  return `<svg class="mdash-hex-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Index profile">${rings}${spokes}<polygon class="mdash-hex-area" points="${area}"></polygon>${dots}${labels}</svg>`;
+}
+
 function indexGlyph(position) {
   // Six little pillars; the card's own one is lit. A negative position lights
   // them all (the overall panel).
@@ -8631,7 +8658,8 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
           · ${taken} of ${battery.subtests.length} subtests · ${minutes} min</span>
       </header>
 
-      <div class="mdash-overall-lead">
+      <div class="mdash-overall-lead${unlocked && !focus ? " has-hex" : ""}">
+        <div class="mdash-lead-text">
         <p class="mdash-overall-score"${unlocked ? ` data-tone="${scoreTone(score)}"` : ""}>${lockedValue(score, unlocked)}${
           spread != null ? `<span>±${spread}</span>` : ""}${unlocked ? "" : mdashUnlockButton("mdash-overall-unlock")}</p>
         ${unlocked ? `<p class="mdash-overall-band">${escapeHtml(interpretationBand(score).label)}</p>` : ""}
@@ -8649,6 +8677,8 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
             ${record.composites.gai ? `<div><dt>GAI</dt><dd>${record.composites.gai.score}</dd></div>` : ""}
             ${record.composites.cpi ? `<div><dt>CPI</dt><dd>${record.composites.cpi.score}</dd></div>` : ""}
           </dl>` : ""}
+        </div>
+        ${unlocked && !focus ? `<figure class="mdash-hex">${measureHexSvg(record.indices)}</figure>` : ""}
       </div>
 
       <div class="mdash-subtabs" role="tablist" aria-label="Which score to read">
@@ -9814,16 +9844,11 @@ function pickNextCatItem() {
   // bank to still measure against — precision wins over novelty at the margin.
   const fresh = unadministered.filter((item) => !catActive.avoidIds?.includes(item.id));
   const banked = fresh.length >= CAT_MIN_FRESH_POOL ? fresh : unadministered;
-  // Visual formats are generated on the fly around the current ability, so
-  // the pool is new on every sitting and a repeat is practically impossible.
-  const generatedKinds = (subtest?.kinds ?? []).filter((kind) => GENERATED_FORMATS[kind]);
-  const generated = generatedKinds.flatMap((kind) => generateCandidates(kind, {
-    seed: catActive.seed ?? "legacy",
-    slot: catActive.responses.length,
-    theta,
-    count: 12
-  }));
-  const pool = generated.length ? [...generated, ...banked] : banked;
+  // The IQ test draws only on the curated bank: every item is hand-built with
+  // a deliberate place on the difficulty ladder. The procedural generator
+  // (catGenerator.js) serves battles, where novelty matters more than a
+  // curated ladder and the same puzzle must never come round twice.
+  const pool = banked;
   // A subtest that mixes kinds samples them evenly: the next item comes from
   // whichever of its kinds has been served least so far, as long as that still
   // leaves something to choose between. Otherwise a strongly informative kind
@@ -10701,7 +10726,7 @@ function questionBrowserItemHtml(item, number) {
     : `<div class="cat-options qb-options">${(item.options ?? []).map((option, index) => `<button type="button" tabindex="-1" class="${index === correct ? "is-correct" : ""}">${escapeHtml(String(option))}${index === correct ? '<i aria-hidden="true">✓</i>' : ""}</button>`).join("")}</div>`;
   return `
     <article class="qb-item">
-      <p class="qb-meta"><span>#${number}</span><span>${escapeHtml(item.kind)}</span><span>difficulty ${escapeHtml(String(item.dRank ?? "–"))}</span></p>
+      <p class="qb-meta"><span>#${number}</span><span>${escapeHtml(item.kind)}</span><span>b ${Number.isFinite(item.b) ? (item.b > 0 ? "+" : "") + item.b.toFixed(1) : "–"}</span>${item.tag ? `<span class="qb-tag">${escapeHtml(item.tag)}</span>` : ""}</p>
       <p class="qb-prompt">${escapeHtml(String(item.prompt ?? ""))}</p>
       ${stage ? `<div class="cat-stage qb-stage">${stage}</div>` : ""}
       ${options}
@@ -11109,7 +11134,7 @@ function catMatrixSvg(matrix, cellSize = 64, gap = 8) {
   const cells = matrix.cells.map((cell, index) => {
     const cx = (index % 3) * (cellSize + gap);
     const cy = Math.floor(index / 3) * (cellSize + gap);
-    const frame = `<rect x="0" y="0" width="${cellSize}" height="${cellSize}" rx="10" class="cat-matrix-frame"></rect>`;
+    const frame = `<rect x="0" y="0" width="${cellSize}" height="${cellSize}" rx="6" class="cat-matrix-frame"></rect>`;
     const content = cell === null
       ? `<text x="${cellSize / 2}" y="${cellSize / 2 + 8}" text-anchor="middle" class="cat-matrix-question">?</text>`
       : cell.map((glyph) => catGlyphSvg(glyph, cellSize)).join("");
