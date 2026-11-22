@@ -1568,3 +1568,21 @@ html.mode-pro .profile-edit-field div input:focus,
 html.mode-pro .profile-edit-field div input:focus-visible,
 html.mode-pro .profile-handle-edit div input:focus-visible { border: 0 !important; outline: none !important; box-shadow: none !important; background: transparent !important; }
 html.mode-pro .profile-edit-field div:focus-within { border-color: var(--text) !important; }
+
+
+/* ---------- the IQ curve with company on it (sales hero) ---------- */
+html.mode-pro .iq-compare { max-width: 720px; margin: 40px auto 0; padding: 0; }
+html.mode-pro .iq-cmp-svg { display: block; width: 100%; height: auto; overflow: visible; }
+html.mode-pro .iq-cmp-area { fill: var(--text); opacity: 0.05; }
+html.mode-pro .iq-cmp-line { fill: none; stroke: var(--text); stroke-width: 1.4; opacity: 0.55; }
+html.mode-pro .iq-cmp-base { stroke: var(--line-strong); stroke-width: 1; }
+html.mode-pro .iq-cmp-mark line { stroke: var(--line-strong); stroke-width: 1; }
+html.mode-pro .iq-cmp-mark circle { fill: var(--surface); stroke: var(--text); stroke-width: 1.5; }
+html.mode-pro .iq-cmp-mark text { font-family: var(--font-sans); font-size: 11.5px; fill: var(--text-2); }
+html.mode-pro .iq-cmp-val { font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
+html.mode-pro .iq-cmp-mark.is-you circle { fill: var(--text); }
+html.mode-pro .iq-cmp-mark.is-you line { stroke: var(--text); }
+html.mode-pro .iq-cmp-mark.is-you text { fill: var(--text); font-weight: 600; }
+html.mode-pro .iq-cmp-mark.is-pending circle { fill: var(--surface); stroke-dasharray: 2.2 2.2; }
+html.mode-pro .iq-compare figcaption { margin: 12px auto 0; max-width: 56ch; text-align: center; font-size: 12px; line-height: 1.5; color: var(--muted); }
+html.mode-pro .iq-hero .iq-compare { text-align: center; }

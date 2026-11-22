@@ -8931,6 +8931,79 @@ function beginFirstMeasurement() {
   if (next) openMeasureStartDialog(next.id);
 }
 
+// The curve with company on it: a few well-known figures placed on the IQ
+// scale, and you. The public figures are reported estimates (none of them sat
+// this test), so the caption says so; the only measured point is yours.
+const IQ_COMPARE_MARKS = [
+  { label: "Average adult", iq: 100, kind: "fact" },
+  { label: "Mensa cut-off", iq: 130, kind: "fact" },
+  { label: "Garry Kasparov", iq: 135, kind: "tested" },
+  { label: "Elon Musk", iq: 155, kind: "estimate" },
+  { label: "Albert Einstein", iq: 160, kind: "estimate" }
+];
+
+function iqCompareSvg(youScore) {
+  const W = 680; const left = 26; const right = 26; const base = 136; const top = 40;
+  const lo = 55; const hi = 178;
+  const x = (iq) => left + ((iq - lo) / (hi - lo)) * (W - left - right);
+  const pdf = (iq) => Math.exp(-0.5 * ((iq - 100) / 15) ** 2);
+  const y = (iq) => base - pdf(iq) * (base - top);
+  const pts = [];
+  for (let iq = lo; iq <= hi; iq += 1) pts.push(`${x(iq).toFixed(1)},${y(iq).toFixed(1)}`);
+  const area = `M ${x(lo).toFixed(1)},${base} L ${pts.join(" L ")} L ${x(hi).toFixed(1)},${base} Z`;
+  const line = `M ${pts.join(" L ")}`;
+  const known = Number.isFinite(youScore);
+  const marks = IQ_COMPARE_MARKS.map((m) => ({ ...m }));
+  if (known) marks.push({ label: "You", iq: Math.round(youScore), kind: "you" });
+  marks.sort((a, b) => a.iq - b.iq);
+  // Labels hang under the baseline. Each takes the first row where its text
+  // (width estimated from its length) clears everything already placed.
+  const rowGap = 19;
+  const rows = [[], [], [], []];
+  for (const m of marks) {
+    m.value = `${m.kind === "estimate" ? "~" : ""}${m.iq}`;
+    const width = m.label.length * 6.3 + m.value.length * 7.2 + 12;
+    const mx = x(m.iq);
+    m.anchor = mx - width / 2 < 4 ? "start" : mx + width / 2 > W - 4 ? "end" : "middle";
+    const span = m.anchor === "start" ? [mx, mx + width] : m.anchor === "end" ? [mx - width, mx] : [mx - width / 2, mx + width / 2];
+    m.row = rows.findIndex((row) => row.every(([a, b]) => span[1] + 8 < a || span[0] - 8 > b));
+    if (m.row < 0) m.row = rows.length - 1;
+    rows[m.row].push(span);
+  }
+  const rowsUsed = Math.max(...marks.map((m) => m.row)) + 1;
+  const markSvg = marks.map((m) => {
+    const mx = x(m.iq); const my = y(m.iq);
+    const isYou = m.kind === "you";
+    const stem = base + 8 + m.row * rowGap;
+    return `<g class="iq-cmp-mark${isYou ? " is-you" : ""}">
+      <line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${mx.toFixed(1)}" y2="${stem}"></line>
+      <circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${isYou ? 5 : 3.5}"></circle>
+      <text x="${mx.toFixed(1)}" y="${stem + 12}" text-anchor="${m.anchor}"><tspan class="iq-cmp-name">${escapeHtml(m.label)}</tspan><tspan class="iq-cmp-val" dx="5">${m.value}</tspan></text>
+    </g>`;
+  }).join("");
+  // Nothing measured yet: a ghost hovers over the peak, waiting to land.
+  const ghost = known ? "" : `<g class="iq-cmp-mark is-you is-pending">
+      <text x="${x(100).toFixed(1)}" y="${top - 24}" text-anchor="middle"><tspan class="iq-cmp-name">You</tspan><tspan class="iq-cmp-val" dx="5">?</tspan></text>
+      <circle cx="${x(100).toFixed(1)}" cy="${top - 10}" r="5.5"></circle>
+    </g>`;
+  const H = base + 8 + (rowsUsed - 1) * rowGap + 20;
+  return `<svg class="iq-cmp-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Where scores sit on the IQ curve">
+    <path class="iq-cmp-area" d="${area}"></path>
+    <path class="iq-cmp-line" d="${line}"></path>
+    <line class="iq-cmp-base" x1="${left}" y1="${base}" x2="${W - right}" y2="${base}"></line>
+    ${markSvg}${ghost}
+  </svg>`;
+}
+
+function iqCompareHtml() {
+  const latest = loadCatSessions()[0] ?? null;
+  const score = Number.isFinite(latest?.score) ? latest.score : null;
+  const caption = score == null
+    ? "Public figures are reported estimates, not Cogni results. Take the test to put yourself on the curve."
+    : "Public figures are reported estimates, not Cogni results. Your point is the measured one.";
+  return `<figure class="iq-compare">${iqCompareSvg(score)}<figcaption>${caption}</figcaption></figure>`;
+}
+
 function renderMeasurementSales() {
   const host = document.querySelector("#measure-offers");
   if (!host) return;
@@ -8977,6 +9050,7 @@ function renderMeasurementSales() {
       </div>
       <p class="sales-note">${note}</p>
       ${locked ? `<div data-referral-host="compact">${referralPanelHtml({ compact: true })}</div>` : ""}
+      ${iqCompareHtml()}
     </div>
 
     ${funnel ? "" : iqPreviewHtml()}
