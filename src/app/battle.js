@@ -1104,9 +1104,10 @@ function rematch() {
 }
 
 // ---------------------------------------------------------------------------
-// Ranks page: IQ leaderboard, battle leaderboard, friends.
+// Ranks page: the battle-rating leaderboard and friends. IQ is not ranked;
+// a score you can retest your way up is not a score worth a ladder.
 // ---------------------------------------------------------------------------
-let ranksTab = "iq";
+let ranksTab = "battle";
 let ranksData = { iq: null, battle: null, incoming: [], outgoing: [], status: "", statusState: "" };
 
 export async function renderRanksPage(pageHost) {
@@ -1117,8 +1118,6 @@ export async function renderRanksPage(pageHost) {
 
   pageHost.onclick = async (event) => {
     const t = event.target;
-    const tab = t.closest("[data-ranks-tab]");
-    if (tab) { ranksTab = tab.dataset.ranksTab; renderRanksPage(pageHost); return; }
     const ch = t.closest("[data-battle-challenge]");
     if (ch) { challengeUser(ch.dataset.battleChallenge); return; }
     if (t.closest("[data-ranks-add]")) { await addFriend(pageHost); return; }
@@ -1155,10 +1154,10 @@ export async function renderRanksPage(pageHost) {
 
   pageHost.innerHTML = `
     <div class="ranks">
-      <nav class="ranks-tabs" aria-label="Leaderboards">
-        <button class="${ranksTab === "iq" ? "active" : ""}" data-ranks-tab="iq" type="button">IQ</button>
-        <button class="${ranksTab === "battle" ? "active" : ""}" data-ranks-tab="battle" type="button">Battle rating</button>
-      </nav>
+      <header class="ranks-head">
+        <p class="battle-eyebrow">Leaderboard</p>
+        <h2 class="ranks-title">Battle rating</h2>
+      </header>
       <section class="ranks-board">
         ${!signedIn ? `<p class="battle-note">Sign in to see where you stand.</p>`
           : board == null ? `<p class="battle-note">Loading…</p>`

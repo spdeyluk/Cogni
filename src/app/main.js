@@ -490,6 +490,18 @@ const nBackTrialTimeLimits = {
   defaultValue: 3000
 };
 
+// Easiest settings per exercise, so the daily detox is always approachable.
+const dailyDetoxEasySettings = {
+  nback: { n: 1, modalities: ["position"], trialTimeMs: nBackTrialTimeLimits.max, matchChance: 35, interference: 0, autoProgression: false },
+  rrt: { premiseCount: 2, timerEnabled: false, vocabulary: "meaningful", visualNoise: 0, scrambleFactor: 0 },
+  cct: { startingIntervalSeconds: 4, minimumIntervalSeconds: 2, adaptive: false },
+  ict: { stopProbability: 15, softDeadlineMs: 1600, stopSignalDelayMs: 350 }
+};
+
+// The one preset routine. Fifteen minutes: a bit of every exercise at the
+// easiest settings. The content is a first cut, to be finished properly.
+const DAILY_DETOX_MINUTES = 15;
+
 const rrtStackPriorities = {
   distinction: 150,
   linear: 120,
@@ -4866,7 +4878,7 @@ function handleProfilePageClick(event) {
   if (viewButton) {
     selectedProfileView = viewButton.dataset.profileView;
     if (selectedProfileView !== "profile") profileEditorOpen = false;
-    renderProfile();
+    keepScroll(renderProfile);
     return;
   }
   const calNav = event.target.closest("[data-cal-nav]");
@@ -4884,12 +4896,12 @@ function handleProfilePageClick(event) {
   }
   if (timeframeButton) {
     selectedProfileTimeframe = timeframeButton.dataset.profileTimeframe;
-    renderProfile();
+    keepScroll(renderProfile);
     return;
   }
   if (exerciseButton) {
     selectedProfileExercise = exerciseButton.dataset.profileExercise;
-    renderProfile();
+    keepScroll(renderProfile);
   }
 }
 
@@ -8941,7 +8953,7 @@ function renderMeasurementSales() {
   const note = !available
     ? "The IQ test is being calibrated and opens to everyone soon."
     : cogniUiMode === "pro"
-      ? "Free to take. Your score goes on your profile and the leaderboard, and it is what you bring into a battle."
+      ? "Free to take. Your score goes on your profile, and it is what you bring into a battle."
       : "Free to start. The detailed report is a paid upgrade — you'll see the price when your results are ready.";
 
   host.innerHTML = `
@@ -9010,7 +9022,7 @@ function renderMeasurementSales() {
     button.addEventListener("click", () => {
       if (button.dataset.battery === measureBatteryChoice) return;
       setMeasureBatteryChoice(button.dataset.battery);
-      renderMeasurementSales();
+      keepScroll(renderMeasurementSales);
     });
   });
   host.querySelector("#sales-how")?.addEventListener("click", () => {
@@ -12327,8 +12339,9 @@ function handleSavedRoutineClick(event) {
   const action = event.target.closest("[data-routine-action]")?.dataset.routineAction;
   const id = event.target.closest("[data-routine-id]")?.dataset.routineId;
   if (!action || !id) return;
-  const routine = loadRoutines().find((item) => item.id === id);
+  const routine = routinePresets().find((item) => item.id === id) ?? loadRoutines().find((item) => item.id === id);
   if (!routine) return;
+  if (routine.preset && action !== "play") return;
   if (action === "play") {
     closeRoutineLoadDialog();
     startRoutine(routine);
@@ -12377,21 +12390,29 @@ function deleteRoutineDraft() {
 function renderRoutineList() {
   if (!elements.routineList || !elements.routineEmpty) return;
   const routines = loadRoutines();
+  const presets = routinePresets();
   elements.routineEmpty.hidden = routines.length > 0;
-  elements.routineEmpty.querySelector("p").textContent = "No routines created yet.";
-  elements.routineEmpty.querySelector("span").textContent = "Create a routine to stack exercises into a repeatable training block.";
-  elements.routineList.innerHTML = routines.map((routine) => `
-    <article class="routine-card" data-routine-id="${escapeHtml(routine.id)}">
+  elements.routineEmpty.querySelector("p").textContent = "No routines of your own yet.";
+  elements.routineEmpty.querySelector("span").textContent = "Create one to stack exercises into a repeatable training block.";
+  const card = (routine) => `
+    <article class="routine-card${routine.preset ? " is-preset" : ""}" data-routine-id="${escapeHtml(routine.id)}">
       <div>
-        <h3>${escapeHtml(routine.name)}</h3>
-        <p>${routine.blocks.length} exercises • ${formatRoutineDuration(estimateRoutineSeconds(routine))}</p>
+        <h3>${escapeHtml(routine.name)}${routine.preset ? ' <span class="routine-preset-tag">Preset</span>' : ""}</h3>
+        <p>${routine.preset
+          ? `${routine.durationMinutes} min · ${escapeHtml(routine.blurb ?? "")}`
+          : `${routine.blocks.length} exercises • ${formatRoutineDuration(estimateRoutineSeconds(routine))}`}</p>
       </div>
       <div class="routine-card-actions">
-        <button type="button" data-routine-action="play">Play</button>
-        <button type="button" data-routine-action="edit">Edit</button>
+        <button type="button" data-routine-action="play">${routine.preset ? "Start" : "Play"}</button>
+        ${routine.preset ? "" : '<button type="button" data-routine-action="edit">Edit</button>'}
       </div>
-    </article>
-  `).join("");
+    </article>`;
+  elements.routineList.innerHTML = `
+    <div class="routine-group">
+      <p class="routine-group-label">Presets</p>
+      ${presets.map(card).join("")}
+    </div>
+    ${routines.length ? `<div class="routine-group"><p class="routine-group-label">Yours</p>${routines.map(card).join("")}</div>` : ""}`;
 }
 
 function isDailyDetoxDoneToday() {
@@ -12410,18 +12431,10 @@ function markDailyDetoxDone() {
   }
 }
 
-// Easiest settings per exercise, so the daily detox is always approachable.
-const dailyDetoxEasySettings = {
-  nback: { n: 1, modalities: ["position"], trialTimeMs: nBackTrialTimeLimits.max, matchChance: 35, interference: 0, autoProgression: false },
-  rrt: { premiseCount: 2, timerEnabled: false, vocabulary: "meaningful", visualNoise: 0, scrambleFactor: 0 },
-  cct: { startingIntervalSeconds: 4, minimumIntervalSeconds: 2, adaptive: false },
-  ict: { stopProbability: 15, softDeadlineMs: 1600, stopSignalDelayMs: 350 }
-};
-
 function buildDailyDetoxRoutine() {
-  // A bit of every exercise: short classic blocks plus one round of each
-  // mini game, roughly twelve minutes in total. Always the easiest settings.
-  const minutesByExercise = { nback: 2, rrt: 2, cct: 1.5, ict: 1.5 };
+  // Four short classic blocks (ten minutes) plus one round of each mini
+  // game (about five), always at the easiest settings.
+  const minutesByExercise = { nback: 3, rrt: 3, cct: 2, ict: 2 };
   const blocks = ["nback", "rrt", "cct", "ict", "gridmemory", "seqrecall", "numrecall", "verbal", "reaction"].map((exerciseId) => {
     const block = createRoutineBlock(exerciseId);
     if (minutesByExercise[exerciseId]) block.timeMinutes = minutesByExercise[exerciseId];
@@ -12430,7 +12443,11 @@ function buildDailyDetoxRoutine() {
     }
     return block;
   });
-  return { id: "daily-detox", name: "Daily detox", blocks };
+  return { id: "daily-detox", name: "Daily detox", preset: true, durationMinutes: DAILY_DETOX_MINUTES, blurb: "Every exercise once, easiest settings. A short reset for the day.", blocks };
+}
+
+function routinePresets() {
+  return [buildDailyDetoxRoutine()];
 }
 
 function startRoutine(routine) {
@@ -14406,6 +14423,7 @@ function updateSegmentedControls() {
     control.style.setProperty("--active-opacity", "1");
   });
 
+  if (cogniUiMode === "pro") { queueSegSync(); return; }
   document.querySelectorAll(".profile-view-switch, .profile-timeframe-control").forEach((control) => {
     control.classList.remove("seg-sliding");
     control.style.removeProperty("--seg-x");
@@ -14413,6 +14431,84 @@ function updateSegmentedControls() {
     control.style.removeProperty("--seg-w");
     control.style.removeProperty("--seg-h");
   });
+}
+
+// ---------------------------------------------------------------------------
+// Sliding thumbs for segmented controls (web skin). The black pill is one
+// element that slides between the options instead of each button repainting.
+// It survives a re-render: a control that comes back under the same key
+// starts its thumb where the old one was and slides from there.
+// ---------------------------------------------------------------------------
+const segThumbMemory = new Map();
+let segSyncQueued = false;
+
+function segControlKey(control) {
+  return control.id || control.dataset.segKey || `${control.className}|${control.getAttribute("aria-label") ?? ""}`;
+}
+
+function syncSegThumbs() {
+  if (cogniUiMode !== "pro") return;
+  document.querySelectorAll(".seg-sliding:not(.ob-battery)").forEach((control) => {
+    if (control.closest("[hidden]")) return;
+    let thumb = control.querySelector(":scope > .seg-thumb-pro");
+    if (!thumb) {
+      thumb = document.createElement("i");
+      thumb.className = "seg-thumb-pro";
+      thumb.setAttribute("aria-hidden", "true");
+      control.prepend(thumb);
+    }
+    const active = control.querySelector(':scope > button.active, :scope > button[aria-pressed="true"], :scope > button[aria-selected="true"]');
+    if (!active) { control.classList.remove("has-thumb"); return; }
+    // A control on a page that is not showing has no geometry yet; leave it
+    // for the sync that runs when the page appears.
+    if (!active.offsetWidth) return;
+    const target = { x: active.offsetLeft, y: active.offsetTop, w: active.offsetWidth, h: active.offsetHeight, r: getComputedStyle(active).borderRadius };
+    const key = segControlKey(control);
+    const apply = (g) => {
+      thumb.style.setProperty("--seg-x", `${g.x}px`);
+      thumb.style.setProperty("--seg-y", `${g.y}px`);
+      thumb.style.setProperty("--seg-w", `${g.w}px`);
+      thumb.style.setProperty("--seg-h", `${g.h}px`);
+      thumb.style.setProperty("--seg-r", g.r);
+    };
+    if (!control.dataset.segReady) {
+      const previous = segThumbMemory.get(key);
+      thumb.style.transition = "none";
+      apply(previous ?? target);
+      control.classList.add("has-thumb");
+      void thumb.offsetWidth;
+      thumb.style.transition = "";
+      control.dataset.segReady = "1";
+      if (previous) window.requestAnimationFrame(() => apply(target));
+    } else {
+      apply(target);
+      control.classList.add("has-thumb");
+    }
+    segThumbMemory.set(key, target);
+  });
+}
+
+function queueSegSync() {
+  if (segSyncQueued) return;
+  segSyncQueued = true;
+  window.requestAnimationFrame(() => { segSyncQueued = false; syncSegThumbs(); });
+}
+
+// Re-render a page while keeping the viewport where it was, so switching a
+// segmented control reads as changing the data, not reloading the page.
+function keepScroll(fn) {
+  const content = document.querySelector(".app-content");
+  const y = window.scrollY;
+  const cy = content?.scrollTop ?? 0;
+  fn();
+  window.scrollTo(0, y);
+  if (content) content.scrollTop = cy;
+}
+
+if (cogniUiMode === "pro") {
+  new MutationObserver(queueSegSync).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed", "aria-selected", "hidden"] });
+  window.addEventListener("resize", queueSegSync);
+  queueSegSync();
 }
 
 function animateStatisticsRefresh() {

@@ -1521,3 +1521,50 @@ html.mode-pro .qb-reseed { margin-left: 10px; padding: 4px 10px; border: 1px sol
 html.mode-pro .qb-reseed:hover { border-color: var(--text); }
 html.mode-pro .qb-stage .cat-lanrt, html.mode-pro .qb-stage .cat-domino { max-width: 100%; }
 html.mode-pro .battle-arena .cat-lanrt[data-cols="6"] { width: min(100%, 560px); }
+
+
+/* ---------- routines: the preset card ---------- */
+html.mode-pro .routine-load-dialog .routine-list { border: 0 !important; padding: 0 !important; background: transparent !important; gap: 18px !important; }
+html.mode-pro .routine-group { display: grid; gap: 8px; }
+html.mode-pro .routine-group-label { margin: 0 0 2px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+html.mode-pro .routine-card { border: 1px solid var(--line) !important; border-radius: 14px !important; padding: 14px 16px !important; background: var(--surface) !important; box-shadow: var(--shadow); transition: border-color 150ms ease, transform 150ms ease; }
+html.mode-pro .routine-card:hover { border-color: var(--line-strong) !important; }
+html.mode-pro .routine-card h3 { display: flex; align-items: center; gap: 8px; font-size: 16px !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+html.mode-pro .routine-card p { margin-top: 4px !important; font-size: 13px !important; color: var(--text-2) !important; }
+html.mode-pro .routine-card.is-preset { background: var(--fill-subtle) !important; }
+html.mode-pro .routine-preset-tag { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; background: var(--btn-fill); color: var(--btn-text); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+html.mode-pro .routine-card-actions button { min-height: 36px !important; padding: 0 16px !important; border-radius: 999px !important; font-size: 13px !important; font-weight: 600 !important; }
+html.mode-pro .routine-card.is-preset .routine-card-actions button { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: var(--btn-fill) !important; }
+html.mode-pro .routine-empty { padding: 14px 16px !important; }
+
+
+/* ---------- ranks: battle rating only ---------- */
+html.mode-pro .ranks-head { display: grid; gap: 4px; margin-bottom: 6px; }
+html.mode-pro .ranks-title { margin: 0; font-family: var(--font-iq-serif); font-weight: 400; font-size: 30px; line-height: 1.1; letter-spacing: -0.01em; color: var(--text); }
+
+
+/* ---------- segmented controls: one black thumb that slides ---------- */
+html.mode-pro .seg-sliding { position: relative !important; isolation: isolate; }
+html.mode-pro .seg-sliding > .seg-thumb-pro {
+  display: block !important; position: absolute; left: 0; top: 0; z-index: 0;
+  width: var(--seg-w, 0px); height: var(--seg-h, 0px);
+  transform: translate(var(--seg-x, 0px), var(--seg-y, 0px));
+  border-radius: var(--seg-r, 10px); background: var(--btn-fill); pointer-events: none; opacity: 0;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), width 300ms cubic-bezier(0.22, 1, 0.36, 1), height 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.mode-pro .seg-sliding.has-thumb > .seg-thumb-pro { opacity: 1; }
+html.mode-pro .seg-sliding > button { position: relative; z-index: 1; transition: color 220ms ease !important; }
+html.mode-pro .seg-sliding.has-thumb > button.active,
+html.mode-pro .seg-sliding.has-thumb > button[aria-pressed="true"],
+html.mode-pro .seg-sliding.has-thumb > button[aria-selected="true"],
+html.mode-pro .seg-sliding.has-thumb > .preset-button.active,
+html.mode-pro .controls .seg-sliding.has-thumb > button.active,
+html.mode-pro .profile-page .seg-sliding.has-thumb > button.active,
+html.mode-pro .measure-battery.has-thumb > button.active, html.mode-pro .iq-battery.has-thumb > button.active { background: transparent !important; color: var(--btn-text) !important; border-color: transparent !important; box-shadow: none !important; }
+
+/* ---------- profile edit: the wrapper is the box, never the input ---------- */
+html.mode-pro .profile-edit-field div input,
+html.mode-pro .profile-edit-field div input:focus,
+html.mode-pro .profile-edit-field div input:focus-visible,
+html.mode-pro .profile-handle-edit div input:focus-visible { border: 0 !important; outline: none !important; box-shadow: none !important; background: transparent !important; }
+html.mode-pro .profile-edit-field div:focus-within { border-color: var(--text) !important; }
