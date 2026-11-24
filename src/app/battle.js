@@ -165,6 +165,59 @@ export function showBattle() {
 
 function isOpen() { return d.appShell.classList.contains("battle-open"); }
 
+// ---------------------------------------------------------------------------
+// In-place rendering. The hub and ranks pages re-render as data arrives
+// (optimistic paint, then Supabase). Rebuilding the whole subtree each time
+// restarted the page-entrance animation and made the page look like it loaded
+// two or three times. patchHtml() diffs the new markup against what is on
+// screen and only touches the nodes that changed, so untouched cards keep
+// their nodes, their running animations, their open <details> and any text
+// the user is typing.
+// ---------------------------------------------------------------------------
+function patchHtml(el, html) {
+  if (!el) return;
+  if (!el.firstChild) { el.innerHTML = html; return; }
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  morphChildren(el, tpl.content);
+}
+
+function nodeKey(n) {
+  if (n.nodeType === Node.TEXT_NODE) return "#text";
+  if (n.nodeType !== Node.ELEMENT_NODE) return "#other";
+  return `${n.nodeName}#${n.id || ""}.${n.getAttribute("class") || ""}`;
+}
+
+function morphChildren(from, to) {
+  const spare = [...from.childNodes];
+  [...to.childNodes].forEach((want, i) => {
+    const key = nodeKey(want);
+    const j = spare.findIndex((o) => o && nodeKey(o) === key);
+    let node = want;
+    if (j >= 0) { node = spare[j]; spare[j] = null; morphNode(node, want); }
+    const current = from.childNodes[i] ?? null;
+    if (current !== node) from.insertBefore(node, current);
+  });
+  spare.forEach((o) => { if (o && o.parentNode === from) o.remove(); });
+}
+
+function morphNode(old, want) {
+  if (old.nodeType === Node.TEXT_NODE) { if (old.data !== want.data) old.data = want.data; return; }
+  if (old.nodeType !== Node.ELEMENT_NODE) return;
+  const keepOpen = old.nodeName === "DETAILS";
+  [...old.attributes].forEach((a) => {
+    if (keepOpen && a.name === "open") return;
+    if (!want.hasAttribute(a.name)) old.removeAttribute(a.name);
+  });
+  [...want.attributes].forEach((a) => { if (old.getAttribute(a.name) !== a.value) old.setAttribute(a.name, a.value); });
+  if (old.nodeName === "INPUT" || old.nodeName === "TEXTAREA") {
+    if (document.activeElement !== old && old.value !== want.value) old.value = want.value;
+    return;
+  }
+  if (old.nodeName === "SELECT") { if (document.activeElement !== old && old.value !== want.value) old.value = want.value; }
+  morphChildren(old, want);
+}
+
 function onHostClick(event) {
   const t = event.target;
   const act = (sel) => t.closest(sel);
@@ -335,7 +388,7 @@ function renderHub() {
     </li>`;
   };
 
-  host.innerHTML = `
+  patchHtml(host, `
     <div class="battle-hub is-home">
       <header class="home-head">
         <h1 class="home-brand">Battle</h1>
@@ -372,7 +425,7 @@ function renderHub() {
           </ol>
         </details>
       </footer>
-    </div>`;
+    </div>`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1152,7 +1205,7 @@ export async function renderRanksPage(pageHost) {
     </li>`;
   };
 
-  pageHost.innerHTML = `
+  patchHtml(pageHost, `
     <div class="ranks">
       <header class="ranks-head">
         <p class="battle-eyebrow">Leaderboard</p>
@@ -1186,7 +1239,7 @@ export async function renderRanksPage(pageHost) {
           ${ranksData.outgoing.length ? `<p class="battle-note">Pending: ${ranksData.outgoing.map((r) => esc(r.toHandle)).join(", ")}</p>` : ""}
         ` : `<p class="battle-note">Sign in to add friends and challenge them.</p>`}
       </section>
-    </div>`;
+    </div>`);
 
   if (signedIn && board == null) {
     await loadRanksBoards();
