@@ -9347,7 +9347,15 @@ function renderMeasurePicker(selectedId) {
   // panel explains it (Start lives there); native opens the brief directly.
   host.querySelectorAll("[data-subtest]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (cogniUiMode === "pro") { measureBoardSelection = button.dataset.subtest; renderSubtestDetail(button.dataset.subtest); return; }
+      if (cogniUiMode === "pro") {
+        measureBoardSelection = button.dataset.subtest;
+        renderSubtestDetail(button.dataset.subtest);
+        // On a phone the detail column stacks under the list, so "Start this
+        // subtest" is a scroll away. Tapping a row opens the brief with Begin
+        // right there instead; the stacked panel below stays in step.
+        if (measureBoardStacked()) openMeasureStartDialog(button.dataset.subtest);
+        return;
+      }
       openMeasureStartDialog(button.dataset.subtest);
     });
   });
@@ -9358,6 +9366,10 @@ function renderMeasurePicker(selectedId) {
   }
 }
 let measureBoardSelection = null;
+// Below this width iq.css stacks the board into one column (list, then the
+// detail panel). Keep the two in step.
+const MEASURE_BOARD_STACK_QUERY = "(max-width: 960px)";
+function measureBoardStacked() { return Boolean(window.matchMedia?.(MEASURE_BOARD_STACK_QUERY).matches); }
 
 // The test hub — now the whole page. It always presents as one card: what the
 // test measures, the state of your current attempt, the way in, and the scores
