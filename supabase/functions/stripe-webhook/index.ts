@@ -36,7 +36,11 @@ const admin = createClient(
 // Map each configured Stripe price id to the tier it grants.
 const PRICE_TIER: Record<string, "basic" | "pro"> = {};
 const basicIds = [Deno.env.get("STRIPE_PRICE_BASIC_MONTHLY"), Deno.env.get("STRIPE_PRICE_BASIC_ANNUAL")];
-const proIds = [Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"), Deno.env.get("STRIPE_PRICE_PRO_ANNUAL")];
+// Cogni Pass (web, one monthly price) and the native weekly plan both grant pro.
+const proIds = [
+  Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"), Deno.env.get("STRIPE_PRICE_PRO_ANNUAL"),
+  Deno.env.get("STRIPE_PRICE_PRO_WEEKLY"), Deno.env.get("STRIPE_PRICE_MEASUREMENT_MONTHLY"),
+];
 for (const id of basicIds) if (id) PRICE_TIER[id] = "basic";
 for (const id of proIds) if (id) PRICE_TIER[id] = "pro";
 

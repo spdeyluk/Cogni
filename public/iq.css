@@ -1602,3 +1602,137 @@ html.mode-pro .iq-hero .iq-compare { text-align: center; }
   html.mode-pro:not([data-theme="light"]) body,
   html.mode-pro:not([data-theme="light"]) .app-shell { background: var(--bg) !important; }
 }
+
+
+/* ===================================================================
+   Plan: the four-week path (2026-11-24). A Duolingo-style track: nodes on a
+   thread, week headers between groups, one open card at a time. Same card
+   grammar as the rest of the skin: white 20px cards, hairlines, charcoal pill.
+   =================================================================== */
+.plan-page { display: none; }
+html.mode-pro .plan-open .plan-page { display: block; }
+html.mode-pro .app-shell.plan-open .hero { display: none; }
+
+html.mode-pro .plan { max-width: 640px; margin: 0 auto; display: grid; gap: 22px; justify-items: center; }
+html.mode-pro .plan .home-head { text-align: center; }
+html.mode-pro .plan-card { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); padding: 22px 24px; }
+html.mode-pro .plan-eyebrow { margin: 0 0 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+html.mode-pro .plan-help { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+
+/* setup */
+html.mode-pro .plan-setup { display: grid; gap: 10px; }
+html.mode-pro .plan-setup .plan-eyebrow:not(:first-child) { margin-top: 14px; }
+html.mode-pro .plan-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+html.mode-pro .plan-goal {
+  display: grid; gap: 3px; text-align: left; padding: 14px 16px !important; min-height: 0 !important;
+  border: 1px solid var(--line) !important; border-radius: 14px !important; background: var(--fill-subtle) !important; color: var(--text) !important;
+  cursor: pointer; transition: border-color 150ms, background 150ms, box-shadow 150ms;
+}
+html.mode-pro .plan-goal strong { font-size: 14px; font-weight: 600; }
+html.mode-pro .plan-goal span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+html.mode-pro .plan-goal:hover { border-color: var(--line-strong) !important; background: var(--surface) !important; }
+html.mode-pro .plan-goal.is-on { border-color: var(--text) !important; background: var(--surface) !important; box-shadow: inset 0 0 0 1px var(--text); }
+html.mode-pro .plan-minutes { display: flex; gap: 10px; }
+html.mode-pro .plan-minute {
+  flex: 1; display: inline-flex; align-items: baseline; justify-content: center; gap: 4px; padding: 12px !important; min-height: 0 !important;
+  border: 1px solid var(--line) !important; border-radius: 999px !important; background: var(--fill-subtle) !important; color: var(--text) !important; cursor: pointer;
+  transition: border-color 150ms, background 150ms, color 150ms;
+}
+html.mode-pro .plan-minute b { font-family: var(--font-display); font-weight: 600; font-size: 20px; }
+html.mode-pro .plan-minute span { font-size: 12px; color: var(--muted); }
+html.mode-pro .plan-minute:hover { border-color: var(--line-strong) !important; }
+html.mode-pro .plan-minute.is-on { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: var(--btn-fill) !important; }
+html.mode-pro .plan-minute.is-on span { color: inherit; opacity: .7; }
+html.mode-pro .plan-profile { margin: 8px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+html.mode-pro .plan-profile b { color: var(--text); font-weight: 600; }
+html.mode-pro .plan-build { justify-self: start; margin-top: 6px; }
+html.mode-pro .plan-build:disabled { opacity: .45; cursor: not-allowed; }
+
+/* progress */
+html.mode-pro .plan-progress { width: 100%; display: grid; gap: 12px; }
+html.mode-pro .plan-progress-row { display: flex; justify-content: center; gap: 36px; }
+html.mode-pro .plan-progress-row > div { display: grid; gap: 2px; justify-items: center; }
+html.mode-pro .plan-progress-row strong { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+html.mode-pro .plan-progress-row strong i { font-style: normal; font-size: 14px; color: var(--muted); font-weight: 500; }
+html.mode-pro .plan-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+html.mode-pro .plan-bar i { display: block; height: 100%; border-radius: inherit; background: var(--text); transition: width 400ms var(--ease-out); }
+
+/* path */
+html.mode-pro .plan-path { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; position: relative; }
+html.mode-pro .plan-week { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 26px 0 18px; }
+html.mode-pro .plan-week:first-child { padding-top: 6px; }
+html.mode-pro .plan-week-label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+html.mode-pro .plan-week h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: -.02em; color: var(--text); }
+html.mode-pro .plan-week p { margin: 0; font-size: 13px; color: var(--text-2); max-width: 44ch; }
+html.mode-pro .plan-week.is-done h2 { color: var(--muted); }
+
+html.mode-pro .plan-step { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; position: relative; padding: 8px 0; }
+/* the thread between nodes */
+html.mode-pro .plan-step::before { content: ""; position: absolute; left: 31px; top: 0; bottom: 0; width: 2px; background: var(--line-strong); }
+html.mode-pro .plan-step.is-done::before { background: var(--text); }
+html.mode-pro .plan-week + .plan-step::before { top: 8px; }
+html.mode-pro .plan-path > .plan-step:last-child::before { bottom: 8px; }
+html.mode-pro .plan-node {
+  position: relative; z-index: 1; width: 64px; height: 64px; display: grid; place-items: center;
+  padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; cursor: pointer; min-height: 0 !important;
+}
+html.mode-pro .plan-node-ring { position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); transition: transform 150ms, border-color 150ms, background 150ms, box-shadow 150ms; }
+html.mode-pro .plan-node-icon { position: relative; width: 22px; height: 22px; color: var(--text-2); display: grid; place-items: center; }
+html.mode-pro .plan-node-icon svg { width: 22px; height: 22px; }
+html.mode-pro .plan-node:hover .plan-node-ring { transform: scale(1.04); border-color: var(--text-2); }
+html.mode-pro .plan-step.is-done .plan-node-ring { background: var(--btn-fill); border-color: var(--btn-fill); }
+html.mode-pro .plan-step.is-done .plan-node-icon { color: var(--btn-text); }
+html.mode-pro .plan-step.is-current .plan-node-ring { border-color: var(--text); background: var(--surface); box-shadow: 0 0 0 6px var(--fill-subtle); }
+html.mode-pro .plan-step.is-current .plan-node-icon { color: var(--text); }
+html.mode-pro .plan-step.is-locked .plan-node { cursor: default; }
+html.mode-pro .plan-step.is-locked .plan-node-ring { border-style: dashed; background: var(--bg); }
+html.mode-pro .plan-step.is-locked .plan-node-icon { color: var(--muted); opacity: .7; }
+html.mode-pro .plan-step.is-locked .plan-node:hover .plan-node-ring { transform: none; border-color: var(--line-strong); }
+
+html.mode-pro .plan-step-card { padding: 14px 18px; display: grid; gap: 4px; align-self: center; transition: border-color 150ms, box-shadow 150ms, background 150ms; }
+html.mode-pro .plan-step-card h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+html.mode-pro .plan-step-card .plan-eyebrow { margin: 0; }
+html.mode-pro .plan-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
+html.mode-pro .plan-blurb { margin: 8px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+html.mode-pro .plan-step.is-open .plan-step-card { padding: 18px 20px; }
+html.mode-pro .plan-step.is-current .plan-step-card { border-color: var(--line-strong); box-shadow: var(--iq-lift); }
+html.mode-pro .plan-step:not(.is-open) .plan-step-card { background: transparent; border-color: transparent; box-shadow: none; padding-left: 4px; }
+html.mode-pro .plan-step.is-locked .plan-step-card h3, html.mode-pro .plan-step.is-locked .plan-meta { color: var(--muted); }
+html.mode-pro .plan-step.is-done:not(.is-open) .plan-step-card h3 { color: var(--text-2); }
+html.mode-pro .plan-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+html.mode-pro .plan-chips li { font-size: 12px; color: var(--text-2); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--fill-subtle); }
+html.mode-pro .plan-chips li i { font-style: normal; color: var(--muted); }
+html.mode-pro .plan-step-card .home-cta, html.mode-pro .plan-again { margin-top: 14px; justify-self: start; }
+html.mode-pro .plan-again { min-height: 40px !important; padding: 8px 18px !important; border-radius: 999px !important; font-size: 13.5px !important; }
+html.mode-pro .plan-pass { margin-top: 12px; display: grid; gap: 10px; justify-items: start; }
+html.mode-pro .plan-pass p { margin: 0; font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
+html.mode-pro .plan-pass .home-cta { margin-top: 0; }
+
+/* finished */
+html.mode-pro .plan-finished { display: grid; gap: 10px; justify-items: center; text-align: center; }
+html.mode-pro .plan-finished-scores { display: flex; align-items: center; gap: 18px; }
+html.mode-pro .plan-finished-scores > div { display: grid; gap: 2px; justify-items: center; }
+html.mode-pro .plan-finished-scores strong { font-family: var(--font-display); font-weight: 600; font-size: 36px; letter-spacing: -.02em; color: var(--text); }
+html.mode-pro .plan-finished-arrow { color: var(--muted); font-size: 20px; }
+html.mode-pro .plan-delta { font-size: 15px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--fill-subtle); color: var(--text-2); }
+html.mode-pro .plan-delta.is-up { color: var(--iq-good); }
+html.mode-pro .plan-delta.is-down { color: var(--iq-low); }
+html.mode-pro .plan-finished .home-cta { margin-top: 6px; }
+
+html.mode-pro .plan-foot { display: grid; justify-items: center; padding: 8px 0 24px; }
+
+/* entrance: same fade-up as every other page */
+html.mode-pro .app-content.is-entering .plan > * { animation: iq-fade-up 420ms var(--ease-out) both; }
+html.mode-pro .app-content.is-entering .plan > *:nth-child(2) { animation-delay: 40ms; }
+html.mode-pro .app-content.is-entering .plan > *:nth-child(3) { animation-delay: 80ms; }
+html.mode-pro .app-content.is-entering .plan > *:nth-child(n + 4) { animation-delay: 120ms; }
+
+@media (max-width: 720px) {
+  html.mode-pro .plan-goals { grid-template-columns: 1fr; }
+  html.mode-pro .plan-step { grid-template-columns: 56px 1fr; gap: 10px; }
+  html.mode-pro .plan-node { width: 56px; height: 56px; }
+  html.mode-pro .plan-step::before { left: 27px; }
+  html.mode-pro .plan-progress-row { gap: 24px; }
+  html.mode-pro .plan-step-card .home-cta { justify-self: stretch; }
+  html.mode-pro .plan-build { justify-self: stretch; }
+}

@@ -28,6 +28,17 @@ Copy each **Price ID** (`price_...`):
 
 (**Basic** = all exercises + data. **Pro** = also routines, AI coach and the IQ test.)
 
+## 2b. The web price: Cogni Pass (1 min)
+
+The web paywall sells exactly one thing, **Cogni Pass** at **€14.99 / month** (it unlocks
+every step of the four-week Plan and the saved training record). Create that recurring
+price too and set it as `STRIPE_PRICE_MEASUREMENT_MONTHLY`. The webhook grants the
+`pro` tier for it, so Pass holders pass every `isProUser()` / `webPlanUnlocked()` gate.
+
+> Status 2026-11-24: `create-checkout` and `stripe-webhook` are deployed but return
+> `WORKER_ERROR` on every call, which is what an empty `STRIPE_SECRET_KEY` does to the
+> Stripe client at boot. Steps 4 and 5 below have not been run yet.
+
 ## 3. Deploy the two functions (2 min)
 
 From the repo root (needs the Supabase CLI + `supabase login` + `supabase link`):

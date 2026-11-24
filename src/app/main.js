@@ -45,6 +45,7 @@ import { resolveGeneratedItem, generatedItemId } from "../core/assessments/catGe
 import { buildLanrt, buildDomino, LANRT_FAMILIES } from "../core/assessments/lanrtGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
+import { initPlan, showPlan, renderPlan, notifyIqSitting } from "./plan.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -311,6 +312,7 @@ function detectCogniUiMode() {
 // Cogni Measurement is the front door on web — there is no separate home page.
 const routeTabToPath = {
   battle: "/battle",
+  plan: "/plan",
   assessments: "/measurement",
   exercises: "/exercises",
   community: "/community",
@@ -328,6 +330,7 @@ const routePathToTab = {
 function routeTabHandler(tab) {
   const handlers = {
     battle: showBattle,
+    plan: showPlan,
     exercises: showExerciseHub,
     assessments: showAssessments,
     statistics: showStatistics,
@@ -1535,7 +1538,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training and battles are free for everyone. Pass opens the IQ test right away and keeps your complete training record.";
+    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass opens every step of your four-week plan and keeps your complete training record.";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -2049,7 +2052,7 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
-  "The IQ test, unlocked now instead of after three invites",
+  "Every step of your four-week plan, rebuilt from each retest",
   "Every training session saved, with trends over time",
   "Full session breakdowns: misses, false alarms, answer speed",
   "Per-exercise progress by ability",
@@ -2233,7 +2236,9 @@ async function startCheckout() {
     return;
   }
   const plan = dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "basic";
-  const billing = dialog.dataset.billing === "monthly" ? "monthly" : "annual";
+  // Pass has one price, so the (hidden) annual/monthly toggle must not turn it
+  // into "measurement:annual", which the checkout function rejects.
+  const billing = plan === "measurement" ? "monthly" : (dialog.dataset.billing === "monthly" ? "monthly" : "annual");
   if (note) note.textContent = "";
   if (button) { button.disabled = true; button.textContent = "Redirecting…"; }
   try {
@@ -4764,7 +4769,7 @@ function showStatistics() {
 // only some of the copies meant navigating away from Community left its panels
 // on screen over the next page. Derive, never duplicate.
 const sectionOpenClasses = [
-  "community-open", "battle-open", "home-open", "friends-open", "dashboard-open",
+  "community-open", "battle-open", "plan-open", "home-open", "friends-open", "dashboard-open",
   "exercises-open", "nback-open", "mot-open", "rrt-open", "cct-open", "ufov-open",
   "ict-open", "assessments-open", "stats-open", "profile-open", "placeholder-open",
   "leaderboard-open", "coach-open", "screentime-open"
@@ -8173,6 +8178,25 @@ initBattle({
   showCommunity,
   onStatusChange: () => { if (elements.appShell.classList.contains("profile-open")) renderProfile(); refreshReferralPanels(); }
 });
+initPlan({
+  appShell: elements.appShell,
+  sectionResetClasses,
+  setActiveTab,
+  setPageHeader: (title, lede) => { elements.pageTitle.textContent = title; elements.pageLede.textContent = lede; },
+  isGameRunning: () => session.running || session.countingDown || mot.running || rrt.running || cct.running || ufov.running || ict.running,
+  escapeHtml,
+  showToast,
+  loadCatSessions,
+  planUnlocked: webPlanUnlocked,
+  openPricingModal,
+  startIqTest: () => { showAssessments(); if (loadCatSessions().length || measureAttemptStarted()) openMeasureSubtests(); },
+  createRoutineBlock,
+  easySettings: dailyDetoxEasySettings,
+  startRoutine,
+  trainingStreak: () => daysTrainedStreak(loadExerciseProgress()),
+  exerciseIcon: (id) => trainSvg(trainIconPaths[catalogEntry(id)?.icon ?? "grid"]),
+  iqIcon: () => trainSvg(trainDomainIcons.Memory)
+});
 initReferral({
   supabase,
   supabaseEnabled,
@@ -10405,6 +10429,7 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
   sessions.unshift(sessionRecord);
   saveCatSessions(sessions.slice(0, 50));
   clearMeasureAttempt();
+  notifyIqSitting(sessionRecord);
   syncUntakenIqTestNudge();
   syncPublicStatus().catch(() => {});
   catActive = null;
@@ -10559,6 +10584,7 @@ async function refreshEntitlement() {
     const shell = elements.appShell;
     if (shell?.classList.contains("profile-open")) renderProfile();
     if (shell?.classList.contains("screentime-open")) renderScreenTime();
+    if (shell?.classList.contains("plan-open")) renderPlan();
     if (elements.catResult && !elements.catResult.hidden) {
       const last = loadCatSessions().at(-1);
       if (last) renderCatResult(last);
@@ -12570,7 +12596,9 @@ function startRoutine(routine) {
     name: routine.name || "Routine",
     blocks,
     index: 0,
-    waitingForSummary: false
+    waitingForSummary: false,
+    // Plan steps pass one: it runs instead of landing on the Exercises hub.
+    onComplete: typeof routine.onComplete === "function" ? routine.onComplete : null
   };
   startNextRoutineBlock();
 }
@@ -12578,12 +12606,12 @@ function startRoutine(routine) {
 function startNextRoutineBlock() {
   if (!activeRoutineRun) return;
   if (activeRoutineRun.index >= activeRoutineRun.blocks.length) {
-    const completedName = activeRoutineRun.name;
-    const wasDailyDetox = activeRoutineRun.id === "daily-detox";
+    const finished = activeRoutineRun;
     activeRoutineRun = null;
-    if (wasDailyDetox) markDailyDetoxDone();
+    if (finished.id === "daily-detox") markDailyDetoxDone();
+    if (finished.onComplete) { finished.onComplete(finished); return; }
     showExerciseHub();
-    elements.pageLede.textContent = `${completedName} complete.`;
+    elements.pageLede.textContent = `${finished.name} complete.`;
     return;
   }
 
