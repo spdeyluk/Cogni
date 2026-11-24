@@ -2235,10 +2235,13 @@ async function startCheckout() {
     if (note) note.textContent = "Payments aren't available right now.";
     return;
   }
-  const plan = dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "basic";
-  // Pass has one price, so the (hidden) annual/monthly toggle must not turn it
-  // into "measurement:annual", which the checkout function rejects.
-  const billing = plan === "measurement" ? "monthly" : (dialog.dataset.billing === "monthly" ? "monthly" : "annual");
+  // The web sells exactly one thing, Cogni Pass, billed monthly. The dialog
+  // also holds the native Basic/Pro cards and a billing toggle (hidden on web),
+  // and whichever of those carries is-selected must not pick the product: that
+  // sent pro:annual, or measurement:annual, both wrong for the web.
+  const web = cogniUiMode === "pro";
+  const plan = web ? "measurement" : (dialog.querySelector(".pricing-plan.is-selected")?.dataset.pricingPlan || "basic");
+  const billing = web ? "monthly" : (dialog.dataset.billing === "monthly" ? "monthly" : "annual");
   if (note) note.textContent = "";
   if (button) { button.disabled = true; button.textContent = "Redirecting…"; }
   try {
