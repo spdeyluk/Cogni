@@ -1586,3 +1586,19 @@ html.mode-pro .iq-cmp-mark.is-you text { fill: var(--text); font-weight: 600; }
 html.mode-pro .iq-cmp-mark.is-pending circle { fill: var(--surface); stroke-dasharray: 2.2 2.2; }
 html.mode-pro .iq-compare figcaption { margin: 12px auto 0; max-width: 56ch; text-align: center; font-size: 12px; line-height: 1.5; color: var(--muted); }
 html.mode-pro .iq-hero .iq-compare { text-align: center; }
+
+/* =====================================================================
+   Phones, dark theme: no near-black frame (2026-11-24)
+   On desktop the app is an inset panel on a near-black frame (--frame).
+   A phone has no frame: the panel runs edge to edge, so the frame colour
+   should never be visible. It still was, as a jet-black page, while the
+   app booted before the landing or a section had painted, and under
+   pages shorter than the screen. Light already paints the frame white;
+   dark now paints it the same dark grey as the page.
+   ===================================================================== */
+@media (max-width: 900px) {
+  html.mode-pro:not([data-theme="light"]) { --frame: var(--bg); }
+  html.mode-pro:not([data-theme="light"]),
+  html.mode-pro:not([data-theme="light"]) body,
+  html.mode-pro:not([data-theme="light"]) .app-shell { background: var(--bg) !important; }
+}
