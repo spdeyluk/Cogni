@@ -1877,3 +1877,33 @@ html.mode-pro .plan-node-badge { position: absolute; right: -5px; bottom: -3px; 
 html.mode-pro .plan-node-badge svg { width: 13px; height: 13px; }
 html.mode-pro .plan-step.needs-pass.is-current .plan-node-badge { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
 @media (max-width: 720px) { html.mode-pro .plan-node-badge { width: 23px; height: 23px; right: -4px; } html.mode-pro .plan-node-badge svg { width: 12px; height: 12px; } }
+
+/* About-you survey (2026-11-25): tap-to-answer screens before the first test,
+   in the onboarding's language. Single picks advance on tap; ticks need Continue. */
+html.mode-pro .profile-survey .web-onboarding-inner { width: min(700px, 100%); }
+html.mode-pro .sv-count { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+html.mode-pro .sv-bar { height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
+html.mode-pro .sv-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--text); transition: width 320ms var(--ease-out); }
+html.mode-pro .sv-slide .web-onboarding-body { max-width: 46ch; }
+html.mode-pro .sv-opts { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 8px; width: min(540px, 100%); margin: 10px auto 0; text-align: left; }
+html.mode-pro .sv-opts.is-wide { width: min(660px, 100%); }
+html.mode-pro .sv-opt {
+  display: flex; align-items: center; gap: 10px; min-height: 48px !important; padding: 10px 14px !important;
+  border: 1px solid var(--line) !important; border-radius: 14px !important; background: var(--fill-subtle) !important; color: var(--text) !important;
+  font-size: 14px; font-weight: 500; line-height: 1.25; text-align: left; cursor: pointer; transition: border-color 150ms, background 150ms, color 150ms, transform 90ms;
+}
+html.mode-pro .sv-opt:hover { border-color: var(--line-strong) !important; background: var(--surface) !important; }
+html.mode-pro .sv-opt:active { transform: scale(.985); }
+html.mode-pro .sv-opt.is-single { justify-content: center; text-align: center; }
+html.mode-pro .sv-opt.is-on { background: var(--btn-fill) !important; color: var(--btn-text) !important; border-color: var(--btn-fill) !important; }
+html.mode-pro .sv-tick { flex: none; width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line-strong); display: grid; place-items: center; background: var(--surface); color: transparent; transition: background 150ms, border-color 150ms, color 150ms; }
+html.mode-pro .sv-tick svg { width: 12px; height: 12px; }
+html.mode-pro .sv-opt.is-on .sv-tick { background: var(--btn-text); border-color: var(--btn-text); color: var(--btn-fill); }
+html.mode-pro .sv-foot .web-onboarding-actions { justify-content: center; gap: 8px; }
+html.mode-pro .sv-foot .web-onboarding-back { margin-right: 0; }
+@media (max-width: 560px) {
+  html.mode-pro .sv-opts { gap: 7px; }
+  html.mode-pro .sv-opts.is-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.mode-pro .sv-opt { min-height: 44px !important; padding: 8px 11px !important; font-size: 13px; }
+  html.mode-pro .sv-slide .web-onboarding-title { font-size: 1.75rem !important; }
+}

@@ -46,6 +46,7 @@ import { buildLanrt, buildDomino, LANRT_FAMILIES } from "../core/assessments/lan
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
 import { initPlan, showPlan, renderPlan, notifyIqSitting, setPlanPrefs, planGoalButtonsHtml, planMinuteButtonsHtml } from "./plan.js";
+import { initSurvey, runProfileSurvey, profileSurveyDone } from "./survey.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -8277,6 +8278,7 @@ initPlan({
   exerciseIcon: (id) => trainSvg(trainIconPaths[catalogEntry(id)?.icon ?? "grid"]),
   iqIcon: () => trainSvg(trainDomainIcons.Memory)
 });
+initSurvey({ escapeHtml, reduceMotion: webOnboardingReduceMotion });
 initReferral({
   supabase,
   supabaseEnabled,
@@ -9904,6 +9906,9 @@ function startSubtest(subtestId) {
   if (!attemptSubtests(attempt).some((entry) => entry.id === subtest.id)) return;
   // One go, once. A completed subtest is closed for this attempt.
   if (attempt.subtests[subtest.id]) return;
+  // The first time a test is started: a short about-you survey (age, gender,
+  // education, then optional screen time, games and ranks, interests), once.
+  if (cogniUiMode === "pro" && !profileSurveyDone()) { runProfileSurvey(() => startSubtest(subtestId)); return; }
   // Starting a subtest starts the attempt: pin which test this is before the
   // first answer, so a reload mid-sitting still knows.
   if (!measureAttemptStarted()) saveMeasureAttempt(attempt);
