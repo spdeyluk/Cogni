@@ -1835,3 +1835,33 @@ html.mode-pro .app-content.is-entering .plan > *:nth-child(n + 4) { animation-de
   html.mode-pro:has(.app-shell.plan-open), html.mode-pro body:has(.app-shell.plan-open),
   html.mode-pro .app-shell.plan-open, html.mode-pro .app-shell.plan-open .app-content { overflow: visible !important; }
 }
+
+/* Onboarding questions (2026-11-25): the Plan's two questions, asked before
+   the thoughts. The cards are the Plan editor's own (.plan-goal, .plan-minute). */
+html.mode-pro .web-onboarding .ob-goals { width: min(560px, 100%); margin: 10px auto 0; text-align: left; }
+html.mode-pro .web-onboarding .ob-minutes { width: min(440px, 100%); margin: 10px auto 0; }
+html.mode-pro .web-onboarding .ob-q + .web-onboarding-footer .web-onboarding-actions { justify-content: center; }
+html.mode-pro .web-onboarding .ob-q + .web-onboarding-footer .web-onboarding-back { margin-right: 0; }
+@media (max-width: 560px) {
+  html.mode-pro .web-onboarding .ob-goals .plan-goal { padding: 12px 14px !important; }
+  html.mode-pro .web-onboarding .ob-q .web-onboarding-body { font-size: 14.5px; }
+}
+
+/* "Change goals or time": the editor card sits over the road. */
+html.mode-pro .plan-editor { animation: plan-pop-in 260ms var(--ease-out) both; }
+html.mode-pro .plan-edit-actions { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+html.mode-pro .plan-edit-actions .plan-build { margin-top: 0; }
+@media (max-width: 720px) {
+  html.mode-pro .plan-edit-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  html.mode-pro .plan-edit-actions .battle-link { align-self: center; }
+}
+/* Phone: the goal question fits one screen, Continue in view without a scroll. */
+@media (max-width: 560px) {
+  html.mode-pro .web-onboarding .ob-q .web-onboarding-title { font-size: 1.75rem !important; }
+  html.mode-pro .web-onboarding .ob-q { gap: 10px; }
+  html.mode-pro .web-onboarding .ob-goals { gap: 7px; margin-top: 6px; }
+  html.mode-pro .web-onboarding .ob-goals .plan-goal { padding: 9px 13px !important; gap: 1px; }
+  html.mode-pro .web-onboarding .ob-goals .plan-goal strong { font-size: 13.5px; }
+  html.mode-pro .web-onboarding .ob-goals .plan-goal span { font-size: 11.5px; line-height: 1.35; }
+  html.mode-pro .web-onboarding .ob-q + .web-onboarding-footer { padding-top: 12px; }
+}

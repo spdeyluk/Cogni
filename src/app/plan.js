@@ -10,6 +10,10 @@
 // State lives in localStorage under a "cogni." key, so account sync carries
 // it between devices like everything else. The generated steps are stored,
 // not recomputed, so a plan stays the same plan even if the generator changes.
+//
+// The two questions (goals, minutes a day) are asked in the web onboarding,
+// before the intro; the Plan tab always shows a road. Without answers the road
+// is built from defaults, and "Change goals" on the Guide re-asks them.
 // ---------------------------------------------------------------------------
 import { MEASUREMENT_INDICES, MEASUREMENT_INDEX_ORDER, rankedIndices } from "../core/assessments/measurement.js";
 
@@ -17,6 +21,7 @@ let d = null;      // deps from main.js
 let host = null;   // .plan-page section
 
 const PLAN_KEY = "cogni.plan.v1";
+const PREFS_KEY = "cogni.planPrefs.v1";
 const PLAN_VERSION = 1;
 const WEEKS = 4;
 const STEPS_PER_WEEK = 5;
@@ -35,6 +40,7 @@ const GOALS = [
   { id: "numbers", label: "Stronger with numbers", phrase: "stronger numbers", blurb: "Quantity, proportion, arithmetic.", indices: ["qri"], exercises: ["mentalmath", "numrecall"] }
 ];
 const MINUTE_OPTIONS = [10, 15, 25];
+const DEFAULT_PREFS = { goals: ["iq"], minutes: 15 };
 
 // Which exercises move which index. Working memory and speed have the most
 // coverage because that is where the catalogue is deepest.
@@ -88,6 +94,7 @@ export function showPlan() {
   d.setPageHeader("Plan", "Your four-week path, one step at a time.");
   selectedKey = null;
   guideOpen = false;
+  editOpen = false;
   renderPlan();
   // After the page's own enter work, so the current stop ends up on screen.
   window.requestAnimationFrame(() => window.requestAnimationFrame(revealCurrent));
@@ -108,10 +115,66 @@ export function loadPlan() {
 function savePlan(plan) {
   try { localStorage.setItem(PLAN_KEY, JSON.stringify(plan)); } catch { /* private mode */ }
 }
-function clearPlan() {
-  try { localStorage.removeItem(PLAN_KEY); } catch { /* private mode */ }
-}
 export function hasPlan() { return Boolean(loadPlan()); }
+
+// Goals and minutes a day: answered in onboarding or in the Plan's editor.
+export function loadPlanPrefs() {
+  try { return normalizePrefs(JSON.parse(localStorage.getItem(PREFS_KEY))); } catch { return null; }
+}
+function normalizePrefs(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const goals = Array.isArray(raw.goals) ? raw.goals.filter((id) => GOALS.some((g) => g.id === id)).slice(0, 2) : [];
+  const minutes = MINUTE_OPTIONS.includes(Number(raw.minutes)) ? Number(raw.minutes) : DEFAULT_PREFS.minutes;
+  return goals.length ? { goals, minutes } : null;
+}
+// A plan counts as under way once a step the person did themselves is done.
+// The baseline step is ticked by the generator when a sitting already exists.
+function planStarted(plan) {
+  return plan.steps.some((s, i) => s.done && !(i === 0 && s.kind === "iq"));
+}
+function latestRecord() { return (d?.loadCatSessions?.() ?? [])[0] ?? null; }
+
+// Save the answers and build the plan from them. A plan already under way is
+// kept unless `rebuild` is set (the editor); the same answers on an untouched
+// plan keep that plan too, so re-saving does not reshuffle the road.
+export function setPlanPrefs(raw, { rebuild = false } = {}) {
+  const prefs = normalizePrefs(raw);
+  if (!prefs) return loadPlan();
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* private mode */ }
+  const existing = loadPlan();
+  if (existing && !rebuild) {
+    const same = existing.minutes === prefs.minutes && existing.goals.join() === prefs.goals.join();
+    if (same || planStarted(existing)) return existing;
+  }
+  const plan = buildPlan({ ...prefs, record: latestRecord() });
+  savePlan(plan);
+  if (isOpen()) renderPlan();
+  return plan;
+}
+
+// The Plan tab always has a road: without answers it is built from defaults.
+function ensurePlan() {
+  const existing = loadPlan();
+  if (existing) return existing;
+  const plan = buildPlan({ ...(loadPlanPrefs() ?? DEFAULT_PREFS), record: latestRecord() });
+  savePlan(plan);
+  return plan;
+}
+
+// The two questions as markup, shared with the onboarding. `attr` names the
+// data attribute the host's click handler listens for.
+export function planGoalButtonsHtml(selected, attr) {
+  return GOALS.map((g) => {
+    const on = selected.includes(g.id);
+    return `<button class="plan-goal${on ? " is-on" : ""}" ${attr}="${g.id}" type="button" aria-pressed="${on}"><strong>${esc(g.label)}</strong><span>${esc(g.blurb)}</span></button>`;
+  }).join("");
+}
+export function planMinuteButtonsHtml(minutes, attr) {
+  return MINUTE_OPTIONS.map((m) => {
+    const on = minutes === m;
+    return `<button class="plan-minute${on ? " is-on" : ""}" ${attr}="${m}" type="button" role="radio" aria-checked="${on}"><b>${m}</b><span>min</span></button>`;
+  }).join("");
+}
 
 function currentStepIndex(plan) {
   const i = plan.steps.findIndex((s) => !s.done);
@@ -119,11 +182,11 @@ function currentStepIndex(plan) {
 }
 function stepNeedsPass(index) { return index >= FREE_STEPS && !d.planUnlocked(); }
 
-// Setup draft, kept only while the setup card is on screen.
+// Editor draft (goals, minutes), kept while the "Change goals" card is open.
 let draft = { goals: [], minutes: 15 };
+let editOpen = false;      // the "Change goals" card over the road
 let selectedKey = null;    // the stop whose bubble is open: a step id, or "c<week>" for a chest
 let guideOpen = false;     // the Guide card under the week header
-let confirmReset = 0;      // timestamp of the first "Start over" tap
 
 // ---------------------------------------------------------------------------
 // Generation
@@ -310,13 +373,25 @@ function onHostClick(event) {
   if (mins) { draft.minutes = Number(mins.dataset.planMinutes); renderPlan(); return; }
   if (t.closest("[data-plan-build]")) {
     if (!draft.goals.length) return;
-    const record = (d.loadCatSessions() ?? [])[0] ?? null;
-    savePlan(buildPlan({ goals: draft.goals, minutes: draft.minutes, record }));
-    selectedKey = null;
+    editOpen = false;
     guideOpen = false;
+    selectedKey = null;
+    setPlanPrefs({ goals: draft.goals, minutes: draft.minutes }, { rebuild: true });
     renderPlan();
+    d.showToast?.("Plan rebuilt.");
     return;
   }
+  if (t.closest("[data-plan-edit]")) {
+    const plan = loadPlan();
+    draft = { goals: [...(plan?.goals ?? [])], minutes: plan?.minutes ?? DEFAULT_PREFS.minutes };
+    editOpen = !editOpen;
+    guideOpen = false;
+    selectedKey = null;
+    renderPlan();
+    host.querySelector(".plan-editor")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    return;
+  }
+  if (t.closest("[data-plan-edit-cancel]")) { editOpen = false; renderPlan(); return; }
   const start = t.closest("[data-plan-start]");
   if (start) { const plan = loadPlan(); if (plan) startStep(plan, Number(start.dataset.planStart)); return; }
   // Pro mode hides every [data-open-pricing] control, so the Plan's own
@@ -338,21 +413,6 @@ function onHostClick(event) {
     renderPlan();
     return;
   }
-  if (t.closest("[data-plan-reset]")) {
-    const now = Date.now();
-    if (now - confirmReset < 4000) {
-      confirmReset = 0;
-      const plan = loadPlan();
-      draft = { goals: plan?.goals ?? [], minutes: plan?.minutes ?? 15 };
-      clearPlan();
-      selectedKey = null;
-      renderPlan();
-    } else {
-      confirmReset = now;
-      renderPlan();
-      window.setTimeout(() => { if (Date.now() - confirmReset >= 4000) { confirmReset = 0; if (isOpen()) renderPlan(); } }, 4200);
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -360,48 +420,36 @@ function onHostClick(event) {
 // ---------------------------------------------------------------------------
 export function renderPlan() {
   if (!host) return;
-  const plan = loadPlan();
-  host.innerHTML = plan ? roadHtml(plan) : setupHtml();
-  if (plan) window.requestAnimationFrame(syncUnitHeader);
+  host.innerHTML = roadHtml(ensurePlan());
+  window.requestAnimationFrame(syncUnitHeader);
 }
 
 const esc = (v) => d.escapeHtml(v);
 
-function setupHtml() {
-  const record = (d.loadCatSessions() ?? [])[0] ?? null;
+// "Change goals": the two questions again, over the road. Rebuilding starts a
+// fresh four weeks from step one.
+function editorHtml(plan) {
+  const record = latestRecord();
   const weak = weakestIndices(record);
   const profileLine = weak.length
     ? `Your last sitting puts <b>${esc(INDEX_TITLES[weak[0]].toLowerCase())}</b> and <b>${esc(INDEX_TITLES[weak[1]].toLowerCase())}</b> lowest. The plan leans into both.`
     : `No sitting yet. Step one is the IQ test, and the plan tunes itself to the result.`;
+  const note = planStarted(plan) ? "Rebuilding starts a fresh four weeks from step one. Progress on this plan resets." : "Rebuilding starts a fresh four weeks from step one.";
   return `
-    <div class="plan is-setup">
-      <header class="home-head">
-        <h1 class="home-brand">Plan</h1>
-        <p class="home-sub">Four weeks. One step at a time. Built around what you want and what the test found.</p>
-      </header>
-
-      <section class="plan-card plan-setup">
+      <section class="plan-card plan-setup plan-editor" aria-label="Change goals">
         <p class="plan-eyebrow">1 · What do you want to work on?</p>
         <p class="plan-help">Pick up to two.</p>
-        <div class="plan-goals" role="group" aria-label="Goals">
-          ${GOALS.map((g) => `
-            <button class="plan-goal${draft.goals.includes(g.id) ? " is-on" : ""}" data-plan-goal="${g.id}" type="button" aria-pressed="${draft.goals.includes(g.id)}">
-              <strong>${esc(g.label)}</strong><span>${esc(g.blurb)}</span>
-            </button>`).join("")}
-        </div>
+        <div class="plan-goals" role="group" aria-label="Goals">${planGoalButtonsHtml(draft.goals, "data-plan-goal")}</div>
 
         <p class="plan-eyebrow">2 · How long each day?</p>
-        <div class="plan-minutes" role="radiogroup" aria-label="Minutes a day">
-          ${MINUTE_OPTIONS.map((m) => `
-            <button class="plan-minute${draft.minutes === m ? " is-on" : ""}" data-plan-minutes="${m}" type="button" role="radio" aria-checked="${draft.minutes === m}">
-              <b>${m}</b><span>min</span>
-            </button>`).join("")}
-        </div>
+        <div class="plan-minutes" role="radiogroup" aria-label="Minutes a day">${planMinuteButtonsHtml(draft.minutes, "data-plan-minutes")}</div>
 
-        <p class="plan-profile">${profileLine}</p>
-        <button class="battle-primary home-cta plan-build" data-plan-build type="button" ${draft.goals.length ? "" : "disabled"}>Build my plan</button>
-      </section>
-    </div>`;
+        <p class="plan-profile">${profileLine} ${esc(note)}</p>
+        <div class="plan-edit-actions">
+          <button class="battle-primary home-cta plan-build" data-plan-build type="button" ${draft.goals.length ? "" : "disabled"}>Rebuild my plan</button>
+          <button class="battle-link" data-plan-edit-cancel type="button">Cancel</button>
+        </div>
+      </section>`;
 }
 
 // ---- the road ----
@@ -433,6 +481,7 @@ function roadHtml(plan) {
   return `
     <div class="plan is-road" style="--plan-progress:${((done / total) * 100).toFixed(1)}%">
       ${unitHeaderHtml(plan, current, finished, done)}
+      ${editOpen ? editorHtml(plan) : ""}
       ${guideOpen ? guideHtml(plan, current, finished) : ""}
       ${finished ? finishedHtml(plan) : ""}
       <ol class="plan-road">${body}</ol>
@@ -519,7 +568,7 @@ function guideHtml(plan, current, finished) {
         }).join("")}
       </ol>
       <footer class="plan-guide-foot">
-        <button class="battle-link" data-plan-reset type="button">${Date.now() - confirmReset < 4000 ? "Tap again to start over" : "Start over with new goals"}</button>
+        <button class="battle-link" data-plan-edit type="button">Change goals or time</button>
       </footer>
     </section>`;
 }

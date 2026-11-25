@@ -45,7 +45,7 @@ import { resolveGeneratedItem, generatedItemId } from "../core/assessments/catGe
 import { buildLanrt, buildDomino, LANRT_FAMILIES } from "../core/assessments/lanrtGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
-import { initPlan, showPlan, renderPlan, notifyIqSitting } from "./plan.js";
+import { initPlan, showPlan, renderPlan, notifyIqSitting, setPlanPrefs, planGoalButtonsHtml, planMinuteButtonsHtml } from "./plan.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -1561,7 +1561,8 @@ function markWebOnboardingSeen() {
   try { localStorage.setItem(WEB_ONBOARDING_KEY, "1"); } catch { /* private mode */ }
 }
 
-// The post-sign-in intro: a short kinetic text piece. One thought per screen,
+// The post-sign-in intro. Two quick questions first (what to work on, minutes
+// a day: they build the Plan's road), then a short kinetic text piece. One thought per screen,
 // a line or two each, in the serif — words land fast, the thought holds a beat,
 // then it leaves upward and the next one comes in. It makes the case for
 // training the mind (machines took the physical work, so we built the gym; AI is
@@ -1620,8 +1621,18 @@ function showWebOnboarding(onDone = () => {}) {
   const stage = overlay.querySelector("#web-onboarding-stage");
   const skip = overlay.querySelector("[data-onboard-skip]");
   const beats = WEB_ONBOARDING_BEATS;
-  const total = beats.length + 1; // + the picker
+  // Slides: the two Plan questions, then the thoughts, then the test picker.
+  const QUESTIONS = 2;
+  const firstBeat = QUESTIONS;
+  const pickerAt = firstBeat + beats.length;
+  const total = pickerAt + 1;
   let index = 0;
+  const onQuestion = () => index < firstBeat;
+  const onBeat = () => index >= firstBeat && index < pickerAt;
+  // The answers build the Plan the moment the second question is done (and on
+  // Skip, if a goal was picked), so a closed tab still leaves a plan behind.
+  const prefs = { goals: [], minutes: 15 };
+  const savePrefs = () => { if (!prefs.goals.length) return; try { setPlanPrefs(prefs); } catch { /* storage */ } };
   let timer = null;
   // The test is a deliberate pick: neither battery is selected until the person
   // chooses, and Start stays off until then.
@@ -1676,11 +1687,42 @@ function showWebOnboarding(onDone = () => {}) {
       </div>`;
   };
 
+  const questionHtml = () => {
+    if (index === 0) {
+      return `
+        <div class="web-onboarding-slide ob-cta ob-q">
+          <p class="web-onboarding-eyebrow">Your plan · 1 of 2</p>
+          <h2 class="web-onboarding-title">What do you want to work on?</h2>
+          <p class="web-onboarding-body">Pick up to two. Your four-week plan is built around it.</p>
+          <div class="plan-goals ob-goals" role="group" aria-label="Goals">${planGoalButtonsHtml(prefs.goals, "data-ob-goal")}</div>
+        </div>
+        <div class="web-onboarding-footer">
+          <div class="web-onboarding-actions">
+            <button type="button" class="web-onboarding-next" data-ob-continue ${prefs.goals.length ? "" : "disabled"}>Continue${arrow}</button>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="web-onboarding-slide ob-cta ob-q">
+        <p class="web-onboarding-eyebrow">Your plan · 2 of 2</p>
+        <h2 class="web-onboarding-title">How long each day?</h2>
+        <p class="web-onboarding-body">Short and daily beats long and rare. You can change this any time.</p>
+        <div class="plan-minutes ob-minutes" role="radiogroup" aria-label="Minutes a day">${planMinuteButtonsHtml(prefs.minutes, "data-ob-minutes")}</div>
+      </div>
+      <div class="web-onboarding-footer">
+        <div class="web-onboarding-actions">
+          <button type="button" class="web-onboarding-back" data-ob-back>Back</button>
+          <button type="button" class="web-onboarding-next" data-ob-continue>Continue${arrow}</button>
+        </div>
+      </div>`;
+  };
+
   let shownAt = 0;
   const render = () => {
     clearTimer();
-    const onPicker = index >= beats.length;
+    const onPicker = index >= pickerAt;
     if (skip) skip.hidden = onPicker;
+    if (onQuestion()) { stage.innerHTML = questionHtml(); return; }
     if (onPicker) {
       stage.innerHTML = pickerHtml();
       placeThumb(false);
@@ -1688,7 +1730,7 @@ function showWebOnboarding(onDone = () => {}) {
       if (group && thumbWatcher) thumbWatcher.observe(group);
       return;
     }
-    const beat = beats[index];
+    const beat = beats[index - firstBeat];
     const { html, slots } = webOnboardingBeatHtml(beat);
     // The thought on screen fades out while the new one rises in: a crossfade,
     // not a cut. Anything that is not a thought (the picker) is cleared.
@@ -1716,7 +1758,7 @@ function showWebOnboarding(onDone = () => {}) {
   // Timers stop while the tab is hidden, so nothing plays to an empty room.
   const onVisibility = () => {
     if (document.hidden) { clearTimer(); return; }
-    if (index < beats.length && !timer) timer = window.setTimeout(() => leave(index + 1), 1200);
+    if (onBeat() && !timer) timer = window.setTimeout(() => leave(index + 1), 1200);
   };
   const finish = (result = {}) => {
     clearTimer();
@@ -1730,8 +1772,43 @@ function showWebOnboarding(onDone = () => {}) {
     window.setTimeout(() => overlay.remove(), 220);
   };
   overlay.addEventListener("click", (event) => {
-    if (event.target.closest("[data-onboard-skip]")) { go(beats.length); return; }
-    if (index < beats.length) { leave(index + 1); return; }
+    if (event.target.closest("[data-onboard-skip]")) { savePrefs(); go(pickerAt); return; }
+    if (onQuestion()) {
+      const goal = event.target.closest("[data-ob-goal]");
+      if (goal) {
+        const id = goal.dataset.obGoal;
+        if (prefs.goals.includes(id)) prefs.goals = prefs.goals.filter((g) => g !== id);
+        else if (prefs.goals.length < 2) prefs.goals = [...prefs.goals, id];
+        else return;
+        // Toggled in place; only Continue's state moves with it.
+        for (const button of stage.querySelectorAll("[data-ob-goal]")) {
+          const on = prefs.goals.includes(button.dataset.obGoal);
+          button.classList.toggle("is-on", on);
+          button.setAttribute("aria-pressed", String(on));
+        }
+        const next = stage.querySelector("[data-ob-continue]");
+        if (next) next.disabled = !prefs.goals.length;
+        return;
+      }
+      const mins = event.target.closest("[data-ob-minutes]");
+      if (mins) {
+        prefs.minutes = Number(mins.dataset.obMinutes);
+        for (const button of stage.querySelectorAll("[data-ob-minutes]")) {
+          const on = Number(button.dataset.obMinutes) === prefs.minutes;
+          button.classList.toggle("is-on", on);
+          button.setAttribute("aria-checked", String(on));
+        }
+        return;
+      }
+      if (event.target.closest("[data-ob-back]")) { go(index - 1); return; }
+      if (event.target.closest("[data-ob-continue]")) {
+        if (index === 0 && !prefs.goals.length) return;
+        if (index === firstBeat - 1) savePrefs();
+        go(index + 1);
+      }
+      return;
+    }
+    if (onBeat()) { leave(index + 1); return; }
     const battery = event.target.closest("[data-battery]");
     if (battery) {
       picked = battery.dataset.battery;
@@ -1761,11 +1838,11 @@ function showWebOnboarding(onDone = () => {}) {
     if (!overlay.isConnected || !document.querySelector("#web-onboarding")) { document.removeEventListener("keydown", onKey); return; }
     if (event.target.closest?.("input, textarea")) return;
     if (event.key === "ArrowLeft" && index > 0) { event.preventDefault(); go(index - 1); return; }
-    if (event.key === "Enter" && event.target.closest?.("button")) return;
+    if ((event.key === "Enter" || event.key === " ") && event.target.closest?.("button")) return;
     if (event.key === "ArrowRight" || event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      if (index < beats.length) { leave(index + 1); return; }
-      const next = stage.querySelector("[data-onboard-start], [data-onboard-finish]");
+      if (onBeat()) { leave(index + 1); return; }
+      const next = stage.querySelector("[data-ob-continue], [data-onboard-start], [data-onboard-finish]");
       if (next && !next.disabled) next.click();
     }
   };
