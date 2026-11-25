@@ -587,7 +587,9 @@ function stepHtml(plan, step, index, current, pos) {
   if (open) cls.push("is-open");
 
   const icon = step.kind === "retest" ? trophySvg() : step.kind === "iq" ? d.iqIcon() : d.exerciseIcon(step.blocks[0].exerciseId);
-  const face = isDone ? checkSvg() : needsPass && isCurrent ? lockSvg() : icon;
+  const face = isDone ? checkSvg() : icon;
+  // Every Pass-gated stop shows what it is; the badge says it is paywalled.
+  const badge = needsPass ? `<span class="plan-node-badge" aria-hidden="true">${lockSvg()}</span>` : "";
   const weekSteps = plan.steps.filter((s) => s.week === step.week);
   const arc = Math.round((weekSteps.filter((s) => s.done).length / weekSteps.length) * 100);
   const tip = isCurrent && !open ? `<span class="plan-tip" aria-hidden="true">${needsPass ? "Unlock" : step.kind === "train" ? "Start" : "Test"}</span>` : "";
@@ -596,17 +598,19 @@ function stepHtml(plan, step, index, current, pos) {
     <li class="${cls.join(" ")}" style="--k:${waveK(pos)}">
       <div class="plan-node-wrap">
         ${tip}
-        <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}" aria-expanded="${open}" style="--arc:${arc}%">
+        <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}${needsPass ? " (Cogni Pass)" : ""}" aria-expanded="${open}" style="--arc:${arc}%">
           ${isCurrent ? '<span class="plan-node-ring" aria-hidden="true"></span>' : ""}
           <span class="plan-node-face"><span class="plan-node-icon">${face}</span></span>
+          ${badge}
         </button>
       </div>
       ${open ? popHtml(plan, step, index, current, { isDone, isCurrent, locked, needsPass }) : ""}
     </li>`;
 }
 
-// The bubble under a tapped stop. Charcoal for the current step, a plain
-// card for a finished one, a flat grey note for anything not reached yet.
+// The bubble under a tapped stop. Charcoal for the current step and for any
+// Pass-gated step (it sells the Pass), a plain card for a finished one, a flat
+// grey note for a step a Pass holder has not reached yet.
 function popHtml(plan, step, index, current, s) {
   const total = plan.steps.length;
   const meta = step.kind === "train"
@@ -620,13 +624,12 @@ function popHtml(plan, step, index, current, s) {
 
   let tone = "is-current";
   let body = "";
-  if (s.locked) {
+  if (s.needsPass) {
+    tone = "is-current is-pass";
+    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<p class="plan-pop-note">The first ${FREE_STEPS} steps are free. Cogni Pass opens steps ${FREE_STEPS + 1} to ${total}.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
+  } else if (s.locked) {
     tone = "is-locked";
-    body = s.needsPass
-      ? `${chips}<p class="plan-pop-note">Finish step ${current + 1} first. Cogni Pass opens steps ${FREE_STEPS + 1} to ${total}.</p>`
-      : `${chips}<p class="plan-pop-note">Finish step ${current + 1} first.</p>`;
-  } else if (s.needsPass) {
-    body = `<p class="plan-pop-note">The first ${FREE_STEPS} steps are free. Cogni Pass opens the rest of your four weeks.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
+    body = `${chips}<p class="plan-pop-note">Finish step ${current + 1} first.</p>`;
   } else if (s.isDone) {
     tone = "is-done";
     body = `${chips}<button class="plan-pop-btn" data-plan-start="${index}" type="button">${step.kind === "train" ? "Practice again" : "Open the test"}</button>`;
