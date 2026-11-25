@@ -388,7 +388,7 @@ function onHostClick(event) {
     guideOpen = false;
     selectedKey = null;
     renderPlan();
-    host.querySelector(".plan-editor")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (editOpen) host.querySelector(".plan-editor")?.scrollIntoView({ block: "start", behavior: "smooth" });
     return;
   }
   if (t.closest("[data-plan-edit-cancel]")) { editOpen = false; renderPlan(); return; }

@@ -1848,7 +1848,7 @@ html.mode-pro .web-onboarding .ob-q + .web-onboarding-footer .web-onboarding-bac
 }
 
 /* "Change goals or time": the editor card sits over the road. */
-html.mode-pro .plan-editor { animation: plan-pop-in 260ms var(--ease-out) both; }
+html.mode-pro .plan-editor { animation: plan-pop-in 260ms var(--ease-out) both; scroll-margin-top: calc(var(--topbar-h) + 112px); }
 html.mode-pro .plan-edit-actions { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
 html.mode-pro .plan-edit-actions .plan-build { margin-top: 0; }
 @media (max-width: 720px) {
