@@ -1605,9 +1605,10 @@ html.mode-pro .iq-hero .iq-compare { text-align: center; }
 
 
 /* ===================================================================
-   Plan: the four-week path (2026-11-24). A Duolingo-style track: nodes on a
-   thread, week headers between groups, one open card at a time. Same card
-   grammar as the rest of the skin: white 20px cards, hairlines, charcoal pill.
+   Plan: the four-week path (2026-11-24, roadmap 2026-11-25). A Duolingo-style
+   road: a sticky week card, round 3D stops snaking down the column, a bouncing
+   START bubble on the current one and a popover under whichever stop is tapped.
+   Setup keeps the skin's card grammar: white 20px cards, hairlines, charcoal pill.
    =================================================================== */
 .plan-page { display: none; }
 html.mode-pro .plan-open .plan-page { display: block; }
@@ -1648,65 +1649,153 @@ html.mode-pro .plan-profile b { color: var(--text); font-weight: 600; }
 html.mode-pro .plan-build { justify-self: start; margin-top: 6px; }
 html.mode-pro .plan-build:disabled { opacity: .45; cursor: not-allowed; }
 
-/* progress */
-html.mode-pro .plan-progress { width: 100%; display: grid; gap: 12px; }
-html.mode-pro .plan-progress-row { display: flex; justify-content: center; gap: 36px; }
-html.mode-pro .plan-progress-row > div { display: grid; gap: 2px; justify-items: center; }
-html.mode-pro .plan-progress-row strong { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.1; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
-html.mode-pro .plan-progress-row strong i { font-style: normal; font-size: 14px; color: var(--muted); font-weight: 500; }
-html.mode-pro .plan-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
-html.mode-pro .plan-bar i { display: block; height: 100%; border-radius: inherit; background: var(--text); transition: width 400ms var(--ease-out); }
+/* progress numbers (inside the Guide card) */
+html.mode-pro .plan-progress-row { display: flex; gap: 28px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+html.mode-pro .plan-progress-row > div { display: grid; gap: 2px; }
+html.mode-pro .plan-progress-row strong { font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 1.1; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+html.mode-pro .plan-progress-row strong i { font-style: normal; font-size: 13px; color: var(--muted); font-weight: 500; }
 
-/* path */
-html.mode-pro .plan-path { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; position: relative; }
-html.mode-pro .plan-week { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 26px 0 18px; }
-html.mode-pro .plan-week:first-child { padding-top: 6px; }
-html.mode-pro .plan-week-label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-html.mode-pro .plan-week h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: -.02em; color: var(--text); }
-html.mode-pro .plan-week p { margin: 0; font-size: 13px; color: var(--text-2); max-width: 44ch; }
-html.mode-pro .plan-week.is-done h2 { color: var(--muted); }
-
-html.mode-pro .plan-step { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; position: relative; padding: 8px 0; }
-/* the thread between nodes */
-html.mode-pro .plan-step::before { content: ""; position: absolute; left: 31px; top: 0; bottom: 0; width: 2px; background: var(--line-strong); }
-html.mode-pro .plan-step.is-done::before { background: var(--text); }
-html.mode-pro .plan-week + .plan-step::before { top: 8px; }
-html.mode-pro .plan-path > .plan-step:last-child::before { bottom: 8px; }
-html.mode-pro .plan-node {
-  position: relative; z-index: 1; width: 64px; height: 64px; display: grid; place-items: center;
-  padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; cursor: pointer; min-height: 0 !important;
+/* ---- the road ----
+   A column of round 3D stops that snakes left and right, the way Duolingo
+   lays out a unit. Each stop carries --k (its place on a sine wave) and the
+   CSS swings it by --plan-amp. Active stops are text-on-bg, so they read as
+   near-black on the light skin and near-white on the dark one; a lip under
+   each face gives the pressable look. */
+html.mode-pro .plan.is-road {
+  --plan-amp: 96px; --node: 78px; --lip: 7px;
+  --node-on: var(--text); --node-on-lip: color-mix(in srgb, var(--text) 70%, var(--bg));
+  --node-off: color-mix(in srgb, var(--text) 12%, var(--bg)); --node-off-lip: color-mix(in srgb, var(--text) 5%, var(--bg));
+  gap: 18px;
 }
-html.mode-pro .plan-node-ring { position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); transition: transform 150ms, border-color 150ms, background 150ms, box-shadow 150ms; }
-html.mode-pro .plan-node-icon { position: relative; width: 22px; height: 22px; color: var(--text-2); display: grid; place-items: center; }
-html.mode-pro .plan-node-icon svg { width: 22px; height: 22px; }
-html.mode-pro .plan-node:hover .plan-node-ring { transform: scale(1.04); border-color: var(--text-2); }
-html.mode-pro .plan-step.is-done .plan-node-ring { background: var(--btn-fill); border-color: var(--btn-fill); }
-html.mode-pro .plan-step.is-done .plan-node-icon { color: var(--btn-text); }
-html.mode-pro .plan-step.is-current .plan-node-ring { border-color: var(--text); background: var(--surface); box-shadow: 0 0 0 6px var(--fill-subtle); }
-html.mode-pro .plan-step.is-current .plan-node-icon { color: var(--text); }
-html.mode-pro .plan-step.is-locked .plan-node { cursor: default; }
-html.mode-pro .plan-step.is-locked .plan-node-ring { border-style: dashed; background: var(--bg); }
-html.mode-pro .plan-step.is-locked .plan-node-icon { color: var(--muted); opacity: .7; }
-html.mode-pro .plan-step.is-locked .plan-node:hover .plan-node-ring { transform: none; border-color: var(--line-strong); }
+html.mode-pro[data-theme="light"] .plan.is-road {
+  --node-on: color-mix(in srgb, var(--text) 88%, var(--bg)); --node-on-lip: var(--text);
+  --node-off: color-mix(in srgb, var(--text) 9%, var(--bg)); --node-off-lip: color-mix(in srgb, var(--text) 24%, var(--bg));
+}
 
-html.mode-pro .plan-step-card { padding: 14px 18px; display: grid; gap: 4px; align-self: center; transition: border-color 150ms, box-shadow 150ms, background 150ms; }
-html.mode-pro .plan-step-card h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
-html.mode-pro .plan-step-card .plan-eyebrow { margin: 0; }
-html.mode-pro .plan-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
-html.mode-pro .plan-blurb { margin: 8px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
-html.mode-pro .plan-step.is-open .plan-step-card { padding: 18px 20px; }
-html.mode-pro .plan-step.is-current .plan-step-card { border-color: var(--line-strong); box-shadow: var(--iq-lift); }
-html.mode-pro .plan-step:not(.is-open) .plan-step-card { background: transparent; border-color: transparent; box-shadow: none; padding-left: 4px; }
-html.mode-pro .plan-step.is-locked .plan-step-card h3, html.mode-pro .plan-step.is-locked .plan-meta { color: var(--muted); }
-html.mode-pro .plan-step.is-done:not(.is-open) .plan-step-card h3 { color: var(--text-2); }
+/* sticky week header */
+html.mode-pro .plan-unit {
+  position: sticky; top: calc(var(--topbar-h) + 12px); z-index: 12;
+  width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 16px;
+  padding: 16px 18px 14px 20px; border-radius: 20px; background: var(--btn-fill); color: var(--btn-text); box-shadow: var(--iq-lift);
+}
+html.mode-pro .plan-unit-text { min-width: 0; }
+html.mode-pro .plan-unit-eyebrow { margin: 0 0 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; opacity: .68; }
+html.mode-pro .plan-unit h2 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 21px; letter-spacing: -.02em; line-height: 1.15; }
+html.mode-pro .plan-unit-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px !important; min-height: 0 !important;
+  border: 1.5px solid rgba(255, 255, 255, .28) !important; border-radius: 14px !important; background: transparent !important; color: inherit !important;
+  font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; box-shadow: none !important;
+  transition: background 150ms, border-color 150ms;
+}
+html.mode-pro .plan-unit-btn svg { width: 18px; height: 18px; }
+html.mode-pro .plan-unit-btn:hover, html.mode-pro .plan-unit-btn.is-on { background: rgba(255, 255, 255, .12) !important; border-color: rgba(255, 255, 255, .5) !important; }
+html.mode-pro .plan-unit-bar { grid-column: 1 / -1; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, .18); overflow: hidden; margin-top: 6px; }
+html.mode-pro .plan-unit-bar i { display: block; height: 100%; width: var(--plan-progress, 0%); background: currentColor; border-radius: inherit; transition: width 400ms var(--ease-out); }
+
+/* guide */
+html.mode-pro .plan-guide { display: grid; gap: 14px; animation: plan-pop-in 180ms var(--ease-out) both; }
+html.mode-pro .plan-guide-sub { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+html.mode-pro .plan-guide .plan-profile { margin: -6px 0 0; }
+html.mode-pro .plan-guide-weeks { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+html.mode-pro .plan-guide-weeks li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+html.mode-pro .plan-guide-num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--text-2); }
+html.mode-pro .plan-guide-num svg { width: 15px; height: 15px; }
+html.mode-pro .plan-guide-weeks li.is-done .plan-guide-num, html.mode-pro .plan-guide-weeks li.is-current .plan-guide-num { background: var(--text); color: var(--bg); }
+html.mode-pro .plan-guide-weeks strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); line-height: 28px; }
+html.mode-pro .plan-guide-weeks li.is-done strong { color: var(--text-2); }
+html.mode-pro .plan-guide-weeks p { margin: 0; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+html.mode-pro .plan-guide-foot { display: flex; padding-top: 2px; }
+
+/* the column of stops */
+html.mode-pro .plan-road { list-style: none; margin: 6px 0 0; padding: 14px 0 48px; width: 100%; max-width: 440px; display: grid; gap: 22px; justify-items: center; }
+html.mode-pro .plan-step, html.mode-pro .plan-chest { width: 100%; display: grid; justify-items: center; gap: 16px; position: relative; }
+html.mode-pro .plan-step.is-current { padding-top: 46px; }
+html.mode-pro .plan-node-wrap { position: relative; transform: translateX(calc(var(--k, 0) * var(--plan-amp))); }
+html.mode-pro .plan-node {
+  position: relative; display: block; width: var(--node); height: var(--node);
+  padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; min-height: 0 !important; cursor: pointer;
+}
+html.mode-pro .plan-node-face {
+  position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center;
+  background: var(--node-off); box-shadow: 0 var(--lip) 0 var(--node-off-lip);
+  transition: transform 90ms, box-shadow 90ms, background 150ms;
+}
+html.mode-pro .plan-node:active .plan-node-face { transform: translateY(var(--lip)); box-shadow: 0 0 0 var(--node-off-lip); }
+html.mode-pro .plan-node-icon { width: 30px; height: 30px; color: var(--muted); display: grid; place-items: center; }
+html.mode-pro .plan-node-icon svg { width: 30px; height: 30px; }
+html.mode-pro .plan-step.is-done .plan-node-face, html.mode-pro .plan-step.is-current .plan-node-face { background: var(--node-on); box-shadow: 0 var(--lip) 0 var(--node-on-lip); }
+html.mode-pro .plan-step.is-done .plan-node:active .plan-node-face, html.mode-pro .plan-step.is-current .plan-node:active .plan-node-face { box-shadow: 0 0 0 var(--node-on-lip); }
+html.mode-pro .plan-step.is-done .plan-node-icon, html.mode-pro .plan-step.is-current .plan-node-icon { color: var(--bg); }
+html.mode-pro .plan-step.is-locked .plan-node-icon { opacity: .75; }
+/* the current stop wears a ring that fills with the week's progress */
+html.mode-pro .plan-node-ring {
+  position: absolute; inset: -13px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--text) var(--arc, 0%), var(--line-strong) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 4.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5.5px), #000 calc(100% - 4.5px));
+}
+/* the bouncing START bubble */
+html.mode-pro .plan-tip {
+  position: absolute; left: 50%; bottom: calc(100% + 20px); transform: translateX(-50%); z-index: 2;
+  padding: 9px 14px; border-radius: 12px; border: 2px solid var(--line-strong); background: var(--surface); color: var(--text);
+  font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; pointer-events: none;
+  animation: plan-bob 1.6s ease-in-out infinite;
+}
+html.mode-pro .plan-tip::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: var(--surface); border-right: 2px solid var(--line-strong); border-bottom: 2px solid var(--line-strong); transform: translateX(-50%) rotate(45deg); }
+@keyframes plan-bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -6px); } }
+@keyframes plan-pop-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html.mode-pro .plan-tip { animation: none; } }
+
+/* week dividers and the Pass gate */
+html.mode-pro .plan-week, html.mode-pro .plan-gate { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; }
+html.mode-pro .plan-week { padding: 18px 0 4px; }
+html.mode-pro .plan-week::before, html.mode-pro .plan-week::after { content: ""; height: 2px; border-radius: 2px; background: var(--line-strong); }
+html.mode-pro .plan-week span { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+html.mode-pro .plan-gate { padding: 2px 0; gap: 12px; }
+html.mode-pro .plan-gate::before, html.mode-pro .plan-gate::after { content: ""; height: 0; border-top: 2px dashed var(--line-strong); }
+html.mode-pro .plan-gate button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px !important; min-height: 0 !important;
+  border-radius: 999px !important; border: 1px solid var(--line-strong) !important; background: var(--surface) !important; color: var(--text-2) !important; box-shadow: var(--shadow) !important;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: border-color 150ms, color 150ms;
+}
+html.mode-pro .plan-gate button:hover { border-color: var(--text) !important; color: var(--text) !important; }
+html.mode-pro .plan-gate button svg { width: 14px; height: 14px; }
+
+/* chests */
+html.mode-pro .plan-chest-btn {
+  width: var(--node); height: var(--node); display: grid; place-items: center; color: var(--muted) !important;
+  padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; min-height: 0 !important; cursor: pointer; transition: transform 150ms, color 150ms;
+}
+html.mode-pro .plan-chest-btn svg { width: 64px; height: 53px; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .12)); }
+html.mode-pro .plan-chest.is-done .plan-chest-btn { color: var(--text) !important; }
+html.mode-pro .plan-chest-btn:hover { transform: translateY(-2px); }
+
+/* the bubble under a tapped stop */
+html.mode-pro .plan-pop {
+  position: relative; width: 100%; box-sizing: border-box; border-radius: 18px; padding: 18px 20px 20px; margin-top: 2px;
+  display: grid; gap: 4px; text-align: left; animation: plan-pop-in 180ms var(--ease-out) both;
+}
+html.mode-pro .plan-pop::before { content: ""; position: absolute; top: -8px; left: calc(50% + var(--k, 0) * var(--plan-amp)); width: 16px; height: 16px; transform: translateX(-50%) rotate(45deg); background: inherit; border-radius: 3px; }
+html.mode-pro .plan-pop.is-current { background: var(--node-on); color: var(--bg); box-shadow: var(--iq-lift); }
+html.mode-pro .plan-pop.is-done { background: var(--surface); color: var(--text); border: 1px solid var(--line-strong); box-shadow: var(--shadow); }
+html.mode-pro .plan-pop.is-done::before { border-top: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); }
+html.mode-pro .plan-pop.is-locked { background: var(--surface-2); color: var(--text-2); }
+html.mode-pro .plan-pop-eyebrow { margin: 0; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; opacity: .65; }
+html.mode-pro .plan-pop h3 { margin: 2px 0 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+html.mode-pro .plan-pop-meta { margin: 0; font-size: 13px; opacity: .72; }
+html.mode-pro .plan-pop-note { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; opacity: .88; }
 html.mode-pro .plan-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-html.mode-pro .plan-chips li { font-size: 12px; color: var(--text-2); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--fill-subtle); }
-html.mode-pro .plan-chips li i { font-style: normal; color: var(--muted); }
-html.mode-pro .plan-step-card .home-cta, html.mode-pro .plan-again { margin-top: 14px; justify-self: start; }
-html.mode-pro .plan-again { min-height: 40px !important; padding: 8px 18px !important; border-radius: 999px !important; font-size: 13.5px !important; }
-html.mode-pro .plan-pass { margin-top: 12px; display: grid; gap: 10px; justify-items: start; }
-html.mode-pro .plan-pass p { margin: 0; font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
-html.mode-pro .plan-pass .home-cta { margin-top: 0; }
+html.mode-pro .plan-chips li { font-size: 12px; color: inherit; padding: 5px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 8%, transparent); }
+html.mode-pro .plan-chips li i { font-style: normal; opacity: .6; }
+html.mode-pro .plan-pop-btn {
+  margin-top: 14px; width: 100%; min-height: 48px !important; padding: 12px 18px !important; border-radius: 999px !important; border: 0 !important;
+  font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: transform 90ms, box-shadow 90ms, filter 150ms;
+}
+html.mode-pro .plan-pop.is-current .plan-pop-btn { background: var(--bg) !important; color: var(--text) !important; box-shadow: 0 4px 0 color-mix(in srgb, var(--bg) 78%, #000) !important; }
+html.mode-pro .plan-pop.is-done .plan-pop-btn { background: var(--node-on) !important; color: var(--bg) !important; box-shadow: 0 4px 0 var(--node-on-lip) !important; }
+html.mode-pro .plan-pop-btn:hover { filter: brightness(1.04); }
+html.mode-pro .plan-pop-btn:active { transform: translateY(4px); box-shadow: none !important; }
+html.mode-pro .plan-blurb { margin: 8px 0 0; font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
 
 /* finished */
 html.mode-pro .plan-finished { display: grid; gap: 10px; justify-items: center; text-align: center; }
@@ -1719,8 +1808,6 @@ html.mode-pro .plan-delta.is-up { color: var(--iq-good); }
 html.mode-pro .plan-delta.is-down { color: var(--iq-low); }
 html.mode-pro .plan-finished .home-cta { margin-top: 6px; }
 
-html.mode-pro .plan-foot { display: grid; justify-items: center; padding: 8px 0 24px; }
-
 /* entrance: same fade-up as every other page */
 html.mode-pro .app-content.is-entering .plan > * { animation: iq-fade-up 420ms var(--ease-out) both; }
 html.mode-pro .app-content.is-entering .plan > *:nth-child(2) { animation-delay: 40ms; }
@@ -1729,10 +1816,22 @@ html.mode-pro .app-content.is-entering .plan > *:nth-child(n + 4) { animation-de
 
 @media (max-width: 720px) {
   html.mode-pro .plan-goals { grid-template-columns: 1fr; }
-  html.mode-pro .plan-step { grid-template-columns: 56px 1fr; gap: 10px; }
-  html.mode-pro .plan-node { width: 56px; height: 56px; }
-  html.mode-pro .plan-step::before { left: 27px; }
-  html.mode-pro .plan-progress-row { gap: 24px; }
-  html.mode-pro .plan-step-card .home-cta { justify-self: stretch; }
   html.mode-pro .plan-build { justify-self: stretch; }
+  html.mode-pro .plan.is-road { --plan-amp: 74px; --node: 68px; --lip: 6px; gap: 14px; }
+  html.mode-pro .plan-unit { top: calc(var(--topbar-h) + 8px); padding: 14px 14px 12px 16px; border-radius: 18px; }
+  html.mode-pro .plan-unit h2 { font-size: 18px; }
+  html.mode-pro .plan-unit-btn { padding: 10px !important; }
+  html.mode-pro .plan-unit-btn span { display: none; }
+  html.mode-pro .plan-road { max-width: none; gap: 20px; }
+  html.mode-pro .plan-node-icon, html.mode-pro .plan-node-icon svg { width: 26px; height: 26px; }
+  html.mode-pro .plan-node-ring { inset: -11px; }
+  html.mode-pro .plan-chest-btn svg { width: 56px; height: 46px; }
+  html.mode-pro .plan-progress-row { gap: 22px; }
+  html.mode-pro .plan-pop { padding: 16px 16px 18px; }
+  /* styles.css clips html/body/.app-shell with overflow-x: hidden on phones,
+     which makes each a scroll container and defeats the sticky week header.
+     Nothing on the road is wider than the viewport, so the Plan page lets
+     them be visible again. */
+  html.mode-pro:has(.app-shell.plan-open), html.mode-pro body:has(.app-shell.plan-open),
+  html.mode-pro .app-shell.plan-open, html.mode-pro .app-shell.plan-open .app-content { overflow: visible !important; }
 }

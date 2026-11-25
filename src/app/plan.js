@@ -1,6 +1,6 @@
 // Cogni · Plan — the four-week path.
 // ---------------------------------------------------------------------------
-// A Duolingo-style track of steps built from what the user wants to work on,
+// A Duolingo-style roadmap of steps built from what the user wants to work on,
 // how long they have each day, and the shape of their IQ profile (the two
 // weakest indices get the most work). Every training step is a routine that
 // runs through the ordinary routine engine; the IQ test and the retest are
@@ -58,10 +58,10 @@ const INDEX_TITLES = {
   qri: "Quantitative reasoning", wmi: "Working memory", psi: "Processing speed"
 };
 const WEEK_THEMES = [
-  { name: "Baseline", blurb: "Measure first, then easy sessions to learn each exercise." },
-  { name: "Build", blurb: "Full sessions. The weak indices get the most time." },
-  { name: "Push", blurb: "Longer blocks, default difficulty. This is where the number moves." },
-  { name: "Retest", blurb: "Hold the gains for four days, then sit the test again." }
+  { name: "Baseline", title: "Measure, then learn the moves", blurb: "Measure first, then easy sessions to learn each exercise." },
+  { name: "Build", title: "Full sessions, weakest first", blurb: "Full sessions. The weak indices get the most time." },
+  { name: "Push", title: "Longer blocks, harder settings", blurb: "Longer blocks, default difficulty. This is where the number moves." },
+  { name: "Retest", title: "Hold the gains, sit the test", blurb: "Hold the gains for four days, then sit the test again." }
 ];
 // A mini game runs one round; this is roughly how long that takes.
 const MINI_MINUTES = 3.5;
@@ -71,6 +71,13 @@ export function initPlan(deps) {
   host = document.querySelector(".plan-page");
   if (!host) return;
   host.addEventListener("click", onHostClick);
+  // The sticky week header follows the scroll.
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(() => { ticking = false; syncUnitHeader(); });
+  }, { passive: true });
 }
 
 export function showPlan() {
@@ -79,7 +86,11 @@ export function showPlan() {
   d.appShell.classList.add("plan-open");
   d.setActiveTab("plan");
   d.setPageHeader("Plan", "Your four-week path, one step at a time.");
+  selectedKey = null;
+  guideOpen = false;
   renderPlan();
+  // After the page's own enter work, so the current stop ends up on screen.
+  window.requestAnimationFrame(() => window.requestAnimationFrame(revealCurrent));
 }
 
 function isOpen() { return d?.appShell.classList.contains("plan-open"); }
@@ -110,7 +121,8 @@ function stepNeedsPass(index) { return index >= FREE_STEPS && !d.planUnlocked();
 
 // Setup draft, kept only while the setup card is on screen.
 let draft = { goals: [], minutes: 15 };
-let selectedStep = null;   // a done step the user tapped to see again
+let selectedKey = null;    // the stop whose bubble is open: a step id, or "c<week>" for a chest
+let guideOpen = false;     // the Guide card under the week header
 let confirmReset = 0;      // timestamp of the first "Start over" tap
 
 // ---------------------------------------------------------------------------
@@ -256,7 +268,7 @@ function completeStep(stepId) {
   if (step.done) step.replays = (step.replays ?? 0) + 1;
   else step.done = new Date().toISOString();
   savePlan(plan);
-  selectedStep = null;
+  selectedKey = null;
   const done = plan.steps.filter((s) => s.done).length;
   showPlan();
   d.showToast?.(done >= plan.steps.length ? "Plan complete." : `Step ${index + 1} done.`);
@@ -300,30 +312,29 @@ function onHostClick(event) {
     if (!draft.goals.length) return;
     const record = (d.loadCatSessions() ?? [])[0] ?? null;
     savePlan(buildPlan({ goals: draft.goals, minutes: draft.minutes, record }));
-    selectedStep = null;
+    selectedKey = null;
+    guideOpen = false;
     renderPlan();
     return;
   }
   const start = t.closest("[data-plan-start]");
   if (start) { const plan = loadPlan(); if (plan) startStep(plan, Number(start.dataset.planStart)); return; }
+  // Pro mode hides every [data-open-pricing] control, so the Plan's own
+  // Pass buttons use their own hook.
+  if (t.closest("[data-plan-pass]")) { d.openPricingModal(); return; }
+  if (t.closest("[data-plan-guide]")) { guideOpen = !guideOpen; renderPlan(); return; }
   const node = t.closest("[data-plan-step]");
-  if (node) {
-    const index = Number(node.dataset.planStep);
-    const plan = loadPlan();
-    if (!plan) return;
-    const current = currentStepIndex(plan);
-    // Done steps open for a replay; the current one is already open; the
-    // future stays shut.
-    if (index < current) { selectedStep = selectedStep === index ? null : index; renderPlan(); }
-    else if (index === current) { selectedStep = null; renderPlan(); }
-    return;
-  }
+  if (node) { togglePop(`s${node.dataset.planStep}`); return; }
+  const chest = t.closest("[data-plan-chest]");
+  if (chest) { togglePop(`c${chest.dataset.planChest}`); return; }
+  // A tap on the empty road closes whatever bubble is open.
+  if (selectedKey && t.closest(".plan-road") && !t.closest(".plan-pop")) { selectedKey = null; renderPlan(); return; }
   if (t.closest("[data-plan-next-cycle]")) {
     const plan = loadPlan();
     if (!plan) return;
     const record = (d.loadCatSessions() ?? [])[0] ?? null;
     savePlan(buildPlan({ goals: plan.goals, minutes: plan.minutes, record }));
-    selectedStep = null;
+    selectedKey = null;
     renderPlan();
     return;
   }
@@ -334,7 +345,7 @@ function onHostClick(event) {
       const plan = loadPlan();
       draft = { goals: plan?.goals ?? [], minutes: plan?.minutes ?? 15 };
       clearPlan();
-      selectedStep = null;
+      selectedKey = null;
       renderPlan();
     } else {
       confirmReset = now;
@@ -350,7 +361,8 @@ function onHostClick(event) {
 export function renderPlan() {
   if (!host) return;
   const plan = loadPlan();
-  host.innerHTML = plan ? pathHtml(plan) : setupHtml();
+  host.innerHTML = plan ? roadHtml(plan) : setupHtml();
+  if (plan) window.requestAnimationFrame(syncUnitHeader);
 }
 
 const esc = (v) => d.escapeHtml(v);
@@ -392,61 +404,132 @@ function setupHtml() {
     </div>`;
 }
 
-function pathHtml(plan) {
+// ---- the road ----
+// Stops snake down the column on a sine wave, eight stops to a full swing.
+// --k is the stop's place on that wave; the CSS multiplies it by --plan-amp.
+function waveK(pos) { return Math.round(Math.sin((pos * Math.PI) / 4) * 100) / 100; }
+
+function roadHtml(plan) {
   const current = currentStepIndex(plan);
   const total = plan.steps.length;
   const done = plan.steps.filter((s) => s.done).length;
   const finished = current >= total;
+  const unlocked = d.planUnlocked();
+
+  let pos = 0;
+  let body = "";
+  for (let w = 0; w < WEEKS; w += 1) {
+    if (w > 0) body += `<li class="plan-week" data-week="${w}" aria-label="Week ${w + 1}"><span>Week ${w + 1} · ${esc(WEEK_THEMES[w].name)}</span></li>`;
+    plan.steps.forEach((step, index) => {
+      if (step.week !== w) return;
+      body += stepHtml(plan, step, index, current, pos);
+      pos += 1;
+      // The free stretch ends here; the divider says so before the lock does.
+      if (!unlocked && index === FREE_STEPS - 1 && !finished) body += gateHtml();
+    });
+    if (w < WEEKS - 1) { body += chestHtml(plan, w, pos); pos += 1; }
+  }
+
+  return `
+    <div class="plan is-road" style="--plan-progress:${((done / total) * 100).toFixed(1)}%">
+      ${unitHeaderHtml(plan, current, finished, done)}
+      ${guideOpen ? guideHtml(plan, current, finished) : ""}
+      ${finished ? finishedHtml(plan) : ""}
+      <ol class="plan-road">${body}</ol>
+    </div>`;
+}
+
+// The sticky card at the top: which week is on screen, how far along the
+// plan is, and the Guide button. syncUnitHeader() retitles it on scroll.
+function unitHeaderHtml(plan, current, finished, done) {
+  const total = plan.steps.length;
+  const week = finished ? WEEKS - 1 : plan.steps[current].week;
+  const stepLabel = `Step ${Math.min(current + 1, total)} of ${total}`;
+  const eyebrow = finished ? "Plan complete" : `Week ${week + 1} of ${WEEKS} · ${stepLabel}`;
+  const title = finished ? "Four weeks done" : WEEK_THEMES[week].title;
+  return `
+    <header class="plan-unit" data-week="${week}" data-current-week="${week}" data-step-label="${esc(stepLabel)}" data-finished="${finished ? 1 : 0}">
+      <div class="plan-unit-text">
+        <p class="plan-unit-eyebrow">${esc(eyebrow)}</p>
+        <h2>${esc(title)}</h2>
+      </div>
+      <button class="plan-unit-btn${guideOpen ? " is-on" : ""}" data-plan-guide type="button" aria-expanded="${guideOpen}" aria-label="Plan guide">${bookSvg()}<span>Guide</span></button>
+      <div class="plan-unit-bar" role="progressbar" aria-label="Plan progress" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${total}"><i></i></div>
+    </header>`;
+}
+
+// Retitle the sticky header for whichever week's stops are under it.
+function syncUnitHeader() {
+  if (!host || !isOpen()) return;
+  const unit = host.querySelector(".plan-unit");
+  if (!unit || unit.dataset.finished === "1") return;
+  const line = unit.getBoundingClientRect().bottom + 28;
+  const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+  let week = 0;
+  host.querySelectorAll(".plan-week[data-week]").forEach((el) => {
+    if (atEnd || el.getBoundingClientRect().top < line) week = Number(el.dataset.week);
+  });
+  if (unit.dataset.week === String(week)) return;
+  unit.dataset.week = String(week);
+  const own = unit.dataset.currentWeek === String(week);
+  unit.querySelector(".plan-unit-eyebrow").textContent = `Week ${week + 1} of ${WEEKS}${own ? ` · ${unit.dataset.stepLabel}` : ""}`;
+  unit.querySelector("h2").textContent = WEEK_THEMES[week].title;
+}
+
+// Opening the tab lands on the current stop when it is below the fold.
+function revealCurrent() {
+  if (!host || !isOpen()) return;
+  const node = host.querySelector(".plan-step.is-current .plan-node");
+  if (!node) return;
+  const r = node.getBoundingClientRect();
+  if (r.top >= 140 && r.bottom <= window.innerHeight - 140) return;
+  window.scrollTo({ top: Math.max(0, window.scrollY + r.top - window.innerHeight * 0.42), behavior: "auto" });
+}
+
+function togglePop(key) {
+  selectedKey = selectedKey === key ? null : key;
+  renderPlan();
+  if (!selectedKey) return;
+  host.querySelector(".plan-pop")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+// The Guide: what this plan is aiming at and what each week does.
+function guideHtml(plan, current, finished) {
+  const total = plan.steps.length;
   const week = finished ? WEEKS : plan.steps[current].week + 1;
   const streak = d.trainingStreak?.() ?? 0;
   const goalLabels = plan.goals.map((id) => GOALS.find((g) => g.id === id)?.phrase).filter(Boolean);
   const sub = `${goalLabels.length ? capitalize(joinAnd(goalLabels)) : "Your plan"}, ${plan.minutes} minutes a day.`;
-
-  let body = "";
-  for (let w = 0; w < WEEKS; w += 1) {
-    const theme = WEEK_THEMES[w];
-    const weekDone = plan.steps.filter((s) => s.week === w).every((s) => s.done);
-    body += `
-      <li class="plan-week${weekDone ? " is-done" : ""}${!finished && plan.steps[current].week === w ? " is-current" : ""}">
-        <span class="plan-week-label">Week ${w + 1}</span>
-        <h2>${esc(theme.name)}</h2>
-        <p>${esc(theme.blurb)}</p>
-      </li>`;
-    plan.steps.forEach((step, index) => { if (step.week === w) body += stepHtml(plan, step, index, current); });
-  }
-
+  const weakLine = plan.weak.length
+    ? `Leaning into <b>${esc(INDEX_TITLES[plan.weak[0]].toLowerCase())}</b> and <b>${esc(INDEX_TITLES[plan.weak[1]].toLowerCase())}</b>, the two lowest in the sitting this plan was built from.`
+    : `Built without a sitting. The test at step one decides what the next cycle leans into.`;
   return `
-    <div class="plan">
-      <header class="home-head">
-        <h1 class="home-brand">Plan</h1>
-        <p class="home-sub">${esc(sub)}</p>
-      </header>
-
-      <section class="plan-progress" aria-label="Progress">
-        <div class="plan-progress-row">
-          <div><span class="battle-eyebrow">Step</span><strong>${Math.min(current + 1, total)}<i>/${total}</i></strong></div>
-          <div><span class="battle-eyebrow">Week</span><strong>${week}<i>/${WEEKS}</i></strong></div>
-          <div><span class="battle-eyebrow">Streak</span><strong>${streak}<i> day${streak === 1 ? "" : "s"}</i></strong></div>
-        </div>
-        <div class="plan-bar" role="progressbar" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${total}"><i style="width:${Math.round((done / total) * 100)}%"></i></div>
-      </section>
-
-      ${finished ? finishedHtml(plan) : ""}
-
-      <ol class="plan-path">${body}</ol>
-
-      <footer class="plan-foot">
+    <section class="plan-card plan-guide" aria-label="Plan guide">
+      <p class="plan-guide-sub">${esc(sub)}</p>
+      <p class="plan-profile">${weakLine}</p>
+      <div class="plan-progress-row">
+        <div><span class="battle-eyebrow">Step</span><strong>${Math.min(current + 1, total)}<i>/${total}</i></strong></div>
+        <div><span class="battle-eyebrow">Week</span><strong>${week}<i>/${WEEKS}</i></strong></div>
+        <div><span class="battle-eyebrow">Streak</span><strong>${streak}<i> day${streak === 1 ? "" : "s"}</i></strong></div>
+      </div>
+      <ol class="plan-guide-weeks">
+        ${WEEK_THEMES.map((t, i) => {
+          const weekDone = plan.steps.filter((s) => s.week === i).every((s) => s.done);
+          return `<li class="${weekDone ? "is-done" : ""}${!finished && i === week - 1 ? " is-current" : ""}"><span class="plan-guide-num">${weekDone ? checkSvg() : i + 1}</span><div><strong>Week ${i + 1} · ${esc(t.name)}</strong><p>${esc(t.blurb)}</p></div></li>`;
+        }).join("")}
+      </ol>
+      <footer class="plan-guide-foot">
         <button class="battle-link" data-plan-reset type="button">${Date.now() - confirmReset < 4000 ? "Tap again to start over" : "Start over with new goals"}</button>
       </footer>
-    </div>`;
+    </section>`;
 }
 
-function stepHtml(plan, step, index, current) {
+function stepHtml(plan, step, index, current, pos) {
   const isDone = Boolean(step.done);
   const isCurrent = index === current;
   const locked = index > current;
   const needsPass = stepNeedsPass(index) && !isDone;
-  const open = isCurrent || selectedStep === index;
+  const open = selectedKey === step.id;
   const cls = ["plan-step"];
   if (isDone) cls.push("is-done");
   if (isCurrent) cls.push("is-current");
@@ -454,39 +537,90 @@ function stepHtml(plan, step, index, current) {
   if (needsPass) cls.push("needs-pass");
   if (open) cls.push("is-open");
 
-  const icon = step.kind === "train" ? d.exerciseIcon(step.blocks[0].exerciseId) : d.iqIcon();
+  const icon = step.kind === "retest" ? trophySvg() : step.kind === "iq" ? d.iqIcon() : d.exerciseIcon(step.blocks[0].exerciseId);
+  const face = isDone ? checkSvg() : needsPass && isCurrent ? lockSvg() : icon;
+  const weekSteps = plan.steps.filter((s) => s.week === step.week);
+  const arc = Math.round((weekSteps.filter((s) => s.done).length / weekSteps.length) * 100);
+  const tip = isCurrent && !open ? `<span class="plan-tip" aria-hidden="true">${needsPass ? "Unlock" : step.kind === "train" ? "Start" : "Test"}</span>` : "";
+
+  return `
+    <li class="${cls.join(" ")}" style="--k:${waveK(pos)}">
+      <div class="plan-node-wrap">
+        ${tip}
+        <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}" aria-expanded="${open}" style="--arc:${arc}%">
+          ${isCurrent ? '<span class="plan-node-ring" aria-hidden="true"></span>' : ""}
+          <span class="plan-node-face"><span class="plan-node-icon">${face}</span></span>
+        </button>
+      </div>
+      ${open ? popHtml(plan, step, index, current, { isDone, isCurrent, locked, needsPass }) : ""}
+    </li>`;
+}
+
+// The bubble under a tapped stop. Charcoal for the current step, a plain
+// card for a finished one, a flat grey note for anything not reached yet.
+function popHtml(plan, step, index, current, s) {
+  const total = plan.steps.length;
   const meta = step.kind === "train"
     ? `${step.blocks.length} exercises · ~${step.minutes} min`
-    : (step.kind === "iq" ? (isDone && plan.baseline ? `IQ ${plan.baseline.score}` : "About 15 minutes") : (isDone && plan.retest ? `IQ ${plan.retest.score}` : "Same test, four weeks on"));
-
+    : step.kind === "iq"
+      ? (s.isDone && plan.baseline ? `IQ ${plan.baseline.score}` : "About 15 minutes")
+      : (s.isDone && plan.retest ? `IQ ${plan.retest.score}` : "Same test, four weeks on");
   const chips = step.kind === "train"
     ? `<ul class="plan-chips">${step.blocks.map((b) => `<li>${esc(EXERCISE_NAMES[b.exerciseId] ?? b.exerciseId)}${b.timeMinutes ? ` <i>${b.timeMinutes} min</i>` : ""}</li>`).join("")}</ul>`
     : "";
 
-  let action = "";
-  if (open && !locked) {
-    if (needsPass) {
-      action = `<div class="plan-pass"><p>The first ${FREE_STEPS} steps are free. Cogni Pass opens the rest of your four weeks.</p><button class="battle-primary home-cta" data-open-pricing type="button">Get Cogni Pass</button></div>`;
-    } else if (isDone) {
-      action = `<button class="battle-secondary plan-again" data-plan-start="${index}" type="button">${step.kind === "train" ? "Practice again" : "Open the test"}</button>`;
-    } else {
-      action = `<button class="battle-primary home-cta" data-plan-start="${index}" type="button">${step.kind === "train" ? "Start" : step.kind === "iq" ? "Take the test" : "Retake the test"}</button>`;
-    }
+  let tone = "is-current";
+  let body = "";
+  if (s.locked) {
+    tone = "is-locked";
+    body = s.needsPass
+      ? `${chips}<p class="plan-pop-note">Finish step ${current + 1} first. Cogni Pass opens steps ${FREE_STEPS + 1} to ${total}.</p>`
+      : `${chips}<p class="plan-pop-note">Finish step ${current + 1} first.</p>`;
+  } else if (s.needsPass) {
+    body = `<p class="plan-pop-note">The first ${FREE_STEPS} steps are free. Cogni Pass opens the rest of your four weeks.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
+  } else if (s.isDone) {
+    tone = "is-done";
+    body = `${chips}<button class="plan-pop-btn" data-plan-start="${index}" type="button">${step.kind === "train" ? "Practice again" : "Open the test"}</button>`;
+  } else {
+    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<button class="plan-pop-btn" data-plan-start="${index}" type="button">${step.kind === "train" ? "Start" : step.kind === "iq" ? "Take the test" : "Retake the test"}</button>`;
   }
 
   return `
-    <li class="${cls.join(" ")}">
-      <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}" ${locked ? 'aria-disabled="true"' : ""} aria-expanded="${open}">
-        <span class="plan-node-ring"></span>
-        <span class="plan-node-icon">${isDone ? checkSvg() : needsPass && !isCurrent ? lockSvg() : icon}</span>
-      </button>
-      <div class="plan-card plan-step-card">
-        <p class="plan-eyebrow">Step ${index + 1}${needsPass ? " · Pass" : ""}${isDone ? " · Done" : ""}</p>
-        <h3>${esc(step.title)}</h3>
-        <p class="plan-meta">${esc(meta)}</p>
-        ${open ? `<p class="plan-blurb">${esc(step.blurb)}</p>${chips}${action}` : ""}
+    <div class="plan-pop ${tone}" role="group" aria-label="Step ${index + 1}">
+      <p class="plan-pop-eyebrow">Step ${index + 1} of ${total}${s.isDone ? " · Done" : s.needsPass ? " · Pass" : ""}</p>
+      <h3>${esc(step.title)}</h3>
+      <p class="plan-pop-meta">${esc(meta)}</p>
+      ${body}
+    </div>`;
+}
+
+// A chest closes each of the first three weeks; it opens with the week's recap.
+function chestHtml(plan, w, pos) {
+  const weekSteps = plan.steps.filter((s) => s.week === w);
+  const complete = weekSteps.every((s) => s.done);
+  const key = `c${w}`;
+  const open = selectedKey === key;
+  const mins = weekSteps.reduce((sum, s) => sum + (s.kind === "train" ? s.minutes : 15), 0);
+  const replays = weekSteps.reduce((sum, s) => sum + (s.replays ?? 0), 0);
+  const recap = complete
+    ? `${weekSteps.length} steps · about ${mins} minutes${replays ? ` · ${replays} replay${replays === 1 ? "" : "s"}` : ""}`
+    : `Finish week ${w + 1} to open this.`;
+  return `
+    <li class="plan-chest${complete ? " is-done" : " is-locked"}${open ? " is-open" : ""}" style="--k:${waveK(pos)}">
+      <div class="plan-node-wrap">
+        <button class="plan-chest-btn" data-plan-chest="${w}" type="button" aria-label="Week ${w + 1} recap" aria-expanded="${open}">${chestSvg()}</button>
       </div>
+      ${open ? `
+      <div class="plan-pop ${complete ? "is-done" : "is-locked"}" role="group" aria-label="Week ${w + 1} recap">
+        <p class="plan-pop-eyebrow">Week ${w + 1} · ${esc(WEEK_THEMES[w].name)}</p>
+        <h3>${complete ? "Week done" : "Not yet"}</h3>
+        <p class="plan-pop-meta">${esc(recap)}</p>
+      </div>` : ""}
     </li>`;
+}
+
+function gateHtml() {
+  return `<li class="plan-gate" aria-label="Cogni Pass from here"><button data-plan-pass type="button">${lockSvg()}<span>Cogni Pass from here</span></button></li>`;
 }
 
 function finishedHtml(plan) {
@@ -508,10 +642,19 @@ function finishedHtml(plan) {
 }
 
 function checkSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>`;
 }
 function lockSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+}
+function trophySvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 4h9v5.5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H5a2.5 2.5 0 0 0 2.7 3.4M16.5 6H19a2.5 2.5 0 0 1-2.7 3.4"/><path d="M12 14v3M9 20.5h6M10.2 17h3.6v3.5h-3.6z"/></svg>`;
+}
+function bookSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v15H7a2.5 2.5 0 0 0-2.5 2.5z"/><path d="M4.5 18.5A2.5 2.5 0 0 1 7 16h12.5"/><path d="M9.5 7.5h6M9.5 11h4"/></svg>`;
+}
+function chestSvg() {
+  return `<svg viewBox="0 0 56 46" aria-hidden="true"><rect x="4" y="18" width="48" height="24" rx="5" fill="currentColor" opacity=".55"/><path d="M4 20a10 10 0 0 1 10-10h28a10 10 0 0 1 10 10v3H4z" fill="currentColor"/><rect x="4" y="22" width="48" height="2.5" fill="var(--bg)" opacity=".55"/><rect x="22" y="17" width="12" height="12" rx="3" fill="var(--bg)"/><circle cx="28" cy="22" r="1.8" fill="currentColor"/><path d="M28 23v2.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 }
 function joinAnd(items) {
   if (items.length <= 1) return items.join("");
