@@ -422,8 +422,11 @@ html.mode-pro .mdash-pillar-view {
 }
 html.mode-pro .mdash-pillar:hover .mdash-pillar-view { color: #fff !important; filter: brightness(1.05); }
 html.mode-pro .mdash-pillar-locked { align-items: center; }
-html.mode-pro .mdash-unlock-chip { padding: 8px 16px !important; border: 0 !important; border-radius: 999px !important; background: var(--iq-dark) !important; color: #fff !important; font-size: 12px !important; font-weight: 600 !important; }
-html.mode-pro .mdash-chart-unlock { padding: 12px 24px !important; border-radius: 16px !important; font-size: 13px !important; }
+/* FaceIQ's unlock pill, measured: 8px 16px, 12px/600, lh 16px, rgba(28,36,41,.95), hairline + inset highlight, 14px lock. */
+html.mode-pro .mdash-unlock-chip { gap: 6px !important; padding: 8px 16px !important; border-radius: 9999px !important; background: rgba(28, 36, 41, 0.95) !important; color: #fff !important; font-size: 12px !important; font-weight: 600 !important; line-height: 16px !important; letter-spacing: 0 !important; width: auto !important; }
+html.mode-pro .mdash-unlock-chip svg { width: 14px !important; height: 14px !important; }
+html.mode-pro .mdash-unlock-chip:hover { background: rgba(28, 36, 41, 0.95) !important; color: #fff !important; opacity: 1 !important; }
+html.mode-pro .mdash-chart-unlock { padding: 10px 18px !important; border-radius: 9999px !important; font-size: 12px !important; }
 html.mode-pro .mdash-connect { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; height: 28px; margin: 0; }
 html.mode-pro .mdash-connect i { display: block; width: 1px; height: 100%; margin: 0 auto; background: var(--line-strong); }
 html.mode-pro .mdash-connect + .mdash-overall { margin-top: 0 !important; }
@@ -961,7 +964,7 @@ html.mode-pro .site-topbar-right .theme-toggle, html.mode-pro .site-rail-collaps
 html.mode-pro .mdash-dark-pill, html.mode-pro .mdash-ksection .mdash-dark-pill, html.mode-pro .mdash-unlock-chip,
 html.mode-pro .mdash-krow-unlock, html.mode-pro .mdash-chart-unlock, html.mode-pro .mdash-pillar-view, html.mode-pro .home-cta.is-special {
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), background-color 200ms var(--ease-out), filter 200ms var(--ease-out) !important;
   will-change: transform;
 }
@@ -1912,4 +1915,4 @@ html.mode-pro .sv-foot .web-onboarding-back { margin-right: 0; }
    rolling decoys as the dashboard; they take the tile's own colour there. */
 html.mode-pro .site-rail-hist-tile .mdash-score { color: inherit; filter: blur(4px); }
 html.mode-pro .site-rail-hist-name .mdash-score { filter: blur(4px); }
-html.mode-pro .profile-social-stats .is-iq .mdash-score { filter: blur(5px); }
+html.mode-pro .profile-social-stats .is-iq .mdash-score { filter: blur(7px); }

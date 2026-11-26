@@ -20218,7 +20218,9 @@ html.landing-active .site-header-inner { padding: 16px 0; }
 
 .mdash-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 24px; align-items: center; }
 .mdash-hero-score { margin: 0; font-size: clamp(2.6rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-.mdash-hero-score span { margin-left: 10px; font-size: 1.1rem; font-weight: 500; color: var(--muted); }
+.mdash-hero-score > span:not(.mdash-score):not(.mdash-unlock-chip) { margin-left: 10px; font-size: 1.1rem; font-weight: 500; color: var(--muted); }
+.mdash-hero-score .mdash-score { filter: blur(7px); }
+.mdash-hero-score .mdash-unlock-chip { margin-left: 12px; vertical-align: middle; font-size: 0.82rem; }
 .mdash-hero-band { margin: 8px 0 0; font-weight: 600; color: var(--accent); }
 .mdash-hero-note { margin: 10px 0 0; color: var(--text-2); font-size: 0.9rem; line-height: 1.6; }
 .mdash-curve svg { width: 100%; height: auto; }
@@ -21436,6 +21438,14 @@ html[data-theme="dark"] .measure-cat {
   transition: color 0.9s ease; /* colour crossfades when a roll flips the band */
 }
 .mdash-overall-score .mdash-score, .mdash-pillar-score .mdash-score { filter: blur(7px); }
+/* Locked verdicts: gibberish under FaceIQ's blur (4px body, 5px headings). */
+.mdash-gib { filter: blur(4px); user-select: none; pointer-events: none; opacity: 0.85; }
+.mdash-score.is-plain { color: inherit; }
+.home-stats .mdash-score, .profile-social-stats .is-iq .mdash-score { filter: blur(7px); }
+.ranks-val .mdash-score { filter: blur(4px); }
+h3 .mdash-gib { filter: blur(5px); }
+.mdash-cardhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.mdash-cardhead h3, .mdash-cardhead .mdash-eyebrow { margin: 0; }
 .mdash-focusrow-score .mdash-score { filter: blur(6px); }
 @media (prefers-reduced-motion: reduce) { .mdash-score { transition: none; } }
 .mdash-reel { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
@@ -21459,10 +21469,10 @@ html[data-theme="dark"] .measure-cat {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 9px 16px 9px 14px !important;
+  gap: 6px;
+  padding: 8px 16px !important;
   border: 0 !important;
-  border-radius: 999px !important;
+  border-radius: 9999px !important;
   background: var(--text) !important;
   color: var(--bg) !important;
   font-size: 0.82rem;
@@ -21484,13 +21494,10 @@ html[data-theme="dark"] .measure-cat {
 .mdash-pillar-locked { cursor: default; }
 .mdash-pillar-unlock {
   margin-top: auto;
-  align-self: stretch;
-  width: 100%;
+  align-self: center;
+  width: auto;
   min-width: 0;
-  padding: 8px 10px !important;
-  font-size: 0.78rem;
 }
-.mdash-pillar-unlock svg { width: 13px; height: 13px; }
 .mdash-overall-unlock { margin-left: 12px; vertical-align: middle; }
 
 /* Unlocked pillar: a quiet teal "view" line, the positive counterpart to the

@@ -407,7 +407,7 @@ function renderHub() {
 
       <section class="home-stats" aria-label="Your status">
         <div><span class="battle-eyebrow">Battle rating</span><strong>${rating}</strong></div>
-        <div><span class="battle-eyebrow">IQ</span><strong${iq ? "" : ' class="is-empty"'}>${iq ? Math.round(iq) : "—"}</strong></div>
+        <div><span class="battle-eyebrow">IQ</span><strong${iq ? "" : ' class="is-empty"'}>${iq ? d.lockedValue(Math.round(iq), d.reportUnlocked()) : "—"}</strong></div>
       </section>
 
       ${yourTurn.length ? `<section class="battle-list"><h3>Your turn</h3><ul>${yourTurn.map((b) => rowHtml(b, "turn")).join("")}</ul></section>` : ""}
@@ -1192,9 +1192,11 @@ export async function renderRanksPage(pageHost) {
   const board = ranksData[ranksTab];
   const rowHtml = (row, i) => {
     const mine = me && row.id === me.id;
-    const value = ranksTab === "iq" ? row.iq_score : row.battle_rating;
+    // Your own IQ stays a decoy here without Pass, like everywhere else.
+    const hideMine = mine && ranksTab === "iq" && !d.reportUnlocked();
+    const value = ranksTab === "iq" ? (hideMine ? d.lockedValue(row.iq_score, false) : row.iq_score) : row.battle_rating;
     const sub = ranksTab === "iq"
-      ? (row.iq_percentile ? `Top ${Math.max(1, Math.round(100 - row.iq_percentile))}%` : "")
+      ? (row.iq_percentile && !hideMine ? `Top ${Math.max(1, Math.round(100 - row.iq_percentile))}%` : "")
       : `${row.battle_wins}W · ${row.battle_losses}L`;
     return `<li class="ranks-row ${mine ? "is-me" : ""}">
       <span class="ranks-pos">${i + 1}</span>

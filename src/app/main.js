@@ -8163,15 +8163,42 @@ function mdashBandColor(v) {
   return v >= 116 ? "#5C986D" : v >= 96 ? "#C2904D" : "#BB6A54"; // green / amber / red, FaceIQ's muted grades
 }
 
-function lockedValue(value, unlocked) {
+function decoyScore() {
+  return MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
+}
+
+// Text that must not leak (a verdict, a percentile, a name) becomes Greek-letter
+// gibberish of a fixed shape under the blur — FaceIQ's treatment — because
+// blurred real words stay half legible.
+const MDASH_GIB = "αβγδεζηθικλμνξοπρστυφχψω";
+function gibberish(sample) {
+  const s = String(sample ?? "");
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+  let out = "";
+  for (let i = 0; i < s.length; i += 1) {
+    if (s[i] === " ") { out += " "; continue; }
+    h = (Math.imul(h, 1103515245) + 12345) >>> 0;
+    out += MDASH_GIB[(h >>> 16) % MDASH_GIB.length];
+  }
+  return `<span class="mdash-gib" aria-hidden="true">${out}</span>`;
+}
+
+// opts: { min, max, reels, plain } — a plain decoy (e.g. "1 in N people") keeps
+// the surrounding text colour instead of the green/amber/red grade.
+function lockedValue(value, unlocked, opts = {}) {
   if (unlocked) return String(value);
+  const min = opts.min ?? MDASH_DECOY_MIN;
+  const max = opts.max ?? MDASH_DECOY_MAX;
+  const count = opts.reels ?? 3;
   mdashDecoyCounter += 1;
-  const v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
-  const reels = String(v).padStart(3, "0").split("").map((d) =>
+  window.setTimeout(ensureMdashRoll, 0); // whatever rendered this gets the roll loop
+  const v = min + Math.floor(Math.random() * (max - min + 1));
+  const reels = String(v).padStart(count, "0").split("").map((d) =>
     `<span class="mdash-reel"><span class="mdash-reel-strip" style="transform:translateY(-${d}em)">${MDASH_DIGIT_STRIP}</span></span>`
   ).join("");
-  return `<span class="mdash-score" aria-hidden="true" data-roll data-v="${v}"
-    style="--roll-color:${mdashBandColor(v)}">${reels}</span>`;
+  return `<span class="mdash-score${opts.plain ? " is-plain" : ""}" aria-hidden="true" data-roll data-v="${v}" data-min="${min}" data-max="${max}"
+    ${opts.plain ? "" : `style="--roll-color:${mdashBandColor(v)}"`}>${reels}</span>`;
 }
 
 function renderRailHistory() {
@@ -8260,6 +8287,8 @@ document.querySelectorAll("[data-site-tab]").forEach((tab) => {
 initBattle({
   supabase,
   supabaseEnabled,
+  lockedValue,
+  reportUnlocked: measurementReportUnlocked,
   getAuthUser: () => authUser,
   isGuest: () => guestMode || authUser?.provider === "guest",
   requireAuth,
@@ -8480,42 +8509,53 @@ function renderMeasurementDashboard() {
   });
   renderRailHistory();
   // Keep the fake scores rolling under the blur (locked only).
-  if (unlocked) stopMdashRoll(); else startMdashRoll(host);
+  if (!unlocked) ensureMdashRoll();
 }
 
-// Roll every locked score to a fresh in-tier value on a slow, staggered loop, so
-// the fake numbers keep changing under the blur (digits cascade left to right).
+// Roll every locked score on the page (report, rail, profile, battle) to a
+// fresh in-tier value on one staggered loop, so the fake numbers keep changing
+// under the blur (digits cascade left to right). The loop re-collects the reels
+// on every tick, so a re-render never freezes them, and stops itself once none
+// are left. lockedValue() starts it whenever a decoy is rendered.
 let mdashRollTimer = null;
-function stopMdashRoll() { if (mdashRollTimer) { clearInterval(mdashRollTimer); mdashRollTimer = null; } }
-function startMdashRoll(host) {
-  stopMdashRoll();
-  const scores = [...host.querySelectorAll("[data-roll]")];
-  const rollCurve = setupMcurveRoll(host);
-  if (!scores.length && !rollCurve) return;
+let mdashCurveRoll = null;
+let mdashCurveSvg = null;
+function stopMdashRoll() {
+  if (mdashRollTimer) { clearInterval(mdashRollTimer); mdashRollTimer = null; }
+  mdashCurveRoll = null; mdashCurveSvg = null;
+}
+function rollOneDecoy(el) {
+  const reels = el.querySelectorAll(".mdash-reel-strip");
+  const min = Number(el.dataset.min) || MDASH_DECOY_MIN;
+  const max = Number(el.dataset.max) || MDASH_DECOY_MAX;
+  const cur = Number(el.dataset.v) || Math.round((min + max) / 2);
+  // Half the time jump anywhere in range (the colour usually flips); otherwise
+  // a smaller drift that stays roughly the same.
+  let v;
+  if (Math.random() < 0.5) {
+    v = min + Math.floor(Math.random() * (max - min + 1));
+  } else {
+    const step = Math.max(2, Math.round((max - min) / 6));
+    v = Math.max(min, Math.min(max, cur + (Math.floor(Math.random() * (2 * step + 1)) - step)));
+  }
+  el.dataset.v = v;
+  const digits = String(v).padStart(reels.length, "0");
+  reels.forEach((strip, i) => { strip.style.transform = `translateY(-${digits[i]}em)`; });
+  if (!el.classList.contains("is-plain")) el.style.setProperty("--roll-color", mdashBandColor(v));
+}
+function mdashRollTick() {
+  const scores = [...document.querySelectorAll("[data-roll]")];
+  const svg = document.querySelector("[data-mcurve-roll]");
+  if (!scores.length && !svg) { stopMdashRoll(); return; }
+  if (svg !== mdashCurveSvg) { mdashCurveSvg = svg; mdashCurveRoll = svg ? setupMcurveRoll(document) : null; }
+  scores.forEach((el, i) => window.setTimeout(() => rollOneDecoy(el), i * 90));
+  if (mdashCurveRoll) mdashCurveRoll();
+}
+function ensureMdashRoll() {
+  if (mdashRollTimer) return;
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return; // held still
-  const rollOne = (el) => {
-    const reels = el.querySelectorAll(".mdash-reel-strip");
-    const cur = Number(el.dataset.v) || 110;
-    // Half the time jump anywhere in range (the colour usually flips); otherwise
-    // a smaller drift that stays roughly the same.
-    let v;
-    if (Math.random() < 0.5) {
-      v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
-    } else {
-      v = Math.max(MDASH_DECOY_MIN, Math.min(MDASH_DECOY_MAX, cur + (Math.floor(Math.random() * 25) - 12)));
-    }
-    el.dataset.v = v;
-    const digits = String(v).padStart(reels.length, "0");
-    reels.forEach((strip, i) => { strip.style.transform = `translateY(-${digits[i]}em)`; });
-    el.style.setProperty("--roll-color", mdashBandColor(v));
-  };
-  const anchor = scores[0] ?? host.querySelector("[data-mcurve-roll]");
-  if (rollCurve) window.setTimeout(rollCurve, 600); // start the curve moving sooner than the first tick
-  mdashRollTimer = window.setInterval(() => {
-    if (!anchor?.isConnected) { stopMdashRoll(); return; }
-    scores.forEach((el, i) => window.setTimeout(() => rollOne(el), i * 90));
-    if (rollCurve) rollCurve();
-  }, 1400);
+  window.setTimeout(mdashRollTick, 600); // first movement soon after the render
+  mdashRollTimer = window.setInterval(mdashRollTick, 1400);
 }
 
 // The locked chart's marker (line + dot) drifts to random realistic scores,
@@ -8541,10 +8581,11 @@ function setupMcurveRoll(host) {
 
 // A small, self-contained unlock button for a locked score box. Every box gets
 // its own — they all open the same checkout, but pressing one feels direct.
+// FaceIQ's pill: compact, charcoal, closed padlock (lucide "lock"), 12px/600.
 function mdashUnlockButton(extraClass = "", label = "Unlock your score") {
   return `<button class="mdash-unlock-chip${extraClass ? " " + extraClass : ""}" type="button" data-mdash-unlock>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 9.6-2"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>
-    ${escapeHtml(label)}</button>`;
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span>${escapeHtml(label)}</span></button>`;
 }
 
 // "Top 8.1%" / "Bottom 47.3%" — how a percentile reads out loud.
@@ -8627,7 +8668,7 @@ function measurePillars(ranked, unlocked) {
       if (!unlocked) {
         return `<article class="mdash-pillar mdash-pillar-locked">
           ${head}
-          ${mdashUnlockButton("mdash-pillar-unlock", "Unlock score")}
+          ${mdashUnlockButton("mdash-pillar-unlock")}
         </article>`;
       }
       return `<button class="mdash-pillar${focused ? " is-focused" : ""}" type="button"
@@ -8707,8 +8748,8 @@ function measureHighlights(record, unlocked) {
             <span class="mdash-ktag">${tag(locked ? 100 + decoyDelta : p.score)}</span>
             <span class="mdash-kname"${locked ? ' aria-hidden="true"' : ""}>${escapeHtml(locked ? decoyName : p.name)}<em>${escapeHtml(locked ? "···" : p.short)}</em></span>
             ${locked ? (i === 0
-              ? `<span class="mdash-krow-unlock"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>Unlock</span>`
-              : `<span class="mdash-klock" aria-label="Locked"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg></span>`) : ""}
+              ? `<span class="mdash-krow-unlock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock</span>`
+              : `<span class="mdash-klock" aria-label="Locked"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`) : ""}
             <span class="mdash-kscore"${locked ? ' aria-hidden="true"' : ""}>${sign}${Math.abs(shownDelta)}</span>
             ${locked ? "" : `<svg class="mdash-kchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`}
           </button>
@@ -8732,7 +8773,7 @@ function measureHighlights(record, unlocked) {
         ${more > 0 ? `<button class="mdash-kmore is-${kind}" type="button" data-mdash-more="${kind}">${open ? "Show fewer" : `Show ${more} more`}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ""}
       </section>`;
   };
-  const unlockPill = (label) => `<button class="mdash-dark-pill" type="button" data-mdash-unlock><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4.5" y="10" width="15" height="10" rx="2.2"/></svg>${label}</button>`;
+  const unlockPill = (label) => `<button class="mdash-dark-pill" type="button" data-mdash-unlock><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${label}</button>`;
   return section("strong", "Key strengths", strong, mdashStrongFocus, mdashStrengthsOpen,
       unlocked ? `<button class="mdash-dark-pill" type="button" data-measure-tab="abilities">See all ${parts.length} subtests</button>` : unlockPill(`See your ${strong.length} best subtests`))
     + section("room", "Areas of improvement", room, mdashRoomFocus, mdashRoomOpen,
@@ -8845,7 +8886,7 @@ function measureOverallPanel(record, ranked, margin, percentile, rarity, unlocke
 
       <p class="mdash-caveat">
         Scores are provisional: the item parameters are author-estimated and not yet calibrated on a
-        norming sample.${margin !== null && record.ci ? ` A retest would usually land between
+        norming sample.${unlocked && margin !== null && record.ci ? ` A retest would usually land between
         ${record.ci.low} and ${record.ci.high}.` : ""}
       </p>
     </section>`;
@@ -8885,14 +8926,15 @@ function measureScoreTab(record, margin, percentile, unlocked) {
   return `
     <section class="mdash-card">
       <p class="mdash-eyebrow">Your composite</p>
-      <p class="mdash-hero-score">${record.score}${margin !== null ? `<span>±${margin}</span>` : ""}</p>
+      <p class="mdash-hero-score">${lockedValue(record.score, unlocked)}${margin !== null ? `<span>±${margin}</span>` : ""}${unlocked ? "" : mdashUnlockButton("mdash-overall-unlock")}</p>
       <p class="mdash-body">
         ${unlocked
-          ? `In a room of 100 people, you would score higher than about ${Math.round(percentile)} of them.
+          ? `In a room of 100 people, you would score higher than about ${Math.round(percentile)} of them —
+             you are 1 in ${rarityFromPercentile(percentile).one_in} people.
              The margin is not decoration: a retest would usually land anywhere between
              ${record.ci?.low} and ${record.ci?.high}, and a single point of difference between two
              sittings means nothing on its own.`
-          : "Unlock the report to see where this sits."}
+          : `You are 1 in ${lockedValue(rarityFromPercentile(percentile).one_in, false, { min: 2, max: 60, reels: 2, plain: true })} people. Unlock the report to see where this sits.`}
       </p>
     </section>
 
@@ -8901,7 +8943,7 @@ function measureScoreTab(record, margin, percentile, unlocked) {
       <div class="mdash-bands">
         ${INTERPRETATION_BANDS.map((entry, index) => {
           const low = index === 0 ? "<75" : `${(INTERPRETATION_BANDS[index - 1].max) + 1}${entry.max === Infinity ? "+" : `–${entry.max}`}`;
-          const isYou = entry === band;
+          const isYou = unlocked && entry === band;
           return `<div class="mdash-band${isYou ? " is-you" : ""}">
             ${isYou ? '<span class="mdash-band-you">You</span>' : ""}
             <span class="mdash-band-range">${low}</span>
@@ -8918,24 +8960,23 @@ function measureScoreTab(record, margin, percentile, unlocked) {
 }
 
 function measureAbilitiesTab(record, ranked, unlocked) {
-  if (!unlocked) {
-    return `<section class="mdash-card"><h3>Locked</h3>
-      <p class="mdash-body">The ability breakdown is part of the full report.</p></section>`;
-  }
   const subtests = record.subtests ?? {};
+  // Locked: the same cards, every number a rolling decoy and every verdict
+  // gibberish under the blur, in canonical order so the ranking leaks nothing.
+  const rows = unlocked ? ranked : MEASUREMENT_INDEX_ORDER.map((key) => ranked.find((entry) => entry.key === key)).filter(Boolean);
   return `
     <section class="mdash-card">
-      <h3>Every ability, with its margin</h3>
+      <div class="mdash-cardhead"><h3>Every ability, with its margin</h3>${unlocked ? "" : mdashUnlockButton("", "Unlock the breakdown")}</div>
       <div class="mdash-rows">
-        ${ranked.map((entry) => `
+        ${rows.map((entry) => `
           <div class="mdash-row">
             <span class="mdash-row-name">${escapeHtml(entry.name)}</span>
             <span class="mdash-row-track" aria-hidden="true">
-              <i style="left:${scoreTrackOffset(entry.score).toFixed(1)}%"></i>
+              <i style="left:${scoreTrackOffset(unlocked ? entry.score : decoyScore()).toFixed(1)}%"></i>
             </span>
-            <span class="mdash-row-score">${entry.score}</span>
-            <span class="mdash-row-pct">${entry.percentile}th</span>
-            <span class="mdash-row-desc">${escapeHtml(interpretationBand(entry.score).label)}</span>
+            <span class="mdash-row-score">${lockedValue(entry.score, unlocked)}</span>
+            <span class="mdash-row-pct">${unlocked ? `${entry.percentile}th` : gibberish("61th")}</span>
+            <span class="mdash-row-desc">${unlocked ? escapeHtml(interpretationBand(entry.score).label) : gibberish("High average")}</span>
           </div>`).join("")}
       </div>
     </section>
@@ -8951,9 +8992,9 @@ function measureAbilitiesTab(record, ranked, unlocked) {
               <span class="mdash-row-name">${escapeHtml(subtest.name)}<em>${escapeHtml(meta.short)}</em></span>
               <span class="mdash-row-track" aria-hidden="true">
                 ${result && Number.isFinite(result.score)
-                  ? `<i style="left:${scoreTrackOffset(result.score).toFixed(1)}%"></i>` : ""}
+                  ? `<i style="left:${scoreTrackOffset(unlocked ? result.score : decoyScore()).toFixed(1)}%"></i>` : ""}
               </span>
-              <span class="mdash-row-score">${result && Number.isFinite(result.score) ? result.score : "—"}</span>
+              <span class="mdash-row-score">${result && Number.isFinite(result.score) ? lockedValue(result.score, unlocked) : "—"}</span>
               <span class="mdash-row-pct">${result?.answered != null ? `${result.answered} answered` : ""}</span>
               <span class="mdash-row-desc">${result
                 ? (result.partial || result.abandoned ? "Stopped early" : "Complete")
@@ -8966,9 +9007,9 @@ function measureAbilitiesTab(record, ranked, unlocked) {
 }
 
 function measureInsightsTab(record, ranked, shape, unlocked) {
-  if (!unlocked || !shape) {
-    return `<section class="mdash-card"><h3>Locked</h3>
-      <p class="mdash-body">Profile insights are part of the full report.</p></section>`;
+  if (!shape) {
+    return `<section class="mdash-card"><h3>Not enough measured yet</h3>
+      <p class="mdash-body">Profile insights need more than one ability measured.</p></section>`;
   }
   const shapeCopy = {
     even: "Your six abilities sit close together. An even profile means the composite is a fair summary of you, and no single ability is carrying or dragging the rest.",
@@ -8978,21 +9019,23 @@ function measureInsightsTab(record, ranked, shape, unlocked) {
 
   return `
     <section class="mdash-card">
-      <p class="mdash-eyebrow">Profile shape</p>
-      <h3>${shape.shape === "even" ? "Even" : shape.shape === "uneven" ? "Uneven" : "Spiky"} — ${shape.spread} points between highest and lowest</h3>
-      <p class="mdash-body">${escapeHtml(shapeCopy)}</p>
+      <div class="mdash-cardhead"><p class="mdash-eyebrow">Profile shape</p>${unlocked ? "" : mdashUnlockButton("", "Unlock your insights")}</div>
+      <h3>${unlocked
+        ? `${shape.shape === "even" ? "Even" : shape.shape === "uneven" ? "Uneven" : "Spiky"} — ${shape.spread} points between highest and lowest`
+        : gibberish("Uneven — 21 points between highest and lowest")}</h3>
+      <p class="mdash-body">${unlocked ? escapeHtml(shapeCopy) : gibberish(shapeCopy)}</p>
     </section>
 
     <div class="mdash-duo">
       <section class="mdash-card">
         <p class="mdash-eyebrow">Biggest strength</p>
-        <h3>${escapeHtml(shape.strongest.name)}</h3>
-        <p class="mdash-body">${escapeHtml(shape.strongest.blurb)}</p>
+        <h3>${unlocked ? escapeHtml(shape.strongest.name) : gibberish("Fluid Reasoning")}</h3>
+        <p class="mdash-body">${unlocked ? escapeHtml(shape.strongest.blurb) : gibberish(shape.strongest.blurb)}</p>
       </section>
       <section class="mdash-card">
         <p class="mdash-eyebrow">Biggest weakness</p>
-        <h3>${escapeHtml(shape.weakest.name)}</h3>
-        <p class="mdash-body">${escapeHtml(shape.weakest.blurb)}</p>
+        <h3>${unlocked ? escapeHtml(shape.weakest.name) : gibberish("Working Memory")}</h3>
+        <p class="mdash-body">${unlocked ? escapeHtml(shape.weakest.blurb) : gibberish(shape.weakest.blurb)}</p>
       </section>
     </div>
 
