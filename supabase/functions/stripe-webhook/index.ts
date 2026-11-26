@@ -48,11 +48,34 @@ const proIds = [
 for (const id of basicIds) if (id) PRICE_TIER[id] = "basic";
 for (const id of proIds) if (id) PRICE_TIER[id] = "pro";
 
+// Subscriptions started from the web Payment Link carry no metadata, so after
+// the first checkout.session.completed (which brings client_reference_id) we
+// stamp user_id onto the subscription and keep the id on the entitlement row.
+// Later renewals and cancellations can then be matched either way.
+async function lookupUserId(sub: Stripe.Subscription): Promise<string | undefined> {
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+  const bySub = await admin.from("entitlements").select("user_id").eq("stripe_subscription_id", sub.id).maybeSingle();
+  if (bySub.data?.user_id) return bySub.data.user_id as string;
+  if (customerId) {
+    const byCustomer = await admin.from("entitlements").select("user_id").eq("stripe_customer_id", customerId).maybeSingle();
+    if (byCustomer.data?.user_id) return byCustomer.data.user_id as string;
+  }
+  return undefined;
+}
+
 async function applySubscription(sub: Stripe.Subscription, fallbackUserId?: string) {
-  const userId = (sub.metadata?.user_id as string | undefined) || fallbackUserId;
+  const fromMetadata = sub.metadata?.user_id as string | undefined;
+  const userId = fromMetadata || fallbackUserId || await lookupUserId(sub);
   if (!userId) {
     console.error("[webhook] subscription without user_id", sub.id);
     return;
+  }
+  if (!fromMetadata) {
+    try {
+      await stripe.subscriptions.update(sub.id, { metadata: { ...(sub.metadata ?? {}), user_id: userId } });
+    } catch (err) {
+      console.error("[webhook] could not stamp user_id on subscription", sub.id, err);
+    }
   }
   const priceId = sub.items.data[0]?.price?.id ?? "";
   const active = sub.status === "active" || sub.status === "trialing";
