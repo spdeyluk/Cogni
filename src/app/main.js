@@ -1539,7 +1539,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass opens every step of your four-week plan and keeps your complete training record.";
+    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass opens every step of your four-week plan to reverse brainrot and keeps your complete training record.";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -1692,9 +1692,9 @@ function showWebOnboarding(onDone = () => {}) {
     if (index === 0) {
       return `
         <div class="web-onboarding-slide ob-cta ob-q">
-          <p class="web-onboarding-eyebrow">Your plan · 1 of 2</p>
+          <p class="web-onboarding-eyebrow">Your plan to reverse brainrot · 1 of 2</p>
           <h2 class="web-onboarding-title">What do you want to work on?</h2>
-          <p class="web-onboarding-body">Pick up to two. Your four-week plan is built around it.</p>
+          <p class="web-onboarding-body">Pick up to two. Your four-week plan to reverse brainrot is built around it.</p>
           <div class="plan-goals ob-goals" role="group" aria-label="Goals">${planGoalButtonsHtml(prefs.goals, "data-ob-goal")}</div>
         </div>
         <div class="web-onboarding-footer">
@@ -1705,7 +1705,7 @@ function showWebOnboarding(onDone = () => {}) {
     }
     return `
       <div class="web-onboarding-slide ob-cta ob-q">
-        <p class="web-onboarding-eyebrow">Your plan · 2 of 2</p>
+        <p class="web-onboarding-eyebrow">Your plan to reverse brainrot · 2 of 2</p>
         <h2 class="web-onboarding-title">How long each day?</h2>
         <p class="web-onboarding-body">Short and daily beats long and rare. You can change this any time.</p>
         <div class="plan-minutes ob-minutes" role="radiogroup" aria-label="Minutes a day">${planMinuteButtonsHtml(prefs.minutes, "data-ob-minutes")}</div>
@@ -2130,7 +2130,7 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
-  "Every step of your four-week plan, rebuilt from each retest",
+  "Every step of your four-week plan to reverse brainrot, rebuilt from each retest",
   "Every training session saved, with trends over time",
   "Full session breakdowns: misses, false alarms, answer speed",
   "Per-exercise progress by ability",

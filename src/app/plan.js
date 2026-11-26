@@ -24,6 +24,8 @@ let host = null;   // .plan-page section
 const PLAN_KEY = "cogni.plan.v1";
 const PREFS_KEY = "cogni.planPrefs.v1";
 const PLAN_VERSION = 1;
+// What the plan calls itself wherever it is named or sold.
+const PLAN_NAME = "Your plan to reverse brainrot";
 const WEEKS = 4;
 const STEPS_PER_WEEK = 5;
 // Steps outside the paywall (0-based index < FREE_STEPS): just the baseline,
@@ -66,10 +68,10 @@ const INDEX_TITLES = {
   qri: "Quantitative reasoning", wmi: "Working memory", psi: "Processing speed"
 };
 const WEEK_THEMES = [
-  { name: "Baseline", title: "Measure, then learn the moves", blurb: "Measure first, then easy sessions to learn each exercise." },
-  { name: "Build", title: "Full sessions, weakest first", blurb: "Full sessions. The weak indices get the most time." },
-  { name: "Push", title: "Longer blocks, harder settings", blurb: "Longer blocks, default difficulty. This is where the number moves." },
-  { name: "Retest", title: "Hold the gains, sit the test", blurb: "Hold the gains for four days, then sit the test again." }
+  { name: "Baseline", blurb: "Measure first, then easy sessions to learn each exercise." },
+  { name: "Build", blurb: "Full sessions. The weak indices get the most time." },
+  { name: "Push", blurb: "Longer blocks, default difficulty. This is where the number moves." },
+  { name: "Retest", blurb: "Hold the gains for four days, then sit the test again." }
 ];
 // A mini game runs one round; this is roughly how long that takes.
 const MINI_MINUTES = 3.5;
@@ -93,7 +95,7 @@ export function showPlan() {
   d.appShell.classList.remove(...d.sectionResetClasses);
   d.appShell.classList.add("plan-open");
   d.setActiveTab("plan");
-  d.setPageHeader("Plan", "Your four-week path, one step at a time.");
+  d.setPageHeader("Plan", "Your plan to reverse brainrot, one step at a time.");
   selectedKey = null;
   guideOpen = false;
   editOpen = false;
@@ -490,14 +492,15 @@ function roadHtml(plan) {
     </div>`;
 }
 
-// The sticky card at the top: which week is on screen, how far along the
-// plan is, and the Guide button. syncUnitHeader() retitles it on scroll.
+// The sticky card at the top: the plan's name, which week is on screen, how
+// far along the plan is, and the Guide button. syncUnitHeader() updates the
+// eyebrow on scroll.
 function unitHeaderHtml(plan, current, finished, done) {
   const total = plan.steps.length;
   const week = finished ? WEEKS - 1 : plan.steps[current].week;
   const stepLabel = `Step ${Math.min(current + 1, total)} of ${total}`;
   const eyebrow = finished ? "Plan complete" : `Week ${week + 1} of ${WEEKS} · ${stepLabel}`;
-  const title = finished ? "Four weeks done" : WEEK_THEMES[week].title;
+  const title = finished ? "Four weeks done" : PLAN_NAME;
   return `
     <header class="plan-unit" data-week="${week}" data-current-week="${week}" data-step-label="${esc(stepLabel)}" data-finished="${finished ? 1 : 0}">
       <div class="plan-unit-text">
@@ -509,7 +512,7 @@ function unitHeaderHtml(plan, current, finished, done) {
     </header>`;
 }
 
-// Retitle the sticky header for whichever week's stops are under it.
+// Point the sticky header's eyebrow at whichever week's stops are under it.
 function syncUnitHeader() {
   if (!host || !isOpen()) return;
   const unit = host.querySelector(".plan-unit");
@@ -523,8 +526,7 @@ function syncUnitHeader() {
   if (unit.dataset.week === String(week)) return;
   unit.dataset.week = String(week);
   const own = unit.dataset.currentWeek === String(week);
-  unit.querySelector(".plan-unit-eyebrow").textContent = `Week ${week + 1} of ${WEEKS}${own ? ` · ${unit.dataset.stepLabel}` : ""}`;
-  unit.querySelector("h2").textContent = WEEK_THEMES[week].title;
+  unit.querySelector(".plan-unit-eyebrow").textContent = `Week ${week + 1} of ${WEEKS} · ${own ? unit.dataset.stepLabel : WEEK_THEMES[week].name}`;
 }
 
 // Opening the tab lands on the current stop when it is below the fold.
@@ -628,7 +630,7 @@ function popHtml(plan, step, index, current, s) {
   let body = "";
   if (s.needsPass) {
     tone = "is-current is-pass";
-    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<p class="plan-pop-note">The plan is part of Cogni Pass: every training step and the retest, ${total - FREE_STEPS} steps in all.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
+    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<p class="plan-pop-note">${PLAN_NAME} is part of Cogni Pass: every training step and the retest, ${total - FREE_STEPS} steps in all.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
   } else if (s.locked) {
     tone = "is-locked";
     body = `${chips}<p class="plan-pop-note">Finish step ${current + 1} first.</p>`;
