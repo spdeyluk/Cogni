@@ -1539,7 +1539,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass opens every step of your four-week plan to reverse brainrot and keeps your complete training record.";
+    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass unlocks your IQ score and the report behind it, every step of your four-week plan to reverse brainrot, and your complete training record.";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -2130,6 +2130,7 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
+  "Your IQ score and the full report behind it",
   "Every step of your four-week plan to reverse brainrot, rebuilt from each retest",
   "Every training session saved, with trends over time",
   "Full session breakdowns: misses, false alarms, answer speed",
@@ -5278,8 +5279,8 @@ function renderProfileIdentityStats(stats) {
   // No score yet: a blurred placeholder number where the score will be.
   const statusCells = cogniUiMode === "pro" ? `
       <div class="is-iq is-big${iq ? "" : " is-empty"}">
-        <strong aria-hidden="${iq ? "false" : "true"}">${iq ? Math.round(iq) : "118"}</strong>
-        <span>${iq && pct ? `IQ · top ${Math.max(1, Math.round(100 - pct))}%` : iq ? "IQ" : `IQ <button class="battle-link" data-profile-take-test type="button">· Take the test</button>`}</span>
+        <strong aria-hidden="${iq ? "false" : "true"}">${iq ? lockedValue(Math.round(iq), measurementReportUnlocked()) : "118"}</strong>
+        <span>${iq && pct && measurementReportUnlocked() ? `IQ · top ${Math.max(1, Math.round(100 - pct))}%` : iq ? "IQ" : `IQ <button class="battle-link" data-profile-take-test type="button">· Take the test</button>`}</span>
       </div>
       <div class="is-big">
         <strong>${rating ?? 1000}</strong>
@@ -8146,6 +8147,33 @@ function railTimeAgo(date) {
   if (diff < 365 * day) return `${Math.max(1, Math.round(diff / (30 * day)))}mo`;
   return `${Math.max(1, Math.round(diff / (365 * day)))}y`;
 }
+// A locked score blurs a fake, rolling number rather than the real one — the UI
+// stays usable, the decoys leak nothing, and under the blur you can tell it's a
+// score (a colour-graded number whose digits roll, like the teaser reels on
+// FaceIQ-style pages). The value is graded by band — green good, amber mid, red
+// low — and every roll can jump far enough to flip the colour. Three reels
+// throughout (low values pad with a leading zero) so the colour can change
+// without the digit count changing.
+const MDASH_DECOY_MIN = 68;
+const MDASH_DECOY_MAX = 141;
+const MDASH_DIGIT_STRIP = "0123456789".split("").map((d) => `<b>${d}</b>`).join("");
+let mdashDecoyCounter = 0;
+
+function mdashBandColor(v) {
+  return v >= 116 ? "#5C986D" : v >= 96 ? "#C2904D" : "#BB6A54"; // green / amber / red, FaceIQ's muted grades
+}
+
+function lockedValue(value, unlocked) {
+  if (unlocked) return String(value);
+  mdashDecoyCounter += 1;
+  const v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
+  const reels = String(v).padStart(3, "0").split("").map((d) =>
+    `<span class="mdash-reel"><span class="mdash-reel-strip" style="transform:translateY(-${d}em)">${MDASH_DIGIT_STRIP}</span></span>`
+  ).join("");
+  return `<span class="mdash-score" aria-hidden="true" data-roll data-v="${v}"
+    style="--roll-color:${mdashBandColor(v)}">${reels}</span>`;
+}
+
 function renderRailHistory() {
   const host = document.querySelector("#site-rail-history");
   if (!host) return;
@@ -8155,15 +8183,18 @@ function renderRailHistory() {
     return;
   }
   const reportOpen = measurementReportOpen && elements.appShell?.classList.contains("assessments-open");
+  const unlocked = measurementReportUnlocked();
   host.innerHTML = sessions.slice(0, 6).map((record, index) => {
     const when = new Date(record.completedAt ?? Date.now());
     const score = Number.isFinite(record.score) ? Math.round(record.score) : null;
     const measured = record.indices ? Object.keys(record.indices).length : 0;
     const active = reportOpen && index === Math.min(measurementSessionIndex, sessions.length - 1);
+    // Without Pass the score is a blurred decoy here too, like in the report.
+    const shown = score == null ? null : lockedValue(score, unlocked);
     return `<button class="site-rail-hist${active ? " is-active" : ""}" type="button" data-rail-session="${index}">
-      <span class="site-rail-hist-tile">${score ?? "·"}</span>
+      <span class="site-rail-hist-tile">${shown ?? "·"}</span>
       <span class="site-rail-hist-body">
-        <span class="site-rail-hist-name">IQ ${score ?? "—"}${record.battery === "mini" ? '<em class="site-rail-hist-tag">Mini</em>' : ""}</span>
+        <span class="site-rail-hist-name">IQ ${shown ?? "—"}${record.battery === "mini" ? '<em class="site-rail-hist-tag">Mini</em>' : ""}</span>
         <span class="site-rail-hist-sub">${measured ? `${measured} of ${MEASUREMENT_INDEX_ORDER.length} abilities` : "Sitting"}</span>
       </span>
       <span class="site-rail-hist-when">${railTimeAgo(when)}</span>
@@ -8291,7 +8322,6 @@ initReferral({
 });
 captureReferralCode();
 captureLobbyCode();
-capturePreviewFlag();
 captureOnboardingFlag();
 captureTesterFlag();
 syncTesterBadge();
@@ -8453,33 +8483,6 @@ function renderMeasurementDashboard() {
   if (unlocked) stopMdashRoll(); else startMdashRoll(host);
 }
 
-// A locked score blurs a fake, rolling number rather than the real one — the UI
-// stays usable, the decoys leak nothing, and under the blur you can tell it's a
-// score (a colour-graded number whose digits roll, like the teaser reels on
-// FaceIQ-style pages). The value is graded by band — green good, amber mid, red
-// low — and every roll can jump far enough to flip the colour. Three reels
-// throughout (low values pad with a leading zero) so the colour can change
-// without the digit count changing.
-const MDASH_DECOY_MIN = 68;
-const MDASH_DECOY_MAX = 141;
-const MDASH_DIGIT_STRIP = "0123456789".split("").map((d) => `<b>${d}</b>`).join("");
-let mdashDecoyCounter = 0;
-
-function mdashBandColor(v) {
-  return v >= 116 ? "#18B87B" : v >= 96 ? "#F5B942" : "#F2597A"; // green / amber / red
-}
-
-function lockedValue(value, unlocked) {
-  if (unlocked) return String(value);
-  mdashDecoyCounter += 1;
-  const v = MDASH_DECOY_MIN + Math.floor(Math.random() * (MDASH_DECOY_MAX - MDASH_DECOY_MIN + 1));
-  const reels = String(v).padStart(3, "0").split("").map((d) =>
-    `<span class="mdash-reel"><span class="mdash-reel-strip" style="transform:translateY(-${d}em)">${MDASH_DIGIT_STRIP}</span></span>`
-  ).join("");
-  return `<span class="mdash-score" aria-hidden="true" data-roll data-v="${v}"
-    style="--roll-color:${mdashBandColor(v)}">${reels}</span>`;
-}
-
 // Roll every locked score to a fresh in-tier value on a slow, staggered loop, so
 // the fake numbers keep changing under the blur (digits cascade left to right).
 let mdashRollTimer = null;
@@ -8510,9 +8513,9 @@ function startMdashRoll(host) {
   if (rollCurve) window.setTimeout(rollCurve, 600); // start the curve moving sooner than the first tick
   mdashRollTimer = window.setInterval(() => {
     if (!anchor?.isConnected) { stopMdashRoll(); return; }
-    scores.forEach((el, i) => window.setTimeout(() => rollOne(el), i * 170));
+    scores.forEach((el, i) => window.setTimeout(() => rollOne(el), i * 90));
     if (rollCurve) rollCurve();
-  }, 3000);
+  }, 1400);
 }
 
 // The locked chart's marker (line + dot) drifts to random realistic scores,
@@ -9103,10 +9106,13 @@ function iqCompareSvg(youScore) {
 
 function iqCompareHtml() {
   const latest = loadCatSessions()[0] ?? null;
-  const score = Number.isFinite(latest?.score) ? latest.score : null;
-  const caption = score == null
-    ? "Public figures are reported estimates, not Cogni results. Take the test to put yourself on the curve."
-    : "Public figures are reported estimates, not Cogni results. Your point is the measured one.";
+  const measured = Number.isFinite(latest?.score);
+  const score = measured && measurementReportUnlocked() ? latest.score : null;
+  const caption = score != null
+    ? "Public figures are reported estimates, not Cogni results. Your point is the measured one."
+    : measured
+      ? "Public figures are reported estimates, not Cogni results. Cogni Pass puts your point on the curve."
+      : "Public figures are reported estimates, not Cogni results. Take the test to put yourself on the curve.";
   return `<figure class="iq-compare">${iqCompareSvg(score)}<figcaption>${caption}</figcaption></figure>`;
 }
 
@@ -9631,7 +9637,7 @@ function renderMeasureReports(total) {
     return `
       <button class="measure-report${index === measurementSessionIndex ? " is-active" : ""}"
               data-measure-session="${index}" type="button">
-        <span class="measure-report-score">${unlocked ? session.score : "•••"}</span>
+        <span class="measure-report-score">${lockedValue(session.score, unlocked)}</span>
         <span class="measure-report-meta">
           <em>${when.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</em>
           ${battery.id === "mini" ? "Mini · " : ""}${taken} of ${battery.subtests.length} subtests
@@ -10035,11 +10041,12 @@ function finishSubtest({ abandoned = false } = {}) {
   catActive = null;
   saveCatActive();
 
-  // Completing the last subtest no longer jumps straight to the score — it
-  // returns to the card, where "Get results" is now live. Otherwise stay in the
-  // picker to sit the next one.
+  // Completing the last subtest scores the sitting and opens the report at
+  // once — nothing to click. Otherwise stay in the picker to sit the next one.
   if (measureCompletedCount(attempt) >= attemptSubtests(attempt).length) {
     measureSubtestsOpen = false;
+    finishMeasurement(attempt, { destination: "dashboard" });
+    return;
   }
   renderMeasurePicker(subtest.id);
   showCatSection("intro");
@@ -10838,11 +10845,9 @@ function webPlanUnlocked() {
   return accessCodeActive() || currentTier() === "basic" || currentTier() === "pro";
 }
 
-// On web the IQ test and its full report are free: the score is the status
-// symbol the social layer runs on. Pass buys the training record. Native keeps
-// its own Pro tier.
-// ?preview=locked shows the report the way a member without Pass would see it
-// (blurred scores, unlock pills). ?preview=unlocked clears it. Per tab.
+// On web the IQ test is free to sit; the numbers in its report are Cogni Pass
+// (blurred, rolling decoys without it — see lockedValue), the same Pass that
+// opens the plan. Native keeps its own Pro tier.
 // Preview hook: ?onboarding=1 replays the post-sign-in walk once on the next
 // authenticated boot, without touching the seen flag — for checking copy and
 // visuals on a real account.
@@ -11072,19 +11077,8 @@ function enterAsTester({ resume = false } = {}) {
   markEnterAfterAuth();
   window.location.reload();
 }
-function capturePreviewFlag() {
-  const want = new URLSearchParams(window.location.search).get("preview");
-  if (!want) return;
-  try {
-    if (want === "locked") sessionStorage.setItem("cogni.previewLocked", "1");
-    if (want === "unlocked") sessionStorage.removeItem("cogni.previewLocked");
-  } catch { /* no sessionStorage */ }
-}
-function previewLocked() {
-  try { return sessionStorage.getItem("cogni.previewLocked") === "1"; } catch { return false; }
-}
 function measurementReportUnlocked() {
-  if (cogniUiMode === "pro") return !previewLocked();
+  if (cogniUiMode === "pro") return webPlanUnlocked();
   return isProUser();
 }
 

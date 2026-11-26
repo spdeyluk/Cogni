@@ -620,8 +620,8 @@ function popHtml(plan, step, index, current, s) {
   const meta = step.kind === "train"
     ? `${step.blocks.length} exercises · ~${step.minutes} min`
     : step.kind === "iq"
-      ? (s.isDone && plan.baseline ? `IQ ${plan.baseline.score}` : "About 15 minutes")
-      : (s.isDone && plan.retest ? `IQ ${plan.retest.score}` : "Same test, four weeks on");
+      ? (s.isDone && plan.baseline ? (d.planUnlocked() ? `IQ ${plan.baseline.score}` : "Taken · score with Cogni Pass") : "About 15 minutes")
+      : (s.isDone && plan.retest ? (d.planUnlocked() ? `IQ ${plan.retest.score}` : "Taken · score with Cogni Pass") : "Same test, four weeks on");
   const chips = step.kind === "train"
     ? `<ul class="plan-chips">${step.blocks.map((b) => `<li>${esc(EXERCISE_NAMES[b.exerciseId] ?? b.exerciseId)}${b.timeMinutes ? ` <i>${b.timeMinutes} min</i>` : ""}</li>`).join("")}</ul>`
     : "";
@@ -680,8 +680,8 @@ function gateHtml() {
 }
 
 function finishedHtml(plan) {
-  const before = plan.baseline?.score ?? null;
-  const after = plan.retest?.score ?? null;
+  const before = d.planUnlocked() ? plan.baseline?.score ?? null : null;
+  const after = d.planUnlocked() ? plan.retest?.score ?? null : null;
   const delta = before != null && after != null ? after - before : null;
   return `
     <section class="plan-card plan-finished">

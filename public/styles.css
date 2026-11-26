@@ -20959,7 +20959,7 @@ html.mode-pro .mdash-overall-head h3 {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.mdash-overall-score span {
+.mdash-overall-score > span:not(.mdash-score) {
   margin-left: 12px;
   font-size: 1.05rem;
   font-weight: 500;
@@ -21428,13 +21428,15 @@ html[data-theme="dark"] .measure-cat {
   display: inline-flex;
   align-items: flex-start;
   color: var(--roll-color, var(--text));
-  filter: blur(6px);
+  filter: blur(4px); /* FaceIQ: 4px on small numbers, heavier on the big ones */
   line-height: 1;
   font-variant-numeric: tabular-nums;
   user-select: none;
   pointer-events: none;
   transition: color 0.9s ease; /* colour crossfades when a roll flips the band */
 }
+.mdash-overall-score .mdash-score, .mdash-pillar-score .mdash-score { filter: blur(7px); }
+.mdash-focusrow-score .mdash-score { filter: blur(6px); }
 @media (prefers-reduced-motion: reduce) { .mdash-score { transition: none; } }
 .mdash-reel { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
 .mdash-reel-strip {

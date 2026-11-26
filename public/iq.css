@@ -437,7 +437,7 @@ html.mode-pro .mdash-overall-head h3 { font-size: 19px !important; font-weight: 
 html.mode-pro .mdash-overall-meta { font-size: 11px !important; font-weight: 500 !important; }
 html.mode-pro .mdash-overall-lead { padding: 20px 24px 0 !important; }
 html.mode-pro .mdash-overall-score { font-size: 32px !important; font-weight: 600 !important; letter-spacing: -0.03em !important; }
-html.mode-pro .mdash-overall-score span { margin-left: 8px !important; font-size: 13px !important; }
+html.mode-pro .mdash-overall-score > span:not(.mdash-score) { margin-left: 8px !important; font-size: 13px !important; }
 html.mode-pro .mdash-overall-band { margin-top: 8px !important; font-size: 14px !important; font-weight: 600 !important; }
 html.mode-pro .mdash-overall-sub { font-size: 13px !important; line-height: 1.55 !important; }
 html.mode-pro .mdash-subtabs { gap: 4px !important; margin: 18px 24px 16px !important; padding-top: 16px; border-top: 1px solid var(--line); }
@@ -1907,3 +1907,9 @@ html.mode-pro .sv-foot .web-onboarding-back { margin-right: 0; }
   html.mode-pro .sv-opt { min-height: 44px !important; padding: 8px 11px !important; font-size: 13px; }
   html.mode-pro .sv-slide .web-onboarding-title { font-size: 1.75rem !important; }
 }
+
+/* Locked numbers outside the report (rail history, own profile) use the same
+   rolling decoys as the dashboard; they take the tile's own colour there. */
+html.mode-pro .site-rail-hist-tile .mdash-score { color: inherit; filter: blur(4px); }
+html.mode-pro .site-rail-hist-name .mdash-score { filter: blur(4px); }
+html.mode-pro .profile-social-stats .is-iq .mdash-score { filter: blur(5px); }
