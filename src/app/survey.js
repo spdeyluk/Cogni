@@ -8,7 +8,8 @@
 //               screen time, games + ranks, and what fills your days (all
 //               skippable). The answers rebuild the four-week plan.
 // Everything lives in one record in localStorage under a "cogni." key, so
-// account sync carries it between devices like the rest of the app state.
+// account sync carries it between devices like the rest of the app state, and
+// each finished run is also upserted into public.survey_responses (d.persist).
 // ---------------------------------------------------------------------------
 import { PLAN_GOALS, PLAN_MINUTES } from "./plan.js";
 
@@ -229,6 +230,8 @@ function runSurvey(kind, onDone) {
       try { d.setPlanPrefs?.({ goals: answers.goals, minutes: Number(answers.minutes) }, { rebuild: true }); } catch { /* plan module */ }
     }
     save(answers);
+    // Also into Supabase, so the answers can be browsed outside this browser.
+    try { d.persist?.(answers, kind); } catch { /* best effort */ }
     document.documentElement.classList.remove("web-onboarding-open");
     document.removeEventListener("keydown", onKey);
     overlay.classList.add("is-leaving");

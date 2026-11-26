@@ -15,3 +15,6 @@ public/dev-web.html
 
 # Claude Code worktrees live inside the repo; never commit them.
 .claude/worktrees/
+
+# Supabase CLI link cache
+supabase/.temp/

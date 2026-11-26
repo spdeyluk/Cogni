@@ -8300,9 +8300,56 @@ initPlan({
   exerciseIcon: (id) => trainSvg(trainIconPaths[catalogEntry(id)?.icon ?? "grid"]),
   iqIcon: () => trainSvg(trainDomainIcons.Memory)
 });
+// --- Survey answers → Supabase ----------------------------------------------
+// Besides the synced local record, every answer from the two question runs is
+// upserted into public.survey_responses (supabase/survey.sql) so it can be
+// browsed and exported in the dashboard. One row per browser id; the id is an
+// ordinary synced key, so a member's devices share one row and a tester
+// Restart (which wipes synced keys) starts a fresh one.
+const SURVEY_CLIENT_KEY = "cogni.surveyClient.v1";
+function surveyClientId() {
+  try {
+    let id = localStorage.getItem(SURVEY_CLIENT_KEY);
+    if (!id) {
+      id = typeof crypto?.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(SURVEY_CLIENT_KEY, id);
+    }
+    return id;
+  } catch { return null; }
+}
+async function persistSurveyResponse(answers) {
+  if (!supabaseEnabled || !supabase || !answers) return;
+  const clientId = surveyClientId();
+  if (!clientId) return;
+  const member = authUser && !guestMode && authUser.provider !== "guest" ? authUser : null;
+  const row = {
+    client_id: clientId,
+    user_id: member?.id ?? null,
+    email: answers.email || member?.email || null,
+    age: answers.age ?? null,
+    gender: answers.gender ?? null,
+    education: answers.education ?? null,
+    goals: Array.isArray(answers.goals) ? answers.goals : [],
+    minutes: answers.minutes == null ? null : (Number(answers.minutes) || null),
+    screen_time: answers.screenTime ?? null,
+    games: Array.isArray(answers.games) ? answers.games : [],
+    ranks: answers.ranks && typeof answers.ranks === "object" ? answers.ranks : {},
+    interests: Array.isArray(answers.interests) ? answers.interests : [],
+    skipped: Array.isArray(answers.skipped) ? answers.skipped : [],
+    profile_done_at: answers.completedAt ?? null,
+    plan_done_at: answers.planAt ?? null,
+    source: testerMode() ? "tester" : "web",
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await supabase.from("survey_responses").upsert(row, { onConflict: "client_id" });
+  } catch { /* best effort: the local record stays the source of truth */ }
+}
+
 initSurvey({
   escapeHtml,
   reduceMotion: webOnboardingReduceMotion,
+  persist: persistSurveyResponse,
   // The email field is prefilled from the account; a guest tester types one.
   accountEmail: () => (guestMode || authUser?.provider === "guest") ? "" : (authUser?.email || ""),
   setPlanPrefs,

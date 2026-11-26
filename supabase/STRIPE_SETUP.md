@@ -48,6 +48,15 @@ web path and `STRIPE_PRICE_MEASUREMENT_MONTHLY` is not needed for the web:
 - Guests and tester mode reach the link without a `client_reference_id`; such a payment
   cannot be matched to an account, so test real purchases from a signed-in member.
 
+> Status 2026-11-26: the Supabase CLI is logged in (token `cogni-cli`) and linked to
+> `vuydvhvlcagelwbztewx`. Still to do, in this order: (1) `bash supabase/scripts/stripe-webhook-setup.sh`
+> creates the live webhook endpoint and stores `STRIPE_WEBHOOK_SECRET` without printing it;
+> (2) `supabase secrets set STRIPE_PRICE_MEASUREMENT_MONTHLY=price_1UfdP09XSnaDI8InrSkyK8Hu`
+> (the webhook maps that price id to the `pro` tier; unset, a Pass payment would grant nothing);
+> (3) `supabase secrets set STRIPE_SECRET_KEY="$(pbpaste)"` with the live secret key on the clipboard;
+> (4) `supabase functions deploy stripe-webhook --no-verify-jwt --use-api --yes` and the same for
+> `create-checkout`; (5) `supabase db query --remote -f supabase/survey.sql --yes` for the survey table.
+
 ## 3. Deploy the two functions (2 min)
 
 From the repo root (needs the Supabase CLI + `supabase login` + `supabase link`):
