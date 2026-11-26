@@ -11197,9 +11197,9 @@ function iqTestUnlocked() {
   return true;
 }
 
-// While the test is calibrated it is open to the owner only. The bundle holds
-// hashes of the allowed addresses, not the addresses. Everyone else sees the
-// tab and the Home button gone, and a "not open yet" note on the IQ page.
+// Owner accounts, as hashes of the allowed addresses rather than the addresses.
+// Owners only get the dev tools: Browse the questions, the rail reset and the
+// dev-complete shortcut. The test itself is open to everyone (iqTestAvailable).
 const IQ_OWNER_HASHES = new Set([
   "15be1241dadf1ee8c519fc63ad796cb41bb8b3ea9af1cfc107e3846e48d21493",
   "9916f43945dcf9810c646f77a7f3becc2a62a6cb5402f7907a0cf17478a875e1"
@@ -11207,9 +11207,9 @@ const IQ_OWNER_HASHES = new Set([
 let iqOwner = false;
 let iqOwnerResolving = false;
 let frontDoorPending = false;
-// The default page after sign-in: the IQ test, or Train while the test is still
-// owner-only. If the owner check is still running, the choice is revisited the
-// moment it lands (see resolveIqOwner).
+// The default page after sign-in: the IQ test. (If the test were ever gated
+// again while the owner check is still running, the choice is revisited the
+// moment it lands; see resolveIqOwner.)
 function landFrontDoor() {
   frontDoorPending = iqOwnerResolving;
   if (iqTestAvailable()) showAssessments(); else showExerciseHub();
@@ -11250,7 +11250,9 @@ function syncIqDue() {
   document.documentElement.classList.toggle("iq-due", due);
 }
 function iqTestAvailable() {
-  return cogniUiMode !== "pro" || iqOwner || testerMode();
+  // Open to everyone since 2026-11-26. The calibration gate (owner or tester
+  // only) hid the tab from real members mid-sitting; the tab is always shown.
+  return true;
 }
 function applyIqAvailability() {
   const off = !iqTestAvailable();
