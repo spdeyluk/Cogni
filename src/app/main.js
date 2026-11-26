@@ -8317,6 +8317,11 @@ function surveyClientId() {
     return id;
   } catch { return null; }
 }
+// Only a real ISO stamp goes into a timestamptz column; older local records
+// (and seeded test data) have carried booleans and numbers there.
+function isoOrNull(value) {
+  return typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : null;
+}
 async function persistSurveyResponse(answers, run) {
   if (!supabaseEnabled || !supabase || !answers) return;
   const clientId = surveyClientId();
@@ -8339,8 +8344,8 @@ async function persistSurveyResponse(answers, run) {
     ranks: answers.ranks && typeof answers.ranks === "object" ? answers.ranks : {},
     interests: Array.isArray(answers.interests) ? answers.interests : [],
     skipped: Array.isArray(answers.skipped) ? answers.skipped : [],
-    profile_done_at: answers.completedAt ?? null,
-    plan_done_at: answers.planAt ?? null,
+    profile_done_at: isoOrNull(answers.completedAt),
+    plan_done_at: isoOrNull(answers.planAt),
     source: testerMode() ? "tester" : "web"
   };
   try {
