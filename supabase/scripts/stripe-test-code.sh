@@ -27,18 +27,28 @@ def stripe(*args):
     r = subprocess.run(["stripe", *args, "--live"], capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit("stripe " + " ".join(args[:2]) + " failed: " + (r.stderr or r.stdout).strip()[:400])
-    return json.loads(r.stdout)
+    out = json.loads(r.stdout)
+    if isinstance(out, dict) and out.get("error"):
+        sys.exit("stripe " + " ".join(args[:2]) + " refused: " + str(out["error"].get("message", out["error"]))[:400])
+    return out
 existing = [p for p in stripe("promotion_codes", "list", "-d", f"code={code}", "-d", "active=true", "-d", "limit=5").get("data", []) if p.get("active")]
 if existing:
     promo = existing[0]
     print(f"promotion code {code} already active ({promo['id']}), reusing it")
 else:
-    coupon = stripe("coupons", "create", "-d", "percent_off=100", "-d", "duration=once", "-d", "max_redemptions=1",
-                    "-d", f"redeem_by={exp}", "-d", "name=Cogni Pass test (one use)")
+    leftover = [c for c in stripe("coupons", "list", "-d", "limit=20").get("data", [])
+                if c.get("name") == "Cogni Pass test (one use)" and c.get("valid") and not c.get("times_redeemed")]
+    if leftover:
+        coupon = leftover[0]
+        print(f"coupon {coupon['id']}: reusing the unused test coupon from an earlier run")
+    else:
+        coupon = stripe("coupons", "create", "-d", "percent_off=100", "-d", "duration=once", "-d", "max_redemptions=1",
+                        "-d", f"redeem_by={exp}", "-d", "name=Cogni Pass test (one use)")
+        print(f"coupon {coupon['id']}: 100% off once, 1 redemption")
+    promo_exp = min(int(exp), int(coupon.get("redeem_by") or exp)) - 300
     promo = stripe("promotion_codes", "create", "-d", f"coupon={coupon['id']}", "-d", f"code={code}",
-                   "-d", "max_redemptions=1", "-d", f"expires_at={exp}")
-    print(f"coupon {coupon['id']}: 100% off once, 1 redemption")
-    print(f"promotion code {promo['code']} ({promo['id']}): active, 1 redemption, expires in 24 h")
+                   "-d", "max_redemptions=1", "-d", f"expires_at={promo_exp}")
+    print(f"promotion code {promo.get('code', code)} ({promo.get('id')}): active, 1 redemption, expires in 24 h")
 link = stripe("payment_links", "update", link_id, "-d", "allow_promotion_codes=true", "-d", "payment_method_collection=if_required")
 print(f"payment link {link['id']}: promotion codes {'on' if link['allow_promotion_codes'] else 'off'}, card only when something is due ({link['payment_method_collection']})")
 print()
@@ -63,6 +73,10 @@ if sub: print(f"subscription {sub['id']}: {sub['status']}")
 for p in stripe("promotion_codes", "list", "-d", f"code={code}", "-d", "active=true", "-d", "limit=5").get("data", []):
     stripe("promotion_codes", "update", p["id"], "-d", "active=false")
     print(f"promotion code {code} ({p['id']}): retired")
+for c in stripe("coupons", "list", "-d", "limit=20").get("data", []):
+    if c.get("name") == "Cogni Pass test (one use)":
+        stripe("coupons", "delete", c["id"], ok_fail=True)
+        print(f"coupon {c['id']}: deleted")
 link = stripe("payment_links", "update", link_id, "-d", "allow_promotion_codes=false", "-d", "payment_method_collection=always")
 print(f"payment link {link['id']}: promotion codes off, card always collected")
 PY
