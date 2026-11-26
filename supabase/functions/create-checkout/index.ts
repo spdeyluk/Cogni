@@ -12,7 +12,7 @@
 //   STRIPE_PRICE_PRO_MONTHLY     price_...
 //   STRIPE_PRICE_PRO_ANNUAL      price_...
 //   STRIPE_PRICE_PRO_WEEKLY      price_...   (the native paywall's weekly plan)
-//   STRIPE_PRICE_MEASUREMENT_MONTHLY price_...  (web: Cogni Measurement, EUR 14.99/mo)
+//   STRIPE_PRICE_MEASUREMENT_MONTHLY price_...  (web: Cogni Pass; the web button now opens a Payment Link instead, see STRIPE_SETUP.md)
 //   SITE_URL                     https://getcogni.app   (where Stripe returns to)
 // SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY are injected
 // automatically by the platform.

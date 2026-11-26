@@ -28,16 +28,25 @@ Copy each **Price ID** (`price_...`):
 
 (**Basic** = all exercises + data. **Pro** = also routines, AI coach and the IQ test.)
 
-## 2b. The web price: Cogni Pass (1 min)
+## 2b. The web price: Cogni Pass (done 2026-11-26)
 
-The web paywall sells exactly one thing, **Cogni Pass** at **€14.99 / month** (it unlocks
-every step of the four-week Plan and the saved training record). Create that recurring
-price too and set it as `STRIPE_PRICE_MEASUREMENT_MONTHLY`. The webhook grants the
-`pro` tier for it, so Pass holders pass every `isProUser()` / `webPlanUnlocked()` gate.
+The web sells exactly one thing, **Cogni Pass**, and since 2026-11-26 the "Get Cogni Pass"
+button opens a **Stripe Payment Link** directly, so `create-checkout` is no longer on the
+web path and `STRIPE_PRICE_MEASUREMENT_MONTHLY` is not needed for the web:
 
-> Status 2026-11-24: `create-checkout` and `stripe-webhook` are deployed but return
-> `WORKER_ERROR` on every call, which is what an empty `STRIPE_SECRET_KEY` does to the
-> Stripe client at boot. Steps 4 and 5 below have not been run yet.
+- Live product `prod_Vh1RaH3C5bfLdH` "Cogni Premium", price `price_1UfdP09XSnaDI8InrSkyK8Hu`
+  (**USD 15.99 / month**, created in the Dashboard).
+- Payment Link `plink_1UfyVm9XSnaDI8In9XqCf5H4` → `https://buy.stripe.com/dRm4gta8V1jR3Wm58W7ok00`,
+  returning to `https://getcogni.app/?checkout=success`.
+- The app appends `client_reference_id=<supabase user id>` and `prefilled_email` for a
+  signed-in member (`PASS_PAYMENT_LINK` in `src/app/main.js`). `stripe-webhook` already reads
+  `session.client_reference_id` on `checkout.session.completed` and grants the `pro` tier,
+  so Pass holders pass every `isProUser()` / `webPlanUnlocked()` gate.
+- What is still missing for the unlock to land: steps 4 and 5 below (`STRIPE_SECRET_KEY`,
+  the webhook endpoint and `STRIPE_WEBHOOK_SECRET`, redeploy `stripe-webhook`). Until then a
+  payment goes through on Stripe but the app keeps showing the locked report.
+- Guests and tester mode reach the link without a `client_reference_id`; such a payment
+  cannot be matched to an account, so test real purchases from a signed-in member.
 
 ## 3. Deploy the two functions (2 min)
 
@@ -89,7 +98,7 @@ Advanced settings paywalls should unlock within a few seconds. Flip to live keys
 ---
 
 ### How it fits together
-- **Upgrade button** → `create-checkout` (has your secret key) → Stripe Checkout page.
+- **Get Cogni Pass** (web) → Stripe **Payment Link** with `client_reference_id`; native → `create-checkout` → Stripe Checkout page.
 - Payment → Stripe → **`stripe-webhook`** verifies the signature and writes `entitlements`
   with the service_role key. That row is the unforgeable source of truth.
 - The app calls `refreshEntitlement()` on sign-in and after checkout, mirroring the row into

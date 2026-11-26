@@ -1539,7 +1539,7 @@ function openPricingModal() {
     const title = dialog?.querySelector(".paywall-includes-title");
     const cta = dialog?.querySelector("#pricing-upgrade");
     if (h2) h2.textContent = "Cogni Pass";
-    if (sub) sub.textContent = "Training, battles and the IQ test are free for everyone. Pass unlocks your IQ score and the report behind it, every step of your four-week plan to reverse brainrot, and your complete training record.";
+    if (sub) sub.textContent = "Training, battles and the test stay free. Pass unlocks:";
     if (title) title.textContent = "What Pass includes";
     if (cta && !cta.disabled) cta.textContent = "Get Cogni Pass";
   }
@@ -1812,6 +1812,11 @@ function wireAccessCodeField() {
   const note = document.querySelector("#pricing-code-note");
   if (!field || !input || !apply || field.dataset.wired === "1") return;
   field.dataset.wired = "1";
+  // On the web the field sits behind "Have a code?" in the footer row.
+  document.querySelector("#pricing-code-toggle")?.addEventListener("click", () => {
+    const open = field.classList.toggle("is-open");
+    if (open && !input.hidden) input.focus();
+  });
 
   const submit = () => {
     if (accessCodeActive()) { clearAccessCode(); window.location.reload(); return; }
@@ -1827,10 +1832,14 @@ function wireAccessCodeField() {
 }
 
 function syncAccessCodeField() {
+  const field = document.querySelector("#pricing-code");
+  const toggle = document.querySelector("#pricing-code-toggle");
   const input = document.querySelector("#pricing-code-input");
   const apply = document.querySelector("#pricing-code-apply");
   const note = document.querySelector("#pricing-code-note");
   const active = accessCodeActive();
+  if (field) field.classList.toggle("is-active", active);
+  if (toggle) toggle.textContent = active ? "Access code active" : "Have a code?";
   if (input) { input.hidden = active; input.value = ""; }
   if (apply) apply.textContent = active ? "Remove code" : "Apply";
   if (note) note.textContent = active ? "An access code is active — paid features are unlocked." : "";
@@ -2060,12 +2069,9 @@ const paywallTrialDays = 0;
 // the Profile page and its history (applyPagePaywall), the IQ test and custom
 // routines (isProUser), and the advanced settings <details> (hasPaidPlan).
 const paywallProFeatures = cogniUiMode === "pro" ? [
-  "Your IQ score and the full report behind it",
-  "Every step of your four-week plan to reverse brainrot, rebuilt from each retest",
-  "Every training session saved, with trends over time",
-  "Full session breakdowns: misses, false alarms, answer speed",
-  "Per-exercise progress by ability",
-  "Your IQ sittings and duels side by side in one record"
+  "Your IQ score and the full report",
+  "Every step of your plan to reverse brainrot",
+  "Your retest, scored and compared"
 ] : [
   "All stats and history",
   "Full Cogni Measurement report",
@@ -2220,6 +2226,12 @@ function wirePricingModal() {
   document.querySelector("#paywall-restore")?.addEventListener("click", restoreApplePurchases);
 }
 
+// The web sells Cogni Pass through a Stripe Payment Link (live account, price
+// price_1UfdP09XSnaDI8InrSkyK8Hu, USD 15.99 a month). client_reference_id carries
+// the Supabase user id so stripe-webhook can grant the entitlement on
+// checkout.session.completed; the create-checkout function is off the web path.
+const PASS_PAYMENT_LINK = "https://buy.stripe.com/dRm4gta8V1jR3Wm58W7ok00";
+
 // Kick off Stripe Checkout for the selected plan + billing period. The heavy
 // lifting is in the create-checkout Edge Function; here we just collect the
 // choice, hand it the user's session, and redirect to Stripe's hosted page.
@@ -2232,6 +2244,26 @@ async function startCheckout() {
   // to the web until StoreKit IAP is wired.
   if (cogniUiMode === "play") {
     await startApplePurchase();
+    return;
+  }
+  if (cogniUiMode === "pro") {
+    // A purchase has to attach to an account. Tester mode is the owner's
+    // walk-through, so it may go on to Stripe without one.
+    const member = authUser && !guestMode && authUser.provider !== "guest" ? authUser : null;
+    if (!member && !testerMode()) {
+      closePricingModal();
+      wireAuthGate();
+      showAuthGate("login", "Sign in to get Cogni Pass.");
+      return;
+    }
+    const url = new URL(PASS_PAYMENT_LINK);
+    if (member) {
+      url.searchParams.set("client_reference_id", member.id);
+      if (member.email) url.searchParams.set("prefilled_email", member.email);
+    }
+    if (note) note.textContent = "";
+    if (button) { button.disabled = true; button.textContent = "Opening Stripe…"; }
+    window.location.assign(url.toString());
     return;
   }
   // A purchase has to attach to an account, so require sign-in first.
@@ -10673,7 +10705,9 @@ async function refreshEntitlement() {
       const last = loadCatSessions().at(-1);
       if (last) renderCatResult(last);
     }
+    return tier;
   } catch { /* keep the cached value if the lookup fails */ }
+  return currentTier();
 }
 
 // Handle the redirect back from Stripe Checkout (success_url / cancel_url).
@@ -10681,9 +10715,19 @@ function handleCheckoutReturn() {
   if (!bootCheckoutParam) return;
   if (bootCheckoutParam === "success") {
     showToast("Payment received — unlocking your account…");
-    // The webhook can land a beat after the redirect, so poll a few times.
+    // The webhook can land a beat after the redirect, so keep polling for a
+    // while. The moment the entitlement flips, reload so every locked surface
+    // (report, plan, rail, battles) re-renders unlocked.
     let tries = 0;
-    const tick = () => { refreshEntitlement(); if (++tries < 6) window.setTimeout(tick, 1500); };
+    const tick = async () => {
+      const tier = await refreshEntitlement();
+      if (tier === "basic" || tier === "pro") {
+        showToast("Cogni Pass is active.");
+        window.setTimeout(() => window.location.replace("/"), 900);
+        return;
+      }
+      if (++tries < 20) window.setTimeout(tick, 1500);
+    };
     tick();
   } else if (bootCheckoutParam === "cancelled") {
     showToast("Checkout cancelled — no charge was made.");

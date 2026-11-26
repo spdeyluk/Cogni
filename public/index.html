@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261122-iq49">
-    <link rel="stylesheet" href="luxe.css?v=20261122-iq49">
-    <link rel="stylesheet" href="battle.css?v=20261122-iq49">
-    <link rel="stylesheet" href="iq.css?v=20261122-iq49">
+    <link rel="stylesheet" href="styles.css?v=20261122-iq50">
+    <link rel="stylesheet" href="luxe.css?v=20261122-iq50">
+    <link rel="stylesheet" href="battle.css?v=20261122-iq50">
+    <link rel="stylesheet" href="iq.css?v=20261122-iq50">
     <script>
       // Decide what to paint FIRST — before the body renders — so the app shell
       // never flashes before the router settles. On the browsable web (pro mode)
@@ -1163,7 +1163,7 @@
                   <h3>See the full breakdown</h3>
                   <p>Your five index scores, percentiles, confidence bands and the full written report — plus every retest and your score history.</p>
                   <button class="cat-paywall-cta" data-cat-upgrade type="button">Unlock the full report</button>
-                  <span class="cat-paywall-price" id="cat-paywall-price">€14.99 / month · cancel anytime</span>
+                  <span class="cat-paywall-price" id="cat-paywall-price">$15.99 / month · cancel anytime</span>
                 </div>
               </div>
             </div>
@@ -2336,15 +2336,14 @@
         <!-- Web sells one thing: the Measurement report. Shown only in pro mode;
              the Basic/Pro chooser below is the native app's offer. -->
         <div class="pricing-plans pricing-plans-web">
-          <button class="pricing-plan is-selected" data-pricing-plan="measurement" type="button">
+          <div class="pricing-plan is-selected" data-pricing-plan="measurement">
             <div class="pricing-plan-info">
-              <div class="pricing-plan-name">Cogni Pass</div>
               <div class="pricing-plan-price">
-                <span class="pricing-plan-amount">€14.99</span><span class="pricing-plan-per">/month</span>
+                <span class="pricing-plan-amount">$15.99</span><span class="pricing-plan-per">/month</span>
               </div>
             </div>
             <span class="pricing-plan-note">Cancel anytime</span>
-          </button>
+          </div>
         </div>
 
         <div class="pricing-plans pricing-plans-native">
@@ -2395,6 +2394,7 @@
         <div class="paywall-links">
           <button class="paywall-restore" id="paywall-restore" type="button" hidden>Restore</button>
           <span class="paywall-restore-sep" aria-hidden="true" hidden>·</span>
+          <span class="paywall-links-web"><span>Renews monthly</span><span aria-hidden="true">·</span><button class="pricing-code-toggle" id="pricing-code-toggle" type="button">Have a code?</button><span aria-hidden="true">·</span></span>
           <a href="terms.html" target="_blank" rel="noopener">Terms</a>
           <span aria-hidden="true">·</span>
           <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
@@ -2709,6 +2709,6 @@
     <script type="importmap">
     { "imports": { "@supabase/supabase-js": "/vendor/supabase.js?v=20260724" } }
     </script>
-    <script type="module" src="src/app/main.js?v=20261122-iq49"></script>
+    <script type="module" src="src/app/main.js?v=20261122-iq50"></script>
   </body>
 </html>
