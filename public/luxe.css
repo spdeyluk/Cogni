@@ -698,10 +698,14 @@ html.mode-pro .pricing-code.is-active { display: block; }
 html.mode-pro .pricing-code-note { color: var(--muted) !important; }
 html.mode-pro .pricing-code-note:empty { display: none; }
 html.mode-pro .pricing-close {
+  /* The global pro button padding (15px 18px) pushed the glyph out of the circle. */
+  width: 34px !important; height: 34px !important; min-height: 0 !important;
+  padding: 0 !important;
   border-radius: var(--luxe-pill) !important;
   border: 1px solid var(--line) !important;
   background: transparent !important;
   color: var(--text-2) !important;
+  font-size: 20px !important; line-height: 1 !important; font-weight: 400 !important;
 }
 html.mode-pro .pricing-code-row input { border-radius: var(--luxe-pill) !important; background: var(--bg) !important; }
 html.mode-pro .pricing-code-apply { border-radius: var(--luxe-pill) !important; }
