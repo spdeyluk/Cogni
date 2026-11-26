@@ -45,8 +45,8 @@ import { resolveGeneratedItem, generatedItemId } from "../core/assessments/catGe
 import { buildLanrt, buildDomino, LANRT_FAMILIES } from "../core/assessments/lanrtGenerator.js";
 import { initBattle, showBattle, renderRanksPage, syncPublicStatus, myStatus as battleStatus, resetBattleState, captureLobbyCode, claimPendingLobby } from "./battle.js";
 import { initReferral, captureReferralCode, claimPendingReferral, referralUnlocked, referralPanelHtml, refreshReferralPanels, openReferralDialog } from "./referral.js";
-import { initPlan, showPlan, renderPlan, notifyIqSitting, setPlanPrefs, planGoalButtonsHtml, planMinuteButtonsHtml } from "./plan.js";
-import { initSurvey, runProfileSurvey, profileSurveyDone } from "./survey.js";
+import { initPlan, showPlan, renderPlan, notifyIqSitting, setPlanPrefs, loadPlanPrefs } from "./plan.js";
+import { initSurvey, runProfileSurvey, profileSurveyDone, runPlanSurvey, planSurveyDone } from "./survey.js";
 import { OCD_QUESTIONS, OCD_RATING_LABELS, OCD_SUBSCALE_LABELS, scoreOcdScreening } from "../core/assessments/ocdScreening.js";
 import {
   createSustainedAttentionAssessmentConfig,
@@ -1622,18 +1622,13 @@ function showWebOnboarding(onDone = () => {}) {
   const stage = overlay.querySelector("#web-onboarding-stage");
   const skip = overlay.querySelector("[data-onboard-skip]");
   const beats = WEB_ONBOARDING_BEATS;
-  // Slides: the two Plan questions, then the thoughts, then the test picker.
-  const QUESTIONS = 2;
-  const firstBeat = QUESTIONS;
+  // Slides: the thoughts, then the test picker. What to improve on is asked
+  // right after the first test (runPlanSurvey), once there is a score.
+  const firstBeat = 0;
   const pickerAt = firstBeat + beats.length;
   const total = pickerAt + 1;
   let index = 0;
-  const onQuestion = () => index < firstBeat;
   const onBeat = () => index >= firstBeat && index < pickerAt;
-  // The answers build the Plan the moment the second question is done (and on
-  // Skip, if a goal was picked), so a closed tab still leaves a plan behind.
-  const prefs = { goals: [], minutes: 15 };
-  const savePrefs = () => { if (!prefs.goals.length) return; try { setPlanPrefs(prefs); } catch { /* storage */ } };
   let timer = null;
   // The test is a deliberate pick: neither battery is selected until the person
   // chooses, and Start stays off until then.
@@ -1688,42 +1683,12 @@ function showWebOnboarding(onDone = () => {}) {
       </div>`;
   };
 
-  const questionHtml = () => {
-    if (index === 0) {
-      return `
-        <div class="web-onboarding-slide ob-cta ob-q">
-          <p class="web-onboarding-eyebrow">Your plan to reverse brainrot · 1 of 2</p>
-          <h2 class="web-onboarding-title">What do you want to work on?</h2>
-          <p class="web-onboarding-body">Pick up to two. Your four-week plan to reverse brainrot is built around it.</p>
-          <div class="plan-goals ob-goals" role="group" aria-label="Goals">${planGoalButtonsHtml(prefs.goals, "data-ob-goal")}</div>
-        </div>
-        <div class="web-onboarding-footer">
-          <div class="web-onboarding-actions">
-            <button type="button" class="web-onboarding-next" data-ob-continue ${prefs.goals.length ? "" : "disabled"}>Continue${arrow}</button>
-          </div>
-        </div>`;
-    }
-    return `
-      <div class="web-onboarding-slide ob-cta ob-q">
-        <p class="web-onboarding-eyebrow">Your plan to reverse brainrot · 2 of 2</p>
-        <h2 class="web-onboarding-title">How long each day?</h2>
-        <p class="web-onboarding-body">Short and daily beats long and rare. You can change this any time.</p>
-        <div class="plan-minutes ob-minutes" role="radiogroup" aria-label="Minutes a day">${planMinuteButtonsHtml(prefs.minutes, "data-ob-minutes")}</div>
-      </div>
-      <div class="web-onboarding-footer">
-        <div class="web-onboarding-actions">
-          <button type="button" class="web-onboarding-back" data-ob-back>Back</button>
-          <button type="button" class="web-onboarding-next" data-ob-continue>Continue${arrow}</button>
-        </div>
-      </div>`;
-  };
 
   let shownAt = 0;
   const render = () => {
     clearTimer();
     const onPicker = index >= pickerAt;
     if (skip) skip.hidden = onPicker;
-    if (onQuestion()) { stage.innerHTML = questionHtml(); return; }
     if (onPicker) {
       stage.innerHTML = pickerHtml();
       placeThumb(false);
@@ -1773,42 +1738,7 @@ function showWebOnboarding(onDone = () => {}) {
     window.setTimeout(() => overlay.remove(), 220);
   };
   overlay.addEventListener("click", (event) => {
-    if (event.target.closest("[data-onboard-skip]")) { savePrefs(); go(pickerAt); return; }
-    if (onQuestion()) {
-      const goal = event.target.closest("[data-ob-goal]");
-      if (goal) {
-        const id = goal.dataset.obGoal;
-        if (prefs.goals.includes(id)) prefs.goals = prefs.goals.filter((g) => g !== id);
-        else if (prefs.goals.length < 2) prefs.goals = [...prefs.goals, id];
-        else return;
-        // Toggled in place; only Continue's state moves with it.
-        for (const button of stage.querySelectorAll("[data-ob-goal]")) {
-          const on = prefs.goals.includes(button.dataset.obGoal);
-          button.classList.toggle("is-on", on);
-          button.setAttribute("aria-pressed", String(on));
-        }
-        const next = stage.querySelector("[data-ob-continue]");
-        if (next) next.disabled = !prefs.goals.length;
-        return;
-      }
-      const mins = event.target.closest("[data-ob-minutes]");
-      if (mins) {
-        prefs.minutes = Number(mins.dataset.obMinutes);
-        for (const button of stage.querySelectorAll("[data-ob-minutes]")) {
-          const on = Number(button.dataset.obMinutes) === prefs.minutes;
-          button.classList.toggle("is-on", on);
-          button.setAttribute("aria-checked", String(on));
-        }
-        return;
-      }
-      if (event.target.closest("[data-ob-back]")) { go(index - 1); return; }
-      if (event.target.closest("[data-ob-continue]")) {
-        if (index === 0 && !prefs.goals.length) return;
-        if (index === firstBeat - 1) savePrefs();
-        go(index + 1);
-      }
-      return;
-    }
+    if (event.target.closest("[data-onboard-skip]")) { go(pickerAt); return; }
     if (onBeat()) { leave(index + 1); return; }
     const battery = event.target.closest("[data-battery]");
     if (battery) {
@@ -8338,7 +8268,14 @@ initPlan({
   exerciseIcon: (id) => trainSvg(trainIconPaths[catalogEntry(id)?.icon ?? "grid"]),
   iqIcon: () => trainSvg(trainDomainIcons.Memory)
 });
-initSurvey({ escapeHtml, reduceMotion: webOnboardingReduceMotion });
+initSurvey({
+  escapeHtml,
+  reduceMotion: webOnboardingReduceMotion,
+  // The email field is prefilled from the account; a guest tester types one.
+  accountEmail: () => (guestMode || authUser?.provider === "guest") ? "" : (authUser?.email || ""),
+  setPlanPrefs,
+  planPrefsExist: () => Boolean(loadPlanPrefs())
+});
 initReferral({
   supabase,
   supabaseEnabled,
@@ -10573,12 +10510,24 @@ function finishMeasurement(attempt, { destination = "result" } = {}) {
   // "Get results" opens the report dashboard for the new sitting (locked +
   // blurred until unlocked); the default path is the animated score reveal.
   if (destination === "dashboard") {
-    measurementReportOpen = true;
-    measurementSessionIndex = 0;
-    measureSubtestsOpen = false;
-    renderMeasurePicker();
-    showCatSection("intro");
-    document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const openReport = () => {
+      measurementReportOpen = true;
+      measurementSessionIndex = 0;
+      measureSubtestsOpen = false;
+      renderMeasurePicker();
+      showCatSection("intro");
+      document.querySelector("#measure-dashboard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    // Web: the first thing after the test is what to improve on. The plan is
+    // rebuilt from the answers, then the report opens.
+    if (cogniUiMode === "pro" && !planSurveyDone()) {
+      measureSubtestsOpen = false;
+      renderMeasurePicker();
+      showCatSection("intro");
+      runPlanSurvey(openReport);
+      return;
+    }
+    openReport();
     return;
   }
   renderCatResult(sessionRecord);

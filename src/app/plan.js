@@ -167,6 +167,10 @@ function ensurePlan() {
 
 // The two questions as markup, shared with the onboarding. `attr` names the
 // data attribute the host's click handler listens for.
+// The survey asks the same two questions after the test; it needs the lists.
+export const PLAN_GOALS = GOALS.map((g) => ({ id: g.id, label: g.label, blurb: g.blurb }));
+export const PLAN_MINUTES = MINUTE_OPTIONS;
+
 export function planGoalButtonsHtml(selected, attr) {
   return GOALS.map((g) => {
     const on = selected.includes(g.id);

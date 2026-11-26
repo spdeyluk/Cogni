@@ -1,10 +1,17 @@
-// Cogni · About-you survey — asked once, the first time a test is started.
+// Cogni · The two question runs around the test.
 // ---------------------------------------------------------------------------
-// A short run of tap-to-answer screens in the onboarding's visual language:
-// age, gender and education (required), then screen time, the games you play
-// and your rank in each, and what fills your days (all skippable). Answers
-// live in localStorage under a "cogni." key, so account sync carries them.
+// Tap-to-answer screens in the onboarding's visual language.
+//   "profile" — the first time a test is started: age, gender, education,
+//               email. All required, four taps and a field.
+//   "plan"    — the moment the first test finishes, before the report opens:
+//               what to improve on and how long each day (required), then
+//               screen time, games + ranks, and what fills your days (all
+//               skippable). The answers rebuild the four-week plan.
+// Everything lives in one record in localStorage under a "cogni." key, so
+// account sync carries it between devices like the rest of the app state.
 // ---------------------------------------------------------------------------
+import { PLAN_GOALS, PLAN_MINUTES } from "./plan.js";
+
 let d = null;
 const KEY = "cogni.profileSurvey.v1";
 const VERSION = 1;
@@ -49,6 +56,7 @@ const INTERESTS = [
   ["reading", "Reading"], ["languages", "Languages"], ["puzzles", "Puzzles & chess"], ["crafts", "Crafts & DIY"],
   ["photo", "Photography & film"], ["travel", "Travel"]
 ];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function initSurvey(deps) { d = deps; }
 
@@ -58,20 +66,35 @@ export function loadSurvey() {
     return saved && saved.v === VERSION ? saved : null;
   } catch { return null; }
 }
+// The about-you run is done once it has been completed on any device.
 export function profileSurveyDone() { return Boolean(loadSurvey()?.completedAt); }
+// The plan run is done once answered here, or when the plan already has
+// preferences from an earlier version that asked them during onboarding.
+export function planSurveyDone() { return Boolean(loadSurvey()?.planAt) || Boolean(d?.planPrefsExist?.()); }
 function save(answers) {
   try { localStorage.setItem(KEY, JSON.stringify({ v: VERSION, ...answers })); } catch { /* private mode */ }
 }
 function blank() {
-  return { age: null, gender: null, education: null, screenTime: null, games: [], ranks: {}, interests: [], skipped: [], startedAt: new Date().toISOString(), completedAt: null };
+  return {
+    age: null, gender: null, education: null, email: null,
+    goals: [], minutes: null, screenTime: null, games: [], ranks: {}, interests: [], skipped: [],
+    startedAt: new Date().toISOString(), completedAt: null, planAt: null
+  };
 }
 
-// The screens, in order. Rank screens appear for each ranked game picked.
-function steps(a) {
+// The screens of each run, in order. Rank screens appear for each ranked game picked.
+function steps(kind, a) {
+  if (kind === "profile") {
+    return [
+      { id: "age", kind: "single", key: "age", required: true, eyebrow: "About you", title: "How old are you?", options: AGE, cols: 2 },
+      { id: "gender", kind: "single", key: "gender", required: true, eyebrow: "About you", title: "How do you identify?", options: GENDER, cols: 2 },
+      { id: "education", kind: "single", key: "education", required: true, eyebrow: "About you", title: "Your education so far?", body: "The highest level you have finished or are in now.", options: EDUCATION, cols: 2 },
+      { id: "email", kind: "email", key: "email", required: true, eyebrow: "About you", title: "Where should your results go?", body: "Your report and plan are tied to this address.", placeholder: "you@example.com" }
+    ];
+  }
   const list = [
-    { id: "age", kind: "single", key: "age", required: true, eyebrow: "About you", title: "How old are you?", options: AGE, cols: 2 },
-    { id: "gender", kind: "single", key: "gender", required: true, eyebrow: "About you", title: "How do you identify?", options: GENDER, cols: 2 },
-    { id: "education", kind: "single", key: "education", required: true, eyebrow: "About you", title: "Your education so far?", body: "The highest level you have finished or are in now.", options: EDUCATION, cols: 2 },
+    { id: "goals", kind: "multi", key: "goals", required: true, max: 2, eyebrow: "Your plan to reverse brainrot", title: "What do you want to improve?", body: "Pick up to two. Your four-week plan is built around it.", options: PLAN_GOALS.map((g) => [g.id, g.label, g.blurb]), cols: 2 },
+    { id: "minutes", kind: "single", key: "minutes", required: true, eyebrow: "Your plan to reverse brainrot", title: "How long each day?", body: "Short and daily beats long and rare. You can change this any time.", options: PLAN_MINUTES.map((m) => [String(m), `${m} minutes`]), cols: 3 },
     { id: "screen", kind: "single", key: "screenTime", eyebrow: "Your days", title: "How much screen time a day?", body: "Phone and computer together, roughly.", options: SCREEN, cols: 2 },
     { id: "games", kind: "multi", key: "games", eyebrow: "Your games", title: "Which games do you play?", body: "Tick any. We ask your rank next.", options: GAMES.map((g) => [g.id, g.label]), cols: 3, wide: true }
   ];
@@ -92,23 +115,38 @@ function clearAnswer(a, key) {
   if (Array.isArray(key)) { if (a[key[0]]) delete a[key[0]][key[1]]; return; }
   a[key] = Array.isArray(a[key]) ? [] : null;
 }
+function answered(step, a) {
+  const value = getAnswer(a, step.key);
+  if (step.kind === "multi") return (value ?? []).length > 0;
+  if (step.kind === "email") return EMAIL_RE.test(String(value ?? "").trim());
+  return value != null;
+}
 
-// Show the survey unless it has been completed; `onDone` runs either way.
 export function runProfileSurvey(onDone = () => {}) {
   if (profileSurveyDone()) { onDone(); return; }
+  runSurvey("profile", onDone);
+}
+export function runPlanSurvey(onDone = () => {}) {
+  if (planSurveyDone()) { onDone(); return; }
+  runSurvey("plan", onDone);
+}
+
+// One run of screens over the app; `onDone` runs when the last one is answered.
+function runSurvey(kind, onDone) {
   if (document.querySelector("#profile-survey")) return;
   const esc = (v) => d.escapeHtml(v);
   const answers = { ...blank(), ...(loadSurvey() ?? {}) };
-  answers.completedAt = null;
+  if (kind === "profile") { answers.completedAt = null; if (!answers.email) answers.email = d.accountEmail?.() || null; }
+  else answers.planAt = null;
   let index = 0;
   let timer = null;
 
   const overlay = document.createElement("div");
-  overlay.className = "web-onboarding profile-survey";
+  overlay.className = `web-onboarding profile-survey is-${kind}`;
   overlay.id = "profile-survey";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
-  overlay.setAttribute("aria-label", "About you");
+  overlay.setAttribute("aria-label", kind === "profile" ? "About you" : "Your plan");
   overlay.innerHTML = `
     <div class="web-onboarding-inner">
       <header class="web-onboarding-top">
@@ -124,24 +162,26 @@ export function runProfileSurvey(onDone = () => {}) {
   const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
   const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
 
-  const optionHtml = (step, [id, label]) => {
+  const optionHtml = (step, [id, label, sub]) => {
     const value = getAnswer(answers, step.key);
-    const on = step.kind === "multi" ? (value ?? []).includes(id) : value === id;
+    const on = step.kind === "multi" ? (value ?? []).includes(id) : String(value) === id;
     const role = step.kind === "multi" ? "checkbox" : "radio";
-    const pressed = step.kind === "multi" ? `aria-checked="${on}"` : `aria-checked="${on}"`;
-    return `<button class="sv-opt${step.kind === "single" ? " is-single" : ""}${on ? " is-on" : ""}" data-sv-opt="${esc(id)}" type="button" role="${role}" ${pressed}>${step.kind === "multi" ? `<span class="sv-tick" aria-hidden="true">${tick}</span>` : ""}<span>${esc(label)}</span></button>`;
+    return `<button class="sv-opt${step.kind === "single" ? " is-single" : ""}${sub ? " has-sub" : ""}${on ? " is-on" : ""}" data-sv-opt="${esc(id)}" type="button" role="${role}" aria-checked="${on}">${step.kind === "multi" ? `<span class="sv-tick" aria-hidden="true">${tick}</span>` : ""}<span class="sv-opt-text"><span>${esc(label)}</span>${sub ? `<small>${esc(sub)}</small>` : ""}</span></button>`;
+  };
+  const fieldHtml = (step) => {
+    const value = getAnswer(answers, step.key) ?? "";
+    return `<div class="sv-field"><input class="sv-input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="${esc(step.placeholder ?? "")}" value="${esc(value)}" data-sv-input aria-label="${esc(step.title)}"></div>`;
   };
   const render = () => {
     window.clearTimeout(timer); timer = null;
-    const list = steps(answers);
+    const list = steps(kind, answers);
     index = Math.max(0, Math.min(list.length - 1, index));
     const step = list[index];
-    const value = getAnswer(answers, step.key);
-    const picked = step.kind === "multi" ? (value ?? []).length > 0 : value != null;
+    const picked = answered(step, answers);
     count.textContent = `${index + 1} of ${list.length}`;
     bar.style.width = `${Math.round(((index) / list.length) * 100)}%`;
-    const next = step.kind === "multi"
-      ? `<button type="button" class="web-onboarding-next" data-sv-next>${picked ? "Continue" : step.required ? "Continue" : "Skip"}${arrow}</button>`
+    const next = step.kind === "multi" || step.kind === "email"
+      ? `<button type="button" class="web-onboarding-next" data-sv-next ${step.required && !picked ? "disabled" : ""}>${picked || step.required ? "Continue" : "Skip"}${arrow}</button>`
       : (picked ? `<button type="button" class="web-onboarding-next" data-sv-next>Continue${arrow}</button>` : "");
     const skip = !step.required && step.kind === "single" && !picked ? `<button type="button" class="web-onboarding-later" data-sv-skip>Skip</button>` : "";
     stage.innerHTML = `
@@ -149,7 +189,9 @@ export function runProfileSurvey(onDone = () => {}) {
         <p class="web-onboarding-eyebrow">${esc(step.eyebrow)}${step.required ? "" : " · optional"}</p>
         <h2 class="web-onboarding-title">${esc(step.title)}</h2>
         ${step.body ? `<p class="web-onboarding-body">${esc(step.body)}</p>` : ""}
-        <div class="sv-opts${step.wide ? " is-wide" : ""}" role="${step.kind === "multi" ? "group" : "radiogroup"}" aria-label="${esc(step.title)}" style="--cols:${step.cols}">${step.options.map((o) => optionHtml(step, o)).join("")}</div>
+        ${step.kind === "email"
+          ? fieldHtml(step)
+          : `<div class="sv-opts${step.wide ? " is-wide" : ""}" role="${step.kind === "multi" ? "group" : "radiogroup"}" aria-label="${esc(step.title)}" style="--cols:${step.cols}">${step.options.map((o) => optionHtml(step, o)).join("")}</div>`}
       </div>
       <div class="web-onboarding-footer sv-foot">
         <div class="web-onboarding-actions">
@@ -157,17 +199,35 @@ export function runProfileSurvey(onDone = () => {}) {
           ${skip}${next}
         </div>
       </div>`;
+    if (step.kind === "email") {
+      const input = stage.querySelector("[data-sv-input]");
+      input?.addEventListener("input", () => {
+        setAnswer(answers, step.key, input.value.trim());
+        const button = stage.querySelector("[data-sv-next]");
+        if (button) button.disabled = !answered(step, answers);
+      });
+      input?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && answered(step, answers)) { event.preventDefault(); advance(); }
+      });
+      window.setTimeout(() => input?.focus(), 60);
+    }
   };
   const advance = () => {
     save(answers);
-    const list = steps(answers);
+    const list = steps(kind, answers);
     if (index >= list.length - 1) { finish(); return; }
     index += 1;
     render();
   };
   const finish = () => {
     window.clearTimeout(timer);
-    answers.completedAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    if (kind === "profile") answers.completedAt = now;
+    else {
+      answers.planAt = now;
+      // The plan is rebuilt from the two required answers.
+      try { d.setPlanPrefs?.({ goals: answers.goals, minutes: Number(answers.minutes) }, { rebuild: true }); } catch { /* plan module */ }
+    }
     save(answers);
     document.documentElement.classList.remove("web-onboarding-open");
     document.removeEventListener("keydown", onKey);
@@ -176,7 +236,7 @@ export function runProfileSurvey(onDone = () => {}) {
     onDone(answers);
   };
   overlay.addEventListener("click", (event) => {
-    const list = steps(answers);
+    const list = steps(kind, answers);
     const step = list[index];
     const opt = event.target.closest("[data-sv-opt]");
     if (opt) {
@@ -186,13 +246,14 @@ export function runProfileSurvey(onDone = () => {}) {
         const def = step.key === "games" ? GAMES.find((g) => g.id === id) : null;
         if (picks.includes(id)) picks = picks.filter((p) => p !== id);
         else if (def?.exclusive) picks = [id];
+        else if (step.max && picks.length >= step.max) return; // full: unpick one first
         else picks = [...picks.filter((p) => !(step.key === "games" && GAMES.find((g) => g.id === p)?.exclusive)), id];
         setAnswer(answers, step.key, picks);
         answers.skipped = answers.skipped.filter((s) => s !== step.id);
         render();
         return;
       }
-      setAnswer(answers, step.key, id);
+      setAnswer(answers, step.key, step.key === "minutes" ? Number(id) : id);
       answers.skipped = answers.skipped.filter((s) => s !== step.id);
       for (const button of stage.querySelectorAll("[data-sv-opt]")) {
         const on = button.dataset.svOpt === id;
@@ -212,15 +273,17 @@ export function runProfileSurvey(onDone = () => {}) {
       return;
     }
     if (event.target.closest("[data-sv-next]")) {
+      if (step.required && !answered(step, answers)) return;
       if (step.kind === "multi" && !(getAnswer(answers, step.key) ?? []).length && !answers.skipped.includes(step.id)) answers.skipped.push(step.id);
       advance();
     }
   });
   const onKey = (event) => {
     if (!overlay.isConnected) { document.removeEventListener("keydown", onKey); return; }
+    if (event.target?.matches?.("input")) return; // typing in the email field
     if (event.key === "ArrowLeft" && index > 0) { event.preventDefault(); window.clearTimeout(timer); index -= 1; render(); return; }
     if (event.key === "ArrowRight") {
-      const next = stage.querySelector("[data-sv-next], [data-sv-skip]");
+      const next = stage.querySelector("[data-sv-next]:not([disabled]), [data-sv-skip]");
       if (next) { event.preventDefault(); next.click(); }
     }
   };
