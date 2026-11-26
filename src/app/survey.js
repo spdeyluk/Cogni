@@ -9,7 +9,7 @@
 //               skippable). The answers rebuild the four-week plan.
 // Everything lives in one record in localStorage under a "cogni." key, so
 // account sync carries it between devices like the rest of the app state, and
-// each finished run is also upserted into public.survey_responses (d.persist).
+// each finished run is also appended to public.survey_responses (d.persist).
 // ---------------------------------------------------------------------------
 import { PLAN_GOALS, PLAN_MINUTES } from "./plan.js";
 

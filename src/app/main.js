@@ -8302,10 +8302,10 @@ initPlan({
 });
 // --- Survey answers → Supabase ----------------------------------------------
 // Besides the synced local record, every answer from the two question runs is
-// upserted into public.survey_responses (supabase/survey.sql) so it can be
-// browsed and exported in the dashboard. One row per browser id; the id is an
-// ordinary synced key, so a member's devices share one row and a tester
-// Restart (which wipes synced keys) starts a fresh one.
+// appended to public.survey_responses (supabase/survey.sql) so it can be
+// browsed and exported in the dashboard; survey_latest keeps the newest row per
+// browser id. The id is an ordinary synced key, so a member's devices share
+// one id and a tester Restart (which wipes synced keys) starts a fresh one.
 const SURVEY_CLIENT_KEY = "cogni.surveyClient.v1";
 function surveyClientId() {
   try {
@@ -8317,13 +8317,16 @@ function surveyClientId() {
     return id;
   } catch { return null; }
 }
-async function persistSurveyResponse(answers) {
+async function persistSurveyResponse(answers, run) {
   if (!supabaseEnabled || !supabase || !answers) return;
   const clientId = surveyClientId();
   if (!clientId) return;
   const member = authUser && !guestMode && authUser.provider !== "guest" ? authUser : null;
+  // Append-only (see supabase/survey.sql): the local record already holds every
+  // answer so far, so each row is the complete picture at that moment.
   const row = {
     client_id: clientId,
+    run: run === "plan" ? "plan" : "profile",
     user_id: member?.id ?? null,
     email: answers.email || member?.email || null,
     age: answers.age ?? null,
@@ -8338,11 +8341,10 @@ async function persistSurveyResponse(answers) {
     skipped: Array.isArray(answers.skipped) ? answers.skipped : [],
     profile_done_at: answers.completedAt ?? null,
     plan_done_at: answers.planAt ?? null,
-    source: testerMode() ? "tester" : "web",
-    updated_at: new Date().toISOString()
+    source: testerMode() ? "tester" : "web"
   };
   try {
-    await supabase.from("survey_responses").upsert(row, { onConflict: "client_id" });
+    await supabase.from("survey_responses").insert(row);
   } catch { /* best effort: the local record stays the source of truth */ }
 }
 

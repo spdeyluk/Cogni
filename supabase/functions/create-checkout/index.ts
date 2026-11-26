@@ -22,7 +22,11 @@
 import Stripe from "npm:stripe@^17.0.0";
 import { createClient } from "npm:@supabase/supabase-js@^2";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+// stripe-node throws when constructed without a key, which took the whole
+// function down (WORKER_ERROR) while STRIPE_SECRET_KEY was unset. A placeholder
+// lets it boot: signature checks still work, API calls fail per request and
+// Stripe retries the delivery, so nothing is lost once the key is set.
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "sk_unset", {
   apiVersion: "2024-06-20",
   httpClient: Stripe.createFetchHttpClient(),
 });
