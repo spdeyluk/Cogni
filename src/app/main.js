@@ -10896,18 +10896,39 @@ function syncTesterBadge() {
   badge.className = "tester-badge";
   badge.innerHTML = `<span>Tester mode</span><button type="button" data-tester-questions title="Every subtest's questions, answers marked">Questions</button><button type="button" data-tester-restart title="Back to the landing as a brand-new visitor">Restart</button><button type="button" data-tester-off>Turn off</button>`;
   badge.querySelector("[data-tester-questions]").addEventListener("click", () => openQuestionBrowser());
-  // Restart: forget this tester (local data included, unless a real account has
-  // synced on this browser) and return to the landing, so the next sign-in
-  // click runs the intro again from the top.
-  badge.querySelector("[data-tester-restart]").addEventListener("click", () => {
+  // Restart: forget this tester and return to the landing, so the next sign-in
+  // click runs the intro again from the top. A real account signed in on this
+  // browser would skip the landing on the reload, so it is saved and signed out
+  // first; its local copy goes too once the server has it (signing back in
+  // pulls it down again). Local data is otherwise kept only when a real account
+  // has synced here and could not be flushed.
+  badge.querySelector("[data-tester-restart]").addEventListener("click", async () => {
+    const button = badge.querySelector("[data-tester-restart]");
+    if (button) button.disabled = true;
     clearTesterSession();
-    let synced = false;
-    try { synced = Boolean(localStorage.getItem(authSyncedAtKey)); } catch { /* private mode */ }
-    if (!synced) {
+    let realSession = false;
+    try {
+      const { data } = await supabase.auth.getSession();
+      realSession = Boolean(data?.session?.user);
+    } catch { /* auth unreachable: nothing to sign out */ }
+    let wipe = true;
+    if (realSession) {
+      if (authSyncDirty) { try { await pushSyncState(); } catch { /* retried below */ } }
+      wipe = !authSyncDirty;
+      try { await supabase.auth.signOut({ scope: "local" }); } catch { /* removed below regardless */ }
+      // The SDK keeps the session when its sign-out request fails (offline); the
+      // landing needs it gone either way.
+      try { localStorage.removeItem("cogni.supabaseAuth.v1"); } catch { /* private mode */ }
+    } else {
+      let synced = false;
+      try { synced = Boolean(localStorage.getItem(authSyncedAtKey)); } catch { /* private mode */ }
+      wipe = !synced;
+    }
+    if (wipe) {
       try {
         for (let i = localStorage.length - 1; i >= 0; i -= 1) {
           const key = localStorage.key(i);
-          if (isSyncKey(key) && key !== "cogni.supabaseAuth.v1") localStorage.removeItem(key);
+          if ((isSyncKey(key) || key === authSyncedAtKey) && key !== "cogni.supabaseAuth.v1") localStorage.removeItem(key);
         }
       } catch { /* private mode */ }
     }
