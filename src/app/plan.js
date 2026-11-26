@@ -4,8 +4,9 @@
 // how long they have each day, and the shape of their IQ profile (the two
 // weakest indices get the most work). Every training step is a routine that
 // runs through the ordinary routine engine; the IQ test and the retest are
-// steps too. Steps open one at a time; the first few are free and the rest
-// are what Cogni Pass buys.
+// steps too. Steps open one at a time. Only the baseline (the free IQ test)
+// sits outside the paywall; every training step and the retest are what Cogni
+// Pass buys, all of them visible from day one.
 //
 // State lives in localStorage under a "cogni." key, so account sync carries
 // it between devices like everything else. The generated steps are stored,
@@ -25,8 +26,9 @@ const PREFS_KEY = "cogni.planPrefs.v1";
 const PLAN_VERSION = 1;
 const WEEKS = 4;
 const STEPS_PER_WEEK = 5;
-// Steps anyone can take before the path asks for Pass (0-based index < FREE_STEPS).
-const FREE_STEPS = 3;
+// Steps outside the paywall (0-based index < FREE_STEPS): just the baseline,
+// which is the IQ test everyone takes for free before the plan exists.
+const FREE_STEPS = 1;
 
 // What a step can target. Goals name the user's intent; the IQ profile adds
 // weight to whichever indices measured lowest.
@@ -472,7 +474,7 @@ function roadHtml(plan) {
       if (step.week !== w) return;
       body += stepHtml(plan, step, index, current, pos);
       pos += 1;
-      // The free stretch ends here; the divider says so before the lock does.
+      // The paywall starts right after the baseline; the divider says so.
       if (!unlocked && index === FREE_STEPS - 1 && !finished) body += gateHtml();
     });
     if (w < WEEKS - 1) { body += chestHtml(plan, w, pos); pos += 1; }
@@ -626,7 +628,7 @@ function popHtml(plan, step, index, current, s) {
   let body = "";
   if (s.needsPass) {
     tone = "is-current is-pass";
-    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<p class="plan-pop-note">The first ${FREE_STEPS} steps are free. Cogni Pass opens steps ${FREE_STEPS + 1} to ${total}.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
+    body = `<p class="plan-pop-note">${esc(step.blurb)}</p>${chips}<p class="plan-pop-note">The plan is part of Cogni Pass: every training step and the retest, ${total - FREE_STEPS} steps in all.</p><button class="plan-pop-btn" data-plan-pass type="button">Get Cogni Pass</button>`;
   } else if (s.locked) {
     tone = "is-locked";
     body = `${chips}<p class="plan-pop-note">Finish step ${current + 1} first.</p>`;
