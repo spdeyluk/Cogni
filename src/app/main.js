@@ -9525,20 +9525,20 @@ function renderMeasurePicker(selectedId) {
       </section>`;
   }).join("");
 
-  // Pick any subtest, in any order. On the web a row selects it and the detail
-  // panel explains it (Start lives there); native opens the brief directly.
+  // Pick any subtest, in any order. On the web a tap on a row that is still to
+  // take goes straight into it (no brief in between; the board's own line says
+  // each is one sitting). A finished row only selects, so the detail panel
+  // shows its result. Native opens the brief.
   host.querySelectorAll("[data-subtest]").forEach((button) => {
     button.addEventListener("click", () => {
+      const id = button.dataset.subtest;
       if (cogniUiMode === "pro") {
-        measureBoardSelection = button.dataset.subtest;
-        renderSubtestDetail(button.dataset.subtest);
-        // On a phone the detail column stacks under the list, so "Start this
-        // subtest" is a scroll away. Tapping a row opens the brief with Begin
-        // right there instead; the stacked panel below stays in step.
-        if (measureBoardStacked()) openMeasureStartDialog(button.dataset.subtest);
+        measureBoardSelection = id;
+        renderSubtestDetail(id);
+        if (!loadMeasureAttempt().subtests[id]) startSubtest(id);
         return;
       }
-      openMeasureStartDialog(button.dataset.subtest);
+      openMeasureStartDialog(id);
     });
   });
   if (cogniUiMode === "pro" && measureSubtestsOpen) {
