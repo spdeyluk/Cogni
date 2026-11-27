@@ -411,6 +411,7 @@ function onHostClick(event) {
   // Pass buttons use their own hook.
   if (t.closest("[data-plan-pass]")) { d.openPricingModal(); return; }
   if (t.closest("[data-plan-guide]")) { guideOpen = !guideOpen; renderPlan(); return; }
+  if (t.closest("[data-plan-locate]")) { revealCurrent(); return; }
   const node = t.closest("[data-plan-step]");
   if (node) { togglePop(`s${node.dataset.planStep}`); return; }
   const chest = t.closest("[data-plan-chest]");
@@ -525,6 +526,30 @@ function editorHtml(plan) {
 // --k is the stop's place on that wave; the CSS multiplies it by --plan-amp.
 function waveK(pos) { return Math.round(Math.sin((pos * Math.PI) / 4) * 100) / 100; }
 
+// The stop: a rounded hexagon, flat top and bottom, in a 100-unit box. The
+// lip is the same shape dropped a few units (CSS), so it reads as pressable.
+const HEX_PATH = (() => {
+  const R = 47, r = 10, cx = 50, cy = 50;
+  const pts = [0, 60, 120, 180, 240, 300].map((deg) => { const t = (deg * Math.PI) / 180; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
+  const f = (n) => n.toFixed(1);
+  let d = "";
+  pts.forEach((p, i) => {
+    const a = towards(p, pts[(i + 5) % 6], r);
+    const b = towards(p, pts[(i + 1) % 6], r);
+    d += `${i ? "L" : "M"}${f(a[0])} ${f(a[1])} Q${f(p[0])} ${f(p[1])} ${f(b[0])} ${f(b[1])} `;
+  });
+  return `${d}Z`;
+})();
+function towards(from, to, dist) {
+  const dx = to[0] - from[0], dy = to[1] - from[1];
+  const len = Math.hypot(dx, dy) || 1;
+  return [from[0] + (dx / len) * dist, from[1] + (dy / len) * dist];
+}
+function hexSvg() { return `<svg class="plan-hex" viewBox="0 0 100 100" aria-hidden="true"><path class="plan-hex-lip" d="${HEX_PATH}"/><path class="plan-hex-face" d="${HEX_PATH}"/></svg>`; }
+function playSvg() { return `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 5.6v12.8a1 1 0 0 0 1.52.86l10.2-6.4a1 1 0 0 0 0-1.72L10.02 4.74a1 1 0 0 0-1.52.86z"/></svg>`; }
+function arrowSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`; }
+function locateSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>`; }
+
 function roadHtml(plan) {
   const current = currentStepIndex(plan);
   const total = plan.steps.length;
@@ -553,6 +578,22 @@ function roadHtml(plan) {
       ${guideOpen ? guideHtml(plan, current, finished) : ""}
       ${finished ? finishedHtml(plan) : ""}
       <ol class="plan-road">${body}</ol>
+      ${finished || selectedKey ? "" : ctaHtml(plan, current)}
+    </div>`;
+}
+
+// The bar that sticks to the bottom: one button for the current step (or the
+// Pass, when that comes first) and a locate button that scrolls back to it.
+function ctaHtml(plan, current) {
+  const step = plan.steps[current];
+  if (!step) return "";
+  const needsPass = stepNeedsPass(current) && !step.done;
+  const action = needsPass ? "data-plan-pass" : `data-plan-start="${current}"`;
+  const text = needsPass ? "Get Cogni Pass" : step.kind === "train" ? `Start · ${esc(step.title)}` : step.kind === "iq" ? "Take the IQ test" : "Retake the IQ test";
+  return `
+    <div class="plan-cta">
+      <button class="plan-cta-locate" data-plan-locate type="button" aria-label="Scroll to the current step">${locateSvg()}</button>
+      <button class="plan-cta-btn" ${action} type="button"><span>${text}</span>${arrowSvg()}</button>
     </div>`;
 }
 
@@ -571,8 +612,8 @@ function unitHeaderHtml(plan, current, finished, done) {
         <p class="plan-unit-eyebrow">${esc(eyebrow)}</p>
         <h2>${esc(title)}</h2>
       </div>
+      <span class="plan-unit-ring" role="progressbar" aria-label="Plan progress" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${total}"></span>
       <button class="plan-unit-btn${guideOpen ? " is-on" : ""}" data-plan-guide type="button" aria-expanded="${guideOpen}" aria-label="Plan guide">${bookSvg()}<span>Guide</span></button>
-      <div class="plan-unit-bar" role="progressbar" aria-label="Plan progress" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${total}"><i></i></div>
     </header>`;
 }
 
@@ -654,26 +695,21 @@ function stepHtml(plan, step, index, current, pos) {
   if (needsPass) cls.push("needs-pass");
   if (open) cls.push("is-open");
 
-  const icon = step.kind === "retest" ? trophySvg() : step.kind === "iq" ? d.iqIcon() : d.exerciseIcon(step.blocks[0].exerciseId);
-  const face = isDone ? checkSvg() : icon;
-  // Every Pass-gated stop shows what it is; the badge says it is paywalled.
-  const badge = needsPass ? `<span class="plan-node-badge" aria-hidden="true">${lockSvg()}</span>` : "";
-  const weekSteps = plan.steps.filter((s) => s.week === step.week);
-  const arc = Math.round((weekSteps.filter((s) => s.done).length / weekSteps.length) * 100);
-  const tip = isCurrent && !open ? `<span class="plan-tip" aria-hidden="true">${needsPass ? "Unlock" : step.kind === "train" ? "Start" : "Test"}</span>` : "";
-  // The current stop says what it is without a tap, on whichever side of the
-  // wave has the room.
+  // A done stop carries a check, the current one a play mark (a lock when
+  // Pass comes first), a stop still to come a lock. Its title sits beside it,
+  // on whichever side of the wave has the room.
+  const face = isDone ? checkSvg() : isCurrent && !needsPass ? playSvg() : lockSvg();
   const k = waveK(pos);
-  const label = isCurrent && !open ? `<span class="plan-node-label ${k > 0 ? "is-left" : "is-right"}" aria-hidden="true"><b>Step ${index + 1}</b>${esc(step.title)}</span>` : "";
+  const here = isCurrent && !open ? `<span class="plan-here" aria-hidden="true">You're here</span>` : "";
+  const label = `<span class="plan-node-label ${k > 0 ? "is-left" : "is-right"}" aria-hidden="true">${esc(step.title)}</span>`;
 
   return `
     <li class="${cls.join(" ")}" data-week="${step.week}" data-kind="${step.kind}" style="--k:${k}">
       <div class="plan-node-wrap">
-        ${tip}
-        <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}${needsPass ? " (Cogni Pass)" : ""}" aria-expanded="${open}" style="--arc:${arc}%">
-          ${isCurrent ? '<span class="plan-node-ring" aria-hidden="true"></span>' : ""}
-          <span class="plan-node-face"><span class="plan-node-icon">${face}</span></span>
-          ${badge}
+        ${here}
+        <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}${needsPass ? " (Cogni Pass)" : ""}" aria-expanded="${open}">
+          ${hexSvg()}
+          <span class="plan-node-icon">${face}</span>
         </button>
         ${label}
       </div>
@@ -730,10 +766,12 @@ function chestHtml(plan, w, pos) {
   const recap = complete
     ? `${weekSteps.length} steps · about ${mins} minutes${replays ? ` · ${replays} replay${replays === 1 ? "" : "s"}` : ""}`
     : `Finish week ${w + 1} to open this.`;
+  const k = waveK(pos);
   return `
-    <li class="plan-chest${complete ? " is-done" : " is-locked"}${open ? " is-open" : ""}" data-week="${w}" style="--k:${waveK(pos)}">
+    <li class="plan-chest${complete ? " is-done" : " is-locked"}${open ? " is-open" : ""}" data-week="${w}" style="--k:${k}">
       <div class="plan-node-wrap">
-        <button class="plan-chest-btn" data-plan-chest="${w}" type="button" aria-label="Week ${w + 1} recap" aria-expanded="${open}">${chestSvg()}</button>
+        <button class="plan-chest-btn plan-node" data-plan-chest="${w}" type="button" aria-label="Week ${w + 1} recap" aria-expanded="${open}">${hexSvg()}<span class="plan-node-icon">${complete ? trophySvg() : flagSvg()}</span></button>
+        <span class="plan-node-label ${k > 0 ? "is-left" : "is-right"}" aria-hidden="true">Week ${w + 1} recap</span>
       </div>
       ${open ? `
       <div class="plan-pop ${complete ? "is-done" : "is-locked"}" role="group" aria-label="Week ${w + 1} recap">
@@ -777,6 +815,9 @@ function trophySvg() {
 }
 function bookSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h12.5v15H7a2.5 2.5 0 0 0-2.5 2.5z"/><path d="M4.5 18.5A2.5 2.5 0 0 1 7 16h12.5"/><path d="M9.5 7.5h6M9.5 11h4"/></svg>`;
+}
+function flagSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4.5h11.5l-2.5 4 2.5 4H6"/></svg>`;
 }
 function chestSvg() {
   return `<svg viewBox="0 0 56 46" aria-hidden="true"><rect x="4" y="18" width="48" height="24" rx="5" fill="currentColor" opacity=".55"/><path d="M4 20a10 10 0 0 1 10-10h28a10 10 0 0 1 10 10v3H4z" fill="currentColor"/><rect x="4" y="22" width="48" height="2.5" fill="var(--bg)" opacity=".55"/><rect x="22" y="17" width="12" height="12" rx="3" fill="var(--bg)"/><circle cx="28" cy="22" r="1.8" fill="currentColor"/><path d="M28 23v2.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
