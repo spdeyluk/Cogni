@@ -80,7 +80,10 @@ async function applySubscription(sub: Stripe.Subscription, fallbackUserId?: stri
   const priceId = sub.items.data[0]?.price?.id ?? "";
   const active = sub.status === "active" || sub.status === "trialing";
   const tier = active ? (PRICE_TIER[priceId] ?? "free") : "free";
-  const periodEnd = (sub as unknown as { current_period_end?: number }).current_period_end;
+  // Older API versions carry current_period_end on the subscription; since
+  // 2025 it lives on each subscription item.
+  const firstItem = sub.items?.data?.[0] as unknown as { current_period_end?: number } | undefined;
+  const periodEnd = (sub as unknown as { current_period_end?: number }).current_period_end ?? firstItem?.current_period_end;
 
   const { error } = await admin.from("entitlements").upsert({
     user_id: userId,
