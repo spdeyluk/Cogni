@@ -5,8 +5,9 @@
 //               email. All required, four taps and a field.
 //   "plan"    — the moment the first test finishes, before the report opens:
 //               what to improve on and how long each day (required), then
-//               screen time, games + ranks, and what fills your days (all
-//               skippable). The answers rebuild the four-week plan.
+//               screen time (skippable). The answers rebuild the four-week
+//               plan. The games + ranks and "what fills your days" screens
+//               are switched off since 2026-11-27 (kept below, not listed).
 // Everything lives in one record in localStorage under a "cogni." key, so
 // account sync carries it between devices like the rest of the app state, and
 // each finished run is also appended to public.survey_responses (d.persist).
@@ -96,17 +97,23 @@ function steps(kind, a) {
   const list = [
     { id: "goals", kind: "multi", key: "goals", required: true, max: 2, eyebrow: "Your plan to reverse brainrot", title: "What do you want to improve?", body: "Pick up to two. Your four-week plan is built around it.", options: PLAN_GOALS.map((g) => [g.id, g.label, g.blurb]), cols: 2 },
     { id: "minutes", kind: "single", key: "minutes", required: true, eyebrow: "Your plan to reverse brainrot", title: "How long each day?", body: "Short and daily beats long and rare. You can change this any time.", options: PLAN_MINUTES.map((m) => [String(m), `${m} minutes`]), cols: 3 },
-    { id: "screen", kind: "single", key: "screenTime", eyebrow: "Your days", title: "How much screen time a day?", body: "Phone and computer together, roughly.", options: SCREEN, cols: 2 },
-    { id: "games", kind: "multi", key: "games", eyebrow: "Your games", title: "Which games do you play?", body: "Tick any. We ask your rank next.", options: GAMES.map((g) => [g.id, g.label]), cols: 3, wide: true }
+    { id: "screen", kind: "single", key: "screenTime", eyebrow: "Your days", title: "How much screen time a day?", body: "Phone and computer together, roughly.", options: SCREEN, cols: 2 }
   ];
-  for (const id of a.games) {
-    const g = GAMES.find((x) => x.id === id);
-    if (!g?.ranks) continue;
-    list.push({ id: `rank:${g.id}`, kind: "single", key: ["ranks", g.id], eyebrow: "Your games", title: g.rankTitle || `Your rank in ${g.label}`, body: "Your current rank, or the one you held most recently.", options: [...g.ranks.map((r) => [r, r]), ["unranked", "Unranked"]], cols: 2 });
+  // Games + ranks and "what fills your days" are off for now (2026-11-27).
+  // Flip ASK_GAMES_AND_INTERESTS to bring them back; answers already saved
+  // keep their shape either way.
+  if (ASK_GAMES_AND_INTERESTS) {
+    list.push({ id: "games", kind: "multi", key: "games", eyebrow: "Your games", title: "Which games do you play?", body: "Tick any. We ask your rank next.", options: GAMES.map((g) => [g.id, g.label]), cols: 3, wide: true });
+    for (const id of a.games) {
+      const g = GAMES.find((x) => x.id === id);
+      if (!g?.ranks) continue;
+      list.push({ id: `rank:${g.id}`, kind: "single", key: ["ranks", g.id], eyebrow: "Your games", title: g.rankTitle || `Your rank in ${g.label}`, body: "Your current rank, or the one you held most recently.", options: [...g.ranks.map((r) => [r, r]), ["unranked", "Unranked"]], cols: 2 });
+    }
+    list.push({ id: "interests", kind: "multi", key: "interests", eyebrow: "Your days", title: "What fills your days?", body: "Work, study, hobbies. Tick everything that applies.", options: INTERESTS, cols: 3, wide: true });
   }
-  list.push({ id: "interests", kind: "multi", key: "interests", eyebrow: "Your days", title: "What fills your days?", body: "Work, study, hobbies. Tick everything that applies.", options: INTERESTS, cols: 3, wide: true });
   return list;
 }
+const ASK_GAMES_AND_INTERESTS = false;
 const getAnswer = (a, key) => Array.isArray(key) ? a[key[0]]?.[key[1]] ?? null : a[key];
 function setAnswer(a, key, value) {
   if (Array.isArray(key)) { a[key[0]] = { ...(a[key[0]] ?? {}), [key[1]]: value }; return; }
