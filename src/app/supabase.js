@@ -1,7 +1,7 @@
 // Supabase client — the single shared connection to the project.
 //
-// On web this resolves "@supabase/supabase-js" via the import map in index.html
-// (to /vendor/supabase.js); on native, esbuild bundles it from node_modules.
+// esbuild bundles "@supabase/supabase-js" from node_modules on both web
+// (scripts/build-web.js) and native (scripts/prepare-mobile.js).
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabaseConfig.js";
 

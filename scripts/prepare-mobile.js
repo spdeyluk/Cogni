@@ -25,7 +25,7 @@ const indexHtml = await readFile(indexPath, "utf8");
 await writeFile(
   indexPath,
   indexHtml.replace(
-    /<script type="module" src="src\/app\/main\.js(?:\?([^"]*))?"><\/script>/,
+    /<script type="module" src="(?:src\/app\/main|build\/app)\.js(?:\?([^"]*))?"><\/script>/,
     (_match, version) => `<script src="app-bundle.js${version ? `?${version}` : ""}"></script>`
   )
 );

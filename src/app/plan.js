@@ -81,6 +81,11 @@ export function initPlan(deps) {
   host = document.querySelector(".plan-page");
   if (!host) return;
   host.addEventListener("click", onHostClick);
+  // The dotted path between the stops is drawn from their on-screen positions,
+  // so it follows every reflow: a resize, a font landing, a bubble opening.
+  window.addEventListener("resize", scheduleDraw);
+  document.fonts?.ready?.then(scheduleDraw);
+  if (typeof ResizeObserver === "function") roadObserver = new ResizeObserver(scheduleDraw);
   // The sticky week header follows the scroll.
   let ticking = false;
   window.addEventListener("scroll", () => {
@@ -429,7 +434,62 @@ function onHostClick(event) {
 export function renderPlan() {
   if (!host) return;
   host.innerHTML = roadHtml(ensurePlan());
-  window.requestAnimationFrame(syncUnitHeader);
+  roadObserver?.disconnect();
+  const road = host.querySelector(".plan-road");
+  if (road && roadObserver) roadObserver.observe(road);
+  window.requestAnimationFrame(() => { syncUnitHeader(); drawRoad(); });
+}
+
+// ---- the dotted path ----
+// An SVG behind the stops: one dotted line through every stop centre, and a
+// second, teal-to-blue, as far as the current stop. Centres come from layout,
+// so this runs after render and again whenever the road changes size.
+let roadObserver = null;
+let drawQueued = false;
+function scheduleDraw() {
+  if (drawQueued) return;
+  drawQueued = true;
+  window.requestAnimationFrame(() => { drawQueued = false; drawRoad(); });
+}
+function drawRoad() {
+  const road = host?.querySelector(".plan-road");
+  if (!road) return;
+  const stops = [...road.querySelectorAll(".plan-step .plan-node, .plan-chest .plan-chest-btn")];
+  let svg = road.querySelector(".plan-path");
+  if (stops.length < 2) { svg?.remove(); return; }
+  const origin = road.getBoundingClientRect();
+  const width = Math.round(origin.width);
+  const height = Math.round(origin.height);
+  const points = stops.map((el) => {
+    const r = el.getBoundingClientRect();
+    return [r.left + r.width / 2 - origin.left, r.top + r.height / 2 - origin.top];
+  });
+  const currentAt = stops.findIndex((el) => el.closest("li")?.classList.contains("is-current"));
+  const doneUntil = currentAt === -1 ? points.length - 1 : currentAt;
+  const seg = (a, b) => {
+    const midY = (a[1] + b[1]) / 2;
+    return ` C${a[0].toFixed(1)} ${midY.toFixed(1)}, ${b[0].toFixed(1)} ${midY.toFixed(1)}, ${b[0].toFixed(1)} ${b[1].toFixed(1)}`;
+  };
+  let all = `M${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+  let done = doneUntil > 0 ? all : "";
+  for (let i = 1; i < points.length; i += 1) {
+    const s = seg(points[i - 1], points[i]);
+    all += s;
+    if (i <= doneUntil) done += s;
+  }
+  if (!svg) {
+    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "plan-path");
+    svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = `<defs><linearGradient id="plan-path-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${height}"><stop offset="0" stop-color="#2DD4BF"/><stop offset="1" stop-color="#4A5BFF"/></linearGradient></defs><path class="plan-path-all" d=""/><path class="plan-path-done" d=""/>`;
+    road.prepend(svg);
+  }
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  svg.querySelector("linearGradient").setAttribute("y2", height);
+  svg.querySelector(".plan-path-all").setAttribute("d", all);
+  svg.querySelector(".plan-path-done").setAttribute("d", done);
 }
 
 const esc = (v) => d.escapeHtml(v);
@@ -601,9 +661,13 @@ function stepHtml(plan, step, index, current, pos) {
   const weekSteps = plan.steps.filter((s) => s.week === step.week);
   const arc = Math.round((weekSteps.filter((s) => s.done).length / weekSteps.length) * 100);
   const tip = isCurrent && !open ? `<span class="plan-tip" aria-hidden="true">${needsPass ? "Unlock" : step.kind === "train" ? "Start" : "Test"}</span>` : "";
+  // The current stop says what it is without a tap, on whichever side of the
+  // wave has the room.
+  const k = waveK(pos);
+  const label = isCurrent && !open ? `<span class="plan-node-label ${k > 0 ? "is-left" : "is-right"}" aria-hidden="true"><b>Step ${index + 1}</b>${esc(step.title)}</span>` : "";
 
   return `
-    <li class="${cls.join(" ")}" style="--k:${waveK(pos)}">
+    <li class="${cls.join(" ")}" data-week="${step.week}" data-kind="${step.kind}" style="--k:${k}">
       <div class="plan-node-wrap">
         ${tip}
         <button class="plan-node" data-plan-step="${index}" type="button" aria-label="Step ${index + 1}: ${esc(step.title)}${needsPass ? " (Cogni Pass)" : ""}" aria-expanded="${open}" style="--arc:${arc}%">
@@ -611,6 +675,7 @@ function stepHtml(plan, step, index, current, pos) {
           <span class="plan-node-face"><span class="plan-node-icon">${face}</span></span>
           ${badge}
         </button>
+        ${label}
       </div>
       ${open ? popHtml(plan, step, index, current, { isDone, isCurrent, locked, needsPass }) : ""}
     </li>`;
@@ -666,7 +731,7 @@ function chestHtml(plan, w, pos) {
     ? `${weekSteps.length} steps · about ${mins} minutes${replays ? ` · ${replays} replay${replays === 1 ? "" : "s"}` : ""}`
     : `Finish week ${w + 1} to open this.`;
   return `
-    <li class="plan-chest${complete ? " is-done" : " is-locked"}${open ? " is-open" : ""}" style="--k:${waveK(pos)}">
+    <li class="plan-chest${complete ? " is-done" : " is-locked"}${open ? " is-open" : ""}" data-week="${w}" style="--k:${waveK(pos)}">
       <div class="plan-node-wrap">
         <button class="plan-chest-btn" data-plan-chest="${w}" type="button" aria-label="Week ${w + 1} recap" aria-expanded="${open}">${chestSvg()}</button>
       </div>

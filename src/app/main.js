@@ -1560,6 +1560,8 @@ function hasSeenWebOnboarding() {
 }
 function markWebOnboardingSeen() {
   try { localStorage.setItem(WEB_ONBOARDING_KEY, "1"); } catch { /* private mode */ }
+  // The intro is gone a moment later; the due-test card may follow it.
+  scheduleIqDueOverlay(2600);
 }
 
 // The post-sign-in intro. Two quick questions first (what to work on, minutes
@@ -11253,6 +11255,76 @@ function syncIqDue() {
   const due = cogniUiMode === "pro" && !!authUser && iqTestAvailable() && !iqSittingThisMonth();
   document.documentElement.classList.toggle("iq-due", due);
 }
+
+// The due-test card (2026-11-27). A member with a sitting on record but none
+// this month, anywhere but the IQ page, gets one card a day in the test's own
+// teal-to-blue: "Take the test" opens the IQ page, "Not now" waits for
+// tomorrow. (A member with no sitting at all is already funnelled to the
+// test, so the card never shows over nothing.) ?iqdue=1 previews it.
+const IQ_DUE_NUDGE_KEY = "cogni.iqDueNudge.v1";
+let iqDueTimer = 0;
+function scheduleIqDueOverlay(delay = 1400) {
+  window.clearTimeout(iqDueTimer);
+  iqDueTimer = window.setTimeout(maybeShowIqDueOverlay, delay);
+}
+function iqDuePreview() {
+  try { return new URLSearchParams(window.location.search).get("iqdue") === "1"; } catch { return false; }
+}
+function iqDueOverlayAllowed() {
+  const shell = elements.appShell;
+  const html = document.documentElement;
+  if (!shell || !authUser || cogniUiMode !== "pro" || html.classList.contains("landing-active")) return false;
+  if (shell.classList.contains("game-active") || shell.classList.contains("cat-immersive")) return false;
+  if (document.querySelector("dialog[open]") || document.querySelector("#web-onboarding") || document.querySelector(`#${profileOnboardingId}`)) return false;
+  const wall = document.querySelector("#signin-first");
+  if (wall && !wall.hidden) return false;
+  if (iqDuePreview()) return true;
+  if (!html.classList.contains("iq-due") || shell.classList.contains("assessments-open")) return false;
+  let last = "";
+  try { last = localStorage.getItem(IQ_DUE_NUDGE_KEY) || ""; } catch { /* private mode */ }
+  return last !== new Date().toISOString().slice(0, 10);
+}
+function maybeShowIqDueOverlay() {
+  if (!iqDueOverlayAllowed()) return;
+  const dialog = ensureIqDueDialog();
+  const sittings = loadCatSessions().length;
+  const month = new Date().toLocaleString("en", { month: "long" });
+  const minutes = batteryMinutes("mini");
+  dialog.querySelector(".iq-due-eyebrow").textContent = sittings ? `${month} sitting` : "Your first sitting";
+  dialog.querySelector("#iq-due-title").textContent = sittings ? `Your ${month} IQ test is due` : "You haven't taken your IQ test yet";
+  dialog.querySelector(".iq-due-sub").textContent = sittings
+    ? `One sitting a month keeps your score and your plan honest. The Mini takes about ${minutes} minutes.`
+    : `Six abilities, one score, and the plan tunes itself to the result. The Mini takes about ${minutes} minutes.`;
+  if (!iqDuePreview()) {
+    try { localStorage.setItem(IQ_DUE_NUDGE_KEY, new Date().toISOString().slice(0, 10)); } catch { /* private mode */ }
+  }
+  if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
+}
+function ensureIqDueDialog() {
+  let dialog = document.querySelector("#iq-due-dialog");
+  if (dialog) return dialog;
+  dialog = document.createElement("dialog");
+  dialog.className = "iq-due-dialog";
+  dialog.id = "iq-due-dialog";
+  dialog.setAttribute("aria-labelledby", "iq-due-title");
+  dialog.innerHTML = `
+    <div class="iq-due-card">
+      <span class="iq-due-sweep" aria-hidden="true"></span>
+      <span class="iq-due-orb" aria-hidden="true"><span class="iq-due-orb-ring"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg></span>
+      <p class="iq-due-eyebrow"></p>
+      <h2 id="iq-due-title"></h2>
+      <p class="iq-due-sub"></p>
+      <button class="iq-due-go" id="iq-due-go" type="button">Take the test</button>
+      <button class="iq-due-later" id="iq-due-later" type="button">Not now</button>
+    </div>`;
+  document.body.appendChild(dialog);
+  dialog.querySelector("#iq-due-go").addEventListener("click", () => { dialog.close(); showAssessments(); });
+  dialog.querySelector("#iq-due-later").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener("close", () => syncNativeNavigationChrome());
+  enableSheetDragDismiss(dialog);
+  return dialog;
+}
 function iqTestAvailable() {
   // Open to everyone since 2026-11-26. The calibration gate (owner or tester
   // only) hid the tab from real members mid-sitting; the tab is always shown.
@@ -11271,6 +11343,7 @@ function applyIqAvailability() {
   const tab = document.querySelector('.site-tab[data-site-tab="assessments"]');
   if (tab) tab.hidden = off;
   syncIqDue();
+  scheduleIqDueOverlay();
   if (elements.appShell?.classList.contains("assessments-open")) renderMeasurePicker();
 }
 

@@ -14,8 +14,6 @@ import { gzipSync } from "node:zlib";
 
 const root = process.cwd();
 const publicDir = join(root, "public");
-const srcDir = join(root, "src");
-const nodeModulesDir = join(root, "node_modules");
 const port = Number(process.env.PORT || 4283);
 
 const mimeTypes = new Map([
@@ -53,9 +51,10 @@ const securityHeaders = {
 
 function resolveRequestPath(url) {
   const pathname = decodeURIComponent(new URL(url, "http://localhost").pathname);
-  // The web build loads raw ES modules from /src and /node_modules.
+  // The browser gets the minified bundle in public/build only. The source tree
+  // and node_modules were served raw until 2026-11-27; they are not any more.
   if (pathname.startsWith("/src/") || pathname.startsWith("/node_modules/")) {
-    return join(root, normalize(pathname));
+    return null;
   }
   // Standalone docs site.
   if (pathname === "/docs") {
@@ -78,8 +77,8 @@ const server = createServer(async (request, response) => {
 
   try {
     const filePath = resolveRequestPath(request.url);
-    // Containment check: a decoded "../" must not escape the served roots.
-    if (!filePath.startsWith(publicDir) && !filePath.startsWith(srcDir) && !filePath.startsWith(nodeModulesDir)) {
+    // Containment check: a decoded "../" must not escape the public root.
+    if (!filePath || !filePath.startsWith(publicDir)) {
       response.writeHead(403, securityHeaders);
       response.end("Forbidden");
       return;
