@@ -6101,6 +6101,9 @@ let authSyncDirty = false;
 let authSyncing = false;
 const authSyncedAtKey = "cogni.__syncedAt";
 const authSyncExclude = new Set([
+  // The Supabase session belongs to the device: never uploaded, never wiped by a pull.
+  "cogni.supabaseAuth.v1",
+  "cogni.supabaseAuth.v1-code-verifier",
   "cogni.tester",
   "cogni.testerSession",
   "cogni.localDataResetToken",
@@ -6435,7 +6438,8 @@ function applySyncState(state) {
   }
   stale.forEach((key) => localStorage.removeItem(key));
   for (const [key, value] of Object.entries(state || {})) {
-    if (typeof value === "string") localStorage.setItem(key, value);
+    // Older snapshots carried another device's session; only sync keys are applied.
+    if (typeof value === "string" && isSyncKey(key)) localStorage.setItem(key, value);
   }
 }
 
