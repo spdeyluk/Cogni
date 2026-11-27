@@ -23,13 +23,16 @@ case "$mode" in
     python3 - "$exp" "$LINK" "$CODE" <<'PY'
 import json, subprocess, sys
 exp, link_id, code = sys.argv[1:]
-def stripe(*args):
+def stripe(*args, soft=False):
     r = subprocess.run(["stripe", *args, "--live"], capture_output=True, text=True)
     if r.returncode != 0:
+        if soft: return None
         sys.exit("stripe " + " ".join(args[:2]) + " failed: " + (r.stderr or r.stdout).strip()[:400])
     out = json.loads(r.stdout)
     if isinstance(out, dict) and out.get("error"):
-        sys.exit("stripe " + " ".join(args[:2]) + " refused: " + str(out["error"].get("message", out["error"]))[:400])
+        msg = str(out["error"].get("message", out["error"]))[:400]
+        if soft and "unknown parameter" in msg.lower(): return None
+        sys.exit("stripe " + " ".join(args[:2]) + " refused: " + msg)
     return out
 existing = [p for p in stripe("promotion_codes", "list", "-d", f"code={code}", "-d", "active=true", "-d", "limit=5").get("data", []) if p.get("active")]
 if existing:
@@ -46,8 +49,11 @@ else:
                         "-d", f"redeem_by={exp}", "-d", "name=Cogni Pass test (one use)")
         print(f"coupon {coupon['id']}: 100% off once, 1 redemption")
     promo_exp = min(int(exp), int(coupon.get("redeem_by") or exp)) - 300
-    promo = stripe("promotion_codes", "create", "-d", f"coupon={coupon['id']}", "-d", f"code={code}",
-                   "-d", "max_redemptions=1", "-d", f"expires_at={promo_exp}")
+    # API versions from late 2025 take promotion[type]/promotion[coupon]; older ones take coupon=.
+    common = ["-d", f"code={code}", "-d", "max_redemptions=1", "-d", f"expires_at={promo_exp}"]
+    promo = stripe("promotion_codes", "create", "-d", "promotion[type]=coupon", "-d", f"promotion[coupon]={coupon['id']}", *common, soft=True)
+    if promo is None:
+        promo = stripe("promotion_codes", "create", "-d", f"coupon={coupon['id']}", *common)
     print(f"promotion code {promo.get('code', code)} ({promo.get('id')}): active, 1 redemption, expires in 24 h")
 link = stripe("payment_links", "update", link_id, "-d", "allow_promotion_codes=true", "-d", "payment_method_collection=if_required")
 print(f"payment link {link['id']}: promotion codes {'on' if link['allow_promotion_codes'] else 'off'}, card only when something is due ({link['payment_method_collection']})")
