@@ -10938,6 +10938,10 @@ function renderCatIndices(sessionRecord, unlocked) {
 // ---------------------------------------------------------------------------
 function webPlanUnlocked() {
   if (cogniUiMode !== "pro") return hasPaidPlan();
+  // A tester session is a brand-new free member. The tier cached for the real
+  // account in this browser (and any access code typed into it) must not leak
+  // into the walk, or the plan and the report look unlocked to "a new user".
+  if (testerSessionActive()) return false;
   return accessCodeActive() || currentTier() === "basic" || currentTier() === "pro";
 }
 
