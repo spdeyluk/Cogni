@@ -71,18 +71,27 @@ sub_id, link_id, code = sys.argv[1:]
 def stripe(*args, ok_fail=False):
     r = subprocess.run(["stripe", *args, "--live"], capture_output=True, text=True)
     if r.returncode != 0:
-        if ok_fail: print("  (skipped:", (r.stderr or r.stdout).strip()[:160] + ")"); return None
+        if ok_fail: print("  (skipped:", ((r.stderr or r.stdout).strip().splitlines() or ["?"])[-1][:200] + ")"); return None
         sys.exit("stripe " + " ".join(args[:2]) + " failed: " + (r.stderr or r.stdout).strip()[:400])
-    return json.loads(r.stdout)
-sub = stripe("subscriptions", "cancel", sub_id, ok_fail=True)
+    # The CLI can print a banner or a confirmation line before the JSON body.
+    body = r.stdout[r.stdout.find("{"):] if "{" in r.stdout else r.stdout
+    try: out = json.loads(body)
+    except json.JSONDecodeError:
+        if ok_fail: return {"id": args[2] if len(args) > 2 else "?", "status": "done (no JSON body)"}
+        sys.exit("stripe " + " ".join(args[:2]) + " returned no JSON: " + r.stdout.strip()[:200])
+    if isinstance(out, dict) and out.get("error"):
+        msg = str(out["error"].get("message", out["error"]))[:200]
+        if ok_fail: print("  (skipped:", msg + ")"); return None
+        sys.exit("stripe " + " ".join(args[:2]) + " refused: " + msg)
+    return out
+sub = stripe("subscriptions", "cancel", sub_id, "--confirm", ok_fail=True)
 if sub: print(f"subscription {sub['id']}: {sub['status']}")
 for p in stripe("promotion_codes", "list", "-d", f"code={code}", "-d", "active=true", "-d", "limit=5").get("data", []):
     stripe("promotion_codes", "update", p["id"], "-d", "active=false")
     print(f"promotion code {code} ({p['id']}): retired")
 for c in stripe("coupons", "list", "-d", "limit=20").get("data", []):
     if c.get("name") == "Cogni Pass test (one use)":
-        stripe("coupons", "delete", c["id"], ok_fail=True)
-        print(f"coupon {c['id']}: deleted")
+        if stripe("coupons", "delete", c["id"], "--confirm", ok_fail=True): print(f"coupon {c['id']}: deleted")
 link = stripe("payment_links", "update", link_id, "-d", "allow_promotion_codes=false", "-d", "payment_method_collection=always")
 print(f"payment link {link['id']}: promotion codes off, card always collected")
 PY
